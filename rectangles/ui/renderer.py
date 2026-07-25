@@ -182,8 +182,31 @@ class Renderer:
         elif game.state == TurnState.GAME_OVER:
             self._text("Game over - see below", (x, y), self.font, MUTED_TEXT_COLOR)
 
+        self._divider(layout.PANEL_HISTORY_DIVIDER_Y)
+        self._text("History", (x, layout.PANEL_HISTORY_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
+        self._draw_history(game)
+
         self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
         self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
+
+    def _draw_history(self, game: Game) -> None:
+        x = layout.PANEL_X
+        y = layout.PANEL_HISTORY_START_Y
+        entries = list(reversed(game.history))[: layout.PANEL_HISTORY_MAX_ROWS]
+        if not entries:
+            self._text("No moves yet", (x, y), self.font_small, MUTED_TEXT_COLOR)
+            return
+        for record in entries:
+            player = game.players[record.player_id]
+            swatch = pygame.Rect(x, y + 3, 10, 10)
+            pygame.draw.rect(self.screen, constants.PLAYER_COLORS[record.player_id], swatch)
+            if record.placed is not None:
+                line = f"{player.name} placed {record.placed.width}x{record.placed.height}"
+            else:
+                a, b = record.roll
+                line = f"{player.name} skipped (rolled {a},{b})"
+            self._text(line, (x + 16, y), self.font_small, MUTED_TEXT_COLOR)
+            y += layout.PANEL_HISTORY_ROW_HEIGHT
 
     def _draw_game_over(self, game: Game) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)

@@ -42,6 +42,45 @@ def test_skip_when_no_legal_move():
     assert game.last_roll == (6, 6)
 
 
+def test_placement_appends_history_record():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    assert len(game.history) == 1
+    record = game.history[0]
+    assert record.player_id == PLAYER_1
+    assert record.roll == (2, 2)
+    assert record.placed is not None
+    assert (record.placed.top_left, record.placed.width, record.placed.height) == ((0, 0), 2, 2)
+
+
+def test_skip_appends_history_record():
+    game = Game(board_size=4, rng=ScriptedRandom([6, 6]))
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=3, h=4)
+    game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty
+
+    game.roll_dice()
+
+    assert len(game.history) == 1
+    record = game.history[0]
+    assert record.player_id == PLAYER_1
+    assert record.roll == (6, 6)
+    assert record.placed is None
+
+
+def test_reset_clears_history():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    game.attempt_place((0, 0), 2, 2)
+    assert len(game.history) == 1
+
+    game.reset()
+
+    assert game.history == []
+
+
 def test_game_over_detection_after_placement():
     game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
 

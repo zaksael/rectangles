@@ -27,6 +27,13 @@ class Rectangle:
                 yield (r, c)
 
 
+@dataclass(frozen=True)
+class TurnRecord:
+    player_id: int
+    roll: tuple[int, int]
+    placed: Rectangle | None  # None means the turn was skipped
+
+
 @dataclass
 class Player:
     id: int

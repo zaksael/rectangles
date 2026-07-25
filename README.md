@@ -56,6 +56,8 @@ The app opens to a settings screen — pick a board size and skip limit
 - When the game ends, a summary screen shows the winner (or tie), final
   scores, and the reason the game ended, with **New Game**/`N` and
   **Exit**/`Esc` buttons.
+- The side panel keeps a running **History** log of every placement and
+  skip, most recent first.
 
 ## Tests
 
@@ -67,7 +69,7 @@ uv run pytest
 
 ```
 rectangles/
-├── models.py     # Rectangle, Player
+├── models.py     # Rectangle, Player, TurnRecord
 ├── board.py      # grid + placement legality
 ├── game.py       # turn state machine, scoring, game-over rules
 └── ui/           # Pygame rendering and input (all Pygame code lives here)

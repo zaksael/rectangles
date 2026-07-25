@@ -13,7 +13,7 @@ from .constants import (
     PLAYER_NAMES,
     SKIP_LIMIT,
 )
-from .models import Player
+from .models import Player, TurnRecord
 
 
 class TurnState(Enum):
@@ -46,6 +46,7 @@ class Game:
         self.legal_cache: dict[tuple[int, int], set[tuple[int, int]]]
         self.game_over_reason: GameOverReason | None
         self.skipped_out_player_id: int | None
+        self.history: list[TurnRecord]
         self.reset()
 
     def reset(self) -> None:
@@ -64,6 +65,7 @@ class Game:
         self.legal_cache = {}
         self.game_over_reason = None
         self.skipped_out_player_id = None
+        self.history = []
 
     @property
     def current_player(self) -> Player:
@@ -83,6 +85,7 @@ class Game:
         else:
             self.state = TurnState.SKIPPED
             self.current_player.consecutive_skips += 1
+            self.history.append(TurnRecord(self.current_player_id, self.last_roll, placed=None))
         return self.last_roll
 
     def legal_placements_for_roll(self) -> dict[tuple[int, int], set[tuple[int, int]]]:
@@ -101,8 +104,9 @@ class Game:
         legal_set = self.legal_cache.get((w, h))
         if legal_set is None or top_left not in legal_set:
             return False
-        self.board.place(self.current_player, top_left, w, h)
+        rect = self.board.place(self.current_player, top_left, w, h)
         self.current_player.consecutive_skips = 0
+        self.history.append(TurnRecord(self.current_player_id, self.last_roll, placed=rect))
         return True
 
     def end_turn(self) -> None:
