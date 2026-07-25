@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from .. import constants
+from .. import constants, persistence
 from ..game import Game, GameOverReason, TurnState
 from . import layout
 from .state import ConfirmAction, Screen, UIState
@@ -71,6 +71,8 @@ class Renderer:
 
         self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game (Space)")
         self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)")
+        if persistence.has_save():
+            self._button(layout.SETTINGS_RESUME_BUTTON_RECT, "Resume Game (R)")
 
     def _draw_board(self, game: Game) -> None:
         for r in range(game.board.size):
@@ -283,7 +285,7 @@ class Renderer:
         else:
             messages = {
                 ConfirmAction.NEW_GAME: "Abandon this match and return to settings?",
-                ConfirmAction.EXIT: "Quit? Current match progress will be lost.",
+                ConfirmAction.EXIT: "Quit? Your progress will be saved.",
             }
             message = messages[ui_state.pending_confirmation]
         message_surf = self.font.render(message, True, TEXT_COLOR)

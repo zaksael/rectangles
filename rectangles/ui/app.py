@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pygame
 
+from .. import persistence
 from ..game import Game
 from . import input as game_input
 from . import layout
@@ -35,10 +36,19 @@ def run() -> None:
             game = Game(board_size=ui_state.selected_board_size, skip_limit=ui_state.selected_skip_limit)
             ui_state.game_requested = False
 
+        if ui_state.resume_requested:
+            game = persistence.load_game()
+            if game is None:
+                ui_state.screen = Screen.SETTINGS
+            ui_state.resume_requested = False
+
         if ui_state.screen == Screen.PLAYING:
             game_input.update_hover(game, ui_state)
 
         renderer.draw(game, ui_state)
         clock.tick(FPS)
+
+    if persistence.has_game_in_progress(game):
+        persistence.save_game(game)
 
     pygame.quit()

@@ -27,6 +27,7 @@ class UIState:
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
     game_requested: bool = False
+    resume_requested: bool = False
 
     pending_confirmation: ConfirmAction | None = None
     history_scroll: int = 0

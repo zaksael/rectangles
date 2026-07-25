@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pygame
 
+from .. import persistence
 from ..constants import PLAYER_2
 from ..game import Game, TurnState
 from . import layout
@@ -42,12 +43,7 @@ def _request_surrender(ui_state: UIState) -> None:
 
 
 def _request_quit(game: Game | None, ui_state: UIState) -> bool:
-    if (
-        ui_state.screen == Screen.PLAYING
-        and game is not None
-        and game.state != TurnState.GAME_OVER
-        and game.history
-    ):
+    if ui_state.screen == Screen.PLAYING and persistence.has_game_in_progress(game):
         ui_state.pending_confirmation = ConfirmAction.EXIT
         return True
     return False
@@ -128,6 +124,12 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> b
 def _start_game(ui_state: UIState) -> None:
     ui_state.screen = Screen.PLAYING
     ui_state.game_requested = True
+    persistence.delete_save()
+
+
+def _resume_game(ui_state: UIState) -> None:
+    ui_state.screen = Screen.PLAYING
+    ui_state.resume_requested = True
 
 
 def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool:
@@ -142,6 +144,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     if layout.SETTINGS_START_BUTTON_RECT.collidepoint(pos):
         _start_game(ui_state)
         return True
+    if persistence.has_save() and layout.SETTINGS_RESUME_BUTTON_RECT.collidepoint(pos):
+        _resume_game(ui_state)
+        return True
     if layout.SETTINGS_EXIT_BUTTON_RECT.collidepoint(pos):
         return False
     return True
@@ -155,6 +160,8 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
             return False
         if event.key == pygame.K_SPACE:
             _start_game(ui_state)
+        elif event.key == pygame.K_r and persistence.has_save():
+            _resume_game(ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         return _handle_settings_left_click(event.pos, ui_state)
     return True
