@@ -15,6 +15,7 @@ TEXT_COLOR = (30, 30, 30)
 MUTED_TEXT_COLOR = (110, 110, 110)
 GHOST_LEGAL_COLOR = (80, 200, 120, 150)
 GHOST_ILLEGAL_COLOR = (220, 70, 70, 130)
+COVERABLE_CELL_COLOR = (190, 235, 200, 130)
 BUTTON_COLOR = (90, 100, 210)
 BUTTON_HOVER_COLOR = (110, 120, 230)
 BUTTON_DISABLED_COLOR = (190, 190, 198)
@@ -36,8 +37,10 @@ class Renderer:
             self._draw_settings_screen(ui_state)
         else:
             self._draw_board(game)
-            if game.state == TurnState.CHOOSING_PLACEMENT and ui_state.hover_top_left is not None:
-                self._draw_ghost(ui_state)
+            if game.state == TurnState.CHOOSING_PLACEMENT:
+                self._draw_coverable_cells(game, ui_state)
+                if ui_state.hover_top_left is not None:
+                    self._draw_ghost(ui_state)
             self._draw_panel(game, ui_state)
             if game.state == TurnState.GAME_OVER:
                 self._draw_game_over(game)
@@ -79,6 +82,25 @@ class Renderer:
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
+
+    def _draw_coverable_cells(self, game: Game, ui_state: UIState) -> None:
+        if ui_state.current_dims is None:
+            return
+        w, h = ui_state.current_dims
+        legal_top_lefts = game.legal_cache.get((w, h), set())
+        if not legal_top_lefts:
+            return
+
+        covered: set[tuple[int, int]] = set()
+        for r0, c0 in legal_top_lefts:
+            for r in range(r0, r0 + h):
+                for c in range(c0, c0 + w):
+                    covered.add((r, c))
+
+        overlay = pygame.Surface((layout.CELL_PX, layout.CELL_PX), pygame.SRCALPHA)
+        overlay.fill(COVERABLE_CELL_COLOR)
+        for r, c in covered:
+            self.screen.blit(overlay, layout.cell_rect(r, c).topleft)
 
     def _draw_ghost(self, ui_state: UIState) -> None:
         w, h = ui_state.current_dims
