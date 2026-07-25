@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 
 from .. import constants
-from ..game import Game, TurnState
+from ..game import Game, GameOverReason, TurnState
 from . import layout
 from .state import UIState
 
@@ -87,6 +87,8 @@ class Renderer:
             pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             active = player.id == game.current_player_id and game.state != TurnState.GAME_OVER
             label = f"{player.name}: {player.total_area}"
+            if player.consecutive_skips:
+                label += f"  (skipped {player.consecutive_skips}/{game.skip_limit})"
             if active:
                 label += "  <- turn"
             self._text(label, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
@@ -131,7 +133,15 @@ class Renderer:
         center_x = layout.WINDOW_WIDTH // 2
         center_y = layout.WINDOW_HEIGHT // 2
 
+        if game.game_over_reason == GameOverReason.SKIP_LIMIT and game.skipped_out_player_id is not None:
+            skipped_player = game.players[game.skipped_out_player_id]
+            reason_line = f"{skipped_player.name} skipped {game.skip_limit} times in a row"
+        else:
+            reason_line = "Board is completely full"
+
         headline_surf = self.font_big.render(headline, True, (255, 255, 255))
         self.screen.blit(headline_surf, headline_surf.get_rect(center=(center_x, center_y - 24)))
         score_surf = self.font.render(score_line, True, (230, 230, 230))
         self.screen.blit(score_surf, score_surf.get_rect(center=(center_x, center_y + 14)))
+        reason_surf = self.font_small.render(reason_line, True, (200, 200, 200))
+        self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, center_y + 44)))
