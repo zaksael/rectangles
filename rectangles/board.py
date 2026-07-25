@@ -76,10 +76,3 @@ class Board:
                 if self.can_place(player, (r, c), w, h):
                     result.add((r, c))
         return result
-
-    def has_any_legal_move(self, player: Player, a: int, b: int) -> bool:
-        if self.legal_top_lefts(player, a, b):
-            return True
-        if a != b and self.legal_top_lefts(player, b, a):
-            return True
-        return False

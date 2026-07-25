@@ -133,16 +133,3 @@ def test_legal_top_lefts_matches_brute_force_can_place():
         if board.can_place(p1, (r, c), w, h)
     }
     assert board.legal_top_lefts(p1, w, h) == expected
-
-
-def test_has_any_legal_move_false_when_board_full_near_player():
-    board = Board(size=4)
-    p1, _ = make_players(4)
-    board.place(p1, (0, 0), w=3, h=4)  # rows0-3, cols0-2
-    board.place(p1, (0, 3), w=1, h=3)  # rows0-2, col3
-    # Only (3, 3) remains empty on the whole board.
-    assert board.frontier(p1) == {(3, 3)}
-
-    assert board.has_any_legal_move(p1, 1, 1) is True
-    assert board.has_any_legal_move(p1, 2, 2) is False
-    assert board.has_any_legal_move(p1, 4, 4) is False
