@@ -37,6 +37,10 @@ def _request_new_game(game: Game, ui_state: UIState) -> None:
         _new_game(ui_state)
 
 
+def _request_surrender(ui_state: UIState) -> None:
+    ui_state.pending_confirmation = ConfirmAction.SURRENDER
+
+
 def _request_quit(game: Game | None, ui_state: UIState) -> bool:
     if (
         ui_state.screen == Screen.PLAYING
@@ -88,6 +92,10 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> b
 
     if layout.EXIT_BUTTON_RECT.collidepoint(pos):
         return _request_quit(game, ui_state)
+
+    if layout.SURRENDER_BUTTON_RECT.collidepoint(pos):
+        _request_surrender(ui_state)
+        return True
 
     if game.state == TurnState.AWAITING_ROLL:
         if layout.ROLL_BUTTON_RECT.collidepoint(pos):
@@ -164,6 +172,8 @@ def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState) ->
         _request_new_game(game, ui_state)
     elif event.key == pygame.K_ESCAPE:
         return _request_quit(game, ui_state)
+    elif event.key == pygame.K_s:
+        _request_surrender(ui_state)
     elif event.key == pygame.K_r and game.state == TurnState.CHOOSING_PLACEMENT:
         _rotate(ui_state)
     elif event.key == pygame.K_d and game.state == TurnState.AWAITING_ROLL:
@@ -173,27 +183,30 @@ def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState) ->
     return True
 
 
-def _handle_confirm_event(event: pygame.event.Event, ui_state: UIState) -> bool:
+def _handle_confirm_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
     action = ui_state.pending_confirmation
     if event.type == pygame.KEYDOWN:
         if event.key in (pygame.K_RETURN, pygame.K_y):
             ui_state.pending_confirmation = None
-            return _new_game_or_quit(action, ui_state)
+            return _resolve_confirmation(action, game, ui_state)
         if event.key == pygame.K_ESCAPE:
             ui_state.pending_confirmation = None
         return True
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         if layout.CONFIRM_YES_BUTTON_RECT.collidepoint(event.pos):
             ui_state.pending_confirmation = None
-            return _new_game_or_quit(action, ui_state)
+            return _resolve_confirmation(action, game, ui_state)
         if layout.CONFIRM_NO_BUTTON_RECT.collidepoint(event.pos):
             ui_state.pending_confirmation = None
     return True
 
 
-def _new_game_or_quit(action: ConfirmAction | None, ui_state: UIState) -> bool:
+def _resolve_confirmation(action: ConfirmAction | None, game: Game, ui_state: UIState) -> bool:
     if action == ConfirmAction.NEW_GAME:
         _new_game(ui_state)
+        return True
+    if action == ConfirmAction.SURRENDER:
+        game.surrender()
         return True
     return False  # ConfirmAction.EXIT
 
@@ -207,7 +220,7 @@ def _handle_mousewheel(event: pygame.event.Event, game: Game, ui_state: UIState)
 
 def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
     if ui_state.pending_confirmation is not None:
-        return _handle_confirm_event(event, ui_state)
+        return _handle_confirm_event(event, game, ui_state)
     if event.type == pygame.QUIT:
         return _request_quit(game, ui_state)
     if event.type == pygame.KEYDOWN:

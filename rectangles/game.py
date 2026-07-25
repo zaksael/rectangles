@@ -27,6 +27,7 @@ class GameOverReason(Enum):
     BOARD_FULL = auto()
     SKIP_LIMIT = auto()
     PLAYER_BLOCKED = auto()
+    SURRENDER = auto()
 
 
 class Game:
@@ -48,6 +49,7 @@ class Game:
         self.game_over_reason: GameOverReason | None
         self.skipped_out_player_id: int | None
         self.blocked_player_id: int | None
+        self.surrendered_player_id: int | None
         self.history: list[TurnRecord]
         self.reset()
 
@@ -68,6 +70,7 @@ class Game:
         self.game_over_reason = None
         self.skipped_out_player_id = None
         self.blocked_player_id = None
+        self.surrendered_player_id = None
         self.history = []
 
     @property
@@ -120,6 +123,13 @@ class Game:
         self.legal_cache = {}
         self.state = TurnState.AWAITING_ROLL
 
+    def surrender(self) -> None:
+        if self.state == TurnState.GAME_OVER:
+            return
+        self.surrendered_player_id = self.current_player_id
+        self.game_over_reason = GameOverReason.SURRENDER
+        self.state = TurnState.GAME_OVER
+
     def check_game_over(self) -> bool:
         p1, p2 = self.players[PLAYER_1], self.players[PLAYER_2]
         if not self.board.frontier(p1) and not self.board.frontier(p2):
@@ -141,6 +151,8 @@ class Game:
         return False
 
     def winner(self) -> int | None:
+        if self.game_over_reason == GameOverReason.SURRENDER and self.surrendered_player_id is not None:
+            return PLAYER_2 if self.surrendered_player_id == PLAYER_1 else PLAYER_1
         p1, p2 = self.players[PLAYER_1], self.players[PLAYER_2]
         if p1.total_area > p2.total_area:
             return PLAYER_1

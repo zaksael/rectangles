@@ -129,6 +129,41 @@ def test_confirm_exit_with_enter_returns_false():
     assert handle_event(event, game, ui_state) is False
 
 
+def test_surrender_key_always_requests_confirmation():
+    # Unlike New Game/Exit, surrender asks for confirmation even with no history.
+    game = Game(board_size=6)
+    ui_state = UIState(screen=Screen.PLAYING)
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_s)
+
+    assert handle_event(event, game, ui_state) is True
+
+    assert ui_state.pending_confirmation == ConfirmAction.SURRENDER
+    assert game.state != TurnState.GAME_OVER
+
+
+def test_confirm_surrender_with_enter_ends_game():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.PLAYING, pending_confirmation=ConfirmAction.SURRENDER)
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)
+
+    assert handle_event(event, game, ui_state) is True
+
+    assert ui_state.pending_confirmation is None
+    assert game.state == TurnState.GAME_OVER
+    assert game.surrendered_player_id == game.current_player_id
+
+
+def test_cancel_surrender_with_escape_leaves_game_untouched():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.PLAYING, pending_confirmation=ConfirmAction.SURRENDER)
+    event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)
+
+    assert handle_event(event, game, ui_state) is True
+
+    assert ui_state.pending_confirmation is None
+    assert game.state != TurnState.GAME_OVER
+
+
 def test_mousewheel_scrolls_history_only_over_history_region(monkeypatch):
     game = Game(board_size=6)
     game.history = [None] * 12  # length is all that matters for clamping

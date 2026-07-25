@@ -48,7 +48,7 @@ class Renderer:
             if game.state == TurnState.GAME_OVER:
                 self._draw_game_over(game)
             if ui_state.pending_confirmation is not None:
-                self._draw_confirm_dialog(ui_state)
+                self._draw_confirm_dialog(game, ui_state)
         pygame.display.flip()
 
     def _draw_settings_screen(self, ui_state: UIState) -> None:
@@ -190,6 +190,7 @@ class Renderer:
         self._draw_history(game, ui_state)
 
         self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
+        self._button(layout.SURRENDER_BUTTON_RECT, "Surrender (S)")
         self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
         self._button(layout.EXIT_BUTTON_RECT, "Exit (Esc)")
 
@@ -242,6 +243,9 @@ class Renderer:
         elif game.game_over_reason == GameOverReason.PLAYER_BLOCKED and game.blocked_player_id is not None:
             blocked_player = game.players[game.blocked_player_id]
             reason_line = f"{blocked_player.name} is completely boxed in"
+        elif game.game_over_reason == GameOverReason.SURRENDER and game.surrendered_player_id is not None:
+            surrendered_player = game.players[game.surrendered_player_id]
+            reason_line = f"{surrendered_player.name} surrendered"
         else:
             reason_line = "Board is completely full"
 
@@ -255,18 +259,24 @@ class Renderer:
         self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, "New Game (N)")
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
 
-    def _draw_confirm_dialog(self, ui_state: UIState) -> None:
+    def _draw_confirm_dialog(self, game: Game, ui_state: UIState) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         overlay.fill(OVERLAY_COLOR)
         self.screen.blit(overlay, (0, 0))
 
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.CONFIRM_DIALOG_RECT, border_radius=8)
 
-        messages = {
-            ConfirmAction.NEW_GAME: "Abandon this match and return to settings?",
-            ConfirmAction.EXIT: "Quit? Current match progress will be lost.",
-        }
-        message = messages[ui_state.pending_confirmation]
+        if ui_state.pending_confirmation == ConfirmAction.SURRENDER:
+            opponent_id = (
+                constants.PLAYER_2 if game.current_player_id == constants.PLAYER_1 else constants.PLAYER_1
+            )
+            message = f"Surrender? {game.players[opponent_id].name} will win."
+        else:
+            messages = {
+                ConfirmAction.NEW_GAME: "Abandon this match and return to settings?",
+                ConfirmAction.EXIT: "Quit? Current match progress will be lost.",
+            }
+            message = messages[ui_state.pending_confirmation]
         message_surf = self.font.render(message, True, TEXT_COLOR)
         message_rect = message_surf.get_rect(
             center=(layout.CONFIRM_DIALOG_RECT.centerx, layout.CONFIRM_DIALOG_RECT.top + 56)

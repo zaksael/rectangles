@@ -25,8 +25,11 @@ area when the game ends wins.
     empty cell touches their own anymore) even if empty cells remain
     elsewhere on the board, or
   - one player is skipped several turns in a row (configurable before each
-    match, 3 by default).
-- Whoever has placed the most total area wins; equal areas is a tie.
+    match, 3 by default), or
+  - one player surrenders, in which case the other player wins outright
+    regardless of area covered so far.
+- Otherwise, whoever has placed the most total area wins; equal areas is a
+  tie.
 
 ## Requirements
 
@@ -59,6 +62,9 @@ The app opens to a settings screen — pick a board size and skip limit
   Once you've placed at least one piece, either of these (and closing the
   window) asks for confirmation first, so you can't lose progress by
   accident.
+- **Surrender** (`S`) to concede the match immediately — your opponent
+  wins regardless of the current area tally. Always asks for confirmation
+  first, even before you've placed a single piece.
 - When the game ends, a summary screen shows the winner (or tie), final
   scores, and the reason the game ended, with **New Game**/`N` and
   **Exit**/`Esc` buttons.

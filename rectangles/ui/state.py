@@ -14,6 +14,7 @@ class Screen(Enum):
 class ConfirmAction(Enum):
     NEW_GAME = auto()
     EXIT = auto()
+    SURRENDER = auto()
 
 
 @dataclass

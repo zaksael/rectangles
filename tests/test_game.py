@@ -83,6 +83,31 @@ def test_end_turn_is_noop_after_game_over():
     assert game.current_player_id == PLAYER_1
 
 
+def test_surrender_ends_game_with_opponent_as_winner():
+    game = Game(board_size=8)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=5, h=5)  # p1 has far more area
+    game.board.place(p2, (7, 7), w=1, h=1)
+
+    game.surrender()  # current_player_id is PLAYER_1
+
+    assert game.state == TurnState.GAME_OVER
+    assert game.game_over_reason == GameOverReason.SURRENDER
+    assert game.surrendered_player_id == PLAYER_1
+    assert game.winner() == PLAYER_2  # opponent wins despite having less area
+
+
+def test_surrender_is_noop_after_game_over():
+    game = Game(board_size=4)
+    game.state = TurnState.GAME_OVER
+    game.game_over_reason = GameOverReason.BOARD_FULL
+
+    game.surrender()
+
+    assert game.game_over_reason == GameOverReason.BOARD_FULL
+    assert game.surrendered_player_id is None
+
+
 def test_placement_appends_history_record():
     game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
     game.roll_dice()
