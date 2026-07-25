@@ -191,6 +191,7 @@ class Renderer:
 
         self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
         self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
+        self._button(layout.EXIT_BUTTON_RECT, "Exit (Esc)")
 
     def _draw_history(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X

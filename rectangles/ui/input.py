@@ -86,6 +86,9 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> b
         _request_new_game(game, ui_state)
         return True
 
+    if layout.EXIT_BUTTON_RECT.collidepoint(pos):
+        return _request_quit(game, ui_state)
+
     if game.state == TurnState.AWAITING_ROLL:
         if layout.ROLL_BUTTON_RECT.collidepoint(pos):
             _roll_dice(game, ui_state)
@@ -159,6 +162,8 @@ def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState) ->
 
     if event.key == pygame.K_n:
         _request_new_game(game, ui_state)
+    elif event.key == pygame.K_ESCAPE:
+        return _request_quit(game, ui_state)
     elif event.key == pygame.K_r and game.state == TurnState.CHOOSING_PLACEMENT:
         _rotate(ui_state)
     elif event.key == pygame.K_d and game.state == TurnState.AWAITING_ROLL:
