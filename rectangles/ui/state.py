@@ -11,6 +11,11 @@ class Screen(Enum):
     PLAYING = auto()
 
 
+class ConfirmAction(Enum):
+    NEW_GAME = auto()
+    EXIT = auto()
+
+
 @dataclass
 class UIState:
     current_dims: tuple[int, int] | None = None
@@ -22,7 +27,10 @@ class UIState:
     selected_skip_limit: int = SKIP_LIMIT
     game_requested: bool = False
 
+    pending_confirmation: ConfirmAction | None = None
+
     def reset(self) -> None:
         self.current_dims = None
         self.hover_top_left = None
         self.hover_legal = False
+        self.pending_confirmation = None

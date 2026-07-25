@@ -5,7 +5,7 @@ import pygame
 from .. import constants
 from ..game import Game, GameOverReason, TurnState
 from . import layout
-from .state import Screen, UIState
+from .state import ConfirmAction, Screen, UIState
 
 BG_COLOR = (245, 245, 245)
 GRID_LINE_COLOR = (205, 205, 205)
@@ -47,6 +47,8 @@ class Renderer:
             self._draw_panel(game, ui_state)
             if game.state == TurnState.GAME_OVER:
                 self._draw_game_over(game)
+            if ui_state.pending_confirmation is not None:
+                self._draw_confirm_dialog(ui_state)
         pygame.display.flip()
 
     def _draw_settings_screen(self, ui_state: UIState) -> None:
@@ -242,3 +244,24 @@ class Renderer:
 
         self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, "New Game (N)")
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
+
+    def _draw_confirm_dialog(self, ui_state: UIState) -> None:
+        overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+        overlay.fill(OVERLAY_COLOR)
+        self.screen.blit(overlay, (0, 0))
+
+        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.CONFIRM_DIALOG_RECT, border_radius=8)
+
+        messages = {
+            ConfirmAction.NEW_GAME: "Abandon this match and return to settings?",
+            ConfirmAction.EXIT: "Quit? Current match progress will be lost.",
+        }
+        message = messages[ui_state.pending_confirmation]
+        message_surf = self.font.render(message, True, TEXT_COLOR)
+        message_rect = message_surf.get_rect(
+            center=(layout.CONFIRM_DIALOG_RECT.centerx, layout.CONFIRM_DIALOG_RECT.top + 56)
+        )
+        self.screen.blit(message_surf, message_rect)
+
+        self._button(layout.CONFIRM_YES_BUTTON_RECT, "Yes (Enter)")
+        self._button(layout.CONFIRM_NO_BUTTON_RECT, "No (Esc)")
