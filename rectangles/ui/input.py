@@ -5,6 +5,7 @@ import pygame
 from .. import persistence
 from ..constants import PLAYER_2
 from ..game import Game, TurnState
+from ..series import Series
 from . import layout
 from .state import ConfirmAction, Screen, UIState
 
@@ -74,10 +75,17 @@ def update_hover(game: Game, ui_state: UIState) -> None:
     ui_state.hover_legal = top_left in game.legal_cache.get((w, h), set())
 
 
-def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> bool:
+def _advance_or_end_series(series: Series | None, ui_state: UIState) -> None:
+    if series is not None and not series.is_complete():
+        ui_state.next_game_requested = True
+    else:
+        _new_game(ui_state)
+
+
+def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, series: Series | None) -> bool:
     if game.state == TurnState.GAME_OVER:
         if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
-            _new_game(ui_state)
+            _advance_or_end_series(series, ui_state)
         elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
             return False
         return True
@@ -127,6 +135,12 @@ def _start_game(ui_state: UIState) -> None:
     persistence.delete_save()
 
 
+def _start_series(ui_state: UIState) -> None:
+    ui_state.screen = Screen.PLAYING
+    ui_state.series_requested = True
+    persistence.delete_save()
+
+
 def _resume_game(ui_state: UIState) -> None:
     ui_state.screen = Screen.PLAYING
     ui_state.resume_requested = True
@@ -141,8 +155,15 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         if rect.collidepoint(pos):
             ui_state.selected_skip_limit = value
             return True
+    for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+        if rect.collidepoint(pos):
+            ui_state.selected_series_length = value
+            return True
     if layout.SETTINGS_START_BUTTON_RECT.collidepoint(pos):
         _start_game(ui_state)
+        return True
+    if layout.SETTINGS_START_SERIES_BUTTON_RECT.collidepoint(pos):
+        _start_series(ui_state)
         return True
     if persistence.has_save() and layout.SETTINGS_RESUME_BUTTON_RECT.collidepoint(pos):
         _resume_game(ui_state)
@@ -167,10 +188,10 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     return True
 
 
-def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
+def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState, series: Series | None) -> bool:
     if game.state == TurnState.GAME_OVER:
         if event.key == pygame.K_n:
-            _new_game(ui_state)
+            _advance_or_end_series(series, ui_state)
         elif event.key == pygame.K_ESCAPE:
             return False
         return True
@@ -225,19 +246,19 @@ def _handle_mousewheel(event: pygame.event.Event, game: Game, ui_state: UIState)
     ui_state.history_scroll = max(0, min(ui_state.history_scroll + event.y, max_offset))
 
 
-def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
+def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState, series: Series | None = None) -> bool:
     if ui_state.pending_confirmation is not None:
         return _handle_confirm_event(event, game, ui_state)
     if event.type == pygame.QUIT:
         return _request_quit(game, ui_state)
     if event.type == pygame.KEYDOWN:
-        if not _handle_keydown(event, game, ui_state):
+        if not _handle_keydown(event, game, ui_state, series):
             return False
     if event.type == pygame.MOUSEWHEEL:
         _handle_mousewheel(event, game, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
-            if not _handle_left_click(event.pos, game, ui_state):
+            if not _handle_left_click(event.pos, game, ui_state, series):
                 return False
         elif event.button == 3 and game.state == TurnState.CHOOSING_PLACEMENT:
             _rotate(ui_state)

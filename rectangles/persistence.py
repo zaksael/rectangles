@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .game import Game, GameOverReason, TurnState
 from .models import Player, Rectangle, TurnRecord
+from .series import Series
 
 SAVE_FORMAT_VERSION = 1
 SAVE_DIR = Path.home() / ".rectangles_game"
@@ -25,9 +26,27 @@ def _rect_from_dict(data: dict, owner: int) -> Rectangle:
     )
 
 
-def to_dict(game: Game) -> dict:
+def _series_to_dict(series: Series) -> dict:
+    return {
+        "length": series.length,
+        "board_size": series.board_size,
+        "skip_limit": series.skip_limit,
+        "wins": {str(player_id): wins for player_id, wins in series.wins.items()},
+        "games_played": series.games_played,
+    }
+
+
+def _series_from_dict(data: dict) -> Series:
+    series = Series(length=data["length"], board_size=data["board_size"], skip_limit=data["skip_limit"])
+    series.wins = {int(player_id): wins for player_id, wins in data["wins"].items()}
+    series.games_played = data["games_played"]
+    return series
+
+
+def to_dict(game: Game, series: Series | None = None) -> dict:
     return {
         "version": SAVE_FORMAT_VERSION,
+        "series": _series_to_dict(series) if series is not None else None,
         "board_size": game.board_size,
         "skip_limit": game.skip_limit,
         "current_player_id": game.current_player_id,
@@ -57,7 +76,7 @@ def to_dict(game: Game) -> dict:
     }
 
 
-def from_dict(data: dict) -> Game:
+def from_dict(data: dict) -> tuple[Game, Series | None]:
     game = Game(board_size=data["board_size"], skip_limit=data["skip_limit"])
 
     for player_id_str, player_data in data["players"].items():
@@ -93,17 +112,19 @@ def from_dict(data: dict) -> Game:
     if game.state == TurnState.CHOOSING_PLACEMENT:
         game.legal_cache = game.legal_placements_for_roll()
 
-    return game
+    series_data = data.get("series")
+    series = _series_from_dict(series_data) if series_data is not None else None
+    return game, series
 
 
-def save_game(game: Game, path: Path = DEFAULT_SAVE_PATH) -> None:
+def save_game(game: Game, series: Series | None = None, path: Path = DEFAULT_SAVE_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(to_dict(game)))
+    tmp_path.write_text(json.dumps(to_dict(game, series)))
     os.replace(tmp_path, path)
 
 
-def load_game(path: Path = DEFAULT_SAVE_PATH) -> Game | None:
+def load_game(path: Path = DEFAULT_SAVE_PATH) -> tuple[Game, Series | None] | None:
     try:
         data = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError):

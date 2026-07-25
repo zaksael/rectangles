@@ -10,6 +10,7 @@ SKIP_LIMIT = 3
 # valid members of both.
 BOARD_SIZE_PRESETS = (8, 10, 12, 16)
 SKIP_LIMIT_PRESETS = (2, 3, 5)
+SERIES_LENGTH_PRESETS = (3, 5)
 
 PLAYER_1 = 1
 PLAYER_2 = 2

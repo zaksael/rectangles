@@ -3,6 +3,7 @@ import json
 from rectangles import persistence
 from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
+from rectangles.series import Series
 
 
 class ScriptedRandom:
@@ -19,10 +20,12 @@ def test_round_trip_preserves_fresh_game(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)
 
-    persistence.save_game(game, path)
-    loaded = persistence.load_game(path)
+    persistence.save_game(game, path=path)
+    result = persistence.load_game(path)
 
-    assert loaded is not None
+    assert result is not None
+    loaded, loaded_series = result
+    assert loaded_series is None
     assert loaded.board_size == 6
     assert loaded.skip_limit == 2
     assert loaded.current_player_id == PLAYER_1
@@ -39,9 +42,10 @@ def test_round_trip_preserves_choosing_placement_state(tmp_path):
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_PLACEMENT
 
-    persistence.save_game(game, path)
-    loaded = persistence.load_game(path)
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
 
+    assert loaded_series is None
     assert loaded.state == TurnState.CHOOSING_PLACEMENT
     assert loaded.last_roll == (2, 3)
     assert loaded.legal_cache
@@ -57,9 +61,10 @@ def test_round_trip_preserves_pieces_and_grid(tmp_path):
     game.board.place(p1, (0, 0), w=2, h=3)
     game.board.place(p2, (3, 3), w=2, h=2)
 
-    persistence.save_game(game, path)
-    loaded = persistence.load_game(path)
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
 
+    assert loaded_series is None
     loaded_p1 = loaded.players[PLAYER_1]
     loaded_p2 = loaded.players[PLAYER_2]
     assert [(r.top_left, r.width, r.height) for r in loaded_p1.pieces] == [((0, 0), 2, 3)]
@@ -84,9 +89,10 @@ def test_round_trip_preserves_skip_history_and_consecutive_skips(tmp_path):
     assert game.state == TurnState.SKIPPED
     assert p1.consecutive_skips == 1
 
-    persistence.save_game(game, path)
-    loaded = persistence.load_game(path)
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
 
+    assert loaded_series is None
     assert loaded.players[PLAYER_1].consecutive_skips == 1
     assert len(loaded.history) == 1
     record = loaded.history[0]
@@ -104,14 +110,48 @@ def test_round_trip_preserves_game_over_state(tmp_path):
     p1.consecutive_skips = 1
     assert game.check_game_over() is True
 
-    persistence.save_game(game, path)
-    loaded = persistence.load_game(path)
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
 
+    assert loaded_series is None
     assert loaded.state == TurnState.GAME_OVER
     assert loaded.game_over_reason == GameOverReason.SKIP_LIMIT
     assert loaded.skipped_out_player_id == PLAYER_1
     assert loaded.blocked_player_id is None
     assert loaded.surrendered_player_id is None
+
+
+def test_round_trip_preserves_series(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    series = Series(length=5, board_size=6, skip_limit=2)
+    series.record_game(PLAYER_1)
+    series.record_game(PLAYER_2)
+
+    persistence.save_game(game, series=series, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is not None
+    assert loaded_series.length == 5
+    assert loaded_series.board_size == 6
+    assert loaded_series.skip_limit == 2
+    assert loaded_series.wins == {PLAYER_1: 1, PLAYER_2: 1}
+    assert loaded_series.games_played == 2
+
+
+def test_load_game_old_format_without_series_key_loads_as_no_series(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["series"]  # simulates a save file written before series support existed
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, loaded_series = result
+    assert loaded_series is None
+    assert loaded.board_size == 6
 
 
 def test_load_game_missing_file_returns_none(tmp_path):
@@ -147,7 +187,7 @@ def test_has_save_and_delete_save(tmp_path):
     game = Game(board_size=4)
 
     assert persistence.has_save(path) is False
-    persistence.save_game(game, path)
+    persistence.save_game(game, path=path)
     assert persistence.has_save(path) is True
     persistence.delete_save(path)
     assert persistence.has_save(path) is False
@@ -161,7 +201,7 @@ def test_save_game_creates_parent_directory(tmp_path):
     path = tmp_path / "nested" / "dir" / "save.json"
     game = Game(board_size=4)
 
-    persistence.save_game(game, path)
+    persistence.save_game(game, path=path)
 
     assert path.exists()
     assert persistence.load_game(path) is not None

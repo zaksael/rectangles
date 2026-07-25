@@ -4,6 +4,7 @@ import pygame
 
 from .. import constants, persistence
 from ..game import Game, GameOverReason, TurnState
+from ..series import Series
 from . import layout
 from .state import ConfirmAction, Screen, UIState
 
@@ -34,7 +35,7 @@ class Renderer:
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
         self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
 
-    def draw(self, game: Game | None, ui_state: UIState) -> None:
+    def draw(self, game: Game | None, ui_state: UIState, series: Series | None = None) -> None:
         self.screen.fill(BG_COLOR)
         if ui_state.screen == Screen.SETTINGS:
             self._draw_settings_screen(ui_state)
@@ -44,9 +45,9 @@ class Renderer:
                 self._draw_coverable_cells(game, ui_state)
                 if ui_state.hover_top_left is not None:
                     self._draw_ghost(ui_state)
-            self._draw_panel(game, ui_state)
+            self._draw_panel(game, ui_state, series)
             if game.state == TurnState.GAME_OVER:
-                self._draw_game_over(game)
+                self._draw_game_over(game, series)
             if ui_state.pending_confirmation is not None:
                 self._draw_confirm_dialog(game, ui_state)
         pygame.display.flip()
@@ -55,21 +56,27 @@ class Renderer:
         center_x = layout.WINDOW_WIDTH // 2
 
         title_surf = self.font_big.render("RECTANGLES", True, TEXT_COLOR)
-        self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, 80)))
+        self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, 56)))
         subtitle_surf = self.font.render("Choose your settings", True, MUTED_TEXT_COLOR)
-        self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 130)))
+        self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 96)))
 
         board_label = self.font.render("Board size", True, TEXT_COLOR)
-        self.screen.blit(board_label, board_label.get_rect(center=(center_x, 230)))
+        self.screen.blit(board_label, board_label.get_rect(center=(center_x, 148)))
         for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
             self._button(rect, f"{value}x{value}", selected=value == ui_state.selected_board_size)
 
         skip_label = self.font.render("Skip limit", True, TEXT_COLOR)
-        self.screen.blit(skip_label, skip_label.get_rect(center=(center_x, 370)))
+        self.screen.blit(skip_label, skip_label.get_rect(center=(center_x, 262)))
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
             self._button(rect, str(value), selected=value == ui_state.selected_skip_limit)
 
+        series_label = self.font.render("Series length (for Start Series)", True, TEXT_COLOR)
+        self.screen.blit(series_label, series_label.get_rect(center=(center_x, 376)))
+        for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+            self._button(rect, f"Bo{value}", selected=value == ui_state.selected_series_length)
+
         self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game (Space)")
+        self._button(layout.SETTINGS_START_SERIES_BUTTON_RECT, "Start Series")
         self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)")
         if persistence.has_save():
             self._button(layout.SETTINGS_RESUME_BUTTON_RECT, "Resume Game (R)")
@@ -140,11 +147,18 @@ class Renderer:
             self.screen, DIVIDER_COLOR, (layout.PANEL_X, y), (layout.PANEL_X + layout.PANEL_CONTENT_WIDTH, y)
         )
 
-    def _draw_panel(self, game: Game, ui_state: UIState) -> None:
+    def _draw_panel(self, game: Game, ui_state: UIState, series: Series | None = None) -> None:
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
 
         self._text("RECTANGLES", (x, layout.PANEL_HEADER_Y), self.font_big)
+        if series is not None:
+            p1, p2 = game.players[constants.PLAYER_1], game.players[constants.PLAYER_2]
+            series_line = (
+                f"Best of {series.length} · Game {series.games_played + 1} · "
+                f"{p1.name} {series.wins[constants.PLAYER_1]}-{series.wins[constants.PLAYER_2]} {p2.name}"
+            )
+            self._text(series_line, (x, layout.PANEL_HEADER_Y + 34), self.font_small, MUTED_TEXT_COLOR)
         self._divider(layout.PANEL_DIVIDER_1_Y)
 
         y = layout.PANEL_SCORE_Y
@@ -235,14 +249,21 @@ class Renderer:
         if has_more:
             self._text("scroll for more ▼", (x, y), self.font_small, MUTED_TEXT_COLOR)
 
-    def _draw_game_over(self, game: Game) -> None:
+    def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         overlay.fill(OVERLAY_COLOR)
         self.screen.blit(overlay, (0, 0))
 
         p1, p2 = game.players[constants.PLAYER_1], game.players[constants.PLAYER_2]
         winner = game.winner()
-        if winner is None:
+
+        series_complete = series is not None and series.is_complete()
+        if series_complete:
+            series_winner = series.winner()
+            headline = (
+                "Series tied!" if series_winner is None else f"{game.players[series_winner].name} wins the series!"
+            )
+        elif winner is None:
             headline = "It's a tie!"
         else:
             headline = f"{game.players[winner].name} wins!"
@@ -267,10 +288,22 @@ class Renderer:
         self.screen.blit(headline_surf, headline_surf.get_rect(center=(center_x, center_y - 24)))
         score_surf = self.font.render(score_line, True, (230, 230, 230))
         self.screen.blit(score_surf, score_surf.get_rect(center=(center_x, center_y + 14)))
-        reason_surf = self.font_small.render(reason_line, True, (200, 200, 200))
-        self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, center_y + 44)))
 
-        self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, "New Game (N)")
+        if series is not None:
+            series_line = (
+                f"Series: {p1.name} {series.wins[constants.PLAYER_1]} - "
+                f"{series.wins[constants.PLAYER_2]} {p2.name}  (Best of {series.length})"
+            )
+            series_surf = self.font_small.render(series_line, True, (200, 200, 200))
+            self.screen.blit(series_surf, series_surf.get_rect(center=(center_x, center_y + 44)))
+            reason_y = center_y + 68
+        else:
+            reason_y = center_y + 44
+        reason_surf = self.font_small.render(reason_line, True, (200, 200, 200))
+        self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, reason_y)))
+
+        new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
+        self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, new_game_label)
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
 
     def _draw_confirm_dialog(self, game: Game, ui_state: UIState) -> None:
