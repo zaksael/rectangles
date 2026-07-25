@@ -3,6 +3,9 @@ BOARD_SIZE = 12
 DICE_MIN = 1
 DICE_MAX = 6
 
+# A player who is skipped this many turns in a row ends the game.
+SKIP_LIMIT = 3
+
 PLAYER_1 = 1
 PLAYER_2 = 2
 

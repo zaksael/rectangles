@@ -1,5 +1,5 @@
 from rectangles.constants import PLAYER_1, PLAYER_2
-from rectangles.game import Game, TurnState
+from rectangles.game import Game, GameOverReason, TurnState
 
 
 class ScriptedRandom:
@@ -100,3 +100,98 @@ def test_degenerate_1x1_board_immediate_gameover():
     assert game.attempt_place((0, 0), 1, 1) is True
     assert game.check_game_over() is True
     assert game.winner() == PLAYER_1
+
+
+def test_skip_increments_consecutive_skips():
+    game = Game(board_size=4, rng=ScriptedRandom([6, 6]))
+    p1 = game.players[PLAYER_1]
+    assert p1.consecutive_skips == 0
+
+    game.roll_dice()
+
+    assert game.state == TurnState.SKIPPED
+    assert p1.consecutive_skips == 1
+
+
+def test_placement_resets_consecutive_skips():
+    game = Game(board_size=4, rng=ScriptedRandom([2, 2]))
+    p1 = game.players[PLAYER_1]
+    p1.consecutive_skips = 2
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    assert p1.consecutive_skips == 0
+
+
+def test_game_over_triggers_at_skip_limit():
+    game = Game(board_size=8, skip_limit=3)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=1, h=1)
+    game.board.place(p2, (7, 7), w=1, h=1)
+    p1.consecutive_skips = 3
+
+    assert game.check_game_over() is True
+    assert game.state == TurnState.GAME_OVER
+    assert game.game_over_reason == GameOverReason.SKIP_LIMIT
+    assert game.skipped_out_player_id == PLAYER_1
+
+
+def test_game_over_not_triggered_below_skip_limit():
+    game = Game(board_size=8, skip_limit=3)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=1, h=1)
+    game.board.place(p2, (7, 7), w=1, h=1)
+    p1.consecutive_skips = 2
+
+    assert game.check_game_over() is False
+    assert game.state != TurnState.GAME_OVER
+
+
+def test_skip_limit_configurable_via_constructor():
+    game = Game(board_size=8, skip_limit=1)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=1, h=1)
+    game.board.place(p2, (7, 7), w=1, h=1)
+    p1.consecutive_skips = 1
+
+    assert game.check_game_over() is True
+    assert game.game_over_reason == GameOverReason.SKIP_LIMIT
+
+
+def test_skip_streak_isolated_per_player():
+    game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([2, 2, 4, 4, 1, 1, 4, 4]))
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+
+    # Turn 1: p1 rolls (2,2), places at its start corner.
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    assert game.check_game_over() is False
+    game.end_turn()
+
+    # Turn 2: p2 rolls (4,4) - the only spot a 4x4 could go is now occupied
+    # by p1's piece, so p2 is skipped.
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    assert p2.consecutive_skips == 1
+    assert game.check_game_over() is False
+    game.end_turn()
+
+    # Turn 3: p1 rolls (1,1) and successfully places, adjacent to its own
+    # territory - p1's own streak (already 0) is unaffected by p2's skip.
+    game.roll_dice()
+    assert game.attempt_place((0, 2), 1, 1) is True
+    assert p1.consecutive_skips == 0
+    assert game.check_game_over() is False
+    game.end_turn()
+
+    # Turn 4: p2 rolls (4,4) again - still no room, second consecutive skip
+    # for p2 hits skip_limit=2, ending the game. p1's streak is untouched.
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    assert p2.consecutive_skips == 2
+    assert p1.consecutive_skips == 0
+
+    assert game.check_game_over() is True
+    assert game.game_over_reason == GameOverReason.SKIP_LIMIT
+    assert game.skipped_out_player_id == PLAYER_2

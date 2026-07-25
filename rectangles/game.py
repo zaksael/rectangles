@@ -4,7 +4,15 @@ import random
 from enum import Enum, auto
 
 from .board import Board
-from .constants import BOARD_SIZE, DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, PLAYER_NAMES
+from .constants import (
+    BOARD_SIZE,
+    DICE_MAX,
+    DICE_MIN,
+    PLAYER_1,
+    PLAYER_2,
+    PLAYER_NAMES,
+    SKIP_LIMIT,
+)
 from .models import Player
 
 
@@ -15,9 +23,20 @@ class TurnState(Enum):
     GAME_OVER = auto()
 
 
+class GameOverReason(Enum):
+    BOARD_FULL = auto()
+    SKIP_LIMIT = auto()
+
+
 class Game:
-    def __init__(self, board_size: int = BOARD_SIZE, rng: random.Random | None = None):
+    def __init__(
+        self,
+        board_size: int = BOARD_SIZE,
+        skip_limit: int = SKIP_LIMIT,
+        rng: random.Random | None = None,
+    ):
         self.board_size = board_size
+        self.skip_limit = skip_limit
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -25,6 +44,8 @@ class Game:
         self.state: TurnState
         self.last_roll: tuple[int, int] | None
         self.legal_cache: dict[tuple[int, int], set[tuple[int, int]]]
+        self.game_over_reason: GameOverReason | None
+        self.skipped_out_player_id: int | None
         self.reset()
 
     def reset(self) -> None:
@@ -41,6 +62,8 @@ class Game:
         self.state = TurnState.AWAITING_ROLL
         self.last_roll = None
         self.legal_cache = {}
+        self.game_over_reason = None
+        self.skipped_out_player_id = None
 
     @property
     def current_player(self) -> Player:
@@ -59,6 +82,7 @@ class Game:
             self.state = TurnState.CHOOSING_PLACEMENT
         else:
             self.state = TurnState.SKIPPED
+            self.current_player.consecutive_skips += 1
         return self.last_roll
 
     def legal_placements_for_roll(self) -> dict[tuple[int, int], set[tuple[int, int]]]:
@@ -78,6 +102,7 @@ class Game:
         if legal_set is None or top_left not in legal_set:
             return False
         self.board.place(self.current_player, top_left, w, h)
+        self.current_player.consecutive_skips = 0
         return True
 
     def end_turn(self) -> None:
@@ -92,7 +117,14 @@ class Game:
         p1, p2 = self.players[PLAYER_1], self.players[PLAYER_2]
         if not self.board.frontier(p1) and not self.board.frontier(p2):
             self.state = TurnState.GAME_OVER
+            self.game_over_reason = GameOverReason.BOARD_FULL
             return True
+        for player in (p1, p2):
+            if player.consecutive_skips >= self.skip_limit:
+                self.state = TurnState.GAME_OVER
+                self.game_over_reason = GameOverReason.SKIP_LIMIT
+                self.skipped_out_player_id = player.id
+                return True
         return False
 
     def winner(self) -> int | None:
