@@ -62,7 +62,8 @@ The app opens to a settings screen — pick a board size and skip limit
   scores, and the reason the game ended, with **New Game**/`N` and
   **Exit**/`Esc` buttons.
 - The side panel keeps a running **History** log of every placement and
-  skip, most recent first.
+  skip, most recent first; scroll the mouse wheel over it to see older
+  entries once a match runs past the visible rows.
 
 ## Tests
 

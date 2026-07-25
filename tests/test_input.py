@@ -2,6 +2,7 @@ import pygame
 
 from rectangles.constants import PLAYER_2
 from rectangles.game import Game, TurnState
+from rectangles.ui import layout
 from rectangles.ui.input import compute_top_left, handle_event
 from rectangles.ui.state import ConfirmAction, Screen, UIState
 
@@ -126,3 +127,34 @@ def test_confirm_exit_with_enter_returns_false():
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)
 
     assert handle_event(event, game, ui_state) is False
+
+
+def test_mousewheel_scrolls_history_only_over_history_region(monkeypatch):
+    game = Game(board_size=6)
+    game.history = [None] * 12  # length is all that matters for clamping
+    ui_state = UIState(screen=Screen.PLAYING)
+    inside = layout.PANEL_HISTORY_REGION_RECT.center
+    event = pygame.event.Event(pygame.MOUSEWHEEL, y=1)
+
+    monkeypatch.setattr(pygame.mouse, "get_pos", lambda: inside)
+    handle_event(event, game, ui_state)
+    assert ui_state.history_scroll == 1
+
+    monkeypatch.setattr(pygame.mouse, "get_pos", lambda: (0, 0))
+    handle_event(event, game, ui_state)
+    assert ui_state.history_scroll == 1  # outside the region: unchanged
+
+
+def test_mousewheel_scroll_clamps_at_bounds(monkeypatch):
+    game = Game(board_size=6)
+    game.history = [None] * 12
+    ui_state = UIState(screen=Screen.PLAYING, history_scroll=100)
+    monkeypatch.setattr(pygame.mouse, "get_pos", lambda: layout.PANEL_HISTORY_REGION_RECT.center)
+
+    handle_event(pygame.event.Event(pygame.MOUSEWHEEL, y=1), game, ui_state)
+    max_offset = len(game.history) - layout.PANEL_HISTORY_MAX_ROWS
+    assert ui_state.history_scroll == max_offset
+
+    ui_state.history_scroll = 0
+    handle_event(pygame.event.Event(pygame.MOUSEWHEEL, y=-1), game, ui_state)
+    assert ui_state.history_scroll == 0

@@ -185,19 +185,25 @@ class Renderer:
             self._text("Game over - see below", (x, y), self.font, MUTED_TEXT_COLOR)
 
         self._divider(layout.PANEL_HISTORY_DIVIDER_Y)
-        self._text("History", (x, layout.PANEL_HISTORY_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
-        self._draw_history(game)
+        history_label = "History (scrolled)" if ui_state.history_scroll > 0 else "History"
+        self._text(history_label, (x, layout.PANEL_HISTORY_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
+        self._draw_history(game, ui_state)
 
         self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
         self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
 
-    def _draw_history(self, game: Game) -> None:
+    def _draw_history(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X
         y = layout.PANEL_HISTORY_START_Y
-        entries = list(reversed(game.history))[: layout.PANEL_HISTORY_MAX_ROWS]
+        remaining = list(reversed(game.history))[ui_state.history_scroll :]
+        has_more = len(remaining) > layout.PANEL_HISTORY_MAX_ROWS
+        visible_rows = layout.PANEL_HISTORY_MAX_ROWS - 1 if has_more else layout.PANEL_HISTORY_MAX_ROWS
+        entries = remaining[:visible_rows]
+
         if not entries:
             self._text("No moves yet", (x, y), self.font_small, MUTED_TEXT_COLOR)
             return
+
         for record in entries:
             player = game.players[record.player_id]
             swatch = pygame.Rect(x, y + 3, 10, 10)
@@ -209,6 +215,9 @@ class Renderer:
                 line = f"{player.name} skipped (rolled {a},{b})"
             self._text(line, (x + 16, y), self.font_small, MUTED_TEXT_COLOR)
             y += layout.PANEL_HISTORY_ROW_HEIGHT
+
+        if has_more:
+            self._text("scroll for more ▼", (x, y), self.font_small, MUTED_TEXT_COLOR)
 
     def _draw_game_over(self, game: Game) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)

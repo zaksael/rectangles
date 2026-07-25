@@ -28,9 +28,11 @@ class UIState:
     game_requested: bool = False
 
     pending_confirmation: ConfirmAction | None = None
+    history_scroll: int = 0
 
     def reset(self) -> None:
         self.current_dims = None
         self.hover_top_left = None
         self.hover_legal = False
         self.pending_confirmation = None
+        self.history_scroll = 0

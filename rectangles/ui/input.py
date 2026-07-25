@@ -193,6 +193,13 @@ def _new_game_or_quit(action: ConfirmAction | None, ui_state: UIState) -> bool:
     return False  # ConfirmAction.EXIT
 
 
+def _handle_mousewheel(event: pygame.event.Event, game: Game, ui_state: UIState) -> None:
+    if not layout.PANEL_HISTORY_REGION_RECT.collidepoint(pygame.mouse.get_pos()):
+        return
+    max_offset = max(0, len(game.history) - layout.PANEL_HISTORY_MAX_ROWS)
+    ui_state.history_scroll = max(0, min(ui_state.history_scroll + event.y, max_offset))
+
+
 def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
     if ui_state.pending_confirmation is not None:
         return _handle_confirm_event(event, ui_state)
@@ -201,6 +208,8 @@ def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bo
     if event.type == pygame.KEYDOWN:
         if not _handle_keydown(event, game, ui_state):
             return False
+    if event.type == pygame.MOUSEWHEEL:
+        _handle_mousewheel(event, game, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
             if not _handle_left_click(event.pos, game, ui_state):
