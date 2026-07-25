@@ -95,6 +95,11 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> b
     return True
 
 
+def _start_game(ui_state: UIState) -> None:
+    ui_state.screen = Screen.PLAYING
+    ui_state.game_requested = True
+
+
 def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool:
     for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
         if rect.collidepoint(pos):
@@ -105,8 +110,7 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
             ui_state.selected_skip_limit = value
             return True
     if layout.SETTINGS_START_BUTTON_RECT.collidepoint(pos):
-        ui_state.screen = Screen.PLAYING
-        ui_state.game_requested = True
+        _start_game(ui_state)
         return True
     if layout.SETTINGS_EXIT_BUTTON_RECT.collidepoint(pos):
         return False
@@ -116,8 +120,11 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
 def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     if event.type == pygame.QUIT:
         return False
-    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-        return False
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+            return False
+        if event.key == pygame.K_SPACE:
+            _start_game(ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         return _handle_settings_left_click(event.pos, ui_state)
     return True

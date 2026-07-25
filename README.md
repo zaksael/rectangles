@@ -46,7 +46,7 @@ uv run python main.py
 ```
 
 The app opens to a settings screen — pick a board size and skip limit
-(preset buttons), then click **Start Game** (or **Exit**/`Esc` to quit).
+(preset buttons), then click **Start Game**/`Space` (or **Exit**/`Esc` to quit).
 
 - **Roll Dice** (`D`) to get a piece for your turn.
 - All cells where your rolled piece could legally go are highlighted green;

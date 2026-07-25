@@ -67,7 +67,7 @@ class Renderer:
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
             self._button(rect, str(value), selected=value == ui_state.selected_skip_limit)
 
-        self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game")
+        self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game (Space)")
         self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)")
 
     def _draw_board(self, game: Game) -> None:
