@@ -75,7 +75,7 @@ def run() -> None:
         renderer.draw(game, ui_state, series)
         clock.tick(FPS)
 
-    if persistence.has_game_in_progress(game):
+    if persistence.should_save_on_exit(game, series):
         persistence.save_game(game, series)
 
     pygame.quit()

@@ -147,3 +147,10 @@ def delete_save(path: Path = DEFAULT_SAVE_PATH) -> None:
 
 def has_game_in_progress(game: Game | None) -> bool:
     return game is not None and game.state != TurnState.GAME_OVER and bool(game.history)
+
+
+def should_save_on_exit(game: Game | None, series: Series | None) -> bool:
+    # A just-finished round (state == GAME_OVER) still needs saving while its
+    # series isn't decided yet, otherwise quitting from the game-over screen
+    # silently drops the series tally.
+    return has_game_in_progress(game) or (series is not None and not series.is_complete())

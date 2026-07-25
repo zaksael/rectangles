@@ -219,3 +219,38 @@ def test_has_game_in_progress():
 
     game.state = TurnState.GAME_OVER
     assert persistence.has_game_in_progress(game) is False
+
+
+def test_should_save_on_exit_true_while_game_in_progress():
+    game = Game(board_size=4, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    game.attempt_place((0, 0), 2, 2)
+    assert persistence.should_save_on_exit(game, series=None) is True
+
+
+def test_should_save_on_exit_false_for_finished_game_no_series():
+    game = Game(board_size=4)
+    game.state = TurnState.GAME_OVER
+    assert persistence.should_save_on_exit(game, series=None) is False
+
+
+def test_should_save_on_exit_true_for_finished_round_mid_series():
+    # A round just ended (state == GAME_OVER, no fresh history yet for the
+    # next round) but the series itself isn't decided - must still save so
+    # the series tally survives quitting from the game-over screen.
+    game = Game(board_size=4)
+    game.state = TurnState.GAME_OVER
+    series = Series(length=3, board_size=4, skip_limit=3)
+    series.record_game(PLAYER_1)
+
+    assert persistence.should_save_on_exit(game, series) is True
+
+
+def test_should_save_on_exit_false_once_series_is_complete():
+    game = Game(board_size=4)
+    game.state = TurnState.GAME_OVER
+    series = Series(length=3, board_size=4, skip_limit=3)
+    series.record_game(PLAYER_1)
+    series.record_game(PLAYER_1)  # clinches best-of-3
+
+    assert persistence.should_save_on_exit(game, series) is False
