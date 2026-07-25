@@ -39,41 +39,49 @@ def update_hover(game: Game, ui_state: UIState) -> None:
     ui_state.hover_legal = top_left in game.legal_cache.get((w, h), set())
 
 
-def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> None:
+def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> bool:
     if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
         ui_state.reset()
         ui_state.screen = Screen.SETTINGS
-        return
+        return True
 
     if game.state == TurnState.GAME_OVER:
-        return
+        if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
+            ui_state.reset()
+            ui_state.screen = Screen.SETTINGS
+        elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
+            return False
+        return True
 
     if game.state == TurnState.AWAITING_ROLL:
         if layout.ROLL_BUTTON_RECT.collidepoint(pos):
             a, b = game.roll_dice()
             if game.state == TurnState.CHOOSING_PLACEMENT:
                 ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
-        return
+        return True
 
     if game.state == TurnState.SKIPPED:
         if layout.CONTINUE_BUTTON_RECT.collidepoint(pos):
             if not game.check_game_over():
                 game.end_turn()
-        return
+        return True
 
     if game.state == TurnState.CHOOSING_PLACEMENT:
         if layout.ROTATE_BUTTON_RECT.collidepoint(pos):
             _rotate(ui_state)
-            return
+            return True
         cell = layout.pixel_to_cell(*pos, game.board.size)
         if cell is None or ui_state.current_dims is None:
-            return
+            return True
         w, h = ui_state.current_dims
         top_left = compute_top_left(game, w, h, cell)
         if game.attempt_place(top_left, w, h):
             if not game.check_game_over():
                 game.end_turn()
             ui_state.reset()
+        return True
+
+    return True
 
 
 def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> None:
@@ -106,7 +114,8 @@ def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bo
             _rotate(ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
-            _handle_left_click(event.pos, game, ui_state)
+            if not _handle_left_click(event.pos, game, ui_state):
+                return False
         elif event.button == 3 and game.state == TurnState.CHOOSING_PLACEMENT:
             _rotate(ui_state)
     return True

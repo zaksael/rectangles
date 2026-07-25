@@ -176,3 +176,6 @@ class Renderer:
         self.screen.blit(score_surf, score_surf.get_rect(center=(center_x, center_y + 14)))
         reason_surf = self.font_small.render(reason_line, True, (200, 200, 200))
         self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, center_y + 44)))
+
+        self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, "New Game")
+        self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit")
