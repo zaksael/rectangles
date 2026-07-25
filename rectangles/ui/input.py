@@ -25,6 +25,22 @@ def _rotate(ui_state: UIState) -> None:
     ui_state.current_dims = (h, w)
 
 
+def _new_game(ui_state: UIState) -> None:
+    ui_state.reset()
+    ui_state.screen = Screen.SETTINGS
+
+
+def _roll_dice(game: Game, ui_state: UIState) -> None:
+    a, b = game.roll_dice()
+    if game.state == TurnState.CHOOSING_PLACEMENT:
+        ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
+
+
+def _continue_turn(game: Game) -> None:
+    if not game.check_game_over():
+        game.end_turn()
+
+
 def update_hover(game: Game, ui_state: UIState) -> None:
     if game.state != TurnState.CHOOSING_PLACEMENT or ui_state.current_dims is None:
         ui_state.hover_top_left = None
@@ -42,28 +58,23 @@ def update_hover(game: Game, ui_state: UIState) -> None:
 def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> bool:
     if game.state == TurnState.GAME_OVER:
         if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
-            ui_state.reset()
-            ui_state.screen = Screen.SETTINGS
+            _new_game(ui_state)
         elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
             return False
         return True
 
     if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
-        ui_state.reset()
-        ui_state.screen = Screen.SETTINGS
+        _new_game(ui_state)
         return True
 
     if game.state == TurnState.AWAITING_ROLL:
         if layout.ROLL_BUTTON_RECT.collidepoint(pos):
-            a, b = game.roll_dice()
-            if game.state == TurnState.CHOOSING_PLACEMENT:
-                ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
+            _roll_dice(game, ui_state)
         return True
 
     if game.state == TurnState.SKIPPED:
         if layout.CONTINUE_BUTTON_RECT.collidepoint(pos):
-            if not game.check_game_over():
-                game.end_turn()
+            _continue_turn(game)
         return True
 
     if game.state == TurnState.CHOOSING_PLACEMENT:
@@ -105,17 +116,38 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
 def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     if event.type == pygame.QUIT:
         return False
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+        return False
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         return _handle_settings_left_click(event.pos, ui_state)
+    return True
+
+
+def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
+    if game.state == TurnState.GAME_OVER:
+        if event.key == pygame.K_n:
+            _new_game(ui_state)
+        elif event.key == pygame.K_ESCAPE:
+            return False
+        return True
+
+    if event.key == pygame.K_n:
+        _new_game(ui_state)
+    elif event.key == pygame.K_r and game.state == TurnState.CHOOSING_PLACEMENT:
+        _rotate(ui_state)
+    elif event.key == pygame.K_d and game.state == TurnState.AWAITING_ROLL:
+        _roll_dice(game, ui_state)
+    elif event.key == pygame.K_SPACE and game.state == TurnState.SKIPPED:
+        _continue_turn(game)
     return True
 
 
 def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:
     if event.type == pygame.QUIT:
         return False
-    if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-        if game.state == TurnState.CHOOSING_PLACEMENT:
-            _rotate(ui_state)
+    if event.type == pygame.KEYDOWN:
+        if not _handle_keydown(event, game, ui_state):
+            return False
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
             if not _handle_left_click(event.pos, game, ui_state):

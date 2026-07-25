@@ -43,19 +43,19 @@ uv run python main.py
 ```
 
 The app opens to a settings screen — pick a board size and skip limit
-(preset buttons), then click **Start Game** (or **Exit** to quit).
+(preset buttons), then click **Start Game** (or **Exit**/`Esc` to quit).
 
-- **Roll Dice** to get a piece for your turn.
+- **Roll Dice** (`D`) to get a piece for your turn.
 - All cells where your rolled piece could legally go are highlighted green;
   hover over the board to preview exact placement, then click a highlighted
   cell to place the piece.
-- Rotate the piece with the `R` key, right-click, or the **Rotate** button.
-- Click **Continue** to proceed after a skipped turn.
-- Click **New Game** at any time during a match to return to the settings
+- Rotate the piece with the **Rotate** button, `R`, or right-click.
+- **Continue** (`Space`) to proceed after a skipped turn.
+- **New Game** (`N`) at any time during a match to return to the settings
   screen and start a fresh match.
 - When the game ends, a summary screen shows the winner (or tie), final
-  scores, and the reason the game ended, with **New Game** and **Exit**
-  buttons.
+  scores, and the reason the game ended, with **New Game**/`N` and
+  **Exit**/`Esc` buttons.
 
 ## Tests
 

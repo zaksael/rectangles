@@ -68,7 +68,7 @@ class Renderer:
             self._button(rect, str(value), selected=value == ui_state.selected_skip_limit)
 
         self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game")
-        self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit")
+        self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)")
 
     def _draw_board(self, game: Game) -> None:
         for r in range(game.board.size):
@@ -164,7 +164,7 @@ class Renderer:
         y = layout.PANEL_STATUS_Y
         if game.state == TurnState.AWAITING_ROLL:
             self._text("Your turn - roll the dice!", (x, y), self.font, MUTED_TEXT_COLOR)
-            self._button(layout.ROLL_BUTTON_RECT, "Roll Dice")
+            self._button(layout.ROLL_BUTTON_RECT, "Roll Dice (D)")
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
             self._text(f"{a} x {b}", (x, y), self.font_dice)
@@ -178,12 +178,12 @@ class Renderer:
             self._text("No legal placement", (x, y), self.font, (170, 40, 40))
             y += 24
             self._text("for this roll - turn skipped.", (x, y), self.font_small, MUTED_TEXT_COLOR)
-            self._button(layout.CONTINUE_BUTTON_RECT, "Continue")
+            self._button(layout.CONTINUE_BUTTON_RECT, "Continue (Space)")
         elif game.state == TurnState.GAME_OVER:
             self._text("Game over - see below", (x, y), self.font, MUTED_TEXT_COLOR)
 
         self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
-        self._button(layout.NEW_GAME_BUTTON_RECT, "New Game")
+        self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
 
     def _draw_game_over(self, game: Game) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
@@ -214,5 +214,5 @@ class Renderer:
         reason_surf = self.font_small.render(reason_line, True, (200, 200, 200))
         self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, center_y + 44)))
 
-        self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, "New Game")
-        self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit")
+        self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, "New Game (N)")
+        self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
