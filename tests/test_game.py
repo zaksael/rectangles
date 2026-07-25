@@ -1,3 +1,5 @@
+import pytest
+
 from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
 
@@ -42,6 +44,45 @@ def test_skip_when_no_legal_move():
     assert game.last_roll == (6, 6)
 
 
+def test_attempt_place_rejects_illegal_top_left():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+
+    assert game.attempt_place((3, 3), 2, 2) is False  # not anchored at p1's start corner
+
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    assert game.history == []
+
+
+def test_attempt_place_rejects_wrong_state():
+    game = Game(board_size=6)
+    assert game.state == TurnState.AWAITING_ROLL
+
+    assert game.attempt_place((0, 0), 1, 1) is False
+
+    assert game.history == []
+
+
+def test_roll_dice_raises_outside_awaiting_roll():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+    with pytest.raises(ValueError):
+        game.roll_dice()
+
+
+def test_end_turn_is_noop_after_game_over():
+    game = Game(board_size=4)
+    game.state = TurnState.GAME_OVER
+    game.current_player_id = PLAYER_1
+
+    game.end_turn()
+
+    assert game.state == TurnState.GAME_OVER
+    assert game.current_player_id == PLAYER_1
+
+
 def test_placement_appends_history_record():
     game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
     game.roll_dice()
@@ -81,6 +122,29 @@ def test_reset_clears_history():
     assert game.history == []
 
 
+def test_reset_restores_initial_state():
+    game = Game(board_size=4, skip_limit=2)
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=1, h=1)
+    p1.consecutive_skips = 2
+    assert game.check_game_over() is True
+    assert game.game_over_reason == GameOverReason.SKIP_LIMIT
+    assert game.skipped_out_player_id == PLAYER_1
+
+    game.reset()
+
+    assert game.state == TurnState.AWAITING_ROLL
+    assert game.current_player_id == PLAYER_1
+    assert game.last_roll is None
+    assert game.legal_cache == {}
+    assert game.game_over_reason is None
+    assert game.skipped_out_player_id is None
+    assert game.blocked_player_id is None
+    assert game.history == []
+    assert game.players[PLAYER_1].pieces == []
+    assert game.players[PLAYER_1].consecutive_skips == 0
+
+
 def test_game_over_detection_after_placement():
     game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
 
@@ -103,6 +167,24 @@ def test_game_over_detection_after_placement():
     assert game.attempt_place((1, 0), 1, 1) is True  # p2 claims the last cell
     assert game.check_game_over() is True
     assert game.state == TurnState.GAME_OVER
+
+
+def test_board_full_reports_board_full_reason():
+    game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
+    game.roll_dice()
+    game.attempt_place((0, 0), 1, 1)
+    game.end_turn()
+    game.roll_dice()
+    game.attempt_place((1, 1), 1, 1)
+    game.end_turn()
+    game.roll_dice()
+    game.attempt_place((0, 1), 1, 1)
+    game.end_turn()
+    game.roll_dice()
+    game.attempt_place((1, 0), 1, 1)
+
+    assert game.check_game_over() is True
+    assert game.game_over_reason == GameOverReason.BOARD_FULL
 
 
 def test_game_over_detection_after_skip():

@@ -80,6 +80,20 @@ def test_can_place_opponent_adjacency_is_fine():
     assert board.can_place(p1, (2, 2), w=1, h=2) is True  # touches p1 block above
 
 
+def test_place_marks_ownership_and_records_piece():
+    board = Board(size=6)
+    p1, _ = make_players(6)
+    rect = board.place(p1, (1, 1), w=2, h=3)
+
+    assert rect.top_left == (1, 1)
+    assert rect.width == 2 and rect.height == 3
+    assert p1.pieces == [rect]
+    for r in range(1, 4):
+        for c in range(1, 3):
+            assert board.owner_at(r, c) == p1.id
+    assert board.is_empty(0, 0) is True
+
+
 def test_frontier_empty_initially():
     board = Board(size=6)
     p1, _ = make_players(6)
