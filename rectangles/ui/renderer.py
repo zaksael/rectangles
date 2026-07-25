@@ -165,7 +165,14 @@ class Renderer:
 
         y = layout.PANEL_STATUS_Y
         if game.state == TurnState.AWAITING_ROLL:
-            self._text("Your turn - roll the dice!", (x, y), self.font, MUTED_TEXT_COLOR)
+            prompt = "Your turn - roll the dice!"
+            if (
+                game.history
+                and game.history[-1].player_id == game.current_player_id
+                and game.history[-1].roll[0] == game.history[-1].roll[1]
+            ):
+                prompt = "Doubles! Roll again"
+            self._text(prompt, (x, y), self.font, MUTED_TEXT_COLOR)
             self._button(layout.ROLL_BUTTON_RECT, "Roll Dice (D)")
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
@@ -215,6 +222,8 @@ class Renderer:
             else:
                 a, b = record.roll
                 line = f"{player.name} skipped (rolled {a},{b})"
+            if record.roll[0] == record.roll[1]:
+                line += " - doubles!"
             self._text(line, (x + 16, y), self.font_small, MUTED_TEXT_COLOR)
             y += layout.PANEL_HISTORY_ROW_HEIGHT
 

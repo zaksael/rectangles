@@ -20,10 +20,10 @@ def test_deterministic_roll_via_injected_rng():
 
 
 def test_turn_alternates_after_placement():
-    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_PLACEMENT
-    assert game.attempt_place((0, 0), 2, 2) is True
+    assert game.attempt_place((0, 0), 2, 3) is True
 
     if not game.check_game_over():
         game.end_turn()
@@ -42,6 +42,38 @@ def test_skip_when_no_legal_move():
 
     assert game.state == TurnState.SKIPPED
     assert game.last_roll == (6, 6)
+
+
+def test_doubles_grants_bonus_turn_after_placement():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    if not game.check_game_over():
+        game.end_turn()
+
+    assert game.current_player_id == PLAYER_1
+    assert game.state == TurnState.AWAITING_ROLL
+
+
+def test_repeated_double_skips_still_reach_skip_limit_without_alternating():
+    game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([6, 6, 6, 6]))
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=3, h=4)
+    game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty; a 6x6 never fits
+
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    assert p1.consecutive_skips == 1
+    assert game.check_game_over() is False
+    game.end_turn()
+    assert game.current_player_id == PLAYER_1  # doubles: bonus turn even on a skip
+
+    game.roll_dice()
+    assert p1.consecutive_skips == 2
+    assert game.check_game_over() is True
+    assert game.game_over_reason == GameOverReason.SKIP_LIMIT
+    assert game.skipped_out_player_id == PLAYER_1
 
 
 def test_attempt_place_rejects_illegal_top_left():
@@ -171,42 +203,50 @@ def test_reset_restores_initial_state():
 
 
 def test_game_over_detection_after_placement():
+    # Every roll here is a double (1,1), which is unavoidable to script literal
+    # 1x1 placements on a 2x2 board - so under the doubles-bonus-turn rule,
+    # p1 keeps its turn throughout and claims all four cells itself.
     game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 1, 1) is True  # p1 anchors at (0,0)
     assert game.check_game_over() is False
     game.end_turn()
-
-    game.roll_dice()
-    assert game.attempt_place((1, 1), 1, 1) is True  # p2 anchors at (1,1)
-    assert game.check_game_over() is False
-    game.end_turn()
+    assert game.current_player_id == PLAYER_1  # doubles: bonus turn
 
     game.roll_dice()
     assert game.attempt_place((0, 1), 1, 1) is True  # p1 claims (0,1)
     assert game.check_game_over() is False
     game.end_turn()
+    assert game.current_player_id == PLAYER_1
 
     game.roll_dice()
-    assert game.attempt_place((1, 0), 1, 1) is True  # p2 claims the last cell
+    assert game.attempt_place((1, 0), 1, 1) is True  # p1 claims (1,0)
+    assert game.check_game_over() is False
+    game.end_turn()
+    assert game.current_player_id == PLAYER_1
+
+    game.roll_dice()
+    assert game.attempt_place((1, 1), 1, 1) is True  # p1 claims the last cell
     assert game.check_game_over() is True
     assert game.state == TurnState.GAME_OVER
 
 
 def test_board_full_reports_board_full_reason():
+    # See test_game_over_detection_after_placement for why every roll is a
+    # double here.
     game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
     game.roll_dice()
     game.attempt_place((0, 0), 1, 1)
-    game.end_turn()
-    game.roll_dice()
-    game.attempt_place((1, 1), 1, 1)
     game.end_turn()
     game.roll_dice()
     game.attempt_place((0, 1), 1, 1)
     game.end_turn()
     game.roll_dice()
     game.attempt_place((1, 0), 1, 1)
+    game.end_turn()
+    game.roll_dice()
+    game.attempt_place((1, 1), 1, 1)
 
     assert game.check_game_over() is True
     assert game.game_over_reason == GameOverReason.BOARD_FULL
@@ -328,33 +368,41 @@ def test_skip_limit_configurable_via_constructor():
 
 
 def test_skip_streak_isolated_per_player():
-    game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([2, 2, 4, 4, 1, 1, 4, 4]))
+    # None of these rolls are doubles, so turns alternate normally - p2's
+    # own start corner (its only possible anchor, since it hasn't moved) is
+    # pre-occupied so every one of its rolls is an unconditional skip
+    # regardless of dice value.
+    game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([1, 2, 3, 5, 2, 1, 1, 3]))
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (3, 3), w=1, h=1)
 
-    # Turn 1: p1 rolls (2,2), places at its start corner.
+    # Turn 1: p1 rolls (1,2) and places adjacent to its own (3,3) cell.
     game.roll_dice()
-    assert game.attempt_place((0, 0), 2, 2) is True
+    assert game.attempt_place((1, 3), 1, 2) is True
     assert game.check_game_over() is False
     game.end_turn()
+    assert game.current_player_id == PLAYER_2  # not doubles: turn alternates
 
-    # Turn 2: p2 rolls (4,4) - the only spot a 4x4 could go is now occupied
-    # by p1's piece, so p2 is skipped.
+    # Turn 2: p2 rolls (3,5) - its start corner (3,3) is already taken, so
+    # it can never place anything, regardless of the roll.
     game.roll_dice()
     assert game.state == TurnState.SKIPPED
     assert p2.consecutive_skips == 1
     assert game.check_game_over() is False
     game.end_turn()
+    assert game.current_player_id == PLAYER_1
 
-    # Turn 3: p1 rolls (1,1) and successfully places, adjacent to its own
-    # territory - p1's own streak (already 0) is unaffected by p2's skip.
+    # Turn 3: p1 rolls (2,1) and places again - p1's own streak (already 0)
+    # is unaffected by p2's skip.
     game.roll_dice()
-    assert game.attempt_place((0, 2), 1, 1) is True
+    assert game.attempt_place((1, 1), 2, 1) is True
     assert p1.consecutive_skips == 0
     assert game.check_game_over() is False
     game.end_turn()
+    assert game.current_player_id == PLAYER_2
 
-    # Turn 4: p2 rolls (4,4) again - still no room, second consecutive skip
-    # for p2 hits skip_limit=2, ending the game. p1's streak is untouched.
+    # Turn 4: p2 rolls (1,3) - still permanently blocked, second consecutive
+    # skip for p2 hits skip_limit=2, ending the game. p1's streak is untouched.
     game.roll_dice()
     assert game.state == TurnState.SKIPPED
     assert p2.consecutive_skips == 2

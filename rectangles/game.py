@@ -118,7 +118,9 @@ class Game:
     def end_turn(self) -> None:
         if self.state == TurnState.GAME_OVER:
             return
-        self.current_player_id = PLAYER_2 if self.current_player_id == PLAYER_1 else PLAYER_1
+        is_bonus_turn = self.last_roll is not None and self.last_roll[0] == self.last_roll[1]
+        if not is_bonus_turn:
+            self.current_player_id = PLAYER_2 if self.current_player_id == PLAYER_1 else PLAYER_1
         self.last_roll = None
         self.legal_cache = {}
         self.state = TurnState.AWAITING_ROLL
