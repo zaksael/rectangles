@@ -10,20 +10,37 @@ CELL_PX = 44
 # board simply renders smaller within that fixed, top-left-anchored area.
 MAX_BOARD_SIZE = max(BOARD_SIZE_PRESETS)
 BOARD_PX = MAX_BOARD_SIZE * CELL_PX
-PANEL_WIDTH = 300
+PANEL_WIDTH = 340
 WINDOW_WIDTH = BOARD_PX + PANEL_WIDTH
 WINDOW_HEIGHT = BOARD_PX
 
 PANEL_RECT = pygame.Rect(BOARD_PX, 0, PANEL_WIDTH, WINDOW_HEIGHT)
 
-PANEL_PADDING = 20
+PANEL_PADDING = 24
 PANEL_X = BOARD_PX + PANEL_PADDING
 PANEL_CONTENT_WIDTH = PANEL_WIDTH - 2 * PANEL_PADDING
 
-ROLL_BUTTON_RECT = pygame.Rect(PANEL_X, 160, PANEL_CONTENT_WIDTH, 44)
-CONTINUE_BUTTON_RECT = pygame.Rect(PANEL_X, 160, PANEL_CONTENT_WIDTH, 44)
-ROTATE_BUTTON_RECT = pygame.Rect(PANEL_X, 220, PANEL_CONTENT_WIDTH, 40)
-NEW_GAME_BUTTON_RECT = pygame.Rect(PANEL_X, WINDOW_HEIGHT - 56, PANEL_CONTENT_WIDTH, 40)
+# The panel is laid out as fixed vertical sections (header / scoreboard /
+# status / action button / footer), each given a generous, hand-measured
+# height budget so no state's text can ever grow into the next section's
+# button - avoids needing a dynamic/reflowing layout for this small, fixed
+# window.
+PANEL_HEADER_Y = 28
+PANEL_DIVIDER_1_Y = 82
+
+PANEL_SCORE_Y = 104
+PANEL_SCORE_ROW_HEIGHT = 34
+PANEL_DIVIDER_2_Y = 192
+
+PANEL_STATUS_Y = 216
+PANEL_ACTION_BUTTON_Y = 300
+
+ROLL_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
+CONTINUE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
+ROTATE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, 160, 40)
+
+PANEL_FOOTER_DIVIDER_Y = WINDOW_HEIGHT - 100
+NEW_GAME_BUTTON_RECT = pygame.Rect(PANEL_X, WINDOW_HEIGHT - 76, PANEL_CONTENT_WIDTH, 44)
 
 
 def cell_rect(r: int, c: int) -> pygame.Rect:

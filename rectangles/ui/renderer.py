@@ -22,6 +22,8 @@ BUTTON_DISABLED_COLOR = (190, 190, 198)
 BUTTON_SELECTED_COLOR = (70, 170, 100)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 OVERLAY_COLOR = (15, 15, 20, 190)
+DIVIDER_COLOR = (200, 200, 208)
+ROW_ACTIVE_BG_COLOR = (205, 230, 214)
 
 
 class Renderer:
@@ -30,6 +32,7 @@ class Renderer:
         self.font = pygame.font.SysFont("arial", 20)
         self.font_small = pygame.font.SysFont("arial", 15)
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
+        self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
 
     def draw(self, game: Game | None, ui_state: UIState) -> None:
         self.screen.fill(BG_COLOR)
@@ -128,38 +131,48 @@ class Renderer:
         font = font or self.font
         self.screen.blit(font.render(text, True, color), pos)
 
+    def _divider(self, y: int) -> None:
+        pygame.draw.line(
+            self.screen, DIVIDER_COLOR, (layout.PANEL_X, y), (layout.PANEL_X + layout.PANEL_CONTENT_WIDTH, y)
+        )
+
     def _draw_panel(self, game: Game, ui_state: UIState) -> None:
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
-        y = 20
 
-        self._text("RECTANGLES", (x, y), self.font_big)
-        y += 46
+        self._text("RECTANGLES", (x, layout.PANEL_HEADER_Y), self.font_big)
+        self._divider(layout.PANEL_DIVIDER_1_Y)
 
+        y = layout.PANEL_SCORE_Y
         for player in game.players.values():
-            swatch = pygame.Rect(x, y, 18, 18)
-            pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             active = player.id == game.current_player_id and game.state != TurnState.GAME_OVER
+            if active:
+                row_rect = pygame.Rect(
+                    x - 8, y - 4, layout.PANEL_CONTENT_WIDTH + 16, layout.PANEL_SCORE_ROW_HEIGHT - 6
+                )
+                pygame.draw.rect(self.screen, ROW_ACTIVE_BG_COLOR, row_rect, border_radius=6)
+            swatch = pygame.Rect(x, y + 2, 18, 18)
+            pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             label = f"{player.name}: {player.total_area}"
             if player.consecutive_skips:
                 label += f"  (skipped {player.consecutive_skips}/{game.skip_limit})"
-            if active:
-                label += "  <- turn"
             self._text(label, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
-            y += 26
+            y += layout.PANEL_SCORE_ROW_HEIGHT
 
-        y += 14
+        self._divider(layout.PANEL_DIVIDER_2_Y)
 
+        y = layout.PANEL_STATUS_Y
         if game.state == TurnState.AWAITING_ROLL:
+            self._text("Your turn - roll the dice!", (x, y), self.font, MUTED_TEXT_COLOR)
             self._button(layout.ROLL_BUTTON_RECT, "Roll Dice")
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
-            self._text(f"Rolled: {a} x {b}", (x, y))
-            y += 26
+            self._text(f"{a} x {b}", (x, y), self.font_dice)
+            y += 36
             w, h = ui_state.current_dims
             self._text(f"Placing: {w} x {h}", (x, y))
-            y += 28
-            self._text("Click board to place", (x, y), self.font_small, MUTED_TEXT_COLOR)
+            y += 26
+            self._text("Click the board to place", (x, y), self.font_small, MUTED_TEXT_COLOR)
             self._button(layout.ROTATE_BUTTON_RECT, "Rotate (R)")
         elif game.state == TurnState.SKIPPED:
             self._text("No legal placement", (x, y), self.font, (170, 40, 40))
@@ -169,6 +182,7 @@ class Renderer:
         elif game.state == TurnState.GAME_OVER:
             self._text("Game over - see below", (x, y), self.font, MUTED_TEXT_COLOR)
 
+        self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
         self._button(layout.NEW_GAME_BUTTON_RECT, "New Game")
 
     def _draw_game_over(self, game: Game) -> None:
