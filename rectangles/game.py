@@ -26,6 +26,7 @@ class TurnState(Enum):
 class GameOverReason(Enum):
     BOARD_FULL = auto()
     SKIP_LIMIT = auto()
+    PLAYER_BLOCKED = auto()
 
 
 class Game:
@@ -46,6 +47,7 @@ class Game:
         self.legal_cache: dict[tuple[int, int], set[tuple[int, int]]]
         self.game_over_reason: GameOverReason | None
         self.skipped_out_player_id: int | None
+        self.blocked_player_id: int | None
         self.history: list[TurnRecord]
         self.reset()
 
@@ -65,6 +67,7 @@ class Game:
         self.legal_cache = {}
         self.game_over_reason = None
         self.skipped_out_player_id = None
+        self.blocked_player_id = None
         self.history = []
 
     @property
@@ -123,6 +126,12 @@ class Game:
             self.state = TurnState.GAME_OVER
             self.game_over_reason = GameOverReason.BOARD_FULL
             return True
+        for player in (p1, p2):
+            if player.has_moved and not self.board.frontier(player):
+                self.state = TurnState.GAME_OVER
+                self.game_over_reason = GameOverReason.PLAYER_BLOCKED
+                self.blocked_player_id = player.id
+                return True
         for player in (p1, p2):
             if player.consecutive_skips >= self.skip_limit:
                 self.state = TurnState.GAME_OVER

@@ -227,6 +227,9 @@ class Renderer:
         if game.game_over_reason == GameOverReason.SKIP_LIMIT and game.skipped_out_player_id is not None:
             skipped_player = game.players[game.skipped_out_player_id]
             reason_line = f"{skipped_player.name} skipped {game.skip_limit} times in a row"
+        elif game.game_over_reason == GameOverReason.PLAYER_BLOCKED and game.blocked_player_id is not None:
+            blocked_player = game.players[game.blocked_player_id]
+            reason_line = f"{blocked_player.name} is completely boxed in"
         else:
             reason_line = "Board is completely full"
 

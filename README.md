@@ -19,8 +19,11 @@ area when the game ends wins.
   own — touching only your opponent's territory doesn't count.
 - If a roll can't legally be placed anywhere (in either orientation), your
   turn is skipped.
-- The game ends when either:
-  - neither player has any legal placement left anywhere on the board, or
+- The game ends when any of the following happens:
+  - neither player has any legal placement left anywhere on the board,
+  - one player becomes completely boxed in by the opponent's territory (no
+    empty cell touches their own anymore) even if empty cells remain
+    elsewhere on the board, or
   - one player is skipped several turns in a row (configurable before each
     match, 3 by default).
 - Whoever has placed the most total area wins; equal areas is a tie.

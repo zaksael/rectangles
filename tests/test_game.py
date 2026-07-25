@@ -116,6 +116,28 @@ def test_game_over_detection_after_skip():
     assert game.check_game_over() is True
 
 
+def test_game_over_when_player_fully_blocked():
+    game = Game(board_size=4)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=1, h=1)
+    game.board.place(p2, (1, 0), w=1, h=1)  # seals p1's south neighbor
+    game.board.place(p2, (0, 1), w=1, h=1)  # seals p1's east neighbor
+    # Plenty of empty cells remain, including p2's own start corner (3, 3).
+
+    assert game.check_game_over() is True
+    assert game.state == TurnState.GAME_OVER
+    assert game.game_over_reason == GameOverReason.PLAYER_BLOCKED
+    assert game.blocked_player_id == PLAYER_1
+
+
+def test_no_blocked_game_over_before_first_move():
+    game = Game(board_size=4)
+    p2 = game.players[PLAYER_2]
+    game.board.place(p2, (3, 3), w=1, h=1)  # p2 has moved, p1 has not
+
+    assert game.check_game_over() is False
+
+
 def test_winner_area_sum():
     game = Game(board_size=8)
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
