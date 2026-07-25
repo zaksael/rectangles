@@ -40,17 +40,17 @@ def update_hover(game: Game, ui_state: UIState) -> None:
 
 
 def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> bool:
-    if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
-        ui_state.reset()
-        ui_state.screen = Screen.SETTINGS
-        return True
-
     if game.state == TurnState.GAME_OVER:
         if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
             ui_state.reset()
             ui_state.screen = Screen.SETTINGS
         elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
             return False
+        return True
+
+    if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
+        ui_state.reset()
+        ui_state.screen = Screen.SETTINGS
         return True
 
     if game.state == TurnState.AWAITING_ROLL:
