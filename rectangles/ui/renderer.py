@@ -186,6 +186,9 @@ class Renderer:
             self._text("Click the board to place", (x, y), self.font_small, MUTED_TEXT_COLOR)
             self._button(layout.ROTATE_BUTTON_RECT, "Rotate (R)")
         elif game.state == TurnState.SKIPPED:
+            a, b = game.last_roll
+            self._text(f"{a} x {b}", (x, y), self.font_dice)
+            y += 36
             self._text("No legal placement", (x, y), self.font, (170, 40, 40))
             y += 24
             self._text("for this roll - turn skipped.", (x, y), self.font_small, MUTED_TEXT_COLOR)
