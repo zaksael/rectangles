@@ -5,7 +5,7 @@ import pygame
 from ..constants import PLAYER_2
 from ..game import Game, TurnState
 from . import layout
-from .state import UIState
+from .state import Screen, UIState
 
 
 def compute_top_left(game: Game, w: int, h: int, cell: tuple[int, int]) -> tuple[int, int]:
@@ -29,7 +29,7 @@ def update_hover(game: Game, ui_state: UIState) -> None:
     if game.state != TurnState.CHOOSING_PLACEMENT or ui_state.current_dims is None:
         ui_state.hover_top_left = None
         return
-    cell = layout.pixel_to_cell(*pygame.mouse.get_pos())
+    cell = layout.pixel_to_cell(*pygame.mouse.get_pos(), game.board.size)
     if cell is None:
         ui_state.hover_top_left = None
         return
@@ -41,8 +41,8 @@ def update_hover(game: Game, ui_state: UIState) -> None:
 
 def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> None:
     if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
-        game.reset()
         ui_state.reset()
+        ui_state.screen = Screen.SETTINGS
         return
 
     if game.state == TurnState.GAME_OVER:
@@ -65,7 +65,7 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> N
         if layout.ROTATE_BUTTON_RECT.collidepoint(pos):
             _rotate(ui_state)
             return
-        cell = layout.pixel_to_cell(*pos)
+        cell = layout.pixel_to_cell(*pos, game.board.size)
         if cell is None or ui_state.current_dims is None:
             return
         w, h = ui_state.current_dims
@@ -74,6 +74,28 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState) -> N
             if not game.check_game_over():
                 game.end_turn()
             ui_state.reset()
+
+
+def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> None:
+    for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
+        if rect.collidepoint(pos):
+            ui_state.selected_board_size = value
+            return
+    for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
+        if rect.collidepoint(pos):
+            ui_state.selected_skip_limit = value
+            return
+    if layout.SETTINGS_START_BUTTON_RECT.collidepoint(pos):
+        ui_state.screen = Screen.PLAYING
+        ui_state.game_requested = True
+
+
+def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
+    if event.type == pygame.QUIT:
+        return False
+    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        _handle_settings_left_click(event.pos, ui_state)
+    return True
 
 
 def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState) -> bool:

@@ -5,7 +5,7 @@ import pygame
 from .. import constants
 from ..game import Game, GameOverReason, TurnState
 from . import layout
-from .state import UIState
+from .state import Screen, UIState
 
 BG_COLOR = (245, 245, 245)
 GRID_LINE_COLOR = (205, 205, 205)
@@ -18,6 +18,7 @@ GHOST_ILLEGAL_COLOR = (220, 70, 70, 130)
 BUTTON_COLOR = (90, 100, 210)
 BUTTON_HOVER_COLOR = (110, 120, 230)
 BUTTON_DISABLED_COLOR = (190, 190, 198)
+BUTTON_SELECTED_COLOR = (70, 170, 100)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 OVERLAY_COLOR = (15, 15, 20, 190)
 
@@ -29,15 +30,38 @@ class Renderer:
         self.font_small = pygame.font.SysFont("arial", 15)
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
 
-    def draw(self, game: Game, ui_state: UIState) -> None:
+    def draw(self, game: Game | None, ui_state: UIState) -> None:
         self.screen.fill(BG_COLOR)
-        self._draw_board(game)
-        if game.state == TurnState.CHOOSING_PLACEMENT and ui_state.hover_top_left is not None:
-            self._draw_ghost(ui_state)
-        self._draw_panel(game, ui_state)
-        if game.state == TurnState.GAME_OVER:
-            self._draw_game_over(game)
+        if ui_state.screen == Screen.SETTINGS:
+            self._draw_settings_screen(ui_state)
+        else:
+            self._draw_board(game)
+            if game.state == TurnState.CHOOSING_PLACEMENT and ui_state.hover_top_left is not None:
+                self._draw_ghost(ui_state)
+            self._draw_panel(game, ui_state)
+            if game.state == TurnState.GAME_OVER:
+                self._draw_game_over(game)
         pygame.display.flip()
+
+    def _draw_settings_screen(self, ui_state: UIState) -> None:
+        center_x = layout.WINDOW_WIDTH // 2
+
+        title_surf = self.font_big.render("RECTANGLES", True, TEXT_COLOR)
+        self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, 80)))
+        subtitle_surf = self.font.render("Choose your settings", True, MUTED_TEXT_COLOR)
+        self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 130)))
+
+        board_label = self.font.render("Board size", True, TEXT_COLOR)
+        self.screen.blit(board_label, board_label.get_rect(center=(center_x, 230)))
+        for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
+            self._button(rect, f"{value}x{value}", selected=value == ui_state.selected_board_size)
+
+        skip_label = self.font.render("Skip limit", True, TEXT_COLOR)
+        self.screen.blit(skip_label, skip_label.get_rect(center=(center_x, 370)))
+        for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
+            self._button(rect, str(value), selected=value == ui_state.selected_skip_limit)
+
+        self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game")
 
     def _draw_board(self, game: Game) -> None:
         for r in range(game.board.size):
@@ -54,7 +78,7 @@ class Renderer:
                 pygame.draw.rect(self.screen, color, rect)
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
-        pygame.draw.rect(self.screen, (150, 150, 150), layout.BOARD_RECT, width=2)
+        pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
 
     def _draw_ghost(self, ui_state: UIState) -> None:
         w, h = ui_state.current_dims
@@ -64,9 +88,16 @@ class Renderer:
         self.screen.blit(overlay, rect.topleft)
         pygame.draw.rect(self.screen, (30, 30, 30), rect, width=2)
 
-    def _button(self, rect: pygame.Rect, label: str, enabled: bool = True) -> None:
-        color = BUTTON_COLOR if enabled else BUTTON_DISABLED_COLOR
+    def _button(self, rect: pygame.Rect, label: str, enabled: bool = True, selected: bool = False) -> None:
+        if selected:
+            color = BUTTON_SELECTED_COLOR
+        elif enabled:
+            color = BUTTON_COLOR
+        else:
+            color = BUTTON_DISABLED_COLOR
         pygame.draw.rect(self.screen, color, rect, border_radius=6)
+        if selected:
+            pygame.draw.rect(self.screen, (255, 255, 255), rect, width=3, border_radius=6)
         text = self.font.render(label, True, BUTTON_TEXT_COLOR)
         self.screen.blit(text, text.get_rect(center=rect.center))
 

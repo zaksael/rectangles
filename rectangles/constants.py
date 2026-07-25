@@ -6,6 +6,11 @@ DICE_MAX = 6
 # A player who is skipped this many turns in a row ends the game.
 SKIP_LIMIT = 3
 
+# Selectable options on the pre-game settings screen. Defaults above stay
+# valid members of both.
+BOARD_SIZE_PRESETS = (8, 10, 12, 16)
+SKIP_LIMIT_PRESETS = (2, 3, 5)
+
 PLAYER_1 = 1
 PLAYER_2 = 2
 

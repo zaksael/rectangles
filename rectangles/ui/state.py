@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum, auto
+
+from ..constants import BOARD_SIZE, SKIP_LIMIT
+
+
+class Screen(Enum):
+    SETTINGS = auto()
+    PLAYING = auto()
 
 
 @dataclass
@@ -8,6 +16,11 @@ class UIState:
     current_dims: tuple[int, int] | None = None
     hover_top_left: tuple[int, int] | None = None
     hover_legal: bool = False
+
+    screen: Screen = Screen.SETTINGS
+    selected_board_size: int = BOARD_SIZE
+    selected_skip_limit: int = SKIP_LIMIT
+    game_requested: bool = False
 
     def reset(self) -> None:
         self.current_dims = None

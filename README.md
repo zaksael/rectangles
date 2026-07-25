@@ -8,8 +8,9 @@ area when the game ends wins.
 
 ## Rules
 
-- The board is a shared 12×12 grid. Player 1 grows inward from the **top-left**
-  corner; Player 2 grows inward from the **bottom-right** corner.
+- The board is a shared grid (size configurable before each match). Player 1
+  grows inward from the **top-left** corner; Player 2 grows inward from the
+  **bottom-right** corner.
 - Players alternate turns, starting with Player 1. On your turn, roll two
   six-sided dice — the two numbers become the width and height of a rectangle
   (rotatable, so a 2-and-5 roll can be placed as 2×5 or 5×2).
@@ -20,7 +21,8 @@ area when the game ends wins.
   turn is skipped.
 - The game ends when either:
   - neither player has any legal placement left anywhere on the board, or
-  - one player is skipped several turns in a row (3 by default).
+  - one player is skipped several turns in a row (configurable before each
+    match, 3 by default).
 - Whoever has placed the most total area wins; equal areas is a tie.
 
 ## Requirements
@@ -40,12 +42,16 @@ uv sync
 uv run python main.py
 ```
 
+The app opens to a settings screen — pick a board size and skip limit
+(preset buttons), then click **Start Game**.
+
 - **Roll Dice** to get a piece for your turn.
 - Hover over the board to preview placement, then click a highlighted (green)
   cell to place the piece.
 - Rotate the piece with the `R` key, right-click, or the **Rotate** button.
 - Click **Continue** to proceed after a skipped turn.
-- Click **New Game** at any time to reset the board.
+- Click **New Game** at any time to return to the settings screen and start
+  a fresh match.
 
 ## Tests
 
