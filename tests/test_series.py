@@ -48,14 +48,12 @@ def test_record_game_stores_area_and_flags_breakdown_per_round():
     assert series.scores == {PLAYER_1: 28, PLAYER_2: 4}
 
 
-def test_total_area_and_total_flags_captured_sum_across_rounds():
+def test_total_flags_captured_sums_across_rounds():
     series = Series(length=3, board_size=6, skip_limit=2, flag_conquest_enabled=True, flag_bonus_points=10)
 
     series.record_game(_finished_game(8, 2, 4, 0, flag_bonus_points=10))
     series.record_game(_finished_game(3, 0, 2, 1, flag_bonus_points=10))
 
-    assert series.total_area(PLAYER_1) == 11
-    assert series.total_area(PLAYER_2) == 6
     assert series.total_flags_captured(PLAYER_1) == 2
     assert series.total_flags_captured(PLAYER_2) == 1
 

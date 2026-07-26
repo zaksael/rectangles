@@ -38,9 +38,6 @@ class Series:
         self.scores[PLAYER_1] += result.total[PLAYER_1]
         self.scores[PLAYER_2] += result.total[PLAYER_2]
 
-    def total_area(self, player_id: int) -> int:
-        return sum(r.area[player_id] for r in self.rounds)
-
     def total_flags_captured(self, player_id: int) -> int:
         return sum(r.flags_captured[player_id] for r in self.rounds)
 
