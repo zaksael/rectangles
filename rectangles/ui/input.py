@@ -181,10 +181,11 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     if layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_flag_conquest_enabled = not ui_state.selected_flag_conquest_enabled
         return True
-    for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
-        if rect.collidepoint(pos):
-            ui_state.selected_flag_bonus_points = value
-            return True
+    if ui_state.selected_flag_conquest_enabled:
+        for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
+            if rect.collidepoint(pos):
+                ui_state.selected_flag_bonus_points = value
+                return True
     if layout.SETTINGS_BOT_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_bot_enabled = not ui_state.selected_bot_enabled
         return True

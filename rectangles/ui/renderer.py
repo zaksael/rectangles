@@ -110,7 +110,11 @@ class Renderer:
             hovered=hovered(layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT),
         )
 
-        flag_bonus_label = self.font.render("Flag bonus points", True, TEXT_COLOR)
+        flag_bonus_label = self.font.render(
+            "Flag bonus points",
+            True,
+            TEXT_COLOR if ui_state.selected_flag_conquest_enabled else MUTED_TEXT_COLOR,
+        )
         self.screen.blit(
             flag_bonus_label, flag_bonus_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 580))
         )
@@ -118,8 +122,9 @@ class Renderer:
             self._button(
                 rect,
                 f"+{value}",
+                enabled=ui_state.selected_flag_conquest_enabled,
                 selected=value == ui_state.selected_flag_bonus_points,
-                hovered=hovered(rect),
+                hovered=ui_state.selected_flag_conquest_enabled and hovered(rect),
             )
 
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
@@ -225,16 +230,16 @@ class Renderer:
         selected: bool = False,
         hovered: bool = False,
     ) -> None:
-        if selected:
-            color = BUTTON_SELECTED_COLOR
-        elif not enabled:
+        if not enabled:
             color = BUTTON_DISABLED_COLOR
+        elif selected:
+            color = BUTTON_SELECTED_COLOR
         elif hovered:
             color = BUTTON_HOVER_COLOR
         else:
             color = BUTTON_COLOR
         pygame.draw.rect(self.screen, color, rect, border_radius=6)
-        if selected:
+        if selected and enabled:
             pygame.draw.rect(self.screen, (255, 255, 255), rect, width=3, border_radius=6)
         text = self.font.render(label, True, BUTTON_TEXT_COLOR)
         self.screen.blit(text, text.get_rect(center=rect.center))
