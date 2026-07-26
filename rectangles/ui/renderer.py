@@ -361,37 +361,76 @@ class Renderer:
         if has_more:
             self._text("scroll for more ▼", (x, y), self.font_small, MUTED_TEXT_COLOR)
 
-    def _format_round_line(self, series: Series, index: int, result: RoundResult) -> str:
-        p1_flags = ""
-        p2_flags = ""
+    def _round_row(self, series: Series, index: int, result: RoundResult) -> list[str]:
+        p1 = str(result.total[constants.PLAYER_1])
+        p2 = str(result.total[constants.PLAYER_2])
         if series.flag_conquest_enabled:
             if result.flags_captured[constants.PLAYER_1]:
-                p1_flags = f" (🚩{result.flags_captured[constants.PLAYER_1]})"
+                p1 += f" 🚩{result.flags_captured[constants.PLAYER_1]}"
             if result.flags_captured[constants.PLAYER_2]:
-                p2_flags = f" (🚩{result.flags_captured[constants.PLAYER_2]})"
-        return (
-            f"R{index}: P1 {result.total[constants.PLAYER_1]}{p1_flags}  -  "
-            f"{result.total[constants.PLAYER_2]}{p2_flags} P2"
-        )
+                p2 += f" 🚩{result.flags_captured[constants.PLAYER_2]}"
+        return [str(index), p1, p2]
 
-    def _format_series_totals_line(self, series: Series) -> str:
-        p1_flags = f" (🚩{series.total_flags_captured(constants.PLAYER_1)})" if series.flag_conquest_enabled else ""
-        p2_flags = f" (🚩{series.total_flags_captured(constants.PLAYER_2)})" if series.flag_conquest_enabled else ""
-        return (
-            f"Totals: P1 {series.scores[constants.PLAYER_1]}{p1_flags}  -  "
-            f"{series.scores[constants.PLAYER_2]}{p2_flags} P2"
-        )
+    def _series_totals_row(self, series: Series) -> list[str]:
+        p1 = str(series.scores[constants.PLAYER_1])
+        p2 = str(series.scores[constants.PLAYER_2])
+        if series.flag_conquest_enabled:
+            p1 += f" 🚩{series.total_flags_captured(constants.PLAYER_1)}"
+            p2 += f" 🚩{series.total_flags_captured(constants.PLAYER_2)}"
+        return ["Total", p1, p2]
+
+    def _series_table_rows(self, series: Series) -> list[list[str]]:
+        rows = [self._round_row(series, index, result) for index, result in enumerate(series.rounds, start=1)]
+        if series.rounds:
+            rows.append(self._series_totals_row(series))
+        return rows
+
+    def _draw_table(
+        self,
+        x: int,
+        y: int,
+        columns: list[tuple[str, int]],
+        rows: list[list[str]],
+        row_height: int,
+        font: pygame.font.Font,
+        header_color: tuple,
+        row_color: tuple,
+    ) -> None:
+        def draw_row(values: list[str], row_y: int, color: tuple) -> None:
+            cx = x
+            for i, (value, (_, width)) in enumerate(zip(values, columns)):
+                surf = font.render(value, True, color)
+                rect = surf.get_rect()
+                if i == 0:
+                    rect.topleft = (cx, row_y)
+                else:
+                    rect.topright = (cx + width, row_y)
+                self.screen.blit(surf, rect)
+                cx += width
+
+        draw_row([header for header, _ in columns], y, header_color)
+        y += row_height
+        table_width = sum(width for _, width in columns)
+        pygame.draw.line(self.screen, DIVIDER_COLOR, (x, y - 4), (x + table_width, y - 4))
+        for row in rows:
+            draw_row(row, y, row_color)
+            y += row_height
 
     def _draw_series_stats(self, series: Series) -> None:
         x = layout.PANEL_X
         self._divider(layout.PANEL_SERIES_DIVIDER_Y)
         self._text("Series Stats", (x, layout.PANEL_SERIES_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
-        y = layout.PANEL_SERIES_START_Y
-        for index, result in enumerate(series.rounds, start=1):
-            self._text(self._format_round_line(series, index, result), (x, y), self.font_small, MUTED_TEXT_COLOR)
-            y += layout.PANEL_SERIES_ROW_HEIGHT
-        if series.rounds:
-            self._text(self._format_series_totals_line(series), (x, y), self.font_small, MUTED_TEXT_COLOR)
+        columns = [("Rnd", 40), ("P1", 126), ("P2", 126)]
+        self._draw_table(
+            x,
+            layout.PANEL_SERIES_START_Y,
+            columns,
+            self._series_table_rows(series),
+            layout.PANEL_SERIES_ROW_HEIGHT,
+            self.font_small,
+            MUTED_TEXT_COLOR,
+            MUTED_TEXT_COLOR,
+        )
 
     def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
@@ -451,15 +490,18 @@ class Renderer:
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
 
         if series is not None and series.rounds:
-            y = layout.GAME_OVER_NEW_GAME_BUTTON_RECT.bottom + 40
-            for index, result in enumerate(series.rounds, start=1):
-                line_surf = self.font_small.render(
-                    self._format_round_line(series, index, result), True, (200, 200, 200)
-                )
-                self.screen.blit(line_surf, line_surf.get_rect(center=(center_x, y)))
-                y += layout.PANEL_SERIES_ROW_HEIGHT
-            totals_surf = self.font_small.render(self._format_series_totals_line(series), True, (200, 200, 200))
-            self.screen.blit(totals_surf, totals_surf.get_rect(center=(center_x, y)))
+            columns = [("Rnd", 70), ("P1", 220), ("P2", 220)]
+            table_width = sum(width for _, width in columns)
+            self._draw_table(
+                center_x - table_width // 2,
+                layout.GAME_OVER_NEW_GAME_BUTTON_RECT.bottom + 40,
+                columns,
+                self._series_table_rows(series),
+                layout.PANEL_SERIES_ROW_HEIGHT,
+                self.font_small,
+                (200, 200, 200),
+                (200, 200, 200),
+            )
 
     def _draw_confirm_dialog(self, game: Game, ui_state: UIState) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)

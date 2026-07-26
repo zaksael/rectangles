@@ -101,6 +101,14 @@ def test_draw_game_over_tie_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_panel_with_series_stats_smoke(renderer):
+    game = Game(board_size=6, flag_conquest_enabled=True)
+    series = Series(length=3, board_size=6, skip_limit=3, flag_conquest_enabled=True, flag_bonus_points=10)
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
+
+
 def test_draw_game_over_with_series_in_progress_smoke(renderer):
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
