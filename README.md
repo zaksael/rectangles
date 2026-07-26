@@ -8,6 +8,9 @@ area when the game ends wins.
 
 ## Rules
 
+For a precise, implementation-agnostic reference covering every rule and
+optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
+
 - The board is a shared grid (size configurable before each match). Player 1
   grows inward from the **top-left** corner; Player 2 grows inward from the
   **bottom-right** corner.
