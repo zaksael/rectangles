@@ -5,7 +5,13 @@ from rectangles.constants import BOARD_SIZE_PRESETS, PLAYER_1, PLAYER_2, SERIES_
 from rectangles.game import Game, TurnState
 from rectangles.series import Series
 from rectangles.ui import layout
-from rectangles.ui.input import compute_top_left, handle_event, handle_settings_event, update_hover
+from rectangles.ui.input import (
+    compute_top_left,
+    handle_event,
+    handle_settings_event,
+    take_bot_turn,
+    update_hover,
+)
 from rectangles.ui.state import ConfirmAction, Screen, UIState
 
 
@@ -316,6 +322,50 @@ def test_continue_button_click_on_skipped_ends_turn():
     assert game.current_player_id == PLAYER_1
 
 
+def test_take_bot_turn_rolls_when_awaiting_roll():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
+    ui_state = UIState()
+    assert game.state == TurnState.AWAITING_ROLL
+
+    take_bot_turn(game, ui_state)
+
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    assert game.last_roll == (2, 3)
+
+
+def test_take_bot_turn_continues_when_skipped():
+    game = _skipped_game()
+    ui_state = UIState()
+
+    take_bot_turn(game, ui_state)
+
+    assert game.state == TurnState.AWAITING_ROLL
+
+
+def test_take_bot_turn_places_when_choosing_placement():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3, 0]))
+    ui_state = UIState()
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+    take_bot_turn(game, ui_state)
+
+    assert game.state == TurnState.AWAITING_ROLL
+    assert len(game.players[PLAYER_1].pieces) == 1
+
+
+def test_human_roll_click_ignored_during_bots_turn():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
+    game.current_player_id = PLAYER_2
+    ui_state = UIState(screen=Screen.PLAYING, selected_bot_enabled=True)
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.ROLL_BUTTON_RECT.center)
+    handle_event(event, game, ui_state)
+
+    assert game.state == TurnState.AWAITING_ROLL
+    assert game.last_roll is None
+
+
 def test_update_hover_sets_top_left_and_legal_flag(monkeypatch):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()
@@ -503,6 +553,18 @@ def test_settings_doubles_button_toggles_selection():
 
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_doubles_enabled is False
+
+
+def test_settings_bot_button_toggles_selection():
+    ui_state = UIState()
+    assert ui_state.selected_bot_enabled is False
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_BOT_BUTTON_RECT.center)
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_bot_enabled is True
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_bot_enabled is False
 
 
 def test_settings_series_length_buttons_update_selection():

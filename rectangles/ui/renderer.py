@@ -85,6 +85,14 @@ class Renderer:
         for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
             self._button(rect, f"Bo{value}", selected=value == ui_state.selected_series_length)
 
+        bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
+        self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_BOT_BUTTON_RECT.centerx, 376)))
+        self._button(
+            layout.SETTINGS_BOT_BUTTON_RECT,
+            "ON" if ui_state.selected_bot_enabled else "OFF",
+            selected=ui_state.selected_bot_enabled,
+        )
+
         self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game (Space)")
         self._button(layout.SETTINGS_START_SERIES_BUTTON_RECT, "Start Series")
         self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)")

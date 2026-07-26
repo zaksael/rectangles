@@ -27,6 +27,7 @@ class UIState:
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
     selected_doubles_enabled: bool = DOUBLES_ENABLED
+    selected_bot_enabled: bool = False
     selected_series_length: int = SERIES_LENGTH_PRESETS[0]
     game_requested: bool = False
     resume_requested: bool = False

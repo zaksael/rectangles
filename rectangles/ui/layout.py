@@ -130,6 +130,12 @@ SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(
     SETTINGS_SKIP_LIMIT_BUTTON_RECTS[max(SKIP_LIMIT_PRESETS)].right + 40, 292, 160, 50
 )
 
+# Sits beside the series-length row the same way the doubles toggle sits
+# beside skip limit.
+SETTINGS_BOT_BUTTON_RECT = pygame.Rect(
+    SETTINGS_SERIES_LENGTH_BUTTON_RECTS[max(SERIES_LENGTH_PRESETS)].right + 40, 406, 160, 50
+)
+
 _SETTINGS_BUTTON_W = 200
 _SETTINGS_BUTTON_H = 56
 _SETTINGS_BUTTON_GAP = 20

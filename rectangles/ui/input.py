@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from .. import persistence
+from .. import bot, persistence
 from ..constants import PLAYER_2
 from ..game import Game, TurnState
 from ..series import Series
@@ -61,6 +61,23 @@ def _continue_turn(game: Game) -> None:
         game.end_turn()
 
 
+def is_bots_turn(game: Game, ui_state: UIState) -> bool:
+    return ui_state.selected_bot_enabled and game.current_player_id == PLAYER_2
+
+
+def take_bot_turn(game: Game, ui_state: UIState) -> None:
+    if game.state == TurnState.AWAITING_ROLL:
+        _roll_dice(game, ui_state)
+    elif game.state == TurnState.SKIPPED:
+        _continue_turn(game)
+    elif game.state == TurnState.CHOOSING_PLACEMENT:
+        top_left, w, h = bot.choose_placement(game)
+        if game.attempt_place(top_left, w, h):
+            if not game.check_game_over():
+                game.end_turn()
+            ui_state.reset()
+
+
 def update_hover(game: Game, ui_state: UIState) -> None:
     if game.state != TurnState.CHOOSING_PLACEMENT or ui_state.current_dims is None:
         ui_state.hover_top_left = None
@@ -99,6 +116,9 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
 
     if layout.SURRENDER_BUTTON_RECT.collidepoint(pos):
         _request_surrender(ui_state)
+        return True
+
+    if is_bots_turn(game, ui_state):
         return True
 
     if game.state == TurnState.AWAITING_ROLL:
@@ -158,6 +178,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     if layout.SETTINGS_DOUBLES_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_doubles_enabled = not ui_state.selected_doubles_enabled
         return True
+    if layout.SETTINGS_BOT_BUTTON_RECT.collidepoint(pos):
+        ui_state.selected_bot_enabled = not ui_state.selected_bot_enabled
+        return True
     for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
         if rect.collidepoint(pos):
             ui_state.selected_series_length = value
@@ -205,11 +228,13 @@ def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState, se
         return _request_quit(game, ui_state)
     elif event.key == pygame.K_s:
         _request_surrender(ui_state)
-    elif event.key == pygame.K_r and game.state == TurnState.CHOOSING_PLACEMENT:
+    elif event.key == pygame.K_r and game.state == TurnState.CHOOSING_PLACEMENT and not is_bots_turn(
+        game, ui_state
+    ):
         _rotate(ui_state)
-    elif event.key == pygame.K_d and game.state == TurnState.AWAITING_ROLL:
+    elif event.key == pygame.K_d and game.state == TurnState.AWAITING_ROLL and not is_bots_turn(game, ui_state):
         _roll_dice(game, ui_state)
-    elif event.key == pygame.K_SPACE and game.state == TurnState.SKIPPED:
+    elif event.key == pygame.K_SPACE and game.state == TurnState.SKIPPED and not is_bots_turn(game, ui_state):
         _continue_turn(game)
     return True
 
@@ -263,6 +288,8 @@ def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState, serie
         if event.button == 1:
             if not _handle_left_click(event.pos, game, ui_state, series):
                 return False
-        elif event.button == 3 and game.state == TurnState.CHOOSING_PLACEMENT:
+        elif event.button == 3 and game.state == TurnState.CHOOSING_PLACEMENT and not is_bots_turn(
+            game, ui_state
+        ):
             _rotate(ui_state)
     return True
