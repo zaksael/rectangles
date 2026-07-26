@@ -4,6 +4,7 @@ import pygame
 
 from ..constants import (
     BOARD_SIZE_PRESETS,
+    BOT_DIFFICULTY_PRESETS,
     FLAG_BONUS_POINTS_PRESETS,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
@@ -39,13 +40,13 @@ def pixel_to_cell(x: int, y: int, board_size: int) -> tuple[int, int] | None:
 
 
 def _centered_button_row(
-    values: tuple[int, ...],
+    values: tuple[int | str, ...],
     y: int,
     center_x: int = WINDOW_WIDTH // 2,
     button_w: int = 90,
     button_h: int = 50,
     gap: int = 16,
-) -> dict[int, pygame.Rect]:
+) -> dict[int | str, pygame.Rect]:
     total_w = len(values) * button_w + (len(values) - 1) * gap
     start_x = center_x - total_w // 2
     return {
@@ -63,8 +64,8 @@ def _centered_button_row(
 SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
 SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
 
-SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 330)
-SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
+SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 420)
+SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 420)
 SETTINGS_HOUSE_RULES_CARD_RECT = pygame.Rect(
     SETTINGS_BOARD_CARD_RECT.left,
     SETTINGS_BOARD_CARD_RECT.bottom + 30,
@@ -82,6 +83,9 @@ SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(
 SETTINGS_BOT_BUTTON_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 80, 210, 160, 50)
 SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
     SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
+)
+SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS = _centered_button_row(
+    BOT_DIFFICULTY_PRESETS, y=410, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
 )
 
 # Three evenly-spaced toggle columns within the House Rules card, each with

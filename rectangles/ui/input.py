@@ -71,7 +71,7 @@ def take_bot_turn(game: Game, ui_state: UIState) -> None:
     elif game.state == TurnState.SKIPPED:
         _continue_turn(game)
     elif game.state == TurnState.CHOOSING_PLACEMENT:
-        top_left, w, h = bot.choose_placement(game)
+        top_left, w, h = bot.choose_placement(game, ui_state.selected_bot_difficulty)
         if game.attempt_place(top_left, w, h):
             if not game.check_game_over():
                 game.end_turn()
@@ -192,6 +192,11 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     if layout.SETTINGS_BOT_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_bot_enabled = not ui_state.selected_bot_enabled
         return True
+    if ui_state.selected_bot_enabled:
+        for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
+            if rect.collidepoint(pos):
+                ui_state.selected_bot_difficulty = value
+                return True
     for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
         if rect.collidepoint(pos):
             ui_state.selected_series_length = value

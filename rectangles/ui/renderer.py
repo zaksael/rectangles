@@ -141,9 +141,26 @@ class Renderer:
                 rect, f"{value} Rounds", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
             )
 
+        difficulty_label = self.font.render(
+            "Bot difficulty",
+            True,
+            TEXT_COLOR if ui_state.selected_bot_enabled else MUTED_TEXT_COLOR,
+        )
+        self.screen.blit(
+            difficulty_label, difficulty_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 380))
+        )
+        for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
+            self._button(
+                rect,
+                value,
+                enabled=ui_state.selected_bot_enabled,
+                selected=value == ui_state.selected_bot_difficulty,
+                hovered=ui_state.selected_bot_enabled and hovered(rect),
+            )
+
         for i, line in enumerate(("The bot plays Player 2 automatically", "when turned on, in every mode.")):
             hint_surf = self.font_small.render(line, True, MUTED_TEXT_COLOR)
-            self.screen.blit(hint_surf, hint_surf.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 400 + i * 20)))
+            self.screen.blit(hint_surf, hint_surf.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 480 + i * 20)))
 
         self._button(
             layout.SETTINGS_START_BUTTON_RECT,
