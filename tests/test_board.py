@@ -131,25 +131,38 @@ def test_board_flag_cells_stored_and_placeable_like_any_empty_cell():
     assert board.can_place(p1, (0, 0), w=1, h=1) is True  # flag cells impose no extra restriction
 
 
-def test_board_wall_cells_default_empty():
+def test_board_wall_edges_default_empty():
     board = Board(size=6)
-    assert board.wall_cells == frozenset()
+    assert board.wall_edges == frozenset()
 
 
-def test_board_wall_cells_block_placement():
-    board = Board(size=6, wall_cells=frozenset({(2, 2)}))
+def test_board_wall_edges_block_span_but_not_individual_cells():
+    wall = frozenset({frozenset({(2, 2), (3, 2)})})
+    board = Board(size=6, wall_edges=wall)
     p1, _ = make_players(6)
-    assert board.wall_cells == frozenset({(2, 2)})
-    assert board.is_wall(2, 2) is True
-    assert board.can_place(p1, (2, 2), w=1, h=1) is False
-    assert board.can_place(p1, (1, 2), w=1, h=2) is False  # piece would cover the wall cell too
+    board.place(p1, (2, 1), w=1, h=1)  # adjacent to (2,2); adjacency alone would allow the piece below
+    assert board.can_place(p1, (2, 2), w=1, h=2) is False  # piece would straddle the wall
+    assert board.is_empty(2, 2) is True  # no cell was sacrificed - both sides stay placeable
+    assert board.is_empty(3, 2) is True
+    assert board.can_place(p1, (2, 2), w=1, h=1) is True  # the cell itself is still perfectly placeable
 
 
-def test_board_wall_cells_excluded_from_frontier():
-    board = Board(size=6, wall_cells=frozenset({(0, 3)}))
+def test_board_wall_edges_block_adjacency_across():
+    wall = frozenset({frozenset({(2, 2), (3, 2)})})
+    board = Board(size=6, wall_edges=wall)
     p1, _ = make_players(6)
-    board.place(p1, (0, 0), w=3, h=3)  # rows0-2, cols0-2; (0,3) would otherwise be frontier
-    assert (0, 3) not in board.frontier(p1)
+    board.place(p1, (2, 2), w=1, h=1)
+    assert board.can_place(p1, (3, 2), w=1, h=1) is False  # walled off - doesn't count as adjacent
+    assert board.can_place(p1, (2, 3), w=1, h=1) is True  # ordinary (unwalled) adjacency still works
+
+
+def test_board_wall_edges_excluded_from_frontier():
+    wall = frozenset({frozenset({(2, 2), (3, 2)})})
+    board = Board(size=6, wall_edges=wall)
+    p1, _ = make_players(6)
+    board.place(p1, (2, 2), w=1, h=1)
+    assert (3, 2) not in board.frontier(p1)
+    assert (2, 3) in board.frontier(p1)  # unwalled neighbor still counts
 
 
 def test_legal_top_lefts_matches_brute_force_can_place():

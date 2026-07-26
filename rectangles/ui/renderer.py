@@ -28,7 +28,7 @@ ROW_ACTIVE_BG_COLOR = (205, 230, 214)
 CARD_BG_COLOR = (255, 255, 255)
 CARD_BORDER_COLOR = (215, 215, 222)
 FLAG_COLOR = (230, 180, 30)
-WALL_CELL_COLOR = (90, 88, 96)
+WALL_LINE_COLOR = (90, 88, 96)
 
 
 class Renderer:
@@ -172,7 +172,6 @@ class Renderer:
                 pygame.draw.rect(self.screen, EMPTY_CELL_COLOR, rect)
                 pygame.draw.rect(self.screen, GRID_LINE_COLOR, rect, width=1)
 
-        self._draw_walls(game)
         self._draw_flags(game)
 
         for player in game.players.values():
@@ -183,11 +182,24 @@ class Renderer:
                 pygame.draw.rect(self.screen, color, rect)
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
+        self._draw_walls(game)
+
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
 
     def _draw_walls(self, game: Game) -> None:
-        for r, c in game.board.wall_cells:
-            pygame.draw.rect(self.screen, WALL_CELL_COLOR, layout.cell_rect(r, c))
+        for edge in game.board.wall_edges:
+            a, b = tuple(edge)
+            (r1, c1), (r2, c2) = (a, b) if a <= b else (b, a)
+            if r1 == r2:
+                # Horizontally adjacent cells (c1 < c2): vertical boundary line between them.
+                x = layout.cell_rect(r1, c2).left
+                top = layout.cell_rect(r1, c1).top
+                pygame.draw.line(self.screen, WALL_LINE_COLOR, (x, top), (x, top + layout.CELL_PX), width=4)
+            else:
+                # Vertically adjacent cells (r1 < r2): horizontal boundary line between them.
+                y = layout.cell_rect(r2, c1).top
+                left = layout.cell_rect(r1, c1).left
+                pygame.draw.line(self.screen, WALL_LINE_COLOR, (left, y), (left + layout.CELL_PX, y), width=4)
 
     def _draw_flags(self, game: Game) -> None:
         for r, c in game.board.flag_cells:

@@ -3,26 +3,18 @@ from __future__ import annotations
 from .constants import BOARD_SIZE
 from .models import Player, Rectangle
 
-# Sentinel grid value for a walled cell - distinct from PLAYER_1/PLAYER_2 (1/2)
-# and from None (empty). can_place/frontier only check "is not None"/"is None",
-# so stamping this in is enough to make wall cells permanently unplaceable and
-# excluded from frontier growth with no changes to that logic.
-WALL = -1
-
 
 class Board:
     def __init__(
         self,
         size: int = BOARD_SIZE,
         flag_cells: frozenset[tuple[int, int]] = frozenset(),
-        wall_cells: frozenset[tuple[int, int]] = frozenset(),
+        wall_edges: frozenset[frozenset[tuple[int, int]]] = frozenset(),
     ):
         self.size = size
         self.flag_cells = flag_cells
-        self.wall_cells = wall_cells
+        self.wall_edges = wall_edges
         self._grid: list[list[int | None]] = [[None] * size for _ in range(size)]
-        for r, c in wall_cells:
-            self._grid[r][c] = WALL
 
     def in_bounds(self, r: int, c: int) -> bool:
         return 0 <= r < self.size and 0 <= c < self.size
@@ -33,8 +25,15 @@ class Board:
     def is_empty(self, r: int, c: int) -> bool:
         return self._grid[r][c] is None
 
-    def is_wall(self, r: int, c: int) -> bool:
-        return self._grid[r][c] == WALL
+    def is_edge_walled(self, a: tuple[int, int], b: tuple[int, int]) -> bool:
+        return frozenset((a, b)) in self.wall_edges
+
+    def _crosses_wall(self, r: int, c: int, w: int, h: int) -> bool:
+        def inside(cell: tuple[int, int]) -> bool:
+            cr, cc = cell
+            return r <= cr < r + h and c <= cc < c + w
+
+        return any(all(inside(cell) for cell in edge) for edge in self.wall_edges)
 
     def can_place(self, player: Player, top_left: tuple[int, int], w: int, h: int) -> bool:
         r, c = top_left
@@ -49,21 +48,43 @@ class Board:
                 if self._grid[cr][cc] is not None:
                     return False
 
+        # 3. The piece must not straddle a walled edge - a wall blocks
+        # building across it even though every individual cell stays empty.
+        if self._crosses_wall(r, c, w, h):
+            return False
+
         if not player.has_moved:
-            # 3. First placement must be anchored at the player's start corner.
+            # 4. First placement must be anchored at the player's start corner.
             candidate = Rectangle(top_left=(r, c), width=w, height=h, owner=player.id)
             return candidate.top_left == player.start_corner or candidate.bottom_right == player.start_corner
 
-        # 4. Every subsequent placement must be edge-adjacent to an owned cell.
+        # 5. Every subsequent placement must be edge-adjacent to an owned
+        # cell, not counting adjacency across a walled edge.
         for cc in range(c, c + w):
-            if self.in_bounds(r - 1, cc) and self.owner_at(r - 1, cc) == player.id:
+            if (
+                self.in_bounds(r - 1, cc)
+                and self.owner_at(r - 1, cc) == player.id
+                and not self.is_edge_walled((r - 1, cc), (r, cc))
+            ):
                 return True
-            if self.in_bounds(r + h, cc) and self.owner_at(r + h, cc) == player.id:
+            if (
+                self.in_bounds(r + h, cc)
+                and self.owner_at(r + h, cc) == player.id
+                and not self.is_edge_walled((r + h - 1, cc), (r + h, cc))
+            ):
                 return True
         for cr in range(r, r + h):
-            if self.in_bounds(cr, c - 1) and self.owner_at(cr, c - 1) == player.id:
+            if (
+                self.in_bounds(cr, c - 1)
+                and self.owner_at(cr, c - 1) == player.id
+                and not self.is_edge_walled((cr, c - 1), (cr, c))
+            ):
                 return True
-            if self.in_bounds(cr, c + w) and self.owner_at(cr, c + w) == player.id:
+            if (
+                self.in_bounds(cr, c + w)
+                and self.owner_at(cr, c + w) == player.id
+                and not self.is_edge_walled((cr, c + w - 1), (cr, c + w))
+            ):
                 return True
         return False
 
@@ -83,7 +104,11 @@ class Board:
                 if self._grid[r][c] != player.id:
                     continue
                 for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
-                    if self.in_bounds(nr, nc) and self._grid[nr][nc] is None:
+                    if (
+                        self.in_bounds(nr, nc)
+                        and self._grid[nr][nc] is None
+                        and not self.is_edge_walled((r, c), (nr, nc))
+                    ):
                         result.add((nr, nc))
         return result
 

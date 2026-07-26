@@ -15,7 +15,8 @@ from .constants import (
     PLAYER_2,
     PLAYER_NAMES,
     SKIP_LIMIT,
-    WALL_RING_RADIUS,
+    WALL_LINE_LENGTH,
+    WALL_LINE_OFFSET,
     WALLS_ENABLED,
 )
 from .models import Player, TurnRecord
@@ -73,8 +74,8 @@ class Game:
             if self.flag_conquest_enabled
             else frozenset()
         )
-        wall_cells = self._wall_cells() if self.walls_enabled else frozenset()
-        self.board = Board(self.board_size, flag_cells=flag_cells, wall_cells=wall_cells)
+        wall_edges = self._wall_edges() if self.walls_enabled else frozenset()
+        self.board = Board(self.board_size, flag_cells=flag_cells, wall_edges=wall_edges)
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
             PLAYER_2: Player(
@@ -93,23 +94,23 @@ class Game:
         self.surrendered_player_id = None
         self.history = []
 
-    def _wall_cells(self) -> frozenset[tuple[int, int]]:
+    def _wall_edges(self) -> frozenset[frozenset[tuple[int, int]]]:
         size = self.board_size
         center = size // 2
-        radius = WALL_RING_RADIUS
-        ring = {
-            (r, c)
-            for r in range(size)
-            for c in range(size)
-            if max(abs(r - center), abs(c - center)) == radius
-        }
-        gaps = {
-            (center - radius, center),
-            (center + radius, center),
-            (center, center - radius),
-            (center, center + radius),
-        }
-        return frozenset(ring - gaps)
+        top_row = center - WALL_LINE_OFFSET
+        bottom_row = top_row + 1
+        cols = range(top_row, top_row + WALL_LINE_LENGTH)
+
+        def mirror(cell: tuple[int, int]) -> tuple[int, int]:
+            r, c = cell
+            return (size - 1 - r, size - 1 - c)
+
+        edges: set[frozenset[tuple[int, int]]] = set()
+        for col in cols:
+            a, b = (top_row, col), (bottom_row, col)
+            edges.add(frozenset({a, b}))
+            edges.add(frozenset({mirror(a), mirror(b)}))
+        return frozenset(edges)
 
     @property
     def current_player(self) -> Player:

@@ -1,6 +1,6 @@
 import pytest
 
-from rectangles.constants import PLAYER_1, PLAYER_2, WALL_RING_RADIUS
+from rectangles.constants import PLAYER_1, PLAYER_2, WALL_LINE_LENGTH
 from rectangles.game import Game, GameOverReason, TurnState
 
 
@@ -315,30 +315,34 @@ def test_reset_computes_flag_positions_for_odd_board_sizes():
 
 def test_walls_disabled_by_default():
     game = Game(board_size=11)
-    assert game.board.wall_cells == frozenset()
+    assert game.board.wall_edges == frozenset()
 
 
-def test_reset_computes_symmetric_wall_ring_for_odd_board_sizes():
+def test_reset_computes_two_symmetric_wall_lines_for_odd_board_sizes():
     for size in (11, 15):
         game = Game(board_size=size, walls_enabled=True)
-        cells = game.board.wall_cells
-        assert cells != frozenset()
-        # 180-degree rotationally symmetric about the board center, so
-        # neither player's approach to the center is favored.
-        assert cells == {(size - 1 - r, size - 1 - c) for r, c in cells}
-        # The exact center cell and its four cardinal neighbors stay open
-        # so the walled area is reachable rather than a sealed island.
+        edges = game.board.wall_edges
+        assert edges != frozenset()
+        assert len(edges) == 2 * WALL_LINE_LENGTH  # exactly two lines, not a ring
+
+        def mirror(cell: tuple[int, int]) -> tuple[int, int]:
+            r, c = cell
+            return (size - 1 - r, size - 1 - c)
+
+        mirrored = {frozenset({mirror(a), mirror(b)}) for edge in edges for a, b in (tuple(edge),)}
+        assert mirrored == edges  # 180-degree symmetric, so neither player is favored
+
+        # Exactly two straight lines: every edge's row pair collapses to one of two values.
+        row_pairs = {tuple(sorted({a[0], b[0]})) for edge in edges for a, b in (tuple(edge),)}
+        assert len(row_pairs) == 2
+
+        # No cell is ever sacrificed, so no wall touches the exact center cell
+        # or either player's own starting corner.
         center = size // 2
-        radius = WALL_RING_RADIUS
-        gaps = (
-            (center, center),
-            (center - radius, center),
-            (center + radius, center),
-            (center, center - radius),
-            (center, center + radius),
-        )
-        for r, c in gaps:
-            assert (r, c) not in cells
+        touched_cells = {cell for edge in edges for cell in edge}
+        assert (center, center) not in touched_cells
+        assert (0, 0) not in touched_cells
+        assert (size - 1, size - 1) not in touched_cells
 
 
 def test_attempt_place_captures_single_flag():

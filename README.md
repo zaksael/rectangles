@@ -48,12 +48,15 @@ than one flag at once if it covers them both.
 
 ## Walls
 
-An optional mode, off by default. When turned on, a ring of permanently
-unplaceable wall cells is seeded around the exact center of the board, with
-four gaps (one per side) so the center area is still reachable — just harder
-to build into — rather than sealed off entirely. The ring is centered on the
-board's middle cell, so it's symmetric for both players regardless of which
-corner they start from.
+An optional mode, off by default. When turned on, two short wall lines are
+seeded on the board — barriers that sit *between* cells rather than cells
+themselves, so no board area is ever sacrificed; every cell stays placeable.
+A piece simply can't be built across a wall line, and a piece on one side
+doesn't count as touching territory on the other, so the only way past one
+is to build around its ends. One wall sits near Player 1's own corner
+(upper-left of center), the other is its exact mirror image near Player 2's
+corner (lower-right of center), so the obstacle is symmetric for both
+players regardless of which corner they start from.
 
 ## Bot opponent
 

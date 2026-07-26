@@ -175,15 +175,15 @@ def test_load_game_old_format_without_flag_keys_defaults_disabled(tmp_path):
 def test_round_trip_preserves_walls_state(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=11, walls_enabled=True)
-    wall_cells = game.board.wall_cells
-    assert wall_cells != frozenset()
+    wall_edges = game.board.wall_edges
+    assert wall_edges != frozenset()
 
     persistence.save_game(game, path=path)
     loaded, loaded_series = persistence.load_game(path)
 
     assert loaded_series is None
     assert loaded.walls_enabled is True
-    assert loaded.board.wall_cells == wall_cells
+    assert loaded.board.wall_edges == wall_edges
 
 
 def test_load_game_old_format_without_walls_key_defaults_disabled(tmp_path):
@@ -198,7 +198,7 @@ def test_load_game_old_format_without_walls_key_defaults_disabled(tmp_path):
     assert result is not None
     loaded, _ = result
     assert loaded.walls_enabled is False
-    assert loaded.board.wall_cells == frozenset()
+    assert loaded.board.wall_edges == frozenset()
 
 
 def test_round_trip_preserves_series(tmp_path):
