@@ -41,6 +41,7 @@ class Player:
     start_corner: tuple[int, int]
     pieces: list[Rectangle] = field(default_factory=list)
     consecutive_skips: int = 0
+    flags_captured: int = 0
 
     @property
     def total_area(self) -> int:

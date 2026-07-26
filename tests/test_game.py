@@ -296,6 +296,88 @@ def test_no_blocked_game_over_before_first_move():
     assert game.check_game_over() is False
 
 
+def test_flag_conquest_disabled_by_default_no_flags_and_score_equals_area():
+    game = Game(board_size=8)
+    p1 = game.players[PLAYER_1]
+    assert game.board.flag_cells == frozenset()
+
+    game.board.place(p1, (0, 0), w=2, h=2)  # area 4
+
+    assert p1.flags_captured == 0
+    assert game.total_score(p1) == p1.total_area == 4
+
+
+def test_reset_computes_flag_positions_for_odd_board_sizes():
+    for size in (11, 15):
+        game = Game(board_size=size, flag_conquest_enabled=True)
+        assert game.board.flag_cells == frozenset({(0, size - 1), (size - 1, 0), (size // 2, size // 2)})
+
+
+def test_attempt_place_captures_single_flag():
+    # First move anchored at p1's start corner (0,0): a 6x6 piece (max dice
+    # value) reaches from (0,0) to (5,5), the board's center flag.
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6]))
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    assert game.board.flag_cells == {(0, 10), (10, 0), (5, 5)}
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True
+
+    assert p1.flags_captured == 1
+    assert p2.flags_captured == 0
+
+
+def test_attempt_place_captures_two_flags_in_one_placement():
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([5, 6, 1, 1, 6, 6]))
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+
+    # P1's first move: anchored at (0,0), covers rows0-5/cols0-4 - no flags,
+    # but leaves column 4 owned so a later piece can be adjacent to it.
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 5, 6) is True
+    assert p1.flags_captured == 0
+    assert game.check_game_over() is False
+    game.end_turn()
+
+    # P2's first move: a 1x1 at its own start corner, unrelated to any flag.
+    game.roll_dice()
+    assert game.attempt_place((10, 10), 1, 1) is True
+    assert p2.flags_captured == 0
+    assert game.check_game_over() is False
+    game.end_turn()
+
+    # P1's second move: a 6x6 piece at (0,5), edge-adjacent to the column-4
+    # territory from turn 1, spans rows0-5/cols5-10 - covering both the
+    # (0,10) corner flag and the (5,5) center flag in a single placement.
+    game.roll_dice()
+    assert game.attempt_place((0, 5), 6, 6) is True
+
+    assert p1.flags_captured == 2
+    assert p2.flags_captured == 0
+
+
+def test_total_score_can_decide_a_winner_area_alone_would_not():
+    game = Game(board_size=8, flag_conquest_enabled=True, flag_bonus_points=5)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=5, h=2)  # area 10
+    game.board.place(p2, (6, 4), w=4, h=2)  # area 8
+    p2.flags_captured = 1  # total_score: 8 + 1*5 = 13
+
+    assert p1.total_area > p2.total_area  # area alone would favor p1
+    assert game.winner() == PLAYER_2  # but the flag bonus decides it
+
+
+def test_surrender_winner_unaffected_by_flag_bonus():
+    game = Game(board_size=8, flag_conquest_enabled=True, flag_bonus_points=100)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=5, h=5)
+    p1.flags_captured = 3  # would dominate on score alone
+
+    game.surrender()  # current_player_id is PLAYER_1
+
+    assert game.winner() == PLAYER_2  # opponent wins regardless of score
+
+
 def test_winner_area_sum():
     game = Game(board_size=8)
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]

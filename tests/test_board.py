@@ -119,6 +119,18 @@ def test_frontier_excludes_opponent_and_own_cells():
     assert (2, 0) in frontier
 
 
+def test_board_flag_cells_default_empty():
+    board = Board(size=6)
+    assert board.flag_cells == frozenset()
+
+
+def test_board_flag_cells_stored_and_placeable_like_any_empty_cell():
+    board = Board(size=6, flag_cells=frozenset({(0, 5), (5, 0)}))
+    p1, _ = make_players(6)
+    assert board.flag_cells == frozenset({(0, 5), (5, 0)})
+    assert board.can_place(p1, (0, 0), w=1, h=1) is True  # flag cells impose no extra restriction
+
+
 def test_legal_top_lefts_matches_brute_force_can_place():
     board = Board(size=6)
     p1, p2 = make_players(6)

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pygame
 
-from ..constants import BOARD_SIZE_PRESETS, SERIES_LENGTH_PRESETS, SKIP_LIMIT_PRESETS
+from ..constants import (
+    BOARD_SIZE_PRESETS,
+    FLAG_BONUS_POINTS_PRESETS,
+    SERIES_LENGTH_PRESETS,
+    SKIP_LIMIT_PRESETS,
+)
 
 CELL_PX = 44
 
@@ -12,7 +17,112 @@ MAX_BOARD_SIZE = max(BOARD_SIZE_PRESETS)
 BOARD_PX = MAX_BOARD_SIZE * CELL_PX
 PANEL_WIDTH = 340
 WINDOW_WIDTH = BOARD_PX + PANEL_WIDTH
-WINDOW_HEIGHT = BOARD_PX
+
+
+def cell_rect(r: int, c: int) -> pygame.Rect:
+    return pygame.Rect(c * CELL_PX, r * CELL_PX, CELL_PX, CELL_PX)
+
+
+def piece_rect(top_left: tuple[int, int], w: int, h: int) -> pygame.Rect:
+    r, c = top_left
+    return pygame.Rect(c * CELL_PX, r * CELL_PX, w * CELL_PX, h * CELL_PX)
+
+
+def board_rect(board_size: int) -> pygame.Rect:
+    return pygame.Rect(0, 0, board_size * CELL_PX, board_size * CELL_PX)
+
+
+def pixel_to_cell(x: int, y: int, board_size: int) -> tuple[int, int] | None:
+    if not board_rect(board_size).collidepoint(x, y):
+        return None
+    return (y // CELL_PX, x // CELL_PX)
+
+
+def _centered_button_row(
+    values: tuple[int, ...],
+    y: int,
+    center_x: int = WINDOW_WIDTH // 2,
+    button_w: int = 90,
+    button_h: int = 50,
+    gap: int = 16,
+) -> dict[int, pygame.Rect]:
+    total_w = len(values) * button_w + (len(values) - 1) * gap
+    start_x = center_x - total_w // 2
+    return {
+        value: pygame.Rect(start_x + i * (button_w + gap), y, button_w, button_h)
+        for i, value in enumerate(values)
+    }
+
+
+# Settings are grouped into two side-by-side cards rather than one ever-taller
+# vertical stack: "Game Rules" on the left, "Opponent & Match" on the right.
+SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
+SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
+
+SETTINGS_LEFT_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 560)
+SETTINGS_RIGHT_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 360)
+
+SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
+    BOARD_SIZE_PRESETS, y=210, center_x=SETTINGS_LEFT_COLUMN_X
+)
+SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(
+    SKIP_LIMIT_PRESETS, y=310, center_x=SETTINGS_LEFT_COLUMN_X
+)
+SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 410, 160, 50)
+SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 510, 160, 50)
+SETTINGS_FLAG_BONUS_BUTTON_RECTS = _centered_button_row(
+    FLAG_BONUS_POINTS_PRESETS, y=610, center_x=SETTINGS_LEFT_COLUMN_X
+)
+
+SETTINGS_BOT_BUTTON_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 80, 210, 160, 50)
+SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
+    SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X
+)
+
+_SETTINGS_BUTTON_W = 200
+_SETTINGS_BUTTON_H = 56
+_SETTINGS_BUTTON_GAP = 20
+# Derived from the (now taller, to fit the flag-conquest rows) left card
+# rather than a hardcoded Y, so the two never overlap.
+_SETTINGS_START_BUTTONS_Y = SETTINGS_LEFT_CARD_RECT.bottom + 16
+_SETTINGS_BUTTONS_START_X = (
+    WINDOW_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
+) // 2
+
+SETTINGS_START_BUTTON_RECT = pygame.Rect(
+    _SETTINGS_BUTTONS_START_X, _SETTINGS_START_BUTTONS_Y, _SETTINGS_BUTTON_W, _SETTINGS_BUTTON_H
+)
+SETTINGS_START_SERIES_BUTTON_RECT = pygame.Rect(
+    _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
+    _SETTINGS_START_BUTTONS_Y,
+    _SETTINGS_BUTTON_W,
+    _SETTINGS_BUTTON_H,
+)
+
+# Exit / Resume sit in their own centered rows below the Start Game / Start
+# Series row, each slightly shorter so all three rows fit under WINDOW_HEIGHT.
+_SETTINGS_SECONDARY_BUTTON_H = 48
+
+_SETTINGS_EXIT_BUTTON_Y = _SETTINGS_START_BUTTONS_Y + _SETTINGS_BUTTON_H + 16
+SETTINGS_EXIT_BUTTON_RECT = pygame.Rect(
+    (WINDOW_WIDTH - _SETTINGS_BUTTON_W) // 2,
+    _SETTINGS_EXIT_BUTTON_Y,
+    _SETTINGS_BUTTON_W,
+    _SETTINGS_SECONDARY_BUTTON_H,
+)
+
+_SETTINGS_RESUME_BUTTON_Y = _SETTINGS_EXIT_BUTTON_Y + _SETTINGS_SECONDARY_BUTTON_H + 12
+SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
+    (WINDOW_WIDTH - _SETTINGS_BUTTON_W) // 2,
+    _SETTINGS_RESUME_BUTTON_Y,
+    _SETTINGS_BUTTON_W,
+    _SETTINGS_SECONDARY_BUTTON_H,
+)
+
+# The window is at least as tall as the largest board, but grows further if
+# the settings screen's button stack needs more room than that (e.g. once the
+# flag-conquest rows push the left card taller).
+WINDOW_HEIGHT = max(BOARD_PX, SETTINGS_RESUME_BUTTON_RECT.bottom + 32)
 
 PANEL_RECT = pygame.Rect(BOARD_PX, 0, PANEL_WIDTH, WINDOW_HEIGHT)
 
@@ -87,101 +197,6 @@ CONFIRM_NO_BUTTON_RECT = pygame.Rect(
     _CONFIRM_BUTTONS_Y,
     _CONFIRM_BUTTON_W,
     _CONFIRM_BUTTON_H,
-)
-
-
-def cell_rect(r: int, c: int) -> pygame.Rect:
-    return pygame.Rect(c * CELL_PX, r * CELL_PX, CELL_PX, CELL_PX)
-
-
-def piece_rect(top_left: tuple[int, int], w: int, h: int) -> pygame.Rect:
-    r, c = top_left
-    return pygame.Rect(c * CELL_PX, r * CELL_PX, w * CELL_PX, h * CELL_PX)
-
-
-def board_rect(board_size: int) -> pygame.Rect:
-    return pygame.Rect(0, 0, board_size * CELL_PX, board_size * CELL_PX)
-
-
-def pixel_to_cell(x: int, y: int, board_size: int) -> tuple[int, int] | None:
-    if not board_rect(board_size).collidepoint(x, y):
-        return None
-    return (y // CELL_PX, x // CELL_PX)
-
-
-def _centered_button_row(
-    values: tuple[int, ...],
-    y: int,
-    center_x: int = WINDOW_WIDTH // 2,
-    button_w: int = 90,
-    button_h: int = 50,
-    gap: int = 16,
-) -> dict[int, pygame.Rect]:
-    total_w = len(values) * button_w + (len(values) - 1) * gap
-    start_x = center_x - total_w // 2
-    return {
-        value: pygame.Rect(start_x + i * (button_w + gap), y, button_w, button_h)
-        for i, value in enumerate(values)
-    }
-
-
-# Settings are grouped into two side-by-side cards rather than one ever-taller
-# vertical stack: "Game Rules" on the left, "Opponent & Match" on the right.
-SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
-SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
-
-SETTINGS_LEFT_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 360)
-SETTINGS_RIGHT_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 360)
-
-SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
-    BOARD_SIZE_PRESETS, y=210, center_x=SETTINGS_LEFT_COLUMN_X
-)
-SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(
-    SKIP_LIMIT_PRESETS, y=310, center_x=SETTINGS_LEFT_COLUMN_X
-)
-SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 410, 160, 50)
-
-SETTINGS_BOT_BUTTON_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 80, 210, 160, 50)
-SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
-    SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X
-)
-
-_SETTINGS_BUTTON_W = 200
-_SETTINGS_BUTTON_H = 56
-_SETTINGS_BUTTON_GAP = 20
-_SETTINGS_START_BUTTONS_Y = 496
-_SETTINGS_BUTTONS_START_X = (
-    WINDOW_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
-) // 2
-
-SETTINGS_START_BUTTON_RECT = pygame.Rect(
-    _SETTINGS_BUTTONS_START_X, _SETTINGS_START_BUTTONS_Y, _SETTINGS_BUTTON_W, _SETTINGS_BUTTON_H
-)
-SETTINGS_START_SERIES_BUTTON_RECT = pygame.Rect(
-    _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
-    _SETTINGS_START_BUTTONS_Y,
-    _SETTINGS_BUTTON_W,
-    _SETTINGS_BUTTON_H,
-)
-
-# Exit / Resume sit in their own centered rows below the Start Game / Start
-# Series row, each slightly shorter so all three rows fit under WINDOW_HEIGHT.
-_SETTINGS_SECONDARY_BUTTON_H = 48
-
-_SETTINGS_EXIT_BUTTON_Y = _SETTINGS_START_BUTTONS_Y + _SETTINGS_BUTTON_H + 16
-SETTINGS_EXIT_BUTTON_RECT = pygame.Rect(
-    (WINDOW_WIDTH - _SETTINGS_BUTTON_W) // 2,
-    _SETTINGS_EXIT_BUTTON_Y,
-    _SETTINGS_BUTTON_W,
-    _SETTINGS_SECONDARY_BUTTON_H,
-)
-
-_SETTINGS_RESUME_BUTTON_Y = _SETTINGS_EXIT_BUTTON_Y + _SETTINGS_SECONDARY_BUTTON_H + 12
-SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
-    (WINDOW_WIDTH - _SETTINGS_BUTTON_W) // 2,
-    _SETTINGS_RESUME_BUTTON_Y,
-    _SETTINGS_BUTTON_W,
-    _SETTINGS_SECONDARY_BUTTON_H,
 )
 
 _GAME_OVER_BUTTON_W = 150

@@ -1,7 +1,14 @@
 import pygame
 
 from rectangles import persistence
-from rectangles.constants import BOARD_SIZE_PRESETS, PLAYER_1, PLAYER_2, SERIES_LENGTH_PRESETS, SKIP_LIMIT_PRESETS
+from rectangles.constants import (
+    BOARD_SIZE_PRESETS,
+    FLAG_BONUS_POINTS_PRESETS,
+    PLAYER_1,
+    PLAYER_2,
+    SERIES_LENGTH_PRESETS,
+    SKIP_LIMIT_PRESETS,
+)
 from rectangles.game import Game, TurnState
 from rectangles.series import Series
 from rectangles.ui import layout
@@ -553,6 +560,29 @@ def test_settings_doubles_button_toggles_selection():
 
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_doubles_enabled is False
+
+
+def test_settings_flag_conquest_button_toggles_selection():
+    ui_state = UIState()
+    assert ui_state.selected_flag_conquest_enabled is False
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT.center
+    )
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_flag_conquest_enabled is True
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_flag_conquest_enabled is False
+
+
+def test_settings_flag_bonus_buttons_update_selection():
+    ui_state = UIState()
+    for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
+        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+        assert handle_settings_event(event, ui_state) is True
+        assert ui_state.selected_flag_bonus_points == value
+    assert set(layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS) == set(FLAG_BONUS_POINTS_PRESETS)
 
 
 def test_settings_bot_button_toggles_selection():

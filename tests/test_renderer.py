@@ -57,6 +57,15 @@ def test_draw_skipped_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_flag_conquest_smoke(renderer):
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag, leaves 2 uncaptured
+    if not game.check_game_over():
+        game.end_turn()
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 @pytest.mark.parametrize(
     "reason",
     [

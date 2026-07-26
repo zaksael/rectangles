@@ -9,6 +9,8 @@ from .constants import (
     DICE_MAX,
     DICE_MIN,
     DOUBLES_ENABLED,
+    FLAG_BONUS_POINTS,
+    FLAG_CONQUEST_ENABLED,
     PLAYER_1,
     PLAYER_2,
     PLAYER_NAMES,
@@ -37,11 +39,15 @@ class Game:
         board_size: int = BOARD_SIZE,
         skip_limit: int = SKIP_LIMIT,
         doubles_enabled: bool = DOUBLES_ENABLED,
+        flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
+        flag_bonus_points: int = FLAG_BONUS_POINTS,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
         self.skip_limit = skip_limit
         self.doubles_enabled = doubles_enabled
+        self.flag_conquest_enabled = flag_conquest_enabled
+        self.flag_bonus_points = flag_bonus_points
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -57,7 +63,13 @@ class Game:
         self.reset()
 
     def reset(self) -> None:
-        self.board = Board(self.board_size)
+        size = self.board_size
+        flag_cells = (
+            frozenset({(0, size - 1), (size - 1, 0), (size // 2, size // 2)})
+            if self.flag_conquest_enabled
+            else frozenset()
+        )
+        self.board = Board(self.board_size, flag_cells=flag_cells)
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
             PLAYER_2: Player(
@@ -114,6 +126,8 @@ class Game:
         if legal_set is None or top_left not in legal_set:
             return False
         rect = self.board.place(self.current_player, top_left, w, h)
+        captured = self.board.flag_cells.intersection(rect.cells())
+        self.current_player.flags_captured += len(captured)
         self.current_player.consecutive_skips = 0
         self.history.append(TurnRecord(self.current_player_id, self.last_roll, placed=rect))
         return True
@@ -157,12 +171,15 @@ class Game:
                 return True
         return False
 
+    def total_score(self, player: Player) -> int:
+        return player.total_area + player.flags_captured * self.flag_bonus_points
+
     def winner(self) -> int | None:
         if self.game_over_reason == GameOverReason.SURRENDER and self.surrendered_player_id is not None:
             return PLAYER_2 if self.surrendered_player_id == PLAYER_1 else PLAYER_1
         p1, p2 = self.players[PLAYER_1], self.players[PLAYER_2]
-        if p1.total_area > p2.total_area:
+        if self.total_score(p1) > self.total_score(p2):
             return PLAYER_1
-        if p2.total_area > p1.total_area:
+        if self.total_score(p2) > self.total_score(p1):
             return PLAYER_2
         return None

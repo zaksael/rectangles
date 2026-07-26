@@ -42,6 +42,8 @@ def run() -> None:
                 board_size=ui_state.selected_board_size,
                 skip_limit=ui_state.selected_skip_limit,
                 doubles_enabled=ui_state.selected_doubles_enabled,
+                flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
+                flag_bonus_points=ui_state.selected_flag_bonus_points,
             )
             series = None
             series_game_recorded = False
@@ -54,6 +56,8 @@ def run() -> None:
                 board_size=ui_state.selected_board_size,
                 skip_limit=ui_state.selected_skip_limit,
                 doubles_enabled=ui_state.selected_doubles_enabled,
+                flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
+                flag_bonus_points=ui_state.selected_flag_bonus_points,
             )
             game = series.new_game()
             series_game_recorded = False

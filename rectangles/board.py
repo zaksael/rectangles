@@ -5,8 +5,9 @@ from .models import Player, Rectangle
 
 
 class Board:
-    def __init__(self, size: int = BOARD_SIZE):
+    def __init__(self, size: int = BOARD_SIZE, flag_cells: frozenset[tuple[int, int]] = frozenset()):
         self.size = size
+        self.flag_cells = flag_cells
         self._grid: list[list[int | None]] = [[None] * size for _ in range(size)]
 
     def in_bounds(self, r: int, c: int) -> bool:

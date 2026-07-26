@@ -65,3 +65,20 @@ def test_new_game_uses_series_settings():
     assert game.board_size == 8
     assert game.skip_limit == 4
     assert game.doubles_enabled is True
+
+
+def test_new_game_uses_series_flag_conquest_settings():
+    series = Series(length=5, board_size=11, skip_limit=4, flag_conquest_enabled=True, flag_bonus_points=20)
+
+    game = series.new_game()
+
+    assert game.flag_conquest_enabled is True
+    assert game.flag_bonus_points == 20
+
+
+def test_new_game_defaults_flag_conquest_disabled():
+    series = Series(length=3, board_size=11, skip_limit=2)
+
+    game = series.new_game()
+
+    assert game.flag_conquest_enabled is False

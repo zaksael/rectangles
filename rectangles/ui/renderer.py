@@ -27,6 +27,7 @@ DIVIDER_COLOR = (200, 200, 208)
 ROW_ACTIVE_BG_COLOR = (205, 230, 214)
 CARD_BG_COLOR = (255, 255, 255)
 CARD_BORDER_COLOR = (215, 215, 222)
+FLAG_COLOR = (230, 180, 30)
 
 
 class Renderer:
@@ -98,6 +99,29 @@ class Renderer:
             hovered=hovered(layout.SETTINGS_DOUBLES_BUTTON_RECT),
         )
 
+        flag_label = self.font.render("Flag Conquest", True, TEXT_COLOR)
+        self.screen.blit(
+            flag_label, flag_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 480))
+        )
+        self._button(
+            layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT,
+            "ON" if ui_state.selected_flag_conquest_enabled else "OFF",
+            selected=ui_state.selected_flag_conquest_enabled,
+            hovered=hovered(layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT),
+        )
+
+        flag_bonus_label = self.font.render("Flag bonus points", True, TEXT_COLOR)
+        self.screen.blit(
+            flag_bonus_label, flag_bonus_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 580))
+        )
+        for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
+            self._button(
+                rect,
+                f"+{value}",
+                selected=value == ui_state.selected_flag_bonus_points,
+                hovered=hovered(rect),
+            )
+
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
         self._button(
@@ -145,6 +169,8 @@ class Renderer:
                 pygame.draw.rect(self.screen, EMPTY_CELL_COLOR, rect)
                 pygame.draw.rect(self.screen, GRID_LINE_COLOR, rect, width=1)
 
+        self._draw_flags(game)
+
         for player in game.players.values():
             color = constants.PLAYER_COLORS[player.id]
             border = constants.PLAYER_BORDER_COLORS[player.id]
@@ -154,6 +180,15 @@ class Renderer:
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
+
+    def _draw_flags(self, game: Game) -> None:
+        for r, c in game.board.flag_cells:
+            if game.board.owner_at(r, c) is not None:
+                continue
+            cx, cy = layout.cell_rect(r, c).center
+            half = layout.CELL_PX // 4
+            points = [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)]
+            pygame.draw.polygon(self.screen, FLAG_COLOR, points)
 
     def _draw_coverable_cells(self, game: Game, ui_state: UIState) -> None:
         if ui_state.current_dims is None:
@@ -237,7 +272,9 @@ class Renderer:
                 pygame.draw.rect(self.screen, ROW_ACTIVE_BG_COLOR, row_rect, border_radius=6)
             swatch = pygame.Rect(x, y + 2, 18, 18)
             pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
-            label = f"{player.name}: {player.total_area}"
+            label = f"{player.name}: {game.total_score(player)}"
+            if player.flags_captured:
+                label += f"  🚩{player.flags_captured}"
             if player.consecutive_skips:
                 label += f"  (skipped {player.consecutive_skips}/{game.skip_limit})"
             self._text(label, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
@@ -334,7 +371,7 @@ class Renderer:
             headline = "It's a tie!"
         else:
             headline = f"{game.players[winner].name} wins!"
-        score_line = f"{p1.name}: {p1.total_area}    {p2.name}: {p2.total_area}"
+        score_line = f"{p1.name}: {game.total_score(p1)}    {p2.name}: {game.total_score(p2)}"
 
         center_x = layout.WINDOW_WIDTH // 2
         center_y = layout.WINDOW_HEIGHT // 2

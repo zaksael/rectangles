@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+from .constants import FLAG_BONUS_POINTS
 from .game import Game, GameOverReason, TurnState
 from .models import Player, Rectangle, TurnRecord
 from .series import Series
@@ -32,6 +33,8 @@ def _series_to_dict(series: Series) -> dict:
         "board_size": series.board_size,
         "skip_limit": series.skip_limit,
         "doubles_enabled": series.doubles_enabled,
+        "flag_conquest_enabled": series.flag_conquest_enabled,
+        "flag_bonus_points": series.flag_bonus_points,
         "wins": {str(player_id): wins for player_id, wins in series.wins.items()},
         "games_played": series.games_played,
     }
@@ -43,6 +46,8 @@ def _series_from_dict(data: dict) -> Series:
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
         doubles_enabled=data.get("doubles_enabled", False),
+        flag_conquest_enabled=data.get("flag_conquest_enabled", False),
+        flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
     )
     series.wins = {int(player_id): wins for player_id, wins in data["wins"].items()}
     series.games_played = data["games_played"]
@@ -56,6 +61,8 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "board_size": game.board_size,
         "skip_limit": game.skip_limit,
         "doubles_enabled": game.doubles_enabled,
+        "flag_conquest_enabled": game.flag_conquest_enabled,
+        "flag_bonus_points": game.flag_bonus_points,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
         "last_roll": list(game.last_roll) if game.last_roll is not None else None,
@@ -68,6 +75,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
                 "name": player.name,
                 "start_corner": list(player.start_corner),
                 "consecutive_skips": player.consecutive_skips,
+                "flags_captured": player.flags_captured,
                 "pieces": [_rect_to_dict(rect) for rect in player.pieces],
             }
             for player in game.players.values()
@@ -88,6 +96,8 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
         doubles_enabled=data.get("doubles_enabled", False),
+        flag_conquest_enabled=data.get("flag_conquest_enabled", False),
+        flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
     )
 
     for player_id_str, player_data in data["players"].items():
@@ -96,6 +106,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         player.name = player_data["name"]
         player.start_corner = tuple(player_data["start_corner"])
         player.consecutive_skips = player_data["consecutive_skips"]
+        player.flags_captured = player_data.get("flags_captured", 0)
         for piece_data in player_data["pieces"]:
             top_left = tuple(piece_data["top_left"])
             game.board.place(player, top_left, piece_data["width"], piece_data["height"])

@@ -31,8 +31,20 @@ area when the game ends wins.
     match, 3 by default), or
   - one player surrenders, in which case the other player wins outright
     regardless of area covered so far.
-- Otherwise, whoever has placed the most total area wins; equal areas is a
-  tie.
+- Otherwise, whoever has placed the most total score (area, plus any flag
+  bonus points — see [Flag Conquest](#flag-conquest) below) wins; equal
+  scores is a tie.
+
+## Flag Conquest
+
+An optional mode, off by default. When turned on, three flags are seeded on
+the board: the two corners *not* used as a starting corner (upper-right and
+bottom-left), plus the exact center cell — which is why board sizes are
+always odd, so the center is a single, unambiguous cell. Whichever player's
+placed piece happens to cover a flag captures it immediately, earning a
+configurable number of bonus points (5/10/20, selectable on the settings
+screen) added on top of their area. A single large piece can capture more
+than one flag at once if it covers them both.
 
 ## Bot opponent
 
@@ -44,9 +56,10 @@ input for Player 2's controls is ignored while the bot is taking its turn.
 ## Series mode
 
 Instead of a single game, you can play a best-of-3 or best-of-5 series
-against the same opponent: board size and skip limit are locked in once for
-every round, and each round's winner (by area, same rules as above) earns one
-series win. A tied round counts toward the games played but doesn't award
+against the same opponent: board size, skip limit, and mode settings
+(including Flag Conquest, if enabled) are locked in once for every round,
+and each round's winner (by score, same rules as above) earns one series
+win. A tied round counts toward the games played but doesn't award
 either side a point. The series ends as soon as one player reaches the
 majority of wins (2 of 3, or 3 of 5) — it doesn't need to play out every
 round — or, in the rare case of enough tied rounds, can itself end tied.
@@ -69,7 +82,8 @@ uv run python main.py
 ```
 
 The app opens to a settings screen — pick a board size and skip limit
-(preset buttons), optionally toggle the doubles house rule or the
+(preset buttons), optionally toggle the doubles house rule,
+[Flag Conquest](#flag-conquest) (and its bonus-points preset) or the
 [bot opponent](#bot-opponent), then click **Start Game**/`Space` for a
 single match, or pick a series length (best-of-3/5) and click
 **Start Series** to play a match series against the same opponent (see

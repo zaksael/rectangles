@@ -1,7 +1,7 @@
 import json
 
 from rectangles import persistence
-from rectangles.constants import PLAYER_1, PLAYER_2
+from rectangles.constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.series import Series
 
@@ -121,10 +121,49 @@ def test_round_trip_preserves_game_over_state(tmp_path):
     assert loaded.surrendered_player_id is None
 
 
+def test_round_trip_preserves_flag_conquest_state(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=11, flag_conquest_enabled=True, flag_bonus_points=20, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
+    p1 = game.players[PLAYER_1]
+    assert p1.flags_captured == 1
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.flag_conquest_enabled is True
+    assert loaded.flag_bonus_points == 20
+    assert loaded.board.flag_cells == {(0, 10), (10, 0), (5, 5)}
+    assert loaded.players[PLAYER_1].flags_captured == 1
+    assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area + 20
+
+
+def test_load_game_old_format_without_flag_keys_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["flag_conquest_enabled"]
+    del data["flag_bonus_points"]
+    for player_data in data["players"].values():
+        del player_data["flags_captured"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.flag_conquest_enabled is False
+    assert loaded.flag_bonus_points == FLAG_BONUS_POINTS
+    assert loaded.players[PLAYER_1].flags_captured == 0
+    assert loaded.players[PLAYER_2].flags_captured == 0
+
+
 def test_round_trip_preserves_series(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)
-    series = Series(length=5, board_size=6, skip_limit=2)
+    series = Series(length=5, board_size=6, skip_limit=2, flag_conquest_enabled=True, flag_bonus_points=20)
     series.record_game(PLAYER_1)
     series.record_game(PLAYER_2)
 
@@ -135,6 +174,8 @@ def test_round_trip_preserves_series(tmp_path):
     assert loaded_series.length == 5
     assert loaded_series.board_size == 6
     assert loaded_series.skip_limit == 2
+    assert loaded_series.flag_conquest_enabled is True
+    assert loaded_series.flag_bonus_points == 20
     assert loaded_series.wins == {PLAYER_1: 1, PLAYER_2: 1}
     assert loaded_series.games_played == 2
 

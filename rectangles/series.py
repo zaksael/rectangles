@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .constants import PLAYER_1, PLAYER_2
+from .constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2
 from .game import Game
 
 
@@ -12,6 +12,8 @@ class Series:
     board_size: int
     skip_limit: int
     doubles_enabled: bool = False
+    flag_conquest_enabled: bool = False
+    flag_bonus_points: int = FLAG_BONUS_POINTS
     wins: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
     games_played: int = 0
 
@@ -40,5 +42,9 @@ class Series:
 
     def new_game(self) -> Game:
         return Game(
-            board_size=self.board_size, skip_limit=self.skip_limit, doubles_enabled=self.doubles_enabled
+            board_size=self.board_size,
+            skip_limit=self.skip_limit,
+            doubles_enabled=self.doubles_enabled,
+            flag_conquest_enabled=self.flag_conquest_enabled,
+            flag_bonus_points=self.flag_bonus_points,
         )

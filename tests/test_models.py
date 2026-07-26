@@ -28,6 +28,11 @@ def test_player_total_area_zero_with_no_pieces():
     assert player.total_area == 0
 
 
+def test_player_flags_captured_defaults_to_zero():
+    player = Player(1, "Player 1", (0, 0))
+    assert player.flags_captured == 0
+
+
 def test_player_has_moved_reflects_pieces():
     player = Player(1, "Player 1", (0, 0))
     assert player.has_moved is False
