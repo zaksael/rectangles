@@ -30,6 +30,15 @@ class ScriptedRandom:
         return self._values.pop(0)
 
 
+def _finished_game(board_size, p1_area, p2_area):
+    game = Game(board_size=board_size)
+    if p1_area:
+        game.board.place(game.players[PLAYER_1], (0, 0), p1_area, 1)
+    if p2_area:
+        game.board.place(game.players[PLAYER_2], (0, 0), p2_area, 1)
+    return game
+
+
 def test_compute_top_left_p1_uses_cell_directly():
     game = Game(board_size=6)
     assert compute_top_left(game, w=2, h=2, cell=(2, 3)) == (2, 3)
@@ -412,7 +421,7 @@ def test_game_over_new_game_button_with_incomplete_series_requests_next_game():
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(1, 0)  # 1 of 3 rounds played, not yet decided
+    series.record_game(_finished_game(6, 1, 0))  # 1 of 3 rounds played, not yet decided
     ui_state = UIState(screen=Screen.PLAYING)
 
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
@@ -426,9 +435,9 @@ def test_game_over_new_game_button_with_completed_series_returns_to_settings():
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(1, 0)
-    series.record_game(1, 0)
-    series.record_game(1, 0)  # all 3 rounds played
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))  # all 3 rounds played
     ui_state = UIState(screen=Screen.PLAYING)
 
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
@@ -442,7 +451,7 @@ def test_game_over_key_n_with_incomplete_series_requests_next_game():
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(1, 0)
+    series.record_game(_finished_game(6, 1, 0))
     ui_state = UIState(screen=Screen.PLAYING)
 
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_n)

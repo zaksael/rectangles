@@ -6,6 +6,13 @@ from .constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2
 from .game import Game
 
 
+@dataclass(frozen=True)
+class RoundResult:
+    area: dict[int, int]
+    flags_captured: dict[int, int]
+    total: dict[int, int]
+
+
 @dataclass
 class Series:
     length: int
@@ -16,11 +23,25 @@ class Series:
     flag_bonus_points: int = FLAG_BONUS_POINTS
     scores: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
     games_played: int = 0
+    rounds: list[RoundResult] = field(default_factory=list)
 
-    def record_game(self, p1_score: int, p2_score: int) -> None:
+    def record_game(self, game: Game) -> None:
         self.games_played += 1
-        self.scores[PLAYER_1] += p1_score
-        self.scores[PLAYER_2] += p2_score
+        p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+        result = RoundResult(
+            area={PLAYER_1: p1.total_area, PLAYER_2: p2.total_area},
+            flags_captured={PLAYER_1: p1.flags_captured, PLAYER_2: p2.flags_captured},
+            total={PLAYER_1: game.total_score(p1), PLAYER_2: game.total_score(p2)},
+        )
+        self.rounds.append(result)
+        self.scores[PLAYER_1] += result.total[PLAYER_1]
+        self.scores[PLAYER_2] += result.total[PLAYER_2]
+
+    def total_area(self, player_id: int) -> int:
+        return sum(r.area[player_id] for r in self.rounds)
+
+    def total_flags_captured(self, player_id: int) -> int:
+        return sum(r.flags_captured[player_id] for r in self.rounds)
 
     def is_complete(self) -> bool:
         return self.games_played >= self.length

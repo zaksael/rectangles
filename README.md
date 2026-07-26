@@ -62,7 +62,9 @@ round's score (same rules as above) adds to each player's running series
 total — a landslide round counts for more than a squeaker — so the whole
 series is always played out, and the player with the higher cumulative
 score at the end wins. Equal cumulative scores after all rounds is a
-tied series.
+tied series. Both the in-game panel and the between-rounds screen show a
+round-by-round breakdown (each round's score, plus flag bonus points when
+Flag Conquest is on) alongside series-wide totals.
 
 ## Requirements
 

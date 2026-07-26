@@ -3,7 +3,6 @@ from __future__ import annotations
 import pygame
 
 from .. import persistence
-from ..constants import PLAYER_1, PLAYER_2
 from ..game import Game, TurnState
 from ..series import Series
 from . import input as game_input
@@ -82,8 +81,7 @@ def run() -> None:
             ui_state.next_game_requested = False
 
         if series is not None and game is not None and game.state == TurnState.GAME_OVER and not series_game_recorded:
-            p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
-            series.record_game(game.total_score(p1), game.total_score(p2))
+            series.record_game(game)
             series_game_recorded = True
 
         if (

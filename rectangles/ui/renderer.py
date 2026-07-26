@@ -4,7 +4,7 @@ import pygame
 
 from .. import constants, persistence
 from ..game import Game, GameOverReason, TurnState
-from ..series import Series
+from ..series import RoundResult, Series
 from . import layout
 from .state import ConfirmAction, Screen, UIState
 
@@ -324,6 +324,9 @@ class Renderer:
         self._text(history_label, (x, layout.PANEL_HISTORY_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
         self._draw_history(game, ui_state)
 
+        if series is not None:
+            self._draw_series_stats(series)
+
         self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
         self._button(layout.SURRENDER_BUTTON_RECT, "Surrender (S)")
         self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
@@ -357,6 +360,38 @@ class Renderer:
 
         if has_more:
             self._text("scroll for more ▼", (x, y), self.font_small, MUTED_TEXT_COLOR)
+
+    def _format_round_line(self, series: Series, index: int, result: RoundResult) -> str:
+        p1_flags = ""
+        p2_flags = ""
+        if series.flag_conquest_enabled:
+            if result.flags_captured[constants.PLAYER_1]:
+                p1_flags = f" (🚩{result.flags_captured[constants.PLAYER_1]})"
+            if result.flags_captured[constants.PLAYER_2]:
+                p2_flags = f" (🚩{result.flags_captured[constants.PLAYER_2]})"
+        return (
+            f"R{index}: P1 {result.total[constants.PLAYER_1]}{p1_flags}  -  "
+            f"{result.total[constants.PLAYER_2]}{p2_flags} P2"
+        )
+
+    def _format_series_totals_line(self, series: Series) -> str:
+        p1_flags = f" (🚩{series.total_flags_captured(constants.PLAYER_1)})" if series.flag_conquest_enabled else ""
+        p2_flags = f" (🚩{series.total_flags_captured(constants.PLAYER_2)})" if series.flag_conquest_enabled else ""
+        return (
+            f"Totals: P1 {series.total_area(constants.PLAYER_1)}{p1_flags}  -  "
+            f"{series.total_area(constants.PLAYER_2)}{p2_flags} P2"
+        )
+
+    def _draw_series_stats(self, series: Series) -> None:
+        x = layout.PANEL_X
+        self._divider(layout.PANEL_SERIES_DIVIDER_Y)
+        self._text("Series Stats", (x, layout.PANEL_SERIES_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
+        y = layout.PANEL_SERIES_START_Y
+        for index, result in enumerate(series.rounds, start=1):
+            self._text(self._format_round_line(series, index, result), (x, y), self.font_small, MUTED_TEXT_COLOR)
+            y += layout.PANEL_SERIES_ROW_HEIGHT
+        if series.rounds:
+            self._text(self._format_series_totals_line(series), (x, y), self.font_small, MUTED_TEXT_COLOR)
 
     def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
@@ -414,6 +449,17 @@ class Renderer:
         new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
         self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, new_game_label)
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
+
+        if series is not None and series.rounds:
+            y = layout.GAME_OVER_NEW_GAME_BUTTON_RECT.bottom + 40
+            for index, result in enumerate(series.rounds, start=1):
+                line_surf = self.font_small.render(
+                    self._format_round_line(series, index, result), True, (200, 200, 200)
+                )
+                self.screen.blit(line_surf, line_surf.get_rect(center=(center_x, y)))
+                y += layout.PANEL_SERIES_ROW_HEIGHT
+            totals_surf = self.font_small.render(self._format_series_totals_line(series), True, (200, 200, 200))
+            self.screen.blit(totals_surf, totals_surf.get_rect(center=(center_x, y)))
 
     def _draw_confirm_dialog(self, game: Game, ui_state: UIState) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)

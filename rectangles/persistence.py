@@ -7,7 +7,7 @@ from pathlib import Path
 from .constants import FLAG_BONUS_POINTS
 from .game import Game, GameOverReason, TurnState
 from .models import Player, Rectangle, TurnRecord
-from .series import Series
+from .series import RoundResult, Series
 
 SAVE_FORMAT_VERSION = 1
 SAVE_DIR = Path.home() / ".rectangles_game"
@@ -27,6 +27,22 @@ def _rect_from_dict(data: dict, owner: int) -> Rectangle:
     )
 
 
+def _round_to_dict(round_result: RoundResult) -> dict:
+    return {
+        "area": {str(player_id): value for player_id, value in round_result.area.items()},
+        "flags_captured": {str(player_id): value for player_id, value in round_result.flags_captured.items()},
+        "total": {str(player_id): value for player_id, value in round_result.total.items()},
+    }
+
+
+def _round_from_dict(data: dict) -> RoundResult:
+    return RoundResult(
+        area={int(player_id): value for player_id, value in data["area"].items()},
+        flags_captured={int(player_id): value for player_id, value in data["flags_captured"].items()},
+        total={int(player_id): value for player_id, value in data["total"].items()},
+    )
+
+
 def _series_to_dict(series: Series) -> dict:
     return {
         "length": series.length,
@@ -37,6 +53,7 @@ def _series_to_dict(series: Series) -> dict:
         "flag_bonus_points": series.flag_bonus_points,
         "scores": {str(player_id): score for player_id, score in series.scores.items()},
         "games_played": series.games_played,
+        "rounds": [_round_to_dict(r) for r in series.rounds],
     }
 
 
@@ -51,6 +68,7 @@ def _series_from_dict(data: dict) -> Series:
     )
     series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
     series.games_played = data["games_played"]
+    series.rounds = [_round_from_dict(r) for r in data.get("rounds", [])]
     return series
 
 

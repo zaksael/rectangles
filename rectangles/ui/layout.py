@@ -169,9 +169,19 @@ EXIT_BUTTON_RECT = pygame.Rect(
     PANEL_X + _FOOTER_BUTTON_W + _FOOTER_BUTTON_GAP, _FOOTER_BUTTON_Y, _FOOTER_BUTTON_W, 44
 )
 
-# Mouse-wheel hit region for scrolling the history log.
+# The history log's content never exceeds PANEL_HISTORY_MAX_ROWS, leaving a fixed idle
+# gap before the footer divider - the series stats block (when a series is active) lives
+# in that gap instead of needing its own dynamic layout.
+PANEL_SERIES_DIVIDER_Y = 558
+PANEL_SERIES_LABEL_Y = 572
+PANEL_SERIES_START_Y = 596
+PANEL_SERIES_ROW_HEIGHT = 20
+
+# Mouse-wheel hit region for scrolling the history log - stops at the series stats
+# section (when present) rather than the footer, so wheel input over that block doesn't
+# scroll an unrelated section.
 PANEL_HISTORY_REGION_RECT = pygame.Rect(
-    PANEL_X, PANEL_HISTORY_START_Y, PANEL_CONTENT_WIDTH, PANEL_FOOTER_DIVIDER_Y - PANEL_HISTORY_START_Y - 8
+    PANEL_X, PANEL_HISTORY_START_Y, PANEL_CONTENT_WIDTH, PANEL_SERIES_DIVIDER_Y - PANEL_HISTORY_START_Y - 8
 )
 
 _CONFIRM_DIALOG_WIDTH = 420

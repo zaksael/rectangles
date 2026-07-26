@@ -20,6 +20,15 @@ class ScriptedRandom:
         return self._values.pop(0)
 
 
+def _finished_game(board_size, p1_area, p2_area):
+    game = Game(board_size=board_size)
+    if p1_area:
+        game.board.place(game.players[PLAYER_1], (0, 0), p1_area, 1)
+    if p2_area:
+        game.board.place(game.players[PLAYER_2], (0, 0), p2_area, 1)
+    return game
+
+
 @pytest.fixture(scope="module")
 def renderer():
     pygame.init()
@@ -97,7 +106,7 @@ def test_draw_game_over_with_series_in_progress_smoke(renderer):
     game.state = TurnState.GAME_OVER
     game.game_over_reason = GameOverReason.BOARD_FULL
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(1, 0)
+    series.record_game(_finished_game(6, 1, 0))
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
 
 
@@ -106,9 +115,9 @@ def test_draw_game_over_with_series_complete_smoke(renderer):
     game.state = TurnState.GAME_OVER
     game.game_over_reason = GameOverReason.BOARD_FULL
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(1, 0)
-    series.record_game(1, 0)
-    series.record_game(1, 0)  # all 3 rounds played
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))  # all 3 rounds played
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
 
 
