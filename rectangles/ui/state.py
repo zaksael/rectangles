@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from ..constants import BOARD_SIZE, SERIES_LENGTH_PRESETS, SKIP_LIMIT
+from ..constants import BOARD_SIZE, DOUBLES_ENABLED, SERIES_LENGTH_PRESETS, SKIP_LIMIT
 
 
 class Screen(Enum):
@@ -26,6 +26,7 @@ class UIState:
     screen: Screen = Screen.SETTINGS
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
+    selected_doubles_enabled: bool = DOUBLES_ENABLED
     selected_series_length: int = SERIES_LENGTH_PRESETS[0]
     game_requested: bool = False
     resume_requested: bool = False

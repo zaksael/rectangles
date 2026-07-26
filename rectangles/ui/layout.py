@@ -124,6 +124,12 @@ SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(BOARD_SIZE_PRESETS, y=17
 SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(SKIP_LIMIT_PRESETS, y=292)
 SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(SERIES_LENGTH_PRESETS, y=406)
 
+# Sits beside the skip-limit row (same y) rather than its own row, since the
+# settings screen is already vertically tight but has unused horizontal room.
+SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(
+    SETTINGS_SKIP_LIMIT_BUTTON_RECTS[max(SKIP_LIMIT_PRESETS)].right + 40, 292, 160, 50
+)
+
 _SETTINGS_BUTTON_W = 200
 _SETTINGS_BUTTON_H = 56
 _SETTINGS_BUTTON_GAP = 20

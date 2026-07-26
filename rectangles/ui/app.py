@@ -36,7 +36,11 @@ def run() -> None:
                     running = False
 
         if ui_state.game_requested:
-            game = Game(board_size=ui_state.selected_board_size, skip_limit=ui_state.selected_skip_limit)
+            game = Game(
+                board_size=ui_state.selected_board_size,
+                skip_limit=ui_state.selected_skip_limit,
+                doubles_enabled=ui_state.selected_doubles_enabled,
+            )
             series = None
             series_game_recorded = False
             ui_state.game_requested = False
@@ -46,6 +50,7 @@ def run() -> None:
                 length=ui_state.selected_series_length,
                 board_size=ui_state.selected_board_size,
                 skip_limit=ui_state.selected_skip_limit,
+                doubles_enabled=ui_state.selected_doubles_enabled,
             )
             game = series.new_game()
             series_game_recorded = False

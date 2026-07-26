@@ -6,6 +6,9 @@ DICE_MAX = 6
 # A player who is skipped this many turns in a row ends the game.
 SKIP_LIMIT = 3
 
+# Whether rolling doubles grants the same player another turn.
+DOUBLES_ENABLED = False
+
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both.
 BOARD_SIZE_PRESETS = (8, 10, 12, 16)

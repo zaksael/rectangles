@@ -11,6 +11,7 @@ class Series:
     length: int
     board_size: int
     skip_limit: int
+    doubles_enabled: bool = False
     wins: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
     games_played: int = 0
 
@@ -38,4 +39,6 @@ class Series:
         return None
 
     def new_game(self) -> Game:
-        return Game(board_size=self.board_size, skip_limit=self.skip_limit)
+        return Game(
+            board_size=self.board_size, skip_limit=self.skip_limit, doubles_enabled=self.doubles_enabled
+        )

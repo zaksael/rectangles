@@ -70,6 +70,16 @@ class Renderer:
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
             self._button(rect, str(value), selected=value == ui_state.selected_skip_limit)
 
+        doubles_label = self.font.render("Doubles bonus turn", True, TEXT_COLOR)
+        self.screen.blit(
+            doubles_label, doubles_label.get_rect(center=(layout.SETTINGS_DOUBLES_BUTTON_RECT.centerx, 262))
+        )
+        self._button(
+            layout.SETTINGS_DOUBLES_BUTTON_RECT,
+            "ON" if ui_state.selected_doubles_enabled else "OFF",
+            selected=ui_state.selected_doubles_enabled,
+        )
+
         series_label = self.font.render("Series length (for Start Series)", True, TEXT_COLOR)
         self.screen.blit(series_label, series_label.get_rect(center=(center_x, 376)))
         for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
@@ -183,7 +193,8 @@ class Renderer:
         if game.state == TurnState.AWAITING_ROLL:
             prompt = "Your turn - roll the dice!"
             if (
-                game.history
+                game.doubles_enabled
+                and game.history
                 and game.history[-1].player_id == game.current_player_id
                 and game.history[-1].roll[0] == game.history[-1].roll[1]
             ):
@@ -241,7 +252,7 @@ class Renderer:
             else:
                 a, b = record.roll
                 line = f"{player.name} skipped (rolled {a},{b})"
-            if record.roll[0] == record.roll[1]:
+            if game.doubles_enabled and record.roll[0] == record.roll[1]:
                 line += " - doubles!"
             self._text(line, (x + 16, y), self.font_small, MUTED_TEXT_COLOR)
             y += layout.PANEL_HISTORY_ROW_HEIGHT

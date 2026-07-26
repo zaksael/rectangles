@@ -31,13 +31,19 @@ def _series_to_dict(series: Series) -> dict:
         "length": series.length,
         "board_size": series.board_size,
         "skip_limit": series.skip_limit,
+        "doubles_enabled": series.doubles_enabled,
         "wins": {str(player_id): wins for player_id, wins in series.wins.items()},
         "games_played": series.games_played,
     }
 
 
 def _series_from_dict(data: dict) -> Series:
-    series = Series(length=data["length"], board_size=data["board_size"], skip_limit=data["skip_limit"])
+    series = Series(
+        length=data["length"],
+        board_size=data["board_size"],
+        skip_limit=data["skip_limit"],
+        doubles_enabled=data.get("doubles_enabled", False),
+    )
     series.wins = {int(player_id): wins for player_id, wins in data["wins"].items()}
     series.games_played = data["games_played"]
     return series
@@ -49,6 +55,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "series": _series_to_dict(series) if series is not None else None,
         "board_size": game.board_size,
         "skip_limit": game.skip_limit,
+        "doubles_enabled": game.doubles_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
         "last_roll": list(game.last_roll) if game.last_roll is not None else None,
@@ -77,7 +84,11 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
 
 
 def from_dict(data: dict) -> tuple[Game, Series | None]:
-    game = Game(board_size=data["board_size"], skip_limit=data["skip_limit"])
+    game = Game(
+        board_size=data["board_size"],
+        skip_limit=data["skip_limit"],
+        doubles_enabled=data.get("doubles_enabled", False),
+    )
 
     for player_id_str, player_data in data["players"].items():
         player_id = int(player_id_str)

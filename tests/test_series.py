@@ -58,9 +58,10 @@ def test_series_completes_after_all_games_played_without_majority():
 
 
 def test_new_game_uses_series_settings():
-    series = Series(length=5, board_size=8, skip_limit=4)
+    series = Series(length=5, board_size=8, skip_limit=4, doubles_enabled=True)
 
     game = series.new_game()
 
     assert game.board_size == 8
     assert game.skip_limit == 4
+    assert game.doubles_enabled is True

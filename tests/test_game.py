@@ -45,7 +45,7 @@ def test_skip_when_no_legal_move():
 
 
 def test_doubles_grants_bonus_turn_after_placement():
-    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 2, 2) is True
 
@@ -56,8 +56,19 @@ def test_doubles_grants_bonus_turn_after_placement():
     assert game.state == TurnState.AWAITING_ROLL
 
 
+def test_doubles_disabled_by_default_turn_always_alternates():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    if not game.check_game_over():
+        game.end_turn()
+
+    assert game.current_player_id == PLAYER_2
+
+
 def test_repeated_double_skips_still_reach_skip_limit_without_alternating():
-    game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([6, 6, 6, 6]))
+    game = Game(board_size=4, skip_limit=2, doubles_enabled=True, rng=ScriptedRandom([6, 6, 6, 6]))
     p1 = game.players[PLAYER_1]
     game.board.place(p1, (0, 0), w=3, h=4)
     game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty; a 6x6 never fits
@@ -206,7 +217,7 @@ def test_game_over_detection_after_placement():
     # Every roll here is a double (1,1), which is unavoidable to script literal
     # 1x1 placements on a 2x2 board - so under the doubles-bonus-turn rule,
     # p1 keeps its turn throughout and claims all four cells itself.
-    game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
+    game = Game(board_size=2, doubles_enabled=True, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 1, 1) is True  # p1 anchors at (0,0)
@@ -235,7 +246,7 @@ def test_game_over_detection_after_placement():
 def test_board_full_reports_board_full_reason():
     # See test_game_over_detection_after_placement for why every roll is a
     # double here.
-    game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
+    game = Game(board_size=2, doubles_enabled=True, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
     game.roll_dice()
     game.attempt_place((0, 0), 1, 1)
     game.end_turn()

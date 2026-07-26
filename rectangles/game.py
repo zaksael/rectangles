@@ -8,6 +8,7 @@ from .constants import (
     BOARD_SIZE,
     DICE_MAX,
     DICE_MIN,
+    DOUBLES_ENABLED,
     PLAYER_1,
     PLAYER_2,
     PLAYER_NAMES,
@@ -35,10 +36,12 @@ class Game:
         self,
         board_size: int = BOARD_SIZE,
         skip_limit: int = SKIP_LIMIT,
+        doubles_enabled: bool = DOUBLES_ENABLED,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
         self.skip_limit = skip_limit
+        self.doubles_enabled = doubles_enabled
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -118,7 +121,9 @@ class Game:
     def end_turn(self) -> None:
         if self.state == TurnState.GAME_OVER:
             return
-        is_bonus_turn = self.last_roll is not None and self.last_roll[0] == self.last_roll[1]
+        is_bonus_turn = (
+            self.doubles_enabled and self.last_roll is not None and self.last_roll[0] == self.last_roll[1]
+        )
         if not is_bonus_turn:
             self.current_player_id = PLAYER_2 if self.current_player_id == PLAYER_1 else PLAYER_1
         self.last_roll = None
