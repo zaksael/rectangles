@@ -10,6 +10,15 @@ from . import layout
 from .state import ConfirmAction, Screen, UIState
 
 
+def _current_window_size() -> tuple[int, int]:
+    # The real window can be resized (see ui/app.py's VIDEORESIZE handling), so
+    # click/scroll hit-testing against window-size-dependent layout rects needs
+    # the live size, not the static layout.WINDOW_WIDTH/HEIGHT defaults. Falls
+    # back to those defaults when no display exists yet (e.g. headless tests).
+    surface = pygame.display.get_surface()
+    return surface.get_size() if surface is not None else (layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+
+
 def compute_top_left(game: Game, w: int, h: int, cell: tuple[int, int]) -> tuple[int, int]:
     r, c = cell
     if game.current_player_id == PLAYER_2:
@@ -100,21 +109,22 @@ def _advance_or_end_series(series: Series | None, ui_state: UIState) -> None:
 
 
 def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, series: Series | None) -> bool:
+    window_width, window_height = _current_window_size()
     if game.state == TurnState.GAME_OVER:
-        if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
+        if layout.game_over_new_game_button_rect(window_width, window_height).collidepoint(pos):
             _advance_or_end_series(series, ui_state)
-        elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
+        elif layout.game_over_exit_button_rect(window_width, window_height).collidepoint(pos):
             return False
         return True
 
-    if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
+    if layout.new_game_button_rect(window_height).collidepoint(pos):
         _request_new_game(game, ui_state)
         return True
 
-    if layout.EXIT_BUTTON_RECT.collidepoint(pos):
+    if layout.exit_button_rect(window_height).collidepoint(pos):
         return _request_quit(game, ui_state)
 
-    if layout.SURRENDER_BUTTON_RECT.collidepoint(pos):
+    if layout.surrender_button_rect(window_height).collidepoint(pos):
         _request_surrender(ui_state)
         return True
 
@@ -215,6 +225,12 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     return True
 
 
+def _handle_settings_mousewheel(event: pygame.event.Event, ui_state: UIState) -> None:
+    _, window_height = _current_window_size()
+    max_scroll = layout.settings_max_scroll(window_height)
+    ui_state.settings_scroll = max(0, min(ui_state.settings_scroll - event.y * 40, max_scroll))
+
+
 def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     if event.type == pygame.QUIT:
         return False
@@ -225,8 +241,14 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
             _start_game(ui_state)
         elif event.key == pygame.K_r and persistence.has_save():
             _resume_game(ui_state)
+    if event.type == pygame.MOUSEWHEEL:
+        _handle_settings_mousewheel(event, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        return _handle_settings_left_click(event.pos, ui_state)
+        # Click positions are in real-window coordinates; the settings
+        # content itself may be scrolled up within a taller virtual surface
+        # (see Renderer._settings_surface), so translate back before hit-testing.
+        pos = (event.pos[0], event.pos[1] + ui_state.settings_scroll)
+        return _handle_settings_left_click(pos, ui_state)
     return True
 
 
@@ -265,10 +287,11 @@ def _handle_confirm_event(event: pygame.event.Event, game: Game, ui_state: UISta
             ui_state.pending_confirmation = None
         return True
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        if layout.CONFIRM_YES_BUTTON_RECT.collidepoint(event.pos):
+        window_width, window_height = _current_window_size()
+        if layout.confirm_yes_button_rect(window_width, window_height).collidepoint(event.pos):
             ui_state.pending_confirmation = None
             return _resolve_confirmation(action, game, ui_state)
-        if layout.CONFIRM_NO_BUTTON_RECT.collidepoint(event.pos):
+        if layout.confirm_no_button_rect(window_width, window_height).collidepoint(event.pos):
             ui_state.pending_confirmation = None
     return True
 

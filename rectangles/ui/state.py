@@ -49,6 +49,7 @@ class UIState:
 
     pending_confirmation: ConfirmAction | None = None
     history_scroll: int = 0
+    settings_scroll: int = 0
 
     def reset(self) -> None:
         self.current_dims = None
@@ -56,3 +57,4 @@ class UIState:
         self.hover_legal = False
         self.pending_confirmation = None
         self.history_scroll = 0
+        self.settings_scroll = 0

@@ -64,8 +64,8 @@ def _centered_button_row(
 SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
 SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
 
-SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 420)
-SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 420)
+SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 330)
+SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
 SETTINGS_HOUSE_RULES_CARD_RECT = pygame.Rect(
     SETTINGS_BOARD_CARD_RECT.left,
     SETTINGS_BOARD_CARD_RECT.bottom + 30,
@@ -85,7 +85,7 @@ SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
     SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
 )
 SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS = _centered_button_row(
-    BOT_DIFFICULTY_PRESETS, y=410, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
+    BOT_DIFFICULTY_PRESETS, y=395, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
 )
 
 # Three evenly-spaced toggle columns within the House Rules card, each with
@@ -142,22 +142,50 @@ SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
     _SETTINGS_SECONDARY_BUTTON_H,
 )
 
-# The window is at least as tall as the largest board, but grows further if
-# the settings screen's button stack needs more room than that (e.g. once the
-# flag-conquest rows push the left card taller).
-WINDOW_HEIGHT = max(BOARD_PX, SETTINGS_RESUME_BUTTON_RECT.bottom + 32)
+# The settings screen's own full button stack, top to bottom - independent of
+# the actual window height. When it's taller than the actual window, the
+# settings screen scrolls (see settings_max_scroll() and
+# Renderer._settings_surface) rather than growing the window to fit, so
+# adding another settings row never risks pushing the window past what a
+# small display can show.
+SETTINGS_CONTENT_HEIGHT = SETTINGS_RESUME_BUTTON_RECT.bottom + 32
 
-PANEL_RECT = pygame.Rect(BOARD_PX, 0, PANEL_WIDTH, WINDOW_HEIGHT)
+
+def settings_max_scroll(window_height: int) -> int:
+    return max(0, SETTINGS_CONTENT_HEIGHT - window_height)
+
+
+# The window is resizable (see ui/app.py); width is pinned at WINDOW_WIDTH
+# (every board/settings/panel column position assumes it), only height
+# flexes. Every panel constant below that depends on the window's bottom
+# edge (the footer + everything under it) reads live window height as a
+# parameter instead of baking in a fixed constant, precisely so shrinking
+# the window doesn't clip them - EXCEPT the history and (capped, see
+# PANEL_SERIES_MAX_ROWS below) series-stats blocks below the roll button,
+# which are fixed-from-the-top positions like the rest of that section, so
+# they don't reflow. MIN_WINDOW_HEIGHT is therefore a real floor, not just a
+# nicety: it's the smallest height at which the footer (top = window_height
+# - 144) still clears the worst case those two fixed blocks can reach - a
+# maxed-out history log plus a capped series-stats table both showing,
+# bottom ~696 (PANEL_SERIES_START_Y=596 + PANEL_SERIES_MAX_ROWS(5)*
+# PANEL_SERIES_ROW_HEIGHT(20)) - with a bit of margin. WINDOW_HEIGHT (the
+# initial/default size) is never below this floor either.
+MIN_WINDOW_HEIGHT = 860
+WINDOW_HEIGHT = max(BOARD_PX, MIN_WINDOW_HEIGHT)
 
 PANEL_PADDING = 24
 PANEL_X = BOARD_PX + PANEL_PADDING
 PANEL_CONTENT_WIDTH = PANEL_WIDTH - 2 * PANEL_PADDING
 
+
+def panel_rect(window_height: int) -> pygame.Rect:
+    return pygame.Rect(BOARD_PX, 0, PANEL_WIDTH, window_height)
+
+
 # The panel is laid out as fixed vertical sections (header / scoreboard /
 # status / action button / footer), each given a generous, hand-measured
 # height budget so no state's text can ever grow into the next section's
-# button - avoids needing a dynamic/reflowing layout for this small, fixed
-# window.
+# button - avoids needing a dynamic/reflowing layout for the top section.
 PANEL_HEADER_Y = 28
 PANEL_DIVIDER_1_Y = 82
 
@@ -179,26 +207,44 @@ PANEL_HISTORY_START_Y = 412
 PANEL_HISTORY_ROW_HEIGHT = 22
 PANEL_HISTORY_MAX_ROWS = 6
 
-PANEL_FOOTER_DIVIDER_Y = WINDOW_HEIGHT - 144
+# The footer (divider + Surrender/New Game/Exit) anchors to the bottom of the
+# *actual* window rather than a fixed offset from the top, so it tracks a
+# live resize instead of drifting into (or leaving a gap above) the content
+# above it.
+def panel_footer_divider_y(window_height: int) -> int:
+    return window_height - 144
 
-SURRENDER_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_FOOTER_DIVIDER_Y + 16, PANEL_CONTENT_WIDTH, 40)
+
+def surrender_button_rect(window_height: int) -> pygame.Rect:
+    return pygame.Rect(PANEL_X, panel_footer_divider_y(window_height) + 16, PANEL_CONTENT_WIDTH, 40)
+
 
 _FOOTER_BUTTON_GAP = 12
 _FOOTER_BUTTON_W = (PANEL_CONTENT_WIDTH - _FOOTER_BUTTON_GAP) // 2
-_FOOTER_BUTTON_Y = WINDOW_HEIGHT - 76
 
-NEW_GAME_BUTTON_RECT = pygame.Rect(PANEL_X, _FOOTER_BUTTON_Y, _FOOTER_BUTTON_W, 44)
-EXIT_BUTTON_RECT = pygame.Rect(
-    PANEL_X + _FOOTER_BUTTON_W + _FOOTER_BUTTON_GAP, _FOOTER_BUTTON_Y, _FOOTER_BUTTON_W, 44
-)
+
+def new_game_button_rect(window_height: int) -> pygame.Rect:
+    return pygame.Rect(PANEL_X, window_height - 76, _FOOTER_BUTTON_W, 44)
+
+
+def exit_button_rect(window_height: int) -> pygame.Rect:
+    return pygame.Rect(
+        PANEL_X + _FOOTER_BUTTON_W + _FOOTER_BUTTON_GAP, window_height - 76, _FOOTER_BUTTON_W, 44
+    )
+
 
 # The history log's content never exceeds PANEL_HISTORY_MAX_ROWS, leaving a fixed idle
 # gap before the footer divider - the series stats block (when a series is active) lives
-# in that gap instead of needing its own dynamic layout.
+# in that gap instead of needing its own dynamic layout. PANEL_SERIES_MAX_ROWS caps that
+# block the same way (header + up to this many more lines, truncating older rounds behind
+# a "N earlier" note - see Renderer._draw_series_stats) so its height stays bounded
+# regardless of series length, which matters now that the footer above can be much
+# closer than it used to be on a shrunk window.
 PANEL_SERIES_DIVIDER_Y = 558
 PANEL_SERIES_LABEL_Y = 572
 PANEL_SERIES_START_Y = 596
 PANEL_SERIES_ROW_HEIGHT = 20
+PANEL_SERIES_MAX_ROWS = 5
 
 # Mouse-wheel hit region for scrolling the history log - stops at the series stats
 # section (when present) rather than the footer, so wheel input over that block doesn't
@@ -209,41 +255,56 @@ PANEL_HISTORY_REGION_RECT = pygame.Rect(
 
 _CONFIRM_DIALOG_WIDTH = 420
 _CONFIRM_DIALOG_HEIGHT = 170
-CONFIRM_DIALOG_RECT = pygame.Rect(
-    (WINDOW_WIDTH - _CONFIRM_DIALOG_WIDTH) // 2,
-    (WINDOW_HEIGHT - _CONFIRM_DIALOG_HEIGHT) // 2,
-    _CONFIRM_DIALOG_WIDTH,
-    _CONFIRM_DIALOG_HEIGHT,
-)
+
+
+def confirm_dialog_rect(window_width: int, window_height: int) -> pygame.Rect:
+    return pygame.Rect(
+        (window_width - _CONFIRM_DIALOG_WIDTH) // 2,
+        (window_height - _CONFIRM_DIALOG_HEIGHT) // 2,
+        _CONFIRM_DIALOG_WIDTH,
+        _CONFIRM_DIALOG_HEIGHT,
+    )
+
 
 _CONFIRM_BUTTON_W = 140
 _CONFIRM_BUTTON_H = 48
 _CONFIRM_BUTTON_GAP = 20
-_CONFIRM_BUTTONS_Y = CONFIRM_DIALOG_RECT.bottom - 64
-_CONFIRM_BUTTONS_START_X = (WINDOW_WIDTH - (2 * _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP)) // 2
 
-CONFIRM_YES_BUTTON_RECT = pygame.Rect(
-    _CONFIRM_BUTTONS_START_X, _CONFIRM_BUTTONS_Y, _CONFIRM_BUTTON_W, _CONFIRM_BUTTON_H
-)
-CONFIRM_NO_BUTTON_RECT = pygame.Rect(
-    _CONFIRM_BUTTONS_START_X + _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP,
-    _CONFIRM_BUTTONS_Y,
-    _CONFIRM_BUTTON_W,
-    _CONFIRM_BUTTON_H,
-)
+
+def _confirm_buttons_origin(window_width: int, window_height: int) -> tuple[int, int]:
+    y = confirm_dialog_rect(window_width, window_height).bottom - 64
+    x = (window_width - (2 * _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP)) // 2
+    return x, y
+
+
+def confirm_yes_button_rect(window_width: int, window_height: int) -> pygame.Rect:
+    x, y = _confirm_buttons_origin(window_width, window_height)
+    return pygame.Rect(x, y, _CONFIRM_BUTTON_W, _CONFIRM_BUTTON_H)
+
+
+def confirm_no_button_rect(window_width: int, window_height: int) -> pygame.Rect:
+    x, y = _confirm_buttons_origin(window_width, window_height)
+    return pygame.Rect(x + _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP, y, _CONFIRM_BUTTON_W, _CONFIRM_BUTTON_H)
+
 
 _GAME_OVER_BUTTON_W = 150
 _GAME_OVER_BUTTON_H = 48
 _GAME_OVER_BUTTON_GAP = 20
-_GAME_OVER_BUTTONS_Y = WINDOW_HEIGHT // 2 + 80
-_GAME_OVER_BUTTONS_START_X = (WINDOW_WIDTH - (2 * _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP)) // 2
 
-GAME_OVER_NEW_GAME_BUTTON_RECT = pygame.Rect(
-    _GAME_OVER_BUTTONS_START_X, _GAME_OVER_BUTTONS_Y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
-)
-GAME_OVER_EXIT_BUTTON_RECT = pygame.Rect(
-    _GAME_OVER_BUTTONS_START_X + _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP,
-    _GAME_OVER_BUTTONS_Y,
-    _GAME_OVER_BUTTON_W,
-    _GAME_OVER_BUTTON_H,
-)
+
+def _game_over_buttons_origin(window_width: int, window_height: int) -> tuple[int, int]:
+    y = window_height // 2 + 80
+    x = (window_width - (2 * _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP)) // 2
+    return x, y
+
+
+def game_over_new_game_button_rect(window_width: int, window_height: int) -> pygame.Rect:
+    x, y = _game_over_buttons_origin(window_width, window_height)
+    return pygame.Rect(x, y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H)
+
+
+def game_over_exit_button_rect(window_width: int, window_height: int) -> pygame.Rect:
+    x, y = _game_over_buttons_origin(window_width, window_height)
+    return pygame.Rect(
+        x + _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP, y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
+    )

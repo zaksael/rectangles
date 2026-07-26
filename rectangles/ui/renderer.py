@@ -34,15 +34,36 @@ WALL_LINE_COLOR = (90, 88, 96)
 class Renderer:
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
+        # The settings screen's content can be taller than the actual window
+        # (see layout.SETTINGS_CONTENT_HEIGHT vs. the live window height); it's
+        # drawn onto this full-height virtual surface and scrolled into view.
+        self._settings_surface = pygame.Surface((layout.WINDOW_WIDTH, layout.SETTINGS_CONTENT_HEIGHT))
         self.font = pygame.font.SysFont("arial", 20)
         self.font_small = pygame.font.SysFont("arial", 15)
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
         self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
 
+    def resize(self, screen: pygame.Surface) -> None:
+        self.screen = screen
+
     def draw(self, game: Game | None, ui_state: UIState, series: Series | None = None) -> None:
         self.screen.fill(BG_COLOR)
         if ui_state.screen == Screen.SETTINGS:
+            window_width, window_height = self.screen.get_size()
+            self._settings_surface.fill(BG_COLOR)
+            real_screen, self.screen = self.screen, self._settings_surface
             self._draw_settings_screen(ui_state)
+            self.screen = real_screen
+            visible = pygame.Rect(0, ui_state.settings_scroll, window_width, window_height)
+            self.screen.blit(self._settings_surface, (0, 0), area=visible)
+            if ui_state.settings_scroll < layout.settings_max_scroll(window_height):
+                # On a short window this strip can sit over genuine (clipped)
+                # content rather than blank space below it - mask it first so
+                # the hint always reads cleanly instead of overlapping.
+                strip = pygame.Rect(0, window_height - 26, window_width, 26)
+                self.screen.fill(BG_COLOR, strip)
+                hint = self.font_small.render("scroll for more ▼", True, MUTED_TEXT_COLOR)
+                self.screen.blit(hint, hint.get_rect(center=(window_width // 2, window_height - 14)))
         else:
             self._draw_board(game)
             if game.state == TurnState.CHOOSING_PLACEMENT:
@@ -147,7 +168,7 @@ class Renderer:
             TEXT_COLOR if ui_state.selected_bot_enabled else MUTED_TEXT_COLOR,
         )
         self.screen.blit(
-            difficulty_label, difficulty_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 380))
+            difficulty_label, difficulty_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 375))
         )
         for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
             self._button(
@@ -157,10 +178,6 @@ class Renderer:
                 selected=value == ui_state.selected_bot_difficulty,
                 hovered=ui_state.selected_bot_enabled and hovered(rect),
             )
-
-        for i, line in enumerate(("The bot plays Player 2 automatically", "when turned on, in every mode.")):
-            hint_surf = self.font_small.render(line, True, MUTED_TEXT_COLOR)
-            self.screen.blit(hint_surf, hint_surf.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 480 + i * 20)))
 
         self._button(
             layout.SETTINGS_START_BUTTON_RECT,
@@ -286,7 +303,8 @@ class Renderer:
         )
 
     def _draw_panel(self, game: Game, ui_state: UIState, series: Series | None = None) -> None:
-        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
+        window_height = self.screen.get_height()
+        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.panel_rect(window_height))
         x = layout.PANEL_X
 
         self._text("RECTANGLES", (x, layout.PANEL_HEADER_Y), self.font_big)
@@ -359,10 +377,10 @@ class Renderer:
         if series is not None:
             self._draw_series_stats(series)
 
-        self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
-        self._button(layout.SURRENDER_BUTTON_RECT, "Surrender (S)")
-        self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
-        self._button(layout.EXIT_BUTTON_RECT, "Exit (Esc)")
+        self._divider(layout.panel_footer_divider_y(window_height))
+        self._button(layout.surrender_button_rect(window_height), "Surrender (S)")
+        self._button(layout.new_game_button_rect(window_height), "New Game (N)")
+        self._button(layout.exit_button_rect(window_height), "Exit (Esc)")
 
     def _draw_history(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X
@@ -460,20 +478,41 @@ class Renderer:
             draw_row(row, y, row_color)
             y += row_height
 
+    def _panel_series_rows(self, series: Series) -> tuple[list[list[str]], int]:
+        # Caps the panel's (compact, always-visible) table at PANEL_SERIES_MAX_ROWS
+        # lines regardless of series length, keeping the totals row and the most
+        # recent rounds, with older rounds folded behind a "+N earlier" note - the
+        # full round-by-round table is always available on the game-over overlay,
+        # which isn't bound by this same fixed-pixel panel budget.
+        rows = self._series_table_rows(series)
+        max_data_rows = layout.PANEL_SERIES_MAX_ROWS - 1  # minus the header line
+        if len(rows) <= max_data_rows:
+            return rows, 0
+        round_rows, totals_row = rows[:-1], rows[-1]
+        keep = max_data_rows - 2  # totals row + the "N earlier" note both reserved
+        visible_rounds = round_rows[-keep:] if keep > 0 else []
+        hidden = len(round_rows) - len(visible_rounds)
+        return visible_rounds + [totals_row], hidden
+
     def _draw_series_stats(self, series: Series) -> None:
         x = layout.PANEL_X
         self._divider(layout.PANEL_SERIES_DIVIDER_Y)
         self._text("Series Stats", (x, layout.PANEL_SERIES_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
+        rows, hidden = self._panel_series_rows(series)
         self._draw_table(
             x,
             layout.PANEL_SERIES_START_Y,
             self._series_table_columns(series, panel=True),
-            self._series_table_rows(series),
+            rows,
             layout.PANEL_SERIES_ROW_HEIGHT,
             self.font_small,
             MUTED_TEXT_COLOR,
             MUTED_TEXT_COLOR,
         )
+        if hidden:
+            note_y = layout.PANEL_SERIES_START_Y + (len(rows) + 1) * layout.PANEL_SERIES_ROW_HEIGHT
+            note = f"+{hidden} earlier round{'s' if hidden != 1 else ''}"
+            self._text(note, (x, note_y), self.font_small, MUTED_TEXT_COLOR)
 
     def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
@@ -495,8 +534,9 @@ class Renderer:
             headline = f"{game.players[winner].name} wins!"
         score_line = f"{p1.name}: {game.total_score(p1)}    {p2.name}: {game.total_score(p2)}"
 
-        center_x = layout.WINDOW_WIDTH // 2
-        center_y = layout.WINDOW_HEIGHT // 2
+        window_width, window_height = self.screen.get_size()
+        center_x = window_width // 2
+        center_y = window_height // 2
 
         if game.game_over_reason == GameOverReason.SKIP_LIMIT and game.skipped_out_player_id is not None:
             skipped_player = game.players[game.skipped_out_player_id]
@@ -529,15 +569,16 @@ class Renderer:
         self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, reason_y)))
 
         new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
-        self._button(layout.GAME_OVER_NEW_GAME_BUTTON_RECT, new_game_label)
-        self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
+        new_game_rect = layout.game_over_new_game_button_rect(window_width, window_height)
+        self._button(new_game_rect, new_game_label)
+        self._button(layout.game_over_exit_button_rect(window_width, window_height), "Exit (Esc)")
 
         if series is not None and series.rounds:
             columns = self._series_table_columns(series, panel=False)
             table_width = sum(width for _, width in columns)
             self._draw_table(
                 center_x - table_width // 2,
-                layout.GAME_OVER_NEW_GAME_BUTTON_RECT.bottom + 40,
+                new_game_rect.bottom + 40,
                 columns,
                 self._series_table_rows(series),
                 layout.PANEL_SERIES_ROW_HEIGHT,
@@ -551,7 +592,9 @@ class Renderer:
         overlay.fill(OVERLAY_COLOR)
         self.screen.blit(overlay, (0, 0))
 
-        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.CONFIRM_DIALOG_RECT, border_radius=8)
+        window_width, window_height = self.screen.get_size()
+        dialog_rect = layout.confirm_dialog_rect(window_width, window_height)
+        pygame.draw.rect(self.screen, PANEL_BG_COLOR, dialog_rect, border_radius=8)
 
         if ui_state.pending_confirmation == ConfirmAction.SURRENDER:
             opponent_id = (
@@ -565,10 +608,8 @@ class Renderer:
             }
             message = messages[ui_state.pending_confirmation]
         message_surf = self.font.render(message, True, TEXT_COLOR)
-        message_rect = message_surf.get_rect(
-            center=(layout.CONFIRM_DIALOG_RECT.centerx, layout.CONFIRM_DIALOG_RECT.top + 56)
-        )
+        message_rect = message_surf.get_rect(center=(dialog_rect.centerx, dialog_rect.top + 56))
         self.screen.blit(message_surf, message_rect)
 
-        self._button(layout.CONFIRM_YES_BUTTON_RECT, "Yes (Enter)")
-        self._button(layout.CONFIRM_NO_BUTTON_RECT, "No (Esc)")
+        self._button(layout.confirm_yes_button_rect(window_width, window_height), "Yes (Enter)")
+        self._button(layout.confirm_no_button_rect(window_width, window_height), "No (Esc)")

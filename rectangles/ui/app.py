@@ -17,7 +17,7 @@ BOT_MOVE_DELAY_MS = 500
 def run() -> None:
     pygame.init()
     pygame.display.set_caption("Rectangles")
-    screen = pygame.display.set_mode((layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT))
+    screen = pygame.display.set_mode((layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT), pygame.RESIZABLE)
     clock = pygame.time.Clock()
 
     game: Game | None = None
@@ -30,6 +30,13 @@ def run() -> None:
     running = True
     while running:
         for event in pygame.event.get():
+            if event.type == pygame.VIDEORESIZE:
+                # Width is pinned (every board/settings/panel column position
+                # assumes it) - only the requested height is honored.
+                height = max(event.h, layout.MIN_WINDOW_HEIGHT)
+                screen = pygame.display.set_mode((layout.WINDOW_WIDTH, height), pygame.RESIZABLE)
+                renderer.resize(screen)
+                continue
             if ui_state.screen == Screen.SETTINGS:
                 if not game_input.handle_settings_event(event, ui_state):
                     running = False
