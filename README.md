@@ -61,9 +61,18 @@ players regardless of which corner they start from.
 ## Bot opponent
 
 Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
-places a random legal piece (or continues past a forced skip), and ends its
-turn on its own, with a short pause between actions. Off by default. Human
-input for Player 2's controls is ignored while the bot is taking its turn.
+places a legal piece (or continues past a forced skip), and ends its turn on
+its own, with a short pause between actions. Off by default. Human input for
+Player 2's controls is ignored while the bot is taking its turn.
+
+Once the bot is on, pick its difficulty:
+- **Basic** — picks uniformly at random among its legal placements.
+- **Greedy** — prefers a placement that captures a flag (see
+  [Flag Conquest](#flag-conquest)); with Flag Conquest off, or when no
+  candidate reaches a flag, it falls back to a random pick.
+- **Blocking** — prefers a placement that covers cells in *your* frontier,
+  denying you those spots; falls back to a random pick among equally
+  denying (or non-denying) candidates.
 
 ## Series mode
 
@@ -98,7 +107,7 @@ uv run python main.py
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle the doubles house rule,
 [Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls)
-or the [bot opponent](#bot-opponent), then click **Start Game**/`Space` for a
+or the [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
 [Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
@@ -141,7 +150,7 @@ rectangles/
 ├── board.py        # grid + placement legality
 ├── game.py         # turn state machine, scoring, game-over rules
 ├── series.py       # N-round match series (cumulative score, next-round setup)
-├── bot.py          # picks a legal placement for the bot opponent
+├── bot.py          # picks a placement for the bot opponent (Basic/Greedy/Blocking)
 ├── persistence.py  # save/load a game (and series, if one is in progress)
 └── ui/             # Pygame rendering and input (all Pygame code lives here)
 ```
