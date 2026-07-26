@@ -378,8 +378,8 @@ class Renderer:
         p1_flags = f" (🚩{series.total_flags_captured(constants.PLAYER_1)})" if series.flag_conquest_enabled else ""
         p2_flags = f" (🚩{series.total_flags_captured(constants.PLAYER_2)})" if series.flag_conquest_enabled else ""
         return (
-            f"Totals: P1 {series.total_area(constants.PLAYER_1)}{p1_flags}  -  "
-            f"{series.total_area(constants.PLAYER_2)}{p2_flags} P2"
+            f"Totals: P1 {series.scores[constants.PLAYER_1]}{p1_flags}  -  "
+            f"{series.scores[constants.PLAYER_2]}{p2_flags} P2"
         )
 
     def _draw_series_stats(self, series: Series) -> None:
