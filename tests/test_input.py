@@ -412,7 +412,7 @@ def test_game_over_new_game_button_without_series_returns_to_settings():
     game.state = TurnState.GAME_OVER
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_new_game_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
     assert handle_event(event, game, ui_state, series=None) is True
 
     assert ui_state.screen == Screen.SETTINGS
@@ -425,7 +425,7 @@ def test_game_over_new_game_button_with_incomplete_series_requests_next_game():
     series.record_game(_finished_game(6, 1, 0))  # 1 of 3 rounds played, not yet decided
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_new_game_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
     assert handle_event(event, game, ui_state, series) is True
 
     assert ui_state.next_game_requested is True
@@ -441,7 +441,7 @@ def test_game_over_new_game_button_with_completed_series_returns_to_settings():
     series.record_game(_finished_game(6, 1, 0))  # all 3 rounds played
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_new_game_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
     assert handle_event(event, game, ui_state, series) is True
 
     assert ui_state.next_game_requested is False
@@ -466,7 +466,7 @@ def test_game_over_exit_button_click_returns_false():
     game.state = TurnState.GAME_OVER
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_EXIT_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_exit_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
     assert handle_event(event, game, ui_state) is False
 
 
@@ -486,7 +486,7 @@ def test_confirm_yes_button_click_performs_new_game():
     game = _played_game()
     ui_state = UIState(screen=Screen.PLAYING, pending_confirmation=ConfirmAction.NEW_GAME)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.CONFIRM_YES_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.confirm_yes_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
@@ -497,7 +497,7 @@ def test_confirm_no_button_click_cancels():
     game = _played_game()
     ui_state = UIState(screen=Screen.PLAYING, pending_confirmation=ConfirmAction.NEW_GAME)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.CONFIRM_NO_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.confirm_no_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
@@ -703,3 +703,31 @@ def test_settings_resume_button_click_only_when_a_save_exists(monkeypatch):
 def test_settings_exit_button_click_returns_false():
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_EXIT_BUTTON_RECT.center)
     assert handle_settings_event(event, UIState()) is False
+
+
+def test_settings_mousewheel_scrolls_and_clamps():
+    ui_state = UIState()
+
+    handle_settings_event(pygame.event.Event(pygame.MOUSEWHEEL, y=-1), ui_state)
+    assert ui_state.settings_scroll == 40
+
+    ui_state.settings_scroll = layout.settings_max_scroll(layout.WINDOW_HEIGHT)
+    handle_settings_event(pygame.event.Event(pygame.MOUSEWHEEL, y=-1), ui_state)
+    assert ui_state.settings_scroll == layout.settings_max_scroll(layout.WINDOW_HEIGHT)  # clamped at max
+
+    ui_state.settings_scroll = 0
+    handle_settings_event(pygame.event.Event(pygame.MOUSEWHEEL, y=1), ui_state)
+    assert ui_state.settings_scroll == 0  # clamped at 0
+
+
+def test_settings_click_position_accounts_for_scroll_offset():
+    ui_state = UIState(settings_scroll=50)
+    # The button visually sits 50px higher on screen than its content-space rect.
+    screen_pos = (
+        layout.SETTINGS_DOUBLES_BUTTON_RECT.centerx,
+        layout.SETTINGS_DOUBLES_BUTTON_RECT.centery - 50,
+    )
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=screen_pos)
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_doubles_enabled is True

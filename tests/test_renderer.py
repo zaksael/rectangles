@@ -114,6 +114,41 @@ def test_draw_panel_with_series_stats_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
 
 
+def test_panel_series_rows_shows_everything_when_it_fits(renderer):
+    series = Series(length=3, board_size=6, skip_limit=3)
+    for _ in range(3):
+        series.record_game(_finished_game(6, 1, 0))
+
+    rows, hidden = renderer._panel_series_rows(series)
+
+    assert hidden == 0
+    assert [row[0] for row in rows] == ["1", "2", "3", "Total"]
+
+
+def test_panel_series_rows_truncates_to_most_recent_plus_totals(renderer):
+    from rectangles.ui import layout
+
+    series = Series(length=5, board_size=6, skip_limit=3)
+    for _ in range(5):
+        series.record_game(_finished_game(6, 1, 0))
+
+    rows, hidden = renderer._panel_series_rows(series)
+
+    assert hidden == 3
+    assert len(rows) == layout.PANEL_SERIES_MAX_ROWS - 2
+    assert [row[0] for row in rows] == ["4", "5", "Total"]
+
+
+def test_draw_panel_with_a_full_five_round_series_smoke(renderer):
+    # The worst case that PANEL_SERIES_MAX_ROWS/MIN_WINDOW_HEIGHT are sized for:
+    # a maxed-out history log alongside a full 5-round Flag Conquest series.
+    game = Game(board_size=6, flag_conquest_enabled=True)
+    series = Series(length=5, board_size=6, skip_limit=3, flag_conquest_enabled=True, flag_bonus_points=20)
+    for _ in range(5):
+        series.record_game(_finished_game(6, 1, 0))
+    renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
+
+
 def test_draw_game_over_with_series_in_progress_smoke(renderer):
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
