@@ -186,6 +186,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
             if rect.collidepoint(pos):
                 ui_state.selected_flag_bonus_points = value
                 return True
+    if layout.SETTINGS_WALLS_BUTTON_RECT.collidepoint(pos):
+        ui_state.selected_walls_enabled = not ui_state.selected_walls_enabled
+        return True
     if layout.SETTINGS_BOT_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_bot_enabled = not ui_state.selected_bot_enabled
         return True

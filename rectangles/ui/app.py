@@ -44,6 +44,7 @@ def run() -> None:
                 doubles_enabled=ui_state.selected_doubles_enabled,
                 flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
                 flag_bonus_points=ui_state.selected_flag_bonus_points,
+                walls_enabled=ui_state.selected_walls_enabled,
             )
             series = None
             series_game_recorded = False
@@ -58,6 +59,7 @@ def run() -> None:
                 doubles_enabled=ui_state.selected_doubles_enabled,
                 flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
                 flag_bonus_points=ui_state.selected_flag_bonus_points,
+                walls_enabled=ui_state.selected_walls_enabled,
             )
             game = series.new_game()
             series_game_recorded = False

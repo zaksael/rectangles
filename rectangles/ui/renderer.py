@@ -28,6 +28,7 @@ ROW_ACTIVE_BG_COLOR = (205, 230, 214)
 CARD_BG_COLOR = (255, 255, 255)
 CARD_BORDER_COLOR = (215, 215, 222)
 FLAG_COLOR = (230, 180, 30)
+WALL_CELL_COLOR = (90, 88, 96)
 
 
 class Renderer:
@@ -127,6 +128,15 @@ class Renderer:
                 hovered=ui_state.selected_flag_conquest_enabled and hovered(rect),
             )
 
+        walls_label = self.font.render("Walls", True, TEXT_COLOR)
+        self.screen.blit(walls_label, walls_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 680)))
+        self._button(
+            layout.SETTINGS_WALLS_BUTTON_RECT,
+            "ON" if ui_state.selected_walls_enabled else "OFF",
+            selected=ui_state.selected_walls_enabled,
+            hovered=hovered(layout.SETTINGS_WALLS_BUTTON_RECT),
+        )
+
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
         self._button(
@@ -174,6 +184,7 @@ class Renderer:
                 pygame.draw.rect(self.screen, EMPTY_CELL_COLOR, rect)
                 pygame.draw.rect(self.screen, GRID_LINE_COLOR, rect, width=1)
 
+        self._draw_walls(game)
         self._draw_flags(game)
 
         for player in game.players.values():
@@ -185,6 +196,10 @@ class Renderer:
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
+
+    def _draw_walls(self, game: Game) -> None:
+        for r, c in game.board.wall_cells:
+            pygame.draw.rect(self.screen, WALL_CELL_COLOR, layout.cell_rect(r, c))
 
     def _draw_flags(self, game: Game) -> None:
         for r, c in game.board.flag_cells:
