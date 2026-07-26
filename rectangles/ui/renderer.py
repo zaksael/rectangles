@@ -135,7 +135,7 @@ class Renderer:
         self.screen.blit(series_label, series_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 280)))
         for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
             self._button(
-                rect, f"Bo{value}", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
+                rect, f"{value} Rounds", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
             )
 
         for i, line in enumerate(("The bot plays Player 2 automatically", "when turned on, in every mode.")):
@@ -256,8 +256,8 @@ class Renderer:
         if series is not None:
             p1, p2 = game.players[constants.PLAYER_1], game.players[constants.PLAYER_2]
             series_line = (
-                f"Best of {series.length} · Game {series.games_played + 1} · "
-                f"{p1.name} {series.wins[constants.PLAYER_1]}-{series.wins[constants.PLAYER_2]} {p2.name}"
+                f"{series.length} Rounds · Game {series.games_played + 1} · "
+                f"{p1.name} {series.scores[constants.PLAYER_1]}-{series.scores[constants.PLAYER_2]} {p2.name}"
             )
             self._text(series_line, (x, layout.PANEL_HEADER_Y + 34), self.font_small, MUTED_TEXT_COLOR)
         self._divider(layout.PANEL_DIVIDER_1_Y)
@@ -395,8 +395,8 @@ class Renderer:
 
         if series is not None:
             series_line = (
-                f"Series: {p1.name} {series.wins[constants.PLAYER_1]} - "
-                f"{series.wins[constants.PLAYER_2]} {p2.name}  (Best of {series.length})"
+                f"Series: {p1.name} {series.scores[constants.PLAYER_1]} - "
+                f"{series.scores[constants.PLAYER_2]} {p2.name}  ({series.length} Rounds)"
             )
             series_surf = self.font_small.render(series_line, True, (200, 200, 200))
             self.screen.blit(series_surf, series_surf.get_rect(center=(center_x, center_y + 44)))

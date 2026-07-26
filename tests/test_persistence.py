@@ -164,8 +164,8 @@ def test_round_trip_preserves_series(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)
     series = Series(length=5, board_size=6, skip_limit=2, flag_conquest_enabled=True, flag_bonus_points=20)
-    series.record_game(PLAYER_1)
-    series.record_game(PLAYER_2)
+    series.record_game(10, 4)
+    series.record_game(3, 12)
 
     persistence.save_game(game, series=series, path=path)
     loaded, loaded_series = persistence.load_game(path)
@@ -176,7 +176,7 @@ def test_round_trip_preserves_series(tmp_path):
     assert loaded_series.skip_limit == 2
     assert loaded_series.flag_conquest_enabled is True
     assert loaded_series.flag_bonus_points == 20
-    assert loaded_series.wins == {PLAYER_1: 1, PLAYER_2: 1}
+    assert loaded_series.scores == {PLAYER_1: 13, PLAYER_2: 16}
     assert loaded_series.games_played == 2
 
 
@@ -282,7 +282,7 @@ def test_should_save_on_exit_true_for_finished_round_mid_series():
     game = Game(board_size=4)
     game.state = TurnState.GAME_OVER
     series = Series(length=3, board_size=4, skip_limit=3)
-    series.record_game(PLAYER_1)
+    series.record_game(1, 0)
 
     assert persistence.should_save_on_exit(game, series) is True
 
@@ -291,7 +291,8 @@ def test_should_save_on_exit_false_once_series_is_complete():
     game = Game(board_size=4)
     game.state = TurnState.GAME_OVER
     series = Series(length=3, board_size=4, skip_limit=3)
-    series.record_game(PLAYER_1)
-    series.record_game(PLAYER_1)  # clinches best-of-3
+    series.record_game(1, 0)
+    series.record_game(1, 0)
+    series.record_game(1, 0)  # all 3 rounds played
 
     assert persistence.should_save_on_exit(game, series) is False

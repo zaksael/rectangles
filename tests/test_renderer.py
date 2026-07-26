@@ -97,7 +97,7 @@ def test_draw_game_over_with_series_in_progress_smoke(renderer):
     game.state = TurnState.GAME_OVER
     game.game_over_reason = GameOverReason.BOARD_FULL
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(PLAYER_1)
+    series.record_game(1, 0)
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
 
 
@@ -106,8 +106,9 @@ def test_draw_game_over_with_series_complete_smoke(renderer):
     game.state = TurnState.GAME_OVER
     game.game_over_reason = GameOverReason.BOARD_FULL
     series = Series(length=3, board_size=6, skip_limit=3)
-    series.record_game(PLAYER_1)
-    series.record_game(PLAYER_1)  # clinches best-of-3
+    series.record_game(1, 0)
+    series.record_game(1, 0)
+    series.record_game(1, 0)  # all 3 rounds played
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
 
 

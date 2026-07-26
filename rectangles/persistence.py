@@ -35,7 +35,7 @@ def _series_to_dict(series: Series) -> dict:
         "doubles_enabled": series.doubles_enabled,
         "flag_conquest_enabled": series.flag_conquest_enabled,
         "flag_bonus_points": series.flag_bonus_points,
-        "wins": {str(player_id): wins for player_id, wins in series.wins.items()},
+        "scores": {str(player_id): score for player_id, score in series.scores.items()},
         "games_played": series.games_played,
     }
 
@@ -49,7 +49,7 @@ def _series_from_dict(data: dict) -> Series:
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
     )
-    series.wins = {int(player_id): wins for player_id, wins in data["wins"].items()}
+    series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
     series.games_played = data["games_played"]
     return series
 

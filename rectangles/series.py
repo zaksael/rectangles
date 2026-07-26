@@ -14,29 +14,21 @@ class Series:
     doubles_enabled: bool = False
     flag_conquest_enabled: bool = False
     flag_bonus_points: int = FLAG_BONUS_POINTS
-    wins: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
+    scores: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
     games_played: int = 0
 
-    @property
-    def wins_needed(self) -> int:
-        return self.length // 2 + 1
-
-    def record_game(self, winner_id: int | None) -> None:
+    def record_game(self, p1_score: int, p2_score: int) -> None:
         self.games_played += 1
-        if winner_id is not None:
-            self.wins[winner_id] += 1
+        self.scores[PLAYER_1] += p1_score
+        self.scores[PLAYER_2] += p2_score
 
     def is_complete(self) -> bool:
-        return (
-            self.wins[PLAYER_1] >= self.wins_needed
-            or self.wins[PLAYER_2] >= self.wins_needed
-            or self.games_played >= self.length
-        )
+        return self.games_played >= self.length
 
     def winner(self) -> int | None:
-        if self.wins[PLAYER_1] > self.wins[PLAYER_2]:
+        if self.scores[PLAYER_1] > self.scores[PLAYER_2]:
             return PLAYER_1
-        if self.wins[PLAYER_2] > self.wins[PLAYER_1]:
+        if self.scores[PLAYER_2] > self.scores[PLAYER_1]:
             return PLAYER_2
         return None
 

@@ -55,14 +55,14 @@ input for Player 2's controls is ignored while the bot is taking its turn.
 
 ## Series mode
 
-Instead of a single game, you can play a best-of-3 or best-of-5 series
-against the same opponent: board size, skip limit, and mode settings
-(including Flag Conquest, if enabled) are locked in once for every round,
-and each round's winner (by score, same rules as above) earns one series
-win. A tied round counts toward the games played but doesn't award
-either side a point. The series ends as soon as one player reaches the
-majority of wins (2 of 3, or 3 of 5) — it doesn't need to play out every
-round — or, in the rare case of enough tied rounds, can itself end tied.
+Instead of a single game, you can play a 3-round or 5-round series against
+the same opponent: board size, skip limit, and mode settings (including
+Flag Conquest, if enabled) are locked in once for every round. Every
+round's score (same rules as above) adds to each player's running series
+total — a landslide round counts for more than a squeaker — so the whole
+series is always played out, and the player with the higher cumulative
+score at the end wins. Equal cumulative scores after all rounds is a
+tied series.
 
 ## Requirements
 
@@ -85,7 +85,7 @@ The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle the doubles house rule,
 [Flag Conquest](#flag-conquest) (and its bonus-points preset) or the
 [bot opponent](#bot-opponent), then click **Start Game**/`Space` for a
-single match, or pick a series length (best-of-3/5) and click
+single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
 [Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
 button appears next time so you can pick up where you left off (including
@@ -126,7 +126,7 @@ rectangles/
 ├── models.py       # Rectangle, Player, TurnRecord
 ├── board.py        # grid + placement legality
 ├── game.py         # turn state machine, scoring, game-over rules
-├── series.py       # best-of-N match series (win tracking, next-round setup)
+├── series.py       # N-round match series (cumulative score, next-round setup)
 ├── bot.py          # picks a legal placement for the bot opponent
 ├── persistence.py  # save/load a game (and series, if one is in progress)
 └── ui/             # Pygame rendering and input (all Pygame code lives here)
