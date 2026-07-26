@@ -279,7 +279,7 @@ class Renderer:
             pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             label = f"{player.name}: {game.total_score(player)}"
             if player.flags_captured:
-                label += f"  🚩{player.flags_captured}"
+                label += f"  F{player.flags_captured}"
             if player.consecutive_skips:
                 label += f"  (skipped {player.consecutive_skips}/{game.skip_limit})"
             self._text(label, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
@@ -366,17 +366,17 @@ class Renderer:
         p2 = str(result.total[constants.PLAYER_2])
         if series.flag_conquest_enabled:
             if result.flags_captured[constants.PLAYER_1]:
-                p1 += f" 🚩{result.flags_captured[constants.PLAYER_1]}"
+                p1 += f" F{result.flags_captured[constants.PLAYER_1]}"
             if result.flags_captured[constants.PLAYER_2]:
-                p2 += f" 🚩{result.flags_captured[constants.PLAYER_2]}"
+                p2 += f" F{result.flags_captured[constants.PLAYER_2]}"
         return [str(index), p1, p2]
 
     def _series_totals_row(self, series: Series) -> list[str]:
         p1 = str(series.scores[constants.PLAYER_1])
         p2 = str(series.scores[constants.PLAYER_2])
         if series.flag_conquest_enabled:
-            p1 += f" 🚩{series.total_flags_captured(constants.PLAYER_1)}"
-            p2 += f" 🚩{series.total_flags_captured(constants.PLAYER_2)}"
+            p1 += f" F{series.total_flags_captured(constants.PLAYER_1)}"
+            p2 += f" F{series.total_flags_captured(constants.PLAYER_2)}"
         return ["Total", p1, p2]
 
     def _series_table_rows(self, series: Series) -> list[list[str]]:
