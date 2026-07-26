@@ -25,6 +25,8 @@ BUTTON_TEXT_COLOR = (255, 255, 255)
 OVERLAY_COLOR = (15, 15, 20, 190)
 DIVIDER_COLOR = (200, 200, 208)
 ROW_ACTIVE_BG_COLOR = (205, 230, 214)
+CARD_BG_COLOR = (255, 255, 255)
+CARD_BORDER_COLOR = (215, 215, 222)
 
 
 class Renderer:
@@ -54,50 +56,87 @@ class Renderer:
 
     def _draw_settings_screen(self, ui_state: UIState) -> None:
         center_x = layout.WINDOW_WIDTH // 2
+        mouse_pos = pygame.mouse.get_pos()
+
+        def hovered(rect: pygame.Rect) -> bool:
+            return rect.collidepoint(mouse_pos)
 
         title_surf = self.font_big.render("RECTANGLES", True, TEXT_COLOR)
         self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, 56)))
         subtitle_surf = self.font.render("Choose your settings", True, MUTED_TEXT_COLOR)
         self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 96)))
 
+        for card_rect, header in (
+            (layout.SETTINGS_LEFT_CARD_RECT, "Game Rules"),
+            (layout.SETTINGS_RIGHT_CARD_RECT, "Opponent & Match"),
+        ):
+            pygame.draw.rect(self.screen, CARD_BG_COLOR, card_rect, border_radius=12)
+            pygame.draw.rect(self.screen, CARD_BORDER_COLOR, card_rect, width=1, border_radius=12)
+            header_surf = self.font.render(header, True, TEXT_COLOR)
+            self.screen.blit(header_surf, header_surf.get_rect(center=(card_rect.centerx, card_rect.top + 26)))
+
         board_label = self.font.render("Board size", True, TEXT_COLOR)
-        self.screen.blit(board_label, board_label.get_rect(center=(center_x, 148)))
+        self.screen.blit(board_label, board_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 180)))
         for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
-            self._button(rect, f"{value}x{value}", selected=value == ui_state.selected_board_size)
+            self._button(
+                rect, f"{value}x{value}", selected=value == ui_state.selected_board_size, hovered=hovered(rect)
+            )
 
         skip_label = self.font.render("Skip limit", True, TEXT_COLOR)
-        self.screen.blit(skip_label, skip_label.get_rect(center=(center_x, 262)))
+        self.screen.blit(skip_label, skip_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 280)))
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
-            self._button(rect, str(value), selected=value == ui_state.selected_skip_limit)
+            self._button(rect, str(value), selected=value == ui_state.selected_skip_limit, hovered=hovered(rect))
 
         doubles_label = self.font.render("Doubles bonus turn", True, TEXT_COLOR)
         self.screen.blit(
-            doubles_label, doubles_label.get_rect(center=(layout.SETTINGS_DOUBLES_BUTTON_RECT.centerx, 262))
+            doubles_label, doubles_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 380))
         )
         self._button(
             layout.SETTINGS_DOUBLES_BUTTON_RECT,
             "ON" if ui_state.selected_doubles_enabled else "OFF",
             selected=ui_state.selected_doubles_enabled,
+            hovered=hovered(layout.SETTINGS_DOUBLES_BUTTON_RECT),
         )
 
-        series_label = self.font.render("Series length (for Start Series)", True, TEXT_COLOR)
-        self.screen.blit(series_label, series_label.get_rect(center=(center_x, 376)))
-        for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
-            self._button(rect, f"Bo{value}", selected=value == ui_state.selected_series_length)
-
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
-        self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_BOT_BUTTON_RECT.centerx, 376)))
+        self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
         self._button(
             layout.SETTINGS_BOT_BUTTON_RECT,
             "ON" if ui_state.selected_bot_enabled else "OFF",
             selected=ui_state.selected_bot_enabled,
+            hovered=hovered(layout.SETTINGS_BOT_BUTTON_RECT),
         )
 
-        self._button(layout.SETTINGS_START_BUTTON_RECT, "Start Game (Space)")
-        self._button(layout.SETTINGS_START_SERIES_BUTTON_RECT, "Start Series")
-        self._button(layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)")
+        series_label = self.font.render("Series length (for Start Series)", True, TEXT_COLOR)
+        self.screen.blit(series_label, series_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 280)))
+        for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+            self._button(
+                rect, f"Bo{value}", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
+            )
+
+        for i, line in enumerate(("The bot plays Player 2 automatically", "when turned on, in every mode.")):
+            hint_surf = self.font_small.render(line, True, MUTED_TEXT_COLOR)
+            self.screen.blit(hint_surf, hint_surf.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 400 + i * 20)))
+
+        self._button(
+            layout.SETTINGS_START_BUTTON_RECT,
+            "Start Game (Space)",
+            hovered=hovered(layout.SETTINGS_START_BUTTON_RECT),
+        )
+        self._button(
+            layout.SETTINGS_START_SERIES_BUTTON_RECT,
+            "Start Series",
+            hovered=hovered(layout.SETTINGS_START_SERIES_BUTTON_RECT),
+        )
+        self._button(
+            layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)", hovered=hovered(layout.SETTINGS_EXIT_BUTTON_RECT)
+        )
         if persistence.has_save():
-            self._button(layout.SETTINGS_RESUME_BUTTON_RECT, "Resume Game (R)")
+            self._button(
+                layout.SETTINGS_RESUME_BUTTON_RECT,
+                "Resume Game (R)",
+                hovered=hovered(layout.SETTINGS_RESUME_BUTTON_RECT),
+            )
 
     def _draw_board(self, game: Game) -> None:
         for r in range(game.board.size):
@@ -143,13 +182,22 @@ class Renderer:
         self.screen.blit(overlay, rect.topleft)
         pygame.draw.rect(self.screen, (30, 30, 30), rect, width=2)
 
-    def _button(self, rect: pygame.Rect, label: str, enabled: bool = True, selected: bool = False) -> None:
+    def _button(
+        self,
+        rect: pygame.Rect,
+        label: str,
+        enabled: bool = True,
+        selected: bool = False,
+        hovered: bool = False,
+    ) -> None:
         if selected:
             color = BUTTON_SELECTED_COLOR
-        elif enabled:
-            color = BUTTON_COLOR
-        else:
+        elif not enabled:
             color = BUTTON_DISABLED_COLOR
+        elif hovered:
+            color = BUTTON_HOVER_COLOR
+        else:
+            color = BUTTON_COLOR
         pygame.draw.rect(self.screen, color, rect, border_radius=6)
         if selected:
             pygame.draw.rect(self.screen, (255, 255, 255), rect, width=3, border_radius=6)

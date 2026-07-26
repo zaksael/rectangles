@@ -110,30 +110,40 @@ def pixel_to_cell(x: int, y: int, board_size: int) -> tuple[int, int] | None:
 
 
 def _centered_button_row(
-    values: tuple[int, ...], y: int, button_w: int = 90, button_h: int = 50, gap: int = 16
+    values: tuple[int, ...],
+    y: int,
+    center_x: int = WINDOW_WIDTH // 2,
+    button_w: int = 90,
+    button_h: int = 50,
+    gap: int = 16,
 ) -> dict[int, pygame.Rect]:
     total_w = len(values) * button_w + (len(values) - 1) * gap
-    start_x = (WINDOW_WIDTH - total_w) // 2
+    start_x = center_x - total_w // 2
     return {
         value: pygame.Rect(start_x + i * (button_w + gap), y, button_w, button_h)
         for i, value in enumerate(values)
     }
 
 
-SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(BOARD_SIZE_PRESETS, y=178)
-SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(SKIP_LIMIT_PRESETS, y=292)
-SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(SERIES_LENGTH_PRESETS, y=406)
+# Settings are grouped into two side-by-side cards rather than one ever-taller
+# vertical stack: "Game Rules" on the left, "Opponent & Match" on the right.
+SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
+SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
 
-# Sits beside the skip-limit row (same y) rather than its own row, since the
-# settings screen is already vertically tight but has unused horizontal room.
-SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(
-    SETTINGS_SKIP_LIMIT_BUTTON_RECTS[max(SKIP_LIMIT_PRESETS)].right + 40, 292, 160, 50
+SETTINGS_LEFT_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 360)
+SETTINGS_RIGHT_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 360)
+
+SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
+    BOARD_SIZE_PRESETS, y=210, center_x=SETTINGS_LEFT_COLUMN_X
 )
+SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(
+    SKIP_LIMIT_PRESETS, y=310, center_x=SETTINGS_LEFT_COLUMN_X
+)
+SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 410, 160, 50)
 
-# Sits beside the series-length row the same way the doubles toggle sits
-# beside skip limit.
-SETTINGS_BOT_BUTTON_RECT = pygame.Rect(
-    SETTINGS_SERIES_LENGTH_BUTTON_RECTS[max(SERIES_LENGTH_PRESETS)].right + 40, 406, 160, 50
+SETTINGS_BOT_BUTTON_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 80, 210, 160, 50)
+SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
+    SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X
 )
 
 _SETTINGS_BUTTON_W = 200
