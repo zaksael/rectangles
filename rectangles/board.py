@@ -3,12 +3,26 @@ from __future__ import annotations
 from .constants import BOARD_SIZE
 from .models import Player, Rectangle
 
+# Sentinel grid value for a walled cell - distinct from PLAYER_1/PLAYER_2 (1/2)
+# and from None (empty). can_place/frontier only check "is not None"/"is None",
+# so stamping this in is enough to make wall cells permanently unplaceable and
+# excluded from frontier growth with no changes to that logic.
+WALL = -1
+
 
 class Board:
-    def __init__(self, size: int = BOARD_SIZE, flag_cells: frozenset[tuple[int, int]] = frozenset()):
+    def __init__(
+        self,
+        size: int = BOARD_SIZE,
+        flag_cells: frozenset[tuple[int, int]] = frozenset(),
+        wall_cells: frozenset[tuple[int, int]] = frozenset(),
+    ):
         self.size = size
         self.flag_cells = flag_cells
+        self.wall_cells = wall_cells
         self._grid: list[list[int | None]] = [[None] * size for _ in range(size)]
+        for r, c in wall_cells:
+            self._grid[r][c] = WALL
 
     def in_bounds(self, r: int, c: int) -> bool:
         return 0 <= r < self.size and 0 <= c < self.size
@@ -18,6 +32,9 @@ class Board:
 
     def is_empty(self, r: int, c: int) -> bool:
         return self._grid[r][c] is None
+
+    def is_wall(self, r: int, c: int) -> bool:
+        return self._grid[r][c] == WALL
 
     def can_place(self, player: Player, top_left: tuple[int, int], w: int, h: int) -> bool:
         r, c = top_left

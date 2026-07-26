@@ -51,6 +51,7 @@ def _series_to_dict(series: Series) -> dict:
         "doubles_enabled": series.doubles_enabled,
         "flag_conquest_enabled": series.flag_conquest_enabled,
         "flag_bonus_points": series.flag_bonus_points,
+        "walls_enabled": series.walls_enabled,
         "scores": {str(player_id): score for player_id, score in series.scores.items()},
         "games_played": series.games_played,
         "rounds": [_round_to_dict(r) for r in series.rounds],
@@ -65,6 +66,7 @@ def _series_from_dict(data: dict) -> Series:
         doubles_enabled=data.get("doubles_enabled", False),
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
+        walls_enabled=data.get("walls_enabled", False),
     )
     series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
     series.games_played = data["games_played"]
@@ -81,6 +83,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "doubles_enabled": game.doubles_enabled,
         "flag_conquest_enabled": game.flag_conquest_enabled,
         "flag_bonus_points": game.flag_bonus_points,
+        "walls_enabled": game.walls_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
         "last_roll": list(game.last_roll) if game.last_roll is not None else None,
@@ -116,6 +119,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         doubles_enabled=data.get("doubles_enabled", False),
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
+        walls_enabled=data.get("walls_enabled", False),
     )
 
     for player_id_str, player_data in data["players"].items():

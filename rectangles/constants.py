@@ -14,6 +14,15 @@ DOUBLES_ENABLED = False
 FLAG_CONQUEST_ENABLED = False
 FLAG_BONUS_POINTS = 10
 
+# Whether a ring of permanently unplaceable wall cells is seeded around the
+# board's center (see Game.reset()). The ring is centered on (size // 2,
+# size // 2) - another reason board sizes are odd - so it's symmetric under
+# 180-degree rotation for either player. Four cardinal-midpoint cells are
+# left open as gaps so the center area stays reachable, just harder to get
+# to, rather than a permanently sealed-off island.
+WALLS_ENABLED = False
+WALL_RING_RADIUS = 2
+
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both. Board sizes are odd so flag conquest's center cell
 # (size // 2) is always a single unambiguous cell.

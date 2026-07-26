@@ -15,6 +15,8 @@ from .constants import (
     PLAYER_2,
     PLAYER_NAMES,
     SKIP_LIMIT,
+    WALL_RING_RADIUS,
+    WALLS_ENABLED,
 )
 from .models import Player, TurnRecord
 
@@ -41,6 +43,7 @@ class Game:
         doubles_enabled: bool = DOUBLES_ENABLED,
         flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
         flag_bonus_points: int = FLAG_BONUS_POINTS,
+        walls_enabled: bool = WALLS_ENABLED,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
@@ -48,6 +51,7 @@ class Game:
         self.doubles_enabled = doubles_enabled
         self.flag_conquest_enabled = flag_conquest_enabled
         self.flag_bonus_points = flag_bonus_points
+        self.walls_enabled = walls_enabled
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -69,7 +73,8 @@ class Game:
             if self.flag_conquest_enabled
             else frozenset()
         )
-        self.board = Board(self.board_size, flag_cells=flag_cells)
+        wall_cells = self._wall_cells() if self.walls_enabled else frozenset()
+        self.board = Board(self.board_size, flag_cells=flag_cells, wall_cells=wall_cells)
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
             PLAYER_2: Player(
@@ -87,6 +92,24 @@ class Game:
         self.blocked_player_id = None
         self.surrendered_player_id = None
         self.history = []
+
+    def _wall_cells(self) -> frozenset[tuple[int, int]]:
+        size = self.board_size
+        center = size // 2
+        radius = WALL_RING_RADIUS
+        ring = {
+            (r, c)
+            for r in range(size)
+            for c in range(size)
+            if max(abs(r - center), abs(c - center)) == radius
+        }
+        gaps = {
+            (center - radius, center),
+            (center + radius, center),
+            (center, center - radius),
+            (center, center + radius),
+        }
+        return frozenset(ring - gaps)
 
     @property
     def current_player(self) -> Player:
