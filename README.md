@@ -19,8 +19,9 @@ area when the game ends wins.
   own — touching only your opponent's territory doesn't count.
 - If a roll can't legally be placed anywhere (in either orientation), your
   turn is skipped.
-- Rolling doubles (both dice show the same number) earns you an immediate
-  extra turn, whether or not that roll could be placed.
+- Rolling doubles (both dice show the same number) can optionally earn you
+  an immediate extra turn, whether or not that roll could be placed — this
+  house rule is off by default and configurable before each match.
 - The game ends when any of the following happens:
   - neither player has any legal placement left anywhere on the board,
   - one player becomes completely boxed in by the opponent's territory (no
@@ -32,6 +33,13 @@ area when the game ends wins.
     regardless of area covered so far.
 - Otherwise, whoever has placed the most total area wins; equal areas is a
   tie.
+
+## Bot opponent
+
+Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
+places a random legal piece (or continues past a forced skip), and ends its
+turn on its own, with a short pause between actions. Off by default. Human
+input for Player 2's controls is ignored while the bot is taking its turn.
 
 ## Series mode
 
@@ -61,10 +69,11 @@ uv run python main.py
 ```
 
 The app opens to a settings screen — pick a board size and skip limit
-(preset buttons), then click **Start Game**/`Space` for a single match, or
-pick a series length (best-of-3/5) and click **Start Series** to play a
-match series against the same opponent (see [Series mode](#series-mode)
-above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
+(preset buttons), optionally toggle the doubles house rule or the
+[bot opponent](#bot-opponent), then click **Start Game**/`Space` for a
+single match, or pick a series length (best-of-3/5) and click
+**Start Series** to play a match series against the same opponent (see
+[Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
 button appears next time so you can pick up where you left off (including
 the series score, if one was in progress).
 
@@ -104,9 +113,11 @@ rectangles/
 ├── board.py        # grid + placement legality
 ├── game.py         # turn state machine, scoring, game-over rules
 ├── series.py       # best-of-N match series (win tracking, next-round setup)
+├── bot.py          # picks a legal placement for the bot opponent
 ├── persistence.py  # save/load a game (and series, if one is in progress)
 └── ui/             # Pygame rendering and input (all Pygame code lives here)
 ```
 
-The rules engine (`models.py`, `board.py`, `game.py`, `series.py`) has no
-dependency on Pygame, so it's fully unit-testable headlessly — see `tests/`.
+The rules engine (`models.py`, `board.py`, `game.py`, `series.py`, `bot.py`)
+has no dependency on Pygame, so it's fully unit-testable headlessly — see
+`tests/`.
