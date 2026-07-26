@@ -29,9 +29,9 @@ def _rect_from_dict(data: dict, owner: int) -> Rectangle:
 
 def _round_to_dict(round_result: RoundResult) -> dict:
     return {
-        "area": {str(player_id): value for player_id, value in round_result.area.items()},
-        "flags_captured": {str(player_id): value for player_id, value in round_result.flags_captured.items()},
-        "total": {str(player_id): value for player_id, value in round_result.total.items()},
+        "area": round_result.area,
+        "flags_captured": round_result.flags_captured,
+        "total": round_result.total,
     }
 
 
@@ -52,7 +52,7 @@ def _series_to_dict(series: Series) -> dict:
         "flag_conquest_enabled": series.flag_conquest_enabled,
         "flag_bonus_points": series.flag_bonus_points,
         "walls_enabled": series.walls_enabled,
-        "scores": {str(player_id): score for player_id, score in series.scores.items()},
+        "scores": series.scores,
         "games_played": series.games_played,
         "rounds": [_round_to_dict(r) for r in series.rounds],
     }
@@ -92,7 +92,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "blocked_player_id": game.blocked_player_id,
         "surrendered_player_id": game.surrendered_player_id,
         "players": {
-            str(player.id): {
+            player.id: {
                 "name": player.name,
                 "start_corner": list(player.start_corner),
                 "consecutive_skips": player.consecutive_skips,
