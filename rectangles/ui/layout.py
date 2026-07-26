@@ -54,13 +54,23 @@ def _centered_button_row(
     }
 
 
-# Settings are grouped into two side-by-side cards rather than one ever-taller
-# vertical stack: "Game Rules" on the left, "Opponent & Match" on the right.
+# Settings are grouped into three cards rather than one ever-taller vertical
+# stack: "Board Setup" and "Opponent & Match" side by side on top (same
+# height, so neither dwarfs the other), and a full-width "House Rules" card
+# below holding every optional toggle (Doubles/Flag Conquest/Walls and any
+# future ones), so new house rules grow that one card sideways/downward
+# instead of making "Board Setup" taller and lopsided again.
 SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
 SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
 
-SETTINGS_LEFT_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 660)
-SETTINGS_RIGHT_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
+SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 330)
+SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
+SETTINGS_HOUSE_RULES_CARD_RECT = pygame.Rect(
+    SETTINGS_BOARD_CARD_RECT.left,
+    SETTINGS_BOARD_CARD_RECT.bottom + 30,
+    SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
+    270,
+)
 
 SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
     BOARD_SIZE_PRESETS, y=210, center_x=SETTINGS_LEFT_COLUMN_X
@@ -68,24 +78,32 @@ SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
 SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(
     SKIP_LIMIT_PRESETS, y=310, center_x=SETTINGS_LEFT_COLUMN_X
 )
-SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 410, 160, 50)
-SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 510, 160, 50)
-SETTINGS_FLAG_BONUS_BUTTON_RECTS = _centered_button_row(
-    FLAG_BONUS_POINTS_PRESETS, y=610, center_x=SETTINGS_LEFT_COLUMN_X
-)
-SETTINGS_WALLS_BUTTON_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 80, 710, 160, 50)
 
 SETTINGS_BOT_BUTTON_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 80, 210, 160, 50)
 SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
     SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
 )
 
+# Three evenly-spaced toggle columns within the House Rules card, each with
+# the same margin (87px) from its nearer card edge as from its neighbors.
+SETTINGS_RULE_COLUMN_1_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width // 6
+SETTINGS_RULE_COLUMN_2_X = SETTINGS_HOUSE_RULES_CARD_RECT.centerx
+SETTINGS_RULE_COLUMN_3_X = SETTINGS_HOUSE_RULES_CARD_RECT.right - SETTINGS_HOUSE_RULES_CARD_RECT.width // 6
+
+_RULE_TOGGLE_Y = SETTINGS_HOUSE_RULES_CARD_RECT.top + 100
+SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_1_X - 80, _RULE_TOGGLE_Y, 160, 50)
+SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_2_X - 80, _RULE_TOGGLE_Y, 160, 50)
+SETTINGS_WALLS_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_3_X - 80, _RULE_TOGGLE_Y, 160, 50)
+SETTINGS_FLAG_BONUS_BUTTON_RECTS = _centered_button_row(
+    FLAG_BONUS_POINTS_PRESETS, y=SETTINGS_HOUSE_RULES_CARD_RECT.top + 200, center_x=SETTINGS_RULE_COLUMN_2_X
+)
+
 _SETTINGS_BUTTON_W = 200
 _SETTINGS_BUTTON_H = 56
 _SETTINGS_BUTTON_GAP = 20
-# Derived from the (now taller, to fit the flag-conquest rows) left card
-# rather than a hardcoded Y, so the two never overlap.
-_SETTINGS_START_BUTTONS_Y = SETTINGS_LEFT_CARD_RECT.bottom + 16
+# Derived from the House Rules card (the tallest/lowest of the three) rather
+# than a hardcoded Y, so the two never overlap.
+_SETTINGS_START_BUTTONS_Y = SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 16
 _SETTINGS_BUTTONS_START_X = (
     WINDOW_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
 ) // 2

@@ -69,8 +69,9 @@ class Renderer:
         self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 96)))
 
         for card_rect, header in (
-            (layout.SETTINGS_LEFT_CARD_RECT, "Game Rules"),
-            (layout.SETTINGS_RIGHT_CARD_RECT, "Opponent & Match"),
+            (layout.SETTINGS_BOARD_CARD_RECT, "Board Setup"),
+            (layout.SETTINGS_MATCH_CARD_RECT, "Opponent & Match"),
+            (layout.SETTINGS_HOUSE_RULES_CARD_RECT, "House Rules"),
         ):
             pygame.draw.rect(self.screen, CARD_BG_COLOR, card_rect, border_radius=12)
             pygame.draw.rect(self.screen, CARD_BORDER_COLOR, card_rect, width=1, border_radius=12)
@@ -89,27 +90,20 @@ class Renderer:
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
             self._button(rect, str(value), selected=value == ui_state.selected_skip_limit, hovered=hovered(rect))
 
-        doubles_label = self.font.render("Doubles bonus turn", True, TEXT_COLOR)
-        self.screen.blit(
-            doubles_label, doubles_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 380))
-        )
-        self._button(
-            layout.SETTINGS_DOUBLES_BUTTON_RECT,
-            "ON" if ui_state.selected_doubles_enabled else "OFF",
-            selected=ui_state.selected_doubles_enabled,
-            hovered=hovered(layout.SETTINGS_DOUBLES_BUTTON_RECT),
-        )
-
-        flag_label = self.font.render("Flag Conquest", True, TEXT_COLOR)
-        self.screen.blit(
-            flag_label, flag_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 480))
-        )
-        self._button(
-            layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT,
-            "ON" if ui_state.selected_flag_conquest_enabled else "OFF",
-            selected=ui_state.selected_flag_conquest_enabled,
-            hovered=hovered(layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT),
-        )
+        toggle_label_y = layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 70
+        for label_text, column_x, rect, enabled_flag in (
+            ("Doubles bonus turn", layout.SETTINGS_RULE_COLUMN_1_X,
+             layout.SETTINGS_DOUBLES_BUTTON_RECT, ui_state.selected_doubles_enabled),
+            ("Flag Conquest", layout.SETTINGS_RULE_COLUMN_2_X,
+             layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT, ui_state.selected_flag_conquest_enabled),
+            ("Walls", layout.SETTINGS_RULE_COLUMN_3_X,
+             layout.SETTINGS_WALLS_BUTTON_RECT, ui_state.selected_walls_enabled),
+        ):
+            label_surf = self.font.render(label_text, True, TEXT_COLOR)
+            self.screen.blit(label_surf, label_surf.get_rect(center=(column_x, toggle_label_y)))
+            self._button(
+                rect, "ON" if enabled_flag else "OFF", selected=enabled_flag, hovered=hovered(rect)
+            )
 
         flag_bonus_label = self.font.render(
             "Flag bonus points",
@@ -117,7 +111,10 @@ class Renderer:
             TEXT_COLOR if ui_state.selected_flag_conquest_enabled else MUTED_TEXT_COLOR,
         )
         self.screen.blit(
-            flag_bonus_label, flag_bonus_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 580))
+            flag_bonus_label,
+            flag_bonus_label.get_rect(
+                center=(layout.SETTINGS_RULE_COLUMN_2_X, layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 170)
+            ),
         )
         for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
             self._button(
@@ -127,15 +124,6 @@ class Renderer:
                 selected=value == ui_state.selected_flag_bonus_points,
                 hovered=ui_state.selected_flag_conquest_enabled and hovered(rect),
             )
-
-        walls_label = self.font.render("Walls", True, TEXT_COLOR)
-        self.screen.blit(walls_label, walls_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 680)))
-        self._button(
-            layout.SETTINGS_WALLS_BUTTON_RECT,
-            "ON" if ui_state.selected_walls_enabled else "OFF",
-            selected=ui_state.selected_walls_enabled,
-            hovered=hovered(layout.SETTINGS_WALLS_BUTTON_RECT),
-        )
 
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
