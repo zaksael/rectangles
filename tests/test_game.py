@@ -1,6 +1,6 @@
 import pytest
 
-from rectangles.constants import PLAYER_1, PLAYER_2
+from rectangles.constants import PLAYER_1, PLAYER_2, WALL_RING_RADIUS
 from rectangles.game import Game, GameOverReason, TurnState
 
 
@@ -311,6 +311,34 @@ def test_reset_computes_flag_positions_for_odd_board_sizes():
     for size in (11, 15):
         game = Game(board_size=size, flag_conquest_enabled=True)
         assert game.board.flag_cells == frozenset({(0, size - 1), (size - 1, 0), (size // 2, size // 2)})
+
+
+def test_walls_disabled_by_default():
+    game = Game(board_size=11)
+    assert game.board.wall_cells == frozenset()
+
+
+def test_reset_computes_symmetric_wall_ring_for_odd_board_sizes():
+    for size in (11, 15):
+        game = Game(board_size=size, walls_enabled=True)
+        cells = game.board.wall_cells
+        assert cells != frozenset()
+        # 180-degree rotationally symmetric about the board center, so
+        # neither player's approach to the center is favored.
+        assert cells == {(size - 1 - r, size - 1 - c) for r, c in cells}
+        # The exact center cell and its four cardinal neighbors stay open
+        # so the walled area is reachable rather than a sealed island.
+        center = size // 2
+        radius = WALL_RING_RADIUS
+        gaps = (
+            (center, center),
+            (center - radius, center),
+            (center + radius, center),
+            (center, center - radius),
+            (center, center + radius),
+        )
+        for r, c in gaps:
+            assert (r, c) not in cells
 
 
 def test_attempt_place_captures_single_flag():

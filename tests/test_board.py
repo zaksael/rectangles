@@ -131,6 +131,27 @@ def test_board_flag_cells_stored_and_placeable_like_any_empty_cell():
     assert board.can_place(p1, (0, 0), w=1, h=1) is True  # flag cells impose no extra restriction
 
 
+def test_board_wall_cells_default_empty():
+    board = Board(size=6)
+    assert board.wall_cells == frozenset()
+
+
+def test_board_wall_cells_block_placement():
+    board = Board(size=6, wall_cells=frozenset({(2, 2)}))
+    p1, _ = make_players(6)
+    assert board.wall_cells == frozenset({(2, 2)})
+    assert board.is_wall(2, 2) is True
+    assert board.can_place(p1, (2, 2), w=1, h=1) is False
+    assert board.can_place(p1, (1, 2), w=1, h=2) is False  # piece would cover the wall cell too
+
+
+def test_board_wall_cells_excluded_from_frontier():
+    board = Board(size=6, wall_cells=frozenset({(0, 3)}))
+    p1, _ = make_players(6)
+    board.place(p1, (0, 0), w=3, h=3)  # rows0-2, cols0-2; (0,3) would otherwise be frontier
+    assert (0, 3) not in board.frontier(p1)
+
+
 def test_legal_top_lefts_matches_brute_force_can_place():
     board = Board(size=6)
     p1, p2 = make_players(6)

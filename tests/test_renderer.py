@@ -75,6 +75,11 @@ def test_draw_flag_conquest_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_walls_smoke(renderer):
+    game = Game(board_size=11, walls_enabled=True)
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 @pytest.mark.parametrize(
     "reason",
     [

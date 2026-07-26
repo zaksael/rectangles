@@ -46,6 +46,15 @@ configurable number of bonus points (5/10/20, selectable on the settings
 screen) added on top of their area. A single large piece can capture more
 than one flag at once if it covers them both.
 
+## Walls
+
+An optional mode, off by default. When turned on, a ring of permanently
+unplaceable wall cells is seeded around the exact center of the board, with
+four gaps (one per side) so the center area is still reachable — just harder
+to build into — rather than sealed off entirely. The ring is centered on the
+board's middle cell, so it's symmetric for both players regardless of which
+corner they start from.
+
 ## Bot opponent
 
 Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
@@ -57,7 +66,7 @@ input for Player 2's controls is ignored while the bot is taking its turn.
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, if enabled) are locked in once for every round. Every
+Flag Conquest and Walls, if enabled) are locked in once for every round. Every
 round's score (same rules as above) adds to each player's running series
 total — a landslide round counts for more than a squeaker — so the whole
 series is always played out, and the player with the higher cumulative
@@ -85,8 +94,8 @@ uv run python main.py
 
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle the doubles house rule,
-[Flag Conquest](#flag-conquest) (and its bonus-points preset) or the
-[bot opponent](#bot-opponent), then click **Start Game**/`Space` for a
+[Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls)
+or the [bot opponent](#bot-opponent), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
 [Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
