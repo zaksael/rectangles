@@ -362,28 +362,40 @@ class Renderer:
             self._text("scroll for more ▼", (x, y), self.font_small, MUTED_TEXT_COLOR)
 
     def _round_row(self, series: Series, index: int, result: RoundResult) -> list[str]:
-        p1 = str(result.total[constants.PLAYER_1])
-        p2 = str(result.total[constants.PLAYER_2])
+        row = [str(index), str(result.total[constants.PLAYER_1])]
         if series.flag_conquest_enabled:
-            if result.flags_captured[constants.PLAYER_1]:
-                p1 += f" F{result.flags_captured[constants.PLAYER_1]}"
-            if result.flags_captured[constants.PLAYER_2]:
-                p2 += f" F{result.flags_captured[constants.PLAYER_2]}"
-        return [str(index), p1, p2]
+            row.append(str(result.flags_captured[constants.PLAYER_1]))
+        row.append(str(result.total[constants.PLAYER_2]))
+        if series.flag_conquest_enabled:
+            row.append(str(result.flags_captured[constants.PLAYER_2]))
+        return row
 
     def _series_totals_row(self, series: Series) -> list[str]:
-        p1 = str(series.scores[constants.PLAYER_1])
-        p2 = str(series.scores[constants.PLAYER_2])
+        row = ["Total", str(series.scores[constants.PLAYER_1])]
         if series.flag_conquest_enabled:
-            p1 += f" F{series.total_flags_captured(constants.PLAYER_1)}"
-            p2 += f" F{series.total_flags_captured(constants.PLAYER_2)}"
-        return ["Total", p1, p2]
+            row.append(str(series.total_flags_captured(constants.PLAYER_1)))
+        row.append(str(series.scores[constants.PLAYER_2]))
+        if series.flag_conquest_enabled:
+            row.append(str(series.total_flags_captured(constants.PLAYER_2)))
+        return row
 
     def _series_table_rows(self, series: Series) -> list[list[str]]:
         rows = [self._round_row(series, index, result) for index, result in enumerate(series.rounds, start=1)]
         if series.rounds:
             rows.append(self._series_totals_row(series))
         return rows
+
+    def _series_table_columns(self, series: Series, *, panel: bool) -> list[tuple[str, int]]:
+        if series.flag_conquest_enabled:
+            if panel:
+                return [("Rnd", 32), ("P1", 88), ("F", 34), ("P2", 88), ("F", 34)]
+            # Centered on the whole window (board + panel) like the rest of the overlay's
+            # text, so this must stay narrow enough that it doesn't creep past the board's
+            # right edge into the panel's own (separately drawn) series table.
+            return [("Rnd", 60), ("P1", 130), ("F", 65), ("P2", 130), ("F", 65)]
+        if panel:
+            return [("Rnd", 40), ("P1", 126), ("P2", 126)]
+        return [("Rnd", 70), ("P1", 220), ("P2", 220)]
 
     def _draw_table(
         self,
@@ -420,11 +432,10 @@ class Renderer:
         x = layout.PANEL_X
         self._divider(layout.PANEL_SERIES_DIVIDER_Y)
         self._text("Series Stats", (x, layout.PANEL_SERIES_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
-        columns = [("Rnd", 40), ("P1", 126), ("P2", 126)]
         self._draw_table(
             x,
             layout.PANEL_SERIES_START_Y,
-            columns,
+            self._series_table_columns(series, panel=True),
             self._series_table_rows(series),
             layout.PANEL_SERIES_ROW_HEIGHT,
             self.font_small,
@@ -490,7 +501,7 @@ class Renderer:
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
 
         if series is not None and series.rounds:
-            columns = [("Rnd", 70), ("P1", 220), ("P2", 220)]
+            columns = self._series_table_columns(series, panel=False)
             table_width = sum(width for _, width in columns)
             self._draw_table(
                 center_x - table_width // 2,
