@@ -11,7 +11,7 @@ from .renderer import Renderer
 from .state import Screen, UIState
 
 FPS = 60
-BOT_MOVE_DELAY_MS = 500
+AUTO_ACTION_DELAY_MS = 500
 
 
 def run() -> None:
@@ -23,7 +23,7 @@ def run() -> None:
     game: Game | None = None
     series: Series | None = None
     series_game_recorded = False
-    bot_next_action_at = 0
+    auto_action_at = 0
     ui_state = UIState()
     renderer = Renderer(screen)
 
@@ -55,7 +55,7 @@ def run() -> None:
             )
             series = None
             series_game_recorded = False
-            bot_next_action_at = 0
+            auto_action_at = 0
             ui_state.game_requested = False
 
         if ui_state.series_requested:
@@ -70,7 +70,7 @@ def run() -> None:
             )
             game = series.new_game()
             series_game_recorded = False
-            bot_next_action_at = 0
+            auto_action_at = 0
             ui_state.series_requested = False
 
         if ui_state.resume_requested:
@@ -80,13 +80,13 @@ def run() -> None:
             else:
                 game, series = loaded
             series_game_recorded = False
-            bot_next_action_at = 0
+            auto_action_at = 0
             ui_state.resume_requested = False
 
         if ui_state.next_game_requested:
             game = series.new_game()
             series_game_recorded = False
-            bot_next_action_at = 0
+            auto_action_at = 0
             ui_state.next_game_requested = False
 
         if series is not None and game is not None and game.state == TurnState.GAME_OVER and not series_game_recorded:
@@ -98,11 +98,14 @@ def run() -> None:
             and game is not None
             and game.state != TurnState.GAME_OVER
             and ui_state.pending_confirmation is None
-            and game_input.is_bots_turn(game, ui_state)
-            and pygame.time.get_ticks() >= bot_next_action_at
+            and pygame.time.get_ticks() >= auto_action_at
         ):
-            game_input.take_bot_turn(game, ui_state)
-            bot_next_action_at = pygame.time.get_ticks() + BOT_MOVE_DELAY_MS
+            if game_input.is_bots_turn(game, ui_state):
+                game_input.take_bot_turn(game, ui_state)
+                auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
+            elif game.state == TurnState.SKIPPED:
+                game_input.continue_turn(game)
+                auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
 
         if ui_state.screen == Screen.PLAYING and not game_input.is_bots_turn(game, ui_state):
             game_input.update_hover(game, ui_state)

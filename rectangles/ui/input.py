@@ -64,7 +64,7 @@ def _roll_dice(game: Game, ui_state: UIState) -> None:
         ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
 
 
-def _continue_turn(game: Game) -> None:
+def continue_turn(game: Game) -> None:
     if not game.check_game_over():
         game.end_turn()
 
@@ -77,7 +77,7 @@ def take_bot_turn(game: Game, ui_state: UIState) -> None:
     if game.state == TurnState.AWAITING_ROLL:
         _roll_dice(game, ui_state)
     elif game.state == TurnState.SKIPPED:
-        _continue_turn(game)
+        continue_turn(game)
     elif game.state == TurnState.CHOOSING_PLACEMENT:
         top_left, w, h = bot.choose_placement(game, ui_state.selected_bot_difficulty)
         if game.attempt_place(top_left, w, h):
@@ -137,7 +137,7 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
 
     if game.state == TurnState.SKIPPED:
         if layout.CONTINUE_BUTTON_RECT.collidepoint(pos):
-            _continue_turn(game)
+            continue_turn(game)
         return True
 
     if game.state == TurnState.CHOOSING_PLACEMENT:
@@ -272,7 +272,7 @@ def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState, se
     elif event.key == pygame.K_d and game.state == TurnState.AWAITING_ROLL and not is_bots_turn(game, ui_state):
         _roll_dice(game, ui_state)
     elif event.key == pygame.K_SPACE and game.state == TurnState.SKIPPED and not is_bots_turn(game, ui_state):
-        _continue_turn(game)
+        continue_turn(game)
     return True
 
 

@@ -130,7 +130,8 @@ more, so the panel always fits.
   hover over the board to preview exact placement (centered on your cursor),
   then click a highlighted cell to place the piece.
 - Rotate the piece with the **Rotate** button, `R`, or right-click.
-- **Continue** (`Space`) to proceed after a skipped turn.
+- A roll with no legal placement skips your turn automatically after a brief
+  pause; click **Continue**/`Space` to skip the wait immediately instead.
 - **New Game** (`N`) at any time during a match to return to the settings
   screen and start a fresh match, or **Exit** (`Esc`) to quit outright.
   Once you've placed at least one piece, either of these (and closing the
