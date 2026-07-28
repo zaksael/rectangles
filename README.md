@@ -127,8 +127,8 @@ more, so the panel always fits.
 
 - **Roll Dice** (`D`) to get a piece for your turn.
 - All cells where your rolled piece could legally go are highlighted green;
-  hover over the board to preview exact placement, then click a highlighted
-  cell to place the piece.
+  hover over the board to preview exact placement (centered on your cursor),
+  then click a highlighted cell to place the piece.
 - Rotate the piece with the **Rotate** button, `R`, or right-click.
 - **Continue** (`Space`) to proceed after a skipped turn.
 - **New Game** (`N`) at any time during a match to return to the settings

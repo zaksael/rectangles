@@ -40,29 +40,36 @@ def _finished_game(board_size, p1_area, p2_area):
     return game
 
 
-def test_compute_top_left_p1_uses_cell_directly():
+def test_compute_top_left_centers_small_piece_on_cell():
     game = Game(board_size=6)
-    assert compute_top_left(game, w=2, h=2, cell=(2, 3)) == (2, 3)
+    # A 2x2 piece centered on (2, 3): offset back by w//2=1, h//2=1.
+    assert compute_top_left(game, w=2, h=2, cell=(2, 3)) == (1, 2)
 
 
-def test_compute_top_left_p1_clamps_upper_bound():
+def test_compute_top_left_clamps_upper_bound():
     game = Game(board_size=6)
-    # A 2x2 piece anchored at (5, 5) would overrun the board; clamp to fit.
-    assert compute_top_left(game, w=2, h=2, cell=(5, 5)) == (4, 4)
+    # A 3x3 piece centered on (5, 5) would overrun the board; clamp to fit.
+    assert compute_top_left(game, w=3, h=3, cell=(5, 5)) == (3, 3)
 
 
-def test_compute_top_left_p2_uses_cell_as_bottom_right():
+def test_compute_top_left_clamps_lower_bound():
     game = Game(board_size=6)
-    game.current_player_id = PLAYER_2
-    # A 2x2 piece with bottom-right at (5, 5) has top-left at (4, 4).
-    assert compute_top_left(game, w=2, h=2, cell=(5, 5)) == (4, 4)
-
-
-def test_compute_top_left_p2_clamps_lower_bound():
-    game = Game(board_size=6)
-    game.current_player_id = PLAYER_2
-    # A 3x3 piece with bottom-right at (0, 0) would go negative; clamp to fit.
+    # A 3x3 piece centered on (0, 0) would go negative; clamp to fit.
     assert compute_top_left(game, w=3, h=3, cell=(0, 0)) == (0, 0)
+
+
+def test_compute_top_left_same_for_both_players():
+    game = Game(board_size=6)
+    p1_result = compute_top_left(game, w=2, h=2, cell=(3, 3))
+    game.current_player_id = PLAYER_2
+    p2_result = compute_top_left(game, w=2, h=2, cell=(3, 3))
+    assert p1_result == p2_result == (2, 2)
+
+
+def test_compute_top_left_centers_odd_dimension_piece():
+    game = Game(board_size=6)
+    # A 3x3 piece has an exact center cell; (3, 3) centers with no clamping.
+    assert compute_top_left(game, w=3, h=3, cell=(3, 3)) == (2, 2)
 
 
 def _played_game() -> Game:

@@ -21,9 +21,8 @@ def _current_window_size() -> tuple[int, int]:
 
 def compute_top_left(game: Game, w: int, h: int, cell: tuple[int, int]) -> tuple[int, int]:
     r, c = cell
-    if game.current_player_id == PLAYER_2:
-        r -= h - 1
-        c -= w - 1
+    r -= h // 2
+    c -= w // 2
     r = max(0, min(r, game.board.size - h))
     c = max(0, min(c, game.board.size - w))
     return (r, c)
