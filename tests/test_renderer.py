@@ -107,6 +107,43 @@ def test_last_placed_rect_ignores_a_trailing_skip(renderer):
     assert (last_placed.top_left, last_placed.width, last_placed.height) == ((0, 0), 2, 2)
 
 
+def test_status_banner_message_none_on_a_normal_awaiting_roll(renderer):
+    game = Game(board_size=6)
+    assert renderer._status_banner_message(game) is None
+
+
+def test_status_banner_message_on_skipped_turn(renderer):
+    game = Game(board_size=4, rng=ScriptedRandom([6, 6]))
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=3, h=4)
+    game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+
+    assert renderer._status_banner_message(game) == "Player 1 skipped - no legal placement!"
+
+
+def test_status_banner_message_on_doubles_bonus_turn(renderer):
+    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    assert game.state == TurnState.AWAITING_ROLL
+    assert game.current_player_id == PLAYER_1  # doubles: same player continues
+
+    assert renderer._status_banner_message(game) == "Doubles! Player 1 rolls again"
+
+
+def test_draw_doubles_banner_smoke(renderer):
+    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 @pytest.mark.parametrize(
     "reason",
     [

@@ -133,7 +133,9 @@ more, so the panel always fits.
   opponent's last move at a glance.
 - Rotate the piece with the **Rotate** button, `R`, or right-click.
 - A roll with no legal placement skips your turn automatically after a brief
-  pause; click **Continue**/`Space` to skip the wait immediately instead.
+  pause; click **Continue**/`Space` to skip the wait immediately instead. A
+  banner over the board calls out the skip, and another calls out a doubles
+  bonus turn, so neither is easy to miss.
 - **New Game** (`N`) at any time during a match to return to the settings
   screen and start a fresh match, or **Exit** (`Esc`) to quit outright.
   Once you've placed at least one piece, either of these (and closing the

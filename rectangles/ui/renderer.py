@@ -31,6 +31,7 @@ CARD_BORDER_COLOR = (215, 215, 222)
 FLAG_COLOR = (230, 180, 30)
 WALL_LINE_COLOR = (90, 88, 96)
 LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
+STATUS_BANNER_BG_COLOR = (20, 20, 24, 215)
 
 
 class Renderer:
@@ -72,6 +73,7 @@ class Renderer:
                 self._draw_coverable_cells(game, ui_state)
                 if ui_state.hover_top_left is not None:
                     self._draw_ghost(ui_state)
+            self._draw_status_banner(game)
             self._draw_panel(game, ui_state, series)
             if game.state == TurnState.GAME_OVER:
                 self._draw_game_over(game, series)
@@ -233,6 +235,37 @@ class Renderer:
         rect = layout.piece_rect(last_placed.top_left, last_placed.width, last_placed.height).inflate(4, 4)
         pygame.draw.rect(self.screen, LAST_MOVE_HIGHLIGHT_COLOR, rect, width=3)
 
+    def _is_doubles_bonus_turn(self, game: Game) -> bool:
+        return (
+            game.doubles_enabled
+            and bool(game.history)
+            and game.history[-1].player_id == game.current_player_id
+            and game.history[-1].roll[0] == game.history[-1].roll[1]
+        )
+
+    def _status_banner_message(self, game: Game) -> str | None:
+        if game.state == TurnState.SKIPPED:
+            return f"{game.current_player.name} skipped - no legal placement!"
+        if game.state == TurnState.AWAITING_ROLL and self._is_doubles_bonus_turn(game):
+            return f"Doubles! {game.current_player.name} rolls again"
+        return None
+
+    def _draw_status_banner(self, game: Game) -> None:
+        message = self._status_banner_message(game)
+        if message is None:
+            return
+        text_surf = self.font.render(message, True, (255, 255, 255))
+        banner_rect = text_surf.get_rect().inflate(48, 28)
+        # Centered on the full board column (not just the current board_size's
+        # smaller rect), so it stays on-screen even for the smallest boards.
+        banner_rect.centerx = layout.BOARD_PX // 2
+        banner_rect.top = 16
+        overlay = pygame.Surface(banner_rect.size, pygame.SRCALPHA)
+        overlay.fill(STATUS_BANNER_BG_COLOR)
+        self.screen.blit(overlay, banner_rect.topleft)
+        pygame.draw.rect(self.screen, LAST_MOVE_HIGHLIGHT_COLOR, banner_rect, width=2, border_radius=8)
+        self.screen.blit(text_surf, text_surf.get_rect(center=banner_rect.center))
+
     def _draw_walls(self, game: Game) -> None:
         for edge in game.board.wall_edges:
             a, b = tuple(edge)
@@ -353,12 +386,7 @@ class Renderer:
         y = layout.PANEL_STATUS_Y
         if game.state == TurnState.AWAITING_ROLL:
             prompt = "Your turn - roll the dice!"
-            if (
-                game.doubles_enabled
-                and game.history
-                and game.history[-1].player_id == game.current_player_id
-                and game.history[-1].roll[0] == game.history[-1].roll[1]
-            ):
+            if self._is_doubles_bonus_turn(game):
                 prompt = "Doubles! Roll again"
             self._text(prompt, (x, y), self.font, MUTED_TEXT_COLOR)
             self._button(layout.ROLL_BUTTON_RECT, "Roll Dice (D)")
