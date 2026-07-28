@@ -107,6 +107,31 @@ def test_last_placed_rect_ignores_a_trailing_skip(renderer):
     assert (last_placed.top_left, last_placed.width, last_placed.height) == ((0, 0), 2, 2)
 
 
+def test_captured_flag_cells_none_without_flag_conquest(renderer):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 3) is True
+    assert renderer._captured_flag_cells(game) == frozenset()
+
+
+def test_captured_flag_cells_on_the_last_placement(renderer):
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
+    assert renderer._captured_flag_cells(game) == frozenset({(5, 5)})
+
+
+def test_captured_flag_cells_ignores_earlier_placements(renderer):
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6, 4, 4]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((7, 7), 4, 4) is True  # P2's start-corner anchor; no flag in this footprint
+    assert renderer._captured_flag_cells(game) == frozenset()
+
+
 def test_status_banner_message_none_on_a_normal_awaiting_roll(renderer):
     game = Game(board_size=6)
     assert renderer._status_banner_message(game) is None

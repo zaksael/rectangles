@@ -47,7 +47,9 @@ always odd, so the center is a single, unambiguous cell. Whichever player's
 placed piece happens to cover a flag captures it immediately, earning a
 configurable number of bonus points (5/10/20, selectable on the settings
 screen) added on top of their area. A single large piece can capture more
-than one flag at once if it covers them both.
+than one flag at once if it covers them both. A gold ring marks whichever
+flag cell(s) your most recent placement captured, so a capture doesn't go
+unnoticed.
 
 ## Walls
 

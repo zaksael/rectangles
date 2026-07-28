@@ -221,6 +221,7 @@ class Renderer:
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
         self._draw_last_move_highlight(game)
+        self._draw_flag_capture_highlight(game)
         self._draw_walls(game)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
@@ -234,6 +235,17 @@ class Renderer:
             return
         rect = layout.piece_rect(last_placed.top_left, last_placed.width, last_placed.height).inflate(4, 4)
         pygame.draw.rect(self.screen, LAST_MOVE_HIGHLIGHT_COLOR, rect, width=3)
+
+    def _captured_flag_cells(self, game: Game) -> frozenset[tuple[int, int]]:
+        last_placed = self._last_placed_rect(game)
+        if last_placed is None:
+            return frozenset()
+        return game.board.flag_cells.intersection(last_placed.cells())
+
+    def _draw_flag_capture_highlight(self, game: Game) -> None:
+        for r, c in self._captured_flag_cells(game):
+            center = layout.cell_rect(r, c).center
+            pygame.draw.circle(self.screen, FLAG_COLOR, center, layout.CELL_PX // 2 - 5, width=4)
 
     def _is_doubles_bonus_turn(self, game: Game) -> bool:
         return (
