@@ -4,6 +4,7 @@ import pygame
 
 from .. import constants, persistence
 from ..game import Game, GameOverReason, TurnState
+from ..models import Rectangle
 from ..series import RoundResult, Series
 from . import layout
 from .state import ConfirmAction, Screen, UIState
@@ -29,6 +30,7 @@ CARD_BG_COLOR = (255, 255, 255)
 CARD_BORDER_COLOR = (215, 215, 222)
 FLAG_COLOR = (230, 180, 30)
 WALL_LINE_COLOR = (90, 88, 96)
+LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
 
 
 class Renderer:
@@ -216,9 +218,20 @@ class Renderer:
                 pygame.draw.rect(self.screen, color, rect)
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
+        self._draw_last_move_highlight(game)
         self._draw_walls(game)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
+
+    def _last_placed_rect(self, game: Game) -> Rectangle | None:
+        return next((record.placed for record in reversed(game.history) if record.placed is not None), None)
+
+    def _draw_last_move_highlight(self, game: Game) -> None:
+        last_placed = self._last_placed_rect(game)
+        if last_placed is None:
+            return
+        rect = layout.piece_rect(last_placed.top_left, last_placed.width, last_placed.height).inflate(4, 4)
+        pygame.draw.rect(self.screen, LAST_MOVE_HIGHLIGHT_COLOR, rect, width=3)
 
     def _draw_walls(self, game: Game) -> None:
         for edge in game.board.wall_edges:

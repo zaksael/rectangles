@@ -129,6 +129,8 @@ more, so the panel always fits.
 - All cells where your rolled piece could legally go are highlighted green;
   hover over the board to preview exact placement (centered on your cursor),
   then click a highlighted cell to place the piece.
+- The most recently placed piece is outlined in gold, so you can spot your
+  opponent's last move at a glance.
 - Rotate the piece with the **Rotate** button, `R`, or right-click.
 - A roll with no legal placement skips your turn automatically after a brief
   pause; click **Continue**/`Space` to skip the wait immediately instead.

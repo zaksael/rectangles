@@ -80,6 +80,33 @@ def test_draw_walls_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_last_move_highlight_smoke(renderer):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 3) is True
+    if not game.check_game_over():
+        game.end_turn()
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
+def test_last_placed_rect_none_before_any_history(renderer):
+    game = Game(board_size=6)
+    assert renderer._last_placed_rect(game) is None
+
+
+def test_last_placed_rect_ignores_a_trailing_skip(renderer):
+    game = Game(board_size=4, rng=ScriptedRandom([2, 2, 6, 6]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()  # (6, 6) is too big for a 4x4 board regardless of state: guaranteed skip
+    assert game.state == TurnState.SKIPPED
+
+    last_placed = renderer._last_placed_rect(game)
+    assert (last_placed.top_left, last_placed.width, last_placed.height) == ((0, 0), 2, 2)
+
+
 @pytest.mark.parametrize(
     "reason",
     [
