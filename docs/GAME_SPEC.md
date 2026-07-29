@@ -114,6 +114,19 @@ placed straddling a wall line, and two cells on opposite sides of a wall are
 never considered edge-adjacent for the placement rule in §4 — the only way
 past a wall is to build around one of its ends.
 
+### 6.4 Wildcard roll
+
+When enabled: every roll has a fixed 1-in-6 chance of becoming a wildcard
+roll. When it triggers, one of the two just-rolled numbers (chosen at
+random) becomes freely editable — before anything else happens, the active
+player may change that one number to any value 1-6, or leave it as rolled.
+The other number keeps its original value. Once the player finalizes their
+choice, the turn proceeds exactly as usual from the resulting pair: a legal
+placement is made if one exists for that pair, otherwise the turn is
+skipped — including counting toward the skip streak (§7) and, if Doubles
+(§6.1) is also in play, granting a bonus turn should the final pair happen
+to match.
+
 ## 7. Skip limit and being boxed in
 
 - A player who is skipped several turns *in a row* — a limit agreed before
@@ -190,6 +203,7 @@ saved and resumed later exactly where it left off, with no loss of state.
 | Flag Conquest | on / off | off |
 | Flag bonus points | 5, 10, 20 | 10 |
 | Walls | on / off | off |
+| Wildcard roll | on / off | off |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
 | Dice | two six-sided | — |
