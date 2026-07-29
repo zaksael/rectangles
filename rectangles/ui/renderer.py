@@ -133,6 +133,8 @@ class Renderer:
              layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT, ui_state.selected_flag_conquest_enabled),
             ("Walls", layout.SETTINGS_RULE_COLUMN_3_X,
              layout.SETTINGS_WALLS_BUTTON_RECT, ui_state.selected_walls_enabled),
+            ("Wildcard roll", layout.SETTINGS_RULE_COLUMN_4_X,
+             layout.SETTINGS_WILDCARD_BUTTON_RECT, ui_state.selected_wildcard_enabled),
         ):
             label_surf = self.font.render(label_text, True, TEXT_COLOR)
             self.screen.blit(label_surf, label_surf.get_rect(center=(column_x, toggle_label_y)))
@@ -159,20 +161,6 @@ class Renderer:
                 selected=value == ui_state.selected_flag_bonus_points,
                 hovered=ui_state.selected_flag_conquest_enabled and hovered(rect),
             )
-
-        wildcard_label = self.font.render("Wildcard roll", True, TEXT_COLOR)
-        self.screen.blit(
-            wildcard_label,
-            wildcard_label.get_rect(
-                center=(layout.SETTINGS_RULE_COLUMN_2_X, layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 270)
-            ),
-        )
-        self._button(
-            layout.SETTINGS_WILDCARD_BUTTON_RECT,
-            "ON" if ui_state.selected_wildcard_enabled else "OFF",
-            selected=ui_state.selected_wildcard_enabled,
-            hovered=hovered(layout.SETTINGS_WILDCARD_BUTTON_RECT),
-        )
 
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))

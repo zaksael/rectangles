@@ -70,9 +70,9 @@ SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 3
 SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
 SETTINGS_HOUSE_RULES_CARD_RECT = pygame.Rect(
     SETTINGS_BOARD_CARD_RECT.left,
-    SETTINGS_BOARD_CARD_RECT.bottom + 30,
+    SETTINGS_BOARD_CARD_RECT.bottom + 20,
     SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
-    370,  # was 270; +100 for the Wildcard roll toggle's second row below
+    270,
 )
 
 SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
@@ -90,26 +90,21 @@ SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS = _centered_button_row(
     BOT_DIFFICULTY_PRESETS, y=395, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
 )
 
-# Three evenly-spaced toggle columns within the House Rules card, each with
-# the same margin (87px) from its nearer card edge as from its neighbors.
-SETTINGS_RULE_COLUMN_1_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width // 6
-SETTINGS_RULE_COLUMN_2_X = SETTINGS_HOUSE_RULES_CARD_RECT.centerx
-SETTINGS_RULE_COLUMN_3_X = SETTINGS_HOUSE_RULES_CARD_RECT.right - SETTINGS_HOUSE_RULES_CARD_RECT.width // 6
+# Four evenly-spaced toggle columns within the House Rules card - each column
+# centered in its own quarter of the card's width, so the same margin
+# separates every button from its neighbors and from the card edges.
+SETTINGS_RULE_COLUMN_1_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 1 // 8
+SETTINGS_RULE_COLUMN_2_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 3 // 8
+SETTINGS_RULE_COLUMN_3_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 5 // 8
+SETTINGS_RULE_COLUMN_4_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 7 // 8
 
 _RULE_TOGGLE_Y = SETTINGS_HOUSE_RULES_CARD_RECT.top + 100
 SETTINGS_DOUBLES_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_1_X - 80, _RULE_TOGGLE_Y, 160, 50)
 SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_2_X - 80, _RULE_TOGGLE_Y, 160, 50)
 SETTINGS_WALLS_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_3_X - 80, _RULE_TOGGLE_Y, 160, 50)
+SETTINGS_WILDCARD_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_4_X - 80, _RULE_TOGGLE_Y, 160, 50)
 SETTINGS_FLAG_BONUS_BUTTON_RECTS = _centered_button_row(
     FLAG_BONUS_POINTS_PRESETS, y=SETTINGS_HOUSE_RULES_CARD_RECT.top + 200, center_x=SETTINGS_RULE_COLUMN_2_X
-)
-
-# Wildcard roll is a lone second-row toggle (probability is a fixed constant,
-# not a selectable preset, so unlike Flag Conquest it has no sub-row of its
-# own) - centered under the three-column row above rather than reflowing it.
-_RULE_TOGGLE_ROW_2_Y = SETTINGS_HOUSE_RULES_CARD_RECT.top + 300
-SETTINGS_WILDCARD_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_2_X - 80, _RULE_TOGGLE_ROW_2_Y, 160, 50
 )
 
 _SETTINGS_BUTTON_W = 200
@@ -117,7 +112,7 @@ _SETTINGS_BUTTON_H = 56
 _SETTINGS_BUTTON_GAP = 20
 # Derived from the House Rules card (the tallest/lowest of the three) rather
 # than a hardcoded Y, so the two never overlap.
-_SETTINGS_START_BUTTONS_Y = SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 16
+_SETTINGS_START_BUTTONS_Y = SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 12
 _SETTINGS_BUTTONS_START_X = (
     WINDOW_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
 ) // 2
@@ -132,22 +127,19 @@ SETTINGS_START_SERIES_BUTTON_RECT = pygame.Rect(
     _SETTINGS_BUTTON_H,
 )
 
-# Exit / Resume sit in their own centered rows below the Start Game / Start
-# Series row, each slightly shorter so all three rows fit under WINDOW_HEIGHT.
+# Exit / Resume share one centered row below Start Game / Start Series
+# (mirroring that row's side-by-side layout) rather than two stacked rows -
+# Resume is only ever drawn/clickable when a save exists (see
+# persistence.has_save()), but Exit stays put in its left slot either way.
 _SETTINGS_SECONDARY_BUTTON_H = 48
+_SETTINGS_SECONDARY_BUTTONS_Y = _SETTINGS_START_BUTTONS_Y + _SETTINGS_BUTTON_H + 12
 
-_SETTINGS_EXIT_BUTTON_Y = _SETTINGS_START_BUTTONS_Y + _SETTINGS_BUTTON_H + 16
 SETTINGS_EXIT_BUTTON_RECT = pygame.Rect(
-    (WINDOW_WIDTH - _SETTINGS_BUTTON_W) // 2,
-    _SETTINGS_EXIT_BUTTON_Y,
-    _SETTINGS_BUTTON_W,
-    _SETTINGS_SECONDARY_BUTTON_H,
+    _SETTINGS_BUTTONS_START_X, _SETTINGS_SECONDARY_BUTTONS_Y, _SETTINGS_BUTTON_W, _SETTINGS_SECONDARY_BUTTON_H
 )
-
-_SETTINGS_RESUME_BUTTON_Y = _SETTINGS_EXIT_BUTTON_Y + _SETTINGS_SECONDARY_BUTTON_H + 12
 SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
-    (WINDOW_WIDTH - _SETTINGS_BUTTON_W) // 2,
-    _SETTINGS_RESUME_BUTTON_Y,
+    _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
+    _SETTINGS_SECONDARY_BUTTONS_Y,
     _SETTINGS_BUTTON_W,
     _SETTINGS_SECONDARY_BUTTON_H,
 )
@@ -158,7 +150,7 @@ SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
 # Renderer._settings_surface) rather than growing the window to fit, so
 # adding another settings row never risks pushing the window past what a
 # small display can show.
-SETTINGS_CONTENT_HEIGHT = SETTINGS_RESUME_BUTTON_RECT.bottom + 32
+SETTINGS_CONTENT_HEIGHT = SETTINGS_RESUME_BUTTON_RECT.bottom + 20
 
 
 def settings_max_scroll(window_height: int) -> int:

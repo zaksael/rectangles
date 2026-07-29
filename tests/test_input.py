@@ -13,6 +13,7 @@ from rectangles.constants import (
 from rectangles.game import Game, TurnState
 from rectangles.series import Series
 from rectangles.ui import layout
+from rectangles.ui import input as game_input
 from rectangles.ui.input import (
     compute_top_left,
     handle_event,
@@ -879,15 +880,23 @@ def test_settings_exit_button_click_returns_false():
     assert handle_settings_event(event, UIState()) is False
 
 
-def test_settings_mousewheel_scrolls_and_clamps():
+def test_settings_mousewheel_scrolls_and_clamps(monkeypatch):
+    # A deliberately short window, so there's always real scroll headroom to
+    # clamp against here regardless of how tall the settings content is at
+    # the real default window size (which may need little or no scrolling).
+    short_window = (layout.WINDOW_WIDTH, 400)
+    monkeypatch.setattr(game_input, "_current_window_size", lambda: short_window)
+    max_scroll = layout.settings_max_scroll(short_window[1])
+    assert max_scroll >= 40  # sanity check: the scenario below still needs real clamping
+
     ui_state = UIState()
 
     handle_settings_event(pygame.event.Event(pygame.MOUSEWHEEL, y=-1), ui_state)
     assert ui_state.settings_scroll == 40
 
-    ui_state.settings_scroll = layout.settings_max_scroll(layout.WINDOW_HEIGHT)
+    ui_state.settings_scroll = max_scroll
     handle_settings_event(pygame.event.Event(pygame.MOUSEWHEEL, y=-1), ui_state)
-    assert ui_state.settings_scroll == layout.settings_max_scroll(layout.WINDOW_HEIGHT)  # clamped at max
+    assert ui_state.settings_scroll == max_scroll  # clamped at max
 
     ui_state.settings_scroll = 0
     handle_settings_event(pygame.event.Event(pygame.MOUSEWHEEL, y=1), ui_state)
