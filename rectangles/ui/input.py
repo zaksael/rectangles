@@ -107,14 +107,6 @@ def _advance_or_end_series(series: Series | None, ui_state: UIState) -> None:
         _new_game(ui_state)
 
 
-def _enter_replay(game: Game, ui_state: UIState) -> None:
-    # Starts at the final board - the player just saw exactly that on the
-    # game-over overlay, so stepping backward via First/Prev is the useful
-    # direction rather than requiring len(history) clicks of Next to get back.
-    ui_state.screen = Screen.REPLAY
-    ui_state.replay_step = len(game.history)
-
-
 def _clamp_replay_step(ui_state: UIState, game: Game) -> None:
     ui_state.replay_step = max(0, min(ui_state.replay_step, len(game.history)))
 
@@ -158,7 +150,8 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
         if layout.game_over_new_game_button_rect(window_width, window_height).collidepoint(pos):
             _advance_or_end_series(series, ui_state)
         elif layout.game_over_replay_button_rect(window_width, window_height).collidepoint(pos):
-            _enter_replay(game, ui_state)
+            ui_state.screen = Screen.REPLAY
+            ui_state.replay_step = 0
         elif layout.game_over_exit_button_rect(window_width, window_height).collidepoint(pos):
             return False
         return True

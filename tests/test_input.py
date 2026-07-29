@@ -503,7 +503,7 @@ def test_game_over_replay_button_click_enters_replay_screen():
     assert handle_event(event, game, ui_state, series=None) is True
 
     assert ui_state.screen == Screen.REPLAY
-    assert ui_state.replay_step == len(game.history) == 1
+    assert ui_state.replay_step == 0
 
 
 def test_replay_first_prev_next_last_button_navigation():
