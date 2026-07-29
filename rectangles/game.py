@@ -18,12 +18,15 @@ from .constants import (
     WALL_LINE_LENGTH,
     WALL_LINE_OFFSET,
     WALLS_ENABLED,
+    WILDCARD_ENABLED,
+    WILDCARD_TRIGGER_VALUE,
 )
 from .models import Player, TurnRecord
 
 
 class TurnState(Enum):
     AWAITING_ROLL = auto()
+    CHOOSING_WILDCARD = auto()
     CHOOSING_PLACEMENT = auto()
     SKIPPED = auto()
     GAME_OVER = auto()
@@ -45,6 +48,7 @@ class Game:
         flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
         flag_bonus_points: int = FLAG_BONUS_POINTS,
         walls_enabled: bool = WALLS_ENABLED,
+        wildcard_enabled: bool = WILDCARD_ENABLED,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
@@ -53,12 +57,15 @@ class Game:
         self.flag_conquest_enabled = flag_conquest_enabled
         self.flag_bonus_points = flag_bonus_points
         self.walls_enabled = walls_enabled
+        self.wildcard_enabled = wildcard_enabled
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
         self.current_player_id: int
         self.state: TurnState
         self.last_roll: tuple[int, int] | None
+        self.wildcard_index: int | None
+        self.wildcard_original_roll: tuple[int, int] | None
         self.legal_cache: dict[tuple[int, int], set[tuple[int, int]]]
         self.game_over_reason: GameOverReason | None
         self.skipped_out_player_id: int | None
@@ -87,6 +94,8 @@ class Game:
         self.current_player_id = PLAYER_1
         self.state = TurnState.AWAITING_ROLL
         self.last_roll = None
+        self.wildcard_index = None
+        self.wildcard_original_roll = None
         self.legal_cache = {}
         self.game_over_reason = None
         self.skipped_out_player_id = None
@@ -123,15 +132,46 @@ class Game:
         a = self.rng.randint(DICE_MIN, DICE_MAX)
         b = self.rng.randint(DICE_MIN, DICE_MAX)
         self.last_roll = (a, b)
-        self.legal_cache = self.legal_placements_for_roll()
 
+        if self.wildcard_enabled and self.rng.randint(DICE_MIN, DICE_MAX) == WILDCARD_TRIGGER_VALUE:
+            self.wildcard_original_roll = self.last_roll
+            self.wildcard_index = self.rng.randint(0, 1)
+            self.state = TurnState.CHOOSING_WILDCARD
+            return self.last_roll
+
+        self._resolve_roll()
+        return self.last_roll
+
+    def choose_wildcard_value(self, value: int) -> None:
+        if self.state != TurnState.CHOOSING_WILDCARD:
+            raise ValueError(f"Cannot choose a wildcard value in state {self.state}")
+        if not (DICE_MIN <= value <= DICE_MAX):
+            raise ValueError(f"Wildcard value must be between {DICE_MIN} and {DICE_MAX}, got {value}")
+
+        a, b = self.last_roll
+        if self.wildcard_index == 0:
+            a = value
+        else:
+            b = value
+        self.last_roll = (a, b)
+        self.wildcard_index = None
+        self._resolve_roll()
+
+    def _resolve_roll(self) -> None:
+        self.legal_cache = self.legal_placements_for_roll()
         if any(self.legal_cache.values()):
             self.state = TurnState.CHOOSING_PLACEMENT
         else:
             self.state = TurnState.SKIPPED
             self.current_player.consecutive_skips += 1
-            self.history.append(TurnRecord(self.current_player_id, self.last_roll, placed=None))
-        return self.last_roll
+            self.history.append(
+                TurnRecord(
+                    self.current_player_id,
+                    self.last_roll,
+                    placed=None,
+                    wildcard_original_roll=self.wildcard_original_roll,
+                )
+            )
 
     def legal_placements_for_roll(self) -> dict[tuple[int, int], set[tuple[int, int]]]:
         if self.last_roll is None:
@@ -153,18 +193,30 @@ class Game:
         captured = self.board.flag_cells.intersection(rect.cells())
         self.current_player.flags_captured += len(captured)
         self.current_player.consecutive_skips = 0
-        self.history.append(TurnRecord(self.current_player_id, self.last_roll, placed=rect))
+        self.history.append(
+            TurnRecord(
+                self.current_player_id,
+                self.last_roll,
+                placed=rect,
+                wildcard_original_roll=self.wildcard_original_roll,
+            )
+        )
         return True
 
     def end_turn(self) -> None:
         if self.state == TurnState.GAME_OVER:
             return
+        # Reads whatever last_roll currently holds, which is the final,
+        # post-wildcard-edit pair by this point - so editing into a double
+        # grants the bonus turn too, no special-casing needed.
         is_bonus_turn = (
             self.doubles_enabled and self.last_roll is not None and self.last_roll[0] == self.last_roll[1]
         )
         if not is_bonus_turn:
             self.current_player_id = PLAYER_2 if self.current_player_id == PLAYER_1 else PLAYER_1
         self.last_roll = None
+        self.wildcard_index = None
+        self.wildcard_original_roll = None
         self.legal_cache = {}
         self.state = TurnState.AWAITING_ROLL
 

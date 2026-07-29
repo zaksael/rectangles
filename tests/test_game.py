@@ -536,3 +536,74 @@ def test_skip_streak_isolated_per_player():
     assert game.check_game_over() is True
     assert game.game_over_reason == GameOverReason.SKIP_LIMIT
     assert game.skipped_out_player_id == PLAYER_2
+
+
+def test_wildcard_disabled_by_default_never_triggers():
+    game = Game(rng=ScriptedRandom([4, 6]))
+    assert game.roll_dice() == (4, 6)
+    assert game.wildcard_enabled is False
+    assert game.wildcard_index is None
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+
+def test_wildcard_not_triggered_leaves_roll_unchanged():
+    # Third scripted value (2) misses WILDCARD_TRIGGER_VALUE (1), so this
+    # behaves exactly like a normal roll.
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 2]))
+    assert game.roll_dice() == (3, 5)
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    assert game.wildcard_index is None
+
+
+def test_wildcard_triggers_and_lets_player_edit_one_number():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    assert game.roll_dice() == (3, 5)
+    assert game.state == TurnState.CHOOSING_WILDCARD
+    assert game.wildcard_index == 0
+    assert game.wildcard_original_roll == (3, 5)
+
+    game.choose_wildcard_value(6)
+    assert game.last_roll == (6, 5)
+    assert game.wildcard_index is None
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+
+def test_wildcard_edit_can_produce_a_skip():
+    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 1, 1]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    game.choose_wildcard_value(6)  # edits index 1: (3, 3) -> (3, 6), too tall for a 4x4 board either way
+    assert game.last_roll == (3, 6)
+    assert game.state == TurnState.SKIPPED
+
+
+def test_wildcard_edit_creating_a_double_grants_doubles_bonus_turn():
+    game = Game(board_size=6, doubles_enabled=True, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 1]))
+    game.roll_dice()
+    assert game.wildcard_index == 1
+
+    game.choose_wildcard_value(3)  # (3, 5) -> (3, 3)
+    assert game.last_roll == (3, 3)
+    assert game.attempt_place((0, 0), 3, 3) is True
+
+    assert game.check_game_over() is False
+    game.end_turn()
+    assert game.current_player_id == PLAYER_1  # doubles: bonus turn even though it came from an edit
+    assert game.wildcard_index is None
+    assert game.wildcard_original_roll is None
+
+
+def test_choose_wildcard_value_raises_when_not_choosing_wildcard():
+    game = Game(rng=ScriptedRandom([4, 6]))
+    game.roll_dice()
+    with pytest.raises(ValueError):
+        game.choose_wildcard_value(3)
+
+
+@pytest.mark.parametrize("value", [0, 7])
+def test_choose_wildcard_value_raises_for_out_of_range_value(value):
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game.roll_dice()
+    with pytest.raises(ValueError):
+        game.choose_wildcard_value(value)

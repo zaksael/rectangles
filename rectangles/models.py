@@ -32,6 +32,7 @@ class TurnRecord:
     player_id: int
     roll: tuple[int, int]
     placed: Rectangle | None  # None means the turn was skipped
+    wildcard_original_roll: tuple[int, int] | None = None  # set only if this turn's wildcard number was edited
 
 
 @dataclass
