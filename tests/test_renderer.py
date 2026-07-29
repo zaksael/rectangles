@@ -96,6 +96,30 @@ def test_draw_last_move_highlight_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_button_hover_sets_hand_cursor_flag(renderer):
+    rect = pygame.Rect(10, 10, 20, 20)
+    pygame.mouse.set_pos(rect.center)
+    renderer._hand_cursor = False
+    renderer._button(rect, "Test")
+    assert renderer._hand_cursor is True
+
+
+def test_button_hover_flag_untouched_away_from_the_button(renderer):
+    rect = pygame.Rect(10, 10, 20, 20)
+    pygame.mouse.set_pos((0, 0))
+    renderer._hand_cursor = False
+    renderer._button(rect, "Test")
+    assert renderer._hand_cursor is False
+
+
+def test_button_hover_ignored_when_disabled(renderer):
+    rect = pygame.Rect(10, 10, 20, 20)
+    pygame.mouse.set_pos(rect.center)
+    renderer._hand_cursor = False
+    renderer._button(rect, "Test", enabled=False)
+    assert renderer._hand_cursor is False
+
+
 def test_last_placed_rect_none_before_any_history(renderer):
     game = Game(board_size=6)
     assert renderer._last_placed_rect(game) is None

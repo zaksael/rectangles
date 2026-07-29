@@ -45,12 +45,14 @@ class Renderer:
         self.font_small = pygame.font.SysFont("arial", 15)
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
         self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
+        self._hand_cursor = False
 
     def resize(self, screen: pygame.Surface) -> None:
         self.screen = screen
 
     def draw(self, game: Game | None, ui_state: UIState, series: Series | None = None) -> None:
         self.screen.fill(BG_COLOR)
+        self._hand_cursor = False
         if ui_state.screen == Screen.SETTINGS:
             window_width, window_height = self.screen.get_size()
             self._settings_surface.fill(BG_COLOR)
@@ -81,6 +83,12 @@ class Renderer:
                 self._draw_game_over(game, series)
             if ui_state.pending_confirmation is not None:
                 self._draw_confirm_dialog(game, ui_state)
+        try:
+            pygame.mouse.set_cursor(
+                pygame.SYSTEM_CURSOR_HAND if self._hand_cursor else pygame.SYSTEM_CURSOR_ARROW
+            )
+        except pygame.error:
+            pass  # no real cursor to set under a headless/dummy video driver
         pygame.display.flip()
 
     def _draw_settings_screen(self, ui_state: UIState) -> None:
@@ -405,6 +413,8 @@ class Renderer:
         selected: bool = False,
         hovered: bool = False,
     ) -> None:
+        if enabled and rect.collidepoint(pygame.mouse.get_pos()):
+            self._hand_cursor = True
         if not enabled:
             color = BUTTON_DISABLED_COLOR
         elif selected:
