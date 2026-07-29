@@ -22,6 +22,7 @@ class Series:
     flag_conquest_enabled: bool = False
     flag_bonus_points: int = FLAG_BONUS_POINTS
     walls_enabled: bool = False
+    wildcard_enabled: bool = False
     scores: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
     games_played: int = 0
     rounds: list[RoundResult] = field(default_factory=list)
@@ -59,4 +60,5 @@ class Series:
             flag_conquest_enabled=self.flag_conquest_enabled,
             flag_bonus_points=self.flag_bonus_points,
             walls_enabled=self.walls_enabled,
+            wildcard_enabled=self.wildcard_enabled,
         )

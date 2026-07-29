@@ -52,6 +52,7 @@ def _series_to_dict(series: Series) -> dict:
         "flag_conquest_enabled": series.flag_conquest_enabled,
         "flag_bonus_points": series.flag_bonus_points,
         "walls_enabled": series.walls_enabled,
+        "wildcard_enabled": series.wildcard_enabled,
         "scores": series.scores,
         "games_played": series.games_played,
         "rounds": [_round_to_dict(r) for r in series.rounds],
@@ -67,6 +68,7 @@ def _series_from_dict(data: dict) -> Series:
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
+        wildcard_enabled=data.get("wildcard_enabled", False),
     )
     series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
     series.games_played = data["games_played"]
@@ -84,9 +86,14 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "flag_conquest_enabled": game.flag_conquest_enabled,
         "flag_bonus_points": game.flag_bonus_points,
         "walls_enabled": game.walls_enabled,
+        "wildcard_enabled": game.wildcard_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
         "last_roll": list(game.last_roll) if game.last_roll is not None else None,
+        "wildcard_index": game.wildcard_index,
+        "wildcard_original_roll": list(game.wildcard_original_roll)
+        if game.wildcard_original_roll is not None
+        else None,
         "game_over_reason": game.game_over_reason.name if game.game_over_reason is not None else None,
         "skipped_out_player_id": game.skipped_out_player_id,
         "blocked_player_id": game.blocked_player_id,
@@ -106,6 +113,9 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
                 "player_id": record.player_id,
                 "roll": list(record.roll),
                 "placed": _rect_to_dict(record.placed) if record.placed is not None else None,
+                "wildcard_original_roll": list(record.wildcard_original_roll)
+                if record.wildcard_original_roll is not None
+                else None,
             }
             for record in game.history
         ],
@@ -120,6 +130,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
+        wildcard_enabled=data.get("wildcard_enabled", False),
     )
 
     for player_id_str, player_data in data["players"].items():
@@ -136,6 +147,10 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
     game.current_player_id = data["current_player_id"]
     game.state = TurnState[data["state"]]
     game.last_roll = tuple(data["last_roll"]) if data["last_roll"] is not None else None
+    game.wildcard_index = data.get("wildcard_index")
+    game.wildcard_original_roll = (
+        tuple(data["wildcard_original_roll"]) if data.get("wildcard_original_roll") is not None else None
+    )
     game.game_over_reason = (
         GameOverReason[data["game_over_reason"]] if data["game_over_reason"] is not None else None
     )
@@ -148,6 +163,9 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
             roll=tuple(record["roll"]),
             placed=_rect_from_dict(record["placed"], record["player_id"])
             if record["placed"] is not None
+            else None,
+            wildcard_original_roll=tuple(record["wildcard_original_roll"])
+            if record.get("wildcard_original_roll") is not None
             else None,
         )
         for record in data["history"]
