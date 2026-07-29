@@ -12,6 +12,7 @@ from ..constants import (
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
     WALLS_ENABLED,
+    WILDCARD_ENABLED,
 )
 
 
@@ -40,6 +41,7 @@ class UIState:
     selected_flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED
     selected_flag_bonus_points: int = FLAG_BONUS_POINTS
     selected_walls_enabled: bool = WALLS_ENABLED
+    selected_wildcard_enabled: bool = WILDCARD_ENABLED
     selected_bot_enabled: bool = False
     selected_bot_difficulty: str = BOT_DIFFICULTY_PRESETS[0]
     selected_series_length: int = SERIES_LENGTH_PRESETS[0]

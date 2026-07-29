@@ -152,6 +152,20 @@ class Renderer:
                 hovered=ui_state.selected_flag_conquest_enabled and hovered(rect),
             )
 
+        wildcard_label = self.font.render("Wildcard roll", True, TEXT_COLOR)
+        self.screen.blit(
+            wildcard_label,
+            wildcard_label.get_rect(
+                center=(layout.SETTINGS_RULE_COLUMN_2_X, layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 270)
+            ),
+        )
+        self._button(
+            layout.SETTINGS_WILDCARD_BUTTON_RECT,
+            "ON" if ui_state.selected_wildcard_enabled else "OFF",
+            selected=ui_state.selected_wildcard_enabled,
+            hovered=hovered(layout.SETTINGS_WILDCARD_BUTTON_RECT),
+        )
+
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
         self._button(
@@ -290,6 +304,9 @@ class Renderer:
             line = f"{player.name} skipped (rolled {a},{b})"
         if game.doubles_enabled and record.roll[0] == record.roll[1]:
             line += " - doubles!"
+        if record.wildcard_original_roll is not None:
+            oa, ob = record.wildcard_original_roll
+            line += f" (wildcard: rolled {oa},{ob})"
         return line
 
     def _is_doubles_bonus_turn(self, game: Game) -> bool:
@@ -301,6 +318,8 @@ class Renderer:
         )
 
     def _status_banner_message(self, game: Game) -> str | None:
+        if game.state == TurnState.CHOOSING_WILDCARD:
+            return f"Wildcard roll! {game.current_player.name} may change one number"
         if game.state == TurnState.SKIPPED:
             return f"{game.current_player.name} skipped - no legal placement!"
         if game.state == TurnState.AWAITING_ROLL and self._is_doubles_bonus_turn(game):
@@ -451,6 +470,18 @@ class Renderer:
                 prompt = "Doubles! Roll again"
             self._text(prompt, (x, y), self.font, MUTED_TEXT_COLOR)
             self._button(layout.ROLL_BUTTON_RECT, "Roll Dice (D)")
+        elif game.state == TurnState.CHOOSING_WILDCARD:
+            a, b = game.last_roll
+            a_color = LAST_MOVE_HIGHLIGHT_COLOR if game.wildcard_index == 0 else TEXT_COLOR
+            b_color = LAST_MOVE_HIGHLIGHT_COLOR if game.wildcard_index == 1 else TEXT_COLOR
+            self._text(str(a), (x, y), self.font_dice, a_color)
+            self._text("x", (x + 30, y), self.font_dice)
+            self._text(str(b), (x + 60, y), self.font_dice, b_color)
+            y += 36
+            self._text("Pick a value for the wildcard number:", (x, y), self.font_small, MUTED_TEXT_COLOR)
+            mouse_pos = pygame.mouse.get_pos()
+            for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
+                self._button(rect, str(value), hovered=rect.collidepoint(mouse_pos))
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
             self._text(f"{a} x {b}", (x, y), self.font_dice)

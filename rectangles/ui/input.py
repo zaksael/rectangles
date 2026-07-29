@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 
 from .. import bot, persistence
-from ..constants import PLAYER_2
+from ..constants import DICE_MAX, DICE_MIN, PLAYER_2
 from ..game import Game, TurnState
 from ..series import Series
 from . import layout
@@ -64,6 +64,13 @@ def _roll_dice(game: Game, ui_state: UIState) -> None:
         ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
 
 
+def _choose_wildcard_value(game: Game, ui_state: UIState, value: int) -> None:
+    game.choose_wildcard_value(value)
+    if game.state == TurnState.CHOOSING_PLACEMENT:
+        a, b = game.last_roll
+        ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
+
+
 def continue_turn(game: Game) -> None:
     if not game.check_game_over():
         game.end_turn()
@@ -76,6 +83,10 @@ def is_bots_turn(game: Game, ui_state: UIState) -> bool:
 def take_bot_turn(game: Game, ui_state: UIState) -> None:
     if game.state == TurnState.AWAITING_ROLL:
         _roll_dice(game, ui_state)
+    elif game.state == TurnState.CHOOSING_WILDCARD:
+        # Bot always picks uniformly at random, independent of difficulty -
+        # Greedy/Blocking only affect placement choice, not this.
+        _choose_wildcard_value(game, ui_state, game.rng.randint(DICE_MIN, DICE_MAX))
     elif game.state == TurnState.SKIPPED:
         continue_turn(game)
     elif game.state == TurnState.CHOOSING_PLACEMENT:
@@ -175,6 +186,13 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
             _roll_dice(game, ui_state)
         return True
 
+    if game.state == TurnState.CHOOSING_WILDCARD:
+        for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
+            if rect.collidepoint(pos):
+                _choose_wildcard_value(game, ui_state, value)
+                break
+        return True
+
     if game.state == TurnState.SKIPPED:
         if layout.CONTINUE_BUTTON_RECT.collidepoint(pos):
             continue_turn(game)
@@ -237,6 +255,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
                 return True
     if layout.SETTINGS_WALLS_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_walls_enabled = not ui_state.selected_walls_enabled
+        return True
+    if layout.SETTINGS_WILDCARD_BUTTON_RECT.collidepoint(pos):
+        ui_state.selected_wildcard_enabled = not ui_state.selected_wildcard_enabled
         return True
     if layout.SETTINGS_BOT_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_bot_enabled = not ui_state.selected_bot_enabled

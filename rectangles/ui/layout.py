@@ -5,6 +5,8 @@ import pygame
 from ..constants import (
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
+    DICE_MAX,
+    DICE_MIN,
     FLAG_BONUS_POINTS_PRESETS,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
@@ -70,7 +72,7 @@ SETTINGS_HOUSE_RULES_CARD_RECT = pygame.Rect(
     SETTINGS_BOARD_CARD_RECT.left,
     SETTINGS_BOARD_CARD_RECT.bottom + 30,
     SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
-    270,
+    370,  # was 270; +100 for the Wildcard roll toggle's second row below
 )
 
 SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
@@ -100,6 +102,14 @@ SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_2_X - 80, 
 SETTINGS_WALLS_BUTTON_RECT = pygame.Rect(SETTINGS_RULE_COLUMN_3_X - 80, _RULE_TOGGLE_Y, 160, 50)
 SETTINGS_FLAG_BONUS_BUTTON_RECTS = _centered_button_row(
     FLAG_BONUS_POINTS_PRESETS, y=SETTINGS_HOUSE_RULES_CARD_RECT.top + 200, center_x=SETTINGS_RULE_COLUMN_2_X
+)
+
+# Wildcard roll is a lone second-row toggle (probability is a fixed constant,
+# not a selectable preset, so unlike Flag Conquest it has no sub-row of its
+# own) - centered under the three-column row above rather than reflowing it.
+_RULE_TOGGLE_ROW_2_Y = SETTINGS_HOUSE_RULES_CARD_RECT.top + 300
+SETTINGS_WILDCARD_BUTTON_RECT = pygame.Rect(
+    SETTINGS_RULE_COLUMN_2_X - 80, _RULE_TOGGLE_ROW_2_Y, 160, 50
 )
 
 _SETTINGS_BUTTON_W = 200
@@ -199,6 +209,19 @@ PANEL_ACTION_BUTTON_Y = 300
 ROLL_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
 CONTINUE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
 ROTATE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, 160, 40)
+
+_WILDCARD_BUTTON_W = 40
+_WILDCARD_BUTTON_H = 40
+_WILDCARD_BUTTON_GAP = 8
+WILDCARD_VALUE_BUTTON_RECTS = {
+    value: pygame.Rect(
+        PANEL_X + i * (_WILDCARD_BUTTON_W + _WILDCARD_BUTTON_GAP),
+        PANEL_ACTION_BUTTON_Y,
+        _WILDCARD_BUTTON_W,
+        _WILDCARD_BUTTON_H,
+    )
+    for i, value in enumerate(range(DICE_MIN, DICE_MAX + 1))
+}
 
 # Turn-history log fills the gap between the action button and the footer.
 PANEL_HISTORY_DIVIDER_Y = 372

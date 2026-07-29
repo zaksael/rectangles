@@ -63,6 +63,16 @@ is to build around its ends. One wall sits near Player 1's own corner
 corner (lower-right of center), so the obstacle is symmetric for both
 players regardless of which corner they start from.
 
+## Wildcard Roll
+
+An optional mode, off by default. When turned on, every roll has a fixed
+1-in-6 chance of becoming a wildcard roll: one of the two just-rolled numbers
+(picked at random) becomes yours to change to any value 1-6, or leave as
+rolled — the other number stays fixed. Once you finalize your pick, the turn
+proceeds exactly like a normal roll, placing if that pair fits or skipping if
+it doesn't (including toward the skip streak, and toward a doubles bonus turn
+if your pick happens to match the other die).
+
 ## Bot opponent
 
 Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
@@ -83,7 +93,7 @@ Once the bot is on, pick its difficulty:
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest and Walls, if enabled) are locked in once for every round. Every
+Flag Conquest, Walls, and Wildcard Roll, if enabled) are locked in once for every round. Every
 round's score (same rules as above) adds to each player's running series
 total — a landslide round counts for more than a squeaker — so the whole
 series is always played out, and the player with the higher cumulative
@@ -111,8 +121,8 @@ uv run python main.py
 
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle the doubles house rule,
-[Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls)
-or the [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
+[Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls),
+[Wildcard Roll](#wildcard-roll), or the [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
 [Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
@@ -138,6 +148,9 @@ more, so the panel always fits.
   pause; click **Continue**/`Space` to skip the wait immediately instead. A
   banner over the board calls out the skip, and another calls out a doubles
   bonus turn, so neither is easy to miss.
+- A [Wildcard Roll](#wildcard-roll) turn shows both dice, with the editable
+  one highlighted, plus a row of buttons to pick its new value (or click the
+  value already showing to keep it) before placement continues.
 - **New Game** (`N`) at any time during a match to return to the settings
   screen and start a fresh match, or **Exit** (`Esc`) to quit outright.
   Once you've placed at least one piece, either of these (and closing the

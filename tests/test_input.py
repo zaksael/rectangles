@@ -379,6 +379,35 @@ def test_take_bot_turn_places_when_choosing_placement():
     assert len(game.players[PLAYER_1].pieces) == 1
 
 
+def test_wildcard_value_button_click_finalizes_choice_and_advances_state():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    ui_state = UIState(screen=Screen.PLAYING)
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.WILDCARD_VALUE_BUTTON_RECTS[6].center
+    )
+    handle_event(event, game, ui_state)
+
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    assert game.last_roll == (6, 5)
+    assert ui_state.current_dims == (6, 5)
+
+
+def test_take_bot_turn_resolves_choosing_wildcard():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0, 6]))
+    ui_state = UIState()
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    take_bot_turn(game, ui_state)
+
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    assert game.last_roll == (6, 5)
+    assert ui_state.current_dims == (6, 5)
+
+
 def test_human_roll_click_ignored_during_bots_turn():
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.current_player_id = PLAYER_2
@@ -728,6 +757,20 @@ def test_settings_walls_button_toggles_selection():
 
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_walls_enabled is False
+
+
+def test_settings_wildcard_button_toggles_selection():
+    ui_state = UIState()
+    assert ui_state.selected_wildcard_enabled is False
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_WILDCARD_BUTTON_RECT.center
+    )
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_wildcard_enabled is True
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_wildcard_enabled is False
 
 
 def test_settings_flag_bonus_buttons_update_selection():

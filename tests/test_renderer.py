@@ -80,6 +80,13 @@ def test_draw_walls_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_choosing_wildcard_smoke(renderer):
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 def test_draw_last_move_highlight_smoke(renderer):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()
@@ -219,6 +226,16 @@ def test_format_turn_caption_doubles_variant(renderer):
     assert renderer._format_turn_caption(game, record) == "Player 1 placed 2x2 - doubles!"
 
 
+def test_format_turn_caption_wildcard_variant(renderer):
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+    game.choose_wildcard_value(6)
+    assert game.attempt_place((0, 0), 6, 5) is True
+    record = game.history[0]
+    assert renderer._format_turn_caption(game, record) == "Player 1 placed 6x5 (wildcard: rolled 3,5)"
+
+
 @pytest.mark.parametrize("step", [0, 1, 2])
 def test_draw_replay_smoke(renderer, step):
     game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
@@ -238,6 +255,14 @@ def test_draw_replay_smoke(renderer, step):
 def test_status_banner_message_none_on_a_normal_awaiting_roll(renderer):
     game = Game(board_size=6)
     assert renderer._status_banner_message(game) is None
+
+
+def test_status_banner_message_on_choosing_wildcard(renderer):
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    assert renderer._status_banner_message(game) == "Wildcard roll! Player 1 may change one number"
 
 
 def test_status_banner_message_on_skipped_turn(renderer):
