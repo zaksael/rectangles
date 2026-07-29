@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import pygame
 
 from .. import persistence
@@ -12,6 +14,13 @@ from .state import Screen, UIState
 
 FPS = 60
 AUTO_ACTION_DELAY_MS = 500
+
+# On macOS Retina displays, SDL2 otherwise gives the window a backing store
+# at 2x the requested size (for a crisp image) while mouse events keep
+# reporting the logical (1x) coordinates our layout rects are defined in -
+# without this, that mismatch shrinks every button's effective clickable
+# area down toward its center. Must be set before pygame.init().
+os.environ.setdefault("SDL_VIDEO_HIGHDPI_DISABLED", "1")
 
 
 def run() -> None:
