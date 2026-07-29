@@ -16,6 +16,7 @@ from rectangles.ui import layout
 from rectangles.ui.input import (
     compute_top_left,
     handle_event,
+    handle_replay_event,
     handle_settings_event,
     take_bot_turn,
     update_hover,
@@ -484,6 +485,129 @@ def test_game_over_escape_key_returns_false():
 
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)
     assert handle_event(event, game, ui_state) is False
+
+
+# --- Replay screen --------------------------------------------------------
+
+
+def test_game_over_replay_button_click_enters_replay_screen():
+    game = _played_game()
+    game.state = TurnState.GAME_OVER
+    ui_state = UIState(screen=Screen.PLAYING)
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN,
+        button=1,
+        pos=layout.game_over_replay_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center,
+    )
+    assert handle_event(event, game, ui_state, series=None) is True
+
+    assert ui_state.screen == Screen.REPLAY
+    assert ui_state.replay_step == len(game.history) == 1
+
+
+def test_replay_first_prev_next_last_button_navigation():
+    game = _played_game()  # one history entry: step ranges over [0, 1]
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
+    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["prev"].center)
+    assert handle_replay_event(event, ui_state, game) is True
+    assert ui_state.replay_step == 0
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["next"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_step == 1
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["first"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_step == 0
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["last"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_step == 1
+
+
+def test_replay_first_and_last_buttons_jump_across_multiple_steps():
+    # A single history entry can't distinguish "First"/"Last" (jump straight
+    # to the boundary) from "Prev"/"Next" (step by one) - both land on the
+    # same result. Three turns make the distinction provable: from the last
+    # step, a single Prev would only reach step 2, but First must reach 0.
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3, 1, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((0, 2), 1, 2) is True
+    assert len(game.history) == 3
+
+    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=3)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["first"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_step == 0
+
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=0)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["last"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_step == 3
+
+
+def test_replay_arrow_and_home_end_keys_step():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
+
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_LEFT), ui_state, game)
+    assert ui_state.replay_step == 0
+
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RIGHT), ui_state, game)
+    assert ui_state.replay_step == 1
+
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_HOME), ui_state, game)
+    assert ui_state.replay_step == 0
+
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_END), ui_state, game)
+    assert ui_state.replay_step == 1
+
+
+def test_replay_step_clamps_at_bounds():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=0)
+
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_LEFT), ui_state, game)
+    assert ui_state.replay_step == 0
+
+    ui_state.replay_step = len(game.history)
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RIGHT), ui_state, game)
+    assert ui_state.replay_step == len(game.history)
+
+
+def test_replay_escape_and_back_button_return_to_playing():
+    game = _played_game()
+
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
+    handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE), ui_state, game)
+    assert ui_state.screen == Screen.PLAYING
+
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
+    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["back"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.screen == Screen.PLAYING
+
+
+def test_replay_quit_event_returns_false():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
+
+    event = pygame.event.Event(pygame.QUIT)
+    assert handle_replay_event(event, ui_state, game) is False
 
 
 # --- Confirmation dialog, mouse path -------------------------------------

@@ -107,11 +107,58 @@ def _advance_or_end_series(series: Series | None, ui_state: UIState) -> None:
         _new_game(ui_state)
 
 
+def _enter_replay(game: Game, ui_state: UIState) -> None:
+    # Starts at the final board - the player just saw exactly that on the
+    # game-over overlay, so stepping backward via First/Prev is the useful
+    # direction rather than requiring len(history) clicks of Next to get back.
+    ui_state.screen = Screen.REPLAY
+    ui_state.replay_step = len(game.history)
+
+
+def _clamp_replay_step(ui_state: UIState, game: Game) -> None:
+    ui_state.replay_step = max(0, min(ui_state.replay_step, len(game.history)))
+
+
+def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game) -> bool:
+    if event.type == pygame.QUIT:
+        return False
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+            ui_state.screen = Screen.PLAYING
+        elif event.key in (pygame.K_RIGHT, pygame.K_DOWN):
+            ui_state.replay_step += 1
+        elif event.key in (pygame.K_LEFT, pygame.K_UP):
+            ui_state.replay_step -= 1
+        elif event.key == pygame.K_HOME:
+            ui_state.replay_step = 0
+        elif event.key == pygame.K_END:
+            ui_state.replay_step = len(game.history)
+        _clamp_replay_step(ui_state, game)
+        return True
+    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        window_width, window_height = _current_window_size()
+        rects = layout.replay_button_rects(window_width, window_height)
+        if rects["first"].collidepoint(event.pos):
+            ui_state.replay_step = 0
+        elif rects["prev"].collidepoint(event.pos):
+            ui_state.replay_step -= 1
+        elif rects["next"].collidepoint(event.pos):
+            ui_state.replay_step += 1
+        elif rects["last"].collidepoint(event.pos):
+            ui_state.replay_step = len(game.history)
+        elif rects["back"].collidepoint(event.pos):
+            ui_state.screen = Screen.PLAYING
+        _clamp_replay_step(ui_state, game)
+    return True
+
+
 def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, series: Series | None) -> bool:
     window_width, window_height = _current_window_size()
     if game.state == TurnState.GAME_OVER:
         if layout.game_over_new_game_button_rect(window_width, window_height).collidepoint(pos):
             _advance_or_end_series(series, ui_state)
+        elif layout.game_over_replay_button_rect(window_width, window_height).collidepoint(pos):
+            _enter_replay(game, ui_state)
         elif layout.game_over_exit_button_rect(window_width, window_height).collidepoint(pos):
             return False
         return True

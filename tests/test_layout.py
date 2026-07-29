@@ -36,3 +36,24 @@ def test_pixel_to_cell_respects_smaller_board_size():
     x = y = 8 * layout.CELL_PX + 1  # just past an 8x8 board's edge
     assert layout.pixel_to_cell(x, y, board_size=8) is None
     assert layout.pixel_to_cell(x, y, board_size=layout.MAX_BOARD_SIZE) == (8, 8)
+
+
+def test_game_over_buttons_are_three_distinct_non_overlapping_rects():
+    w, h = layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT
+    new_game = layout.game_over_new_game_button_rect(w, h)
+    replay = layout.game_over_replay_button_rect(w, h)
+    exit_rect = layout.game_over_exit_button_rect(w, h)
+    rects = [new_game, replay, exit_rect]
+    assert len(rects) == len(set((r.x, r.y) for r in rects))
+    for a, b in ((new_game, replay), (replay, exit_rect)):
+        assert not a.colliderect(b)
+    assert new_game.y == replay.y == exit_rect.y
+
+
+def test_replay_button_rects_returns_five_non_overlapping_rects():
+    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    assert set(rects.keys()) == {"first", "prev", "next", "last", "back"}
+    ordered = [rects["first"], rects["prev"], rects["next"], rects["last"], rects["back"]]
+    for a, b in zip(ordered, ordered[1:]):
+        assert not a.colliderect(b)
+        assert a.right <= b.left

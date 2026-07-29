@@ -18,6 +18,7 @@ from ..constants import (
 class Screen(Enum):
     SETTINGS = auto()
     PLAYING = auto()
+    REPLAY = auto()
 
 
 class ConfirmAction(Enum):
@@ -50,6 +51,7 @@ class UIState:
     pending_confirmation: ConfirmAction | None = None
     history_scroll: int = 0
     settings_scroll: int = 0
+    replay_step: int = 0
 
     def reset(self) -> None:
         self.current_dims = None
@@ -58,3 +60,4 @@ class UIState:
         self.pending_confirmation = None
         self.history_scroll = 0
         self.settings_scroll = 0
+        self.replay_step = 0

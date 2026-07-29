@@ -4,7 +4,7 @@ import pygame
 
 from .. import constants, persistence
 from ..game import Game, GameOverReason, TurnState
-from ..models import Rectangle
+from ..models import Rectangle, TurnRecord
 from ..series import RoundResult, Series
 from . import layout
 from .state import ConfirmAction, Screen, UIState
@@ -67,6 +67,8 @@ class Renderer:
                 self.screen.fill(BG_COLOR, strip)
                 hint = self.font_small.render("scroll for more ▼", True, MUTED_TEXT_COLOR)
                 self.screen.blit(hint, hint.get_rect(center=(window_width // 2, window_height - 14)))
+        elif ui_state.screen == Screen.REPLAY:
+            self._draw_replay(game, ui_state)
         else:
             self._draw_board(game)
             if game.state == TurnState.CHOOSING_PLACEMENT:
@@ -203,12 +205,15 @@ class Renderer:
                 hovered=hovered(layout.SETTINGS_RESUME_BUTTON_RECT),
             )
 
-    def _draw_board(self, game: Game) -> None:
+    def _draw_grid_cells(self, game: Game) -> None:
         for r in range(game.board.size):
             for c in range(game.board.size):
                 rect = layout.cell_rect(r, c)
                 pygame.draw.rect(self.screen, EMPTY_CELL_COLOR, rect)
                 pygame.draw.rect(self.screen, GRID_LINE_COLOR, rect, width=1)
+
+    def _draw_board(self, game: Game) -> None:
+        self._draw_grid_cells(game)
 
         self._draw_flags(game)
 
@@ -226,26 +231,66 @@ class Renderer:
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
 
-    def _last_placed_rect(self, game: Game) -> Rectangle | None:
-        return next((record.placed for record in reversed(game.history) if record.placed is not None), None)
+    def _placed_upto(self, game: Game, step: int) -> list[Rectangle]:
+        return [record.placed for record in game.history[:step] if record.placed is not None]
 
-    def _draw_last_move_highlight(self, game: Game) -> None:
-        last_placed = self._last_placed_rect(game)
+    def _draw_replay_board(self, game: Game, step: int) -> None:
+        self._draw_grid_cells(game)
+
+        self._draw_flags(game, upto=step)
+
+        for rect in self._placed_upto(game, step):
+            color = constants.PLAYER_COLORS[rect.owner]
+            border = constants.PLAYER_BORDER_COLORS[rect.owner]
+            piece_rect = layout.piece_rect(rect.top_left, rect.width, rect.height)
+            pygame.draw.rect(self.screen, color, piece_rect)
+            pygame.draw.rect(self.screen, border, piece_rect, width=3)
+
+        self._draw_last_move_highlight(game, upto=step)
+        self._draw_flag_capture_highlight(game, upto=step)
+        self._draw_walls(game)
+
+        pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
+
+    def _last_placed_rect(self, game: Game, upto: int | None = None) -> Rectangle | None:
+        history = game.history if upto is None else game.history[:upto]
+        return next((record.placed for record in reversed(history) if record.placed is not None), None)
+
+    def _draw_last_move_highlight(self, game: Game, upto: int | None = None) -> None:
+        last_placed = self._last_placed_rect(game, upto)
         if last_placed is None:
             return
         rect = layout.piece_rect(last_placed.top_left, last_placed.width, last_placed.height).inflate(4, 4)
         pygame.draw.rect(self.screen, LAST_MOVE_HIGHLIGHT_COLOR, rect, width=3)
 
-    def _captured_flag_cells(self, game: Game) -> frozenset[tuple[int, int]]:
-        last_placed = self._last_placed_rect(game)
+    def _captured_flag_cells(self, game: Game, upto: int | None = None) -> frozenset[tuple[int, int]]:
+        last_placed = self._last_placed_rect(game, upto)
         if last_placed is None:
             return frozenset()
         return game.board.flag_cells.intersection(last_placed.cells())
 
-    def _draw_flag_capture_highlight(self, game: Game) -> None:
-        for r, c in self._captured_flag_cells(game):
+    def _draw_flag_capture_highlight(self, game: Game, upto: int | None = None) -> None:
+        for r, c in self._captured_flag_cells(game, upto):
             center = layout.cell_rect(r, c).center
             pygame.draw.circle(self.screen, FLAG_COLOR, center, layout.CELL_PX // 2 - 5, width=4)
+
+    def _replay_stats(self, game: Game, step: int) -> dict[int, dict[str, int]]:
+        stats = {player_id: {"area": 0, "flags": 0} for player_id in game.players}
+        for rect in self._placed_upto(game, step):
+            stats[rect.owner]["area"] += rect.area
+            stats[rect.owner]["flags"] += len(game.board.flag_cells.intersection(rect.cells()))
+        return stats
+
+    def _format_turn_caption(self, game: Game, record: TurnRecord) -> str:
+        player = game.players[record.player_id]
+        if record.placed is not None:
+            line = f"{player.name} placed {record.placed.width}x{record.placed.height}"
+        else:
+            a, b = record.roll
+            line = f"{player.name} skipped (rolled {a},{b})"
+        if game.doubles_enabled and record.roll[0] == record.roll[1]:
+            line += " - doubles!"
+        return line
 
     def _is_doubles_bonus_turn(self, game: Game) -> bool:
         return (
@@ -293,9 +338,13 @@ class Renderer:
                 left = layout.cell_rect(r1, c1).left
                 pygame.draw.line(self.screen, WALL_LINE_COLOR, (left, y), (left + layout.CELL_PX, y), width=4)
 
-    def _draw_flags(self, game: Game) -> None:
+    def _draw_flags(self, game: Game, upto: int | None = None) -> None:
+        covered = (
+            None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
+        )
         for r, c in game.board.flag_cells:
-            if game.board.owner_at(r, c) is not None:
+            is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
+            if is_covered:
                 continue
             cx, cy = layout.cell_rect(r, c).center
             half = layout.CELL_PX // 4
@@ -448,16 +497,9 @@ class Renderer:
             return
 
         for record in entries:
-            player = game.players[record.player_id]
             swatch = pygame.Rect(x, y + 3, 10, 10)
             pygame.draw.rect(self.screen, constants.PLAYER_COLORS[record.player_id], swatch)
-            if record.placed is not None:
-                line = f"{player.name} placed {record.placed.width}x{record.placed.height}"
-            else:
-                a, b = record.roll
-                line = f"{player.name} skipped (rolled {a},{b})"
-            if game.doubles_enabled and record.roll[0] == record.roll[1]:
-                line += " - doubles!"
+            line = self._format_turn_caption(game, record)
             self._text(line, (x + 16, y), self.font_small, MUTED_TEXT_COLOR)
             y += layout.PANEL_HISTORY_ROW_HEIGHT
 
@@ -567,6 +609,53 @@ class Renderer:
             note = f"+{hidden} earlier round{'s' if hidden != 1 else ''}"
             self._text(note, (x, note_y), self.font_small, MUTED_TEXT_COLOR)
 
+    def _draw_replay(self, game: Game, ui_state: UIState) -> None:
+        step = ui_state.replay_step
+        window_width, window_height = self.screen.get_size()
+
+        self._draw_replay_board(game, step)
+
+        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.panel_rect(window_height))
+        x = layout.PANEL_X
+        self._text("REPLAY", (x, layout.PANEL_HEADER_Y), self.font_big)
+        self._text(
+            f"Step {step} / {len(game.history)}",
+            (x, layout.PANEL_HEADER_Y + 34),
+            self.font_small,
+            MUTED_TEXT_COLOR,
+        )
+        self._divider(layout.PANEL_DIVIDER_1_Y)
+
+        y = layout.PANEL_SCORE_Y
+        stats = self._replay_stats(game, step)
+        for player in game.players.values():
+            swatch = pygame.Rect(x, y + 2, 18, 18)
+            pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
+            s = stats[player.id]
+            label = f"{player.name}: {s['area']}"
+            if game.flag_conquest_enabled:
+                label += f"  F{s['flags']}"
+            self._text(label, (x + 26, y), self.font, TEXT_COLOR)
+            y += layout.PANEL_SCORE_ROW_HEIGHT
+        self._divider(layout.PANEL_DIVIDER_2_Y)
+
+        if step == 0:
+            caption = "Initial board"
+        else:
+            record = game.history[step - 1]
+            caption = self._format_turn_caption(game, record)
+            if record.placed is not None:
+                r, c = record.placed.top_left
+                caption += f" at ({r},{c})"
+        self._text(caption, (x, layout.PANEL_STATUS_Y), self.font, TEXT_COLOR)
+
+        rects = layout.replay_button_rects(window_width, window_height)
+        self._button(rects["first"], "|< First", enabled=step > 0)
+        self._button(rects["prev"], "< Prev", enabled=step > 0)
+        self._button(rects["next"], "Next >", enabled=step < len(game.history))
+        self._button(rects["last"], "Last >|", enabled=step < len(game.history))
+        self._button(rects["back"], "Back (Esc)")
+
     def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         overlay.fill(OVERLAY_COLOR)
@@ -624,6 +713,7 @@ class Renderer:
         new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
         new_game_rect = layout.game_over_new_game_button_rect(window_width, window_height)
         self._button(new_game_rect, new_game_label)
+        self._button(layout.game_over_replay_button_rect(window_width, window_height), "Replay")
         self._button(layout.game_over_exit_button_rect(window_width, window_height), "Exit (Esc)")
 
         if series is not None and series.rounds:

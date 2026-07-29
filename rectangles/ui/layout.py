@@ -294,7 +294,7 @@ _GAME_OVER_BUTTON_GAP = 20
 
 def _game_over_buttons_origin(window_width: int, window_height: int) -> tuple[int, int]:
     y = window_height // 2 + 80
-    x = (window_width - (2 * _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP)) // 2
+    x = (window_width - (3 * _GAME_OVER_BUTTON_W + 2 * _GAME_OVER_BUTTON_GAP)) // 2
     return x, y
 
 
@@ -303,8 +303,33 @@ def game_over_new_game_button_rect(window_width: int, window_height: int) -> pyg
     return pygame.Rect(x, y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H)
 
 
-def game_over_exit_button_rect(window_width: int, window_height: int) -> pygame.Rect:
+def game_over_replay_button_rect(window_width: int, window_height: int) -> pygame.Rect:
     x, y = _game_over_buttons_origin(window_width, window_height)
     return pygame.Rect(
         x + _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP, y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
+    )
+
+
+def game_over_exit_button_rect(window_width: int, window_height: int) -> pygame.Rect:
+    x, y = _game_over_buttons_origin(window_width, window_height)
+    return pygame.Rect(
+        x + 2 * (_GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP), y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
+    )
+
+
+_REPLAY_BUTTON_W = 110
+_REPLAY_BUTTON_H = 44
+_REPLAY_BUTTON_GAP = 12
+_REPLAY_BUTTON_Y_OFFSET = 76
+
+
+def replay_button_rects(window_width: int, window_height: int) -> dict[str, pygame.Rect]:
+    y = window_height - _REPLAY_BUTTON_Y_OFFSET
+    return _centered_button_row(
+        ("first", "prev", "next", "last", "back"),
+        y,
+        center_x=window_width // 2,
+        button_w=_REPLAY_BUTTON_W,
+        button_h=_REPLAY_BUTTON_H,
+        gap=_REPLAY_BUTTON_GAP,
     )

@@ -40,6 +40,9 @@ def run() -> None:
             if ui_state.screen == Screen.SETTINGS:
                 if not game_input.handle_settings_event(event, ui_state):
                     running = False
+            elif ui_state.screen == Screen.REPLAY:
+                if not game_input.handle_replay_event(event, ui_state, game):
+                    running = False
             else:
                 if not game_input.handle_event(event, game, ui_state, series):
                     running = False

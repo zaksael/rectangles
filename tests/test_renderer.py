@@ -132,6 +132,109 @@ def test_captured_flag_cells_ignores_earlier_placements(renderer):
     assert renderer._captured_flag_cells(game) == frozenset()
 
 
+def test_last_placed_rect_upto_ignores_later_placements(renderer):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True
+
+    upto_first = renderer._last_placed_rect(game, upto=1)
+    assert (upto_first.top_left, upto_first.width, upto_first.height) == ((0, 0), 2, 2)
+
+
+def test_captured_flag_cells_upto_ignores_later_placements(renderer):
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6, 4, 4]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((7, 7), 4, 4) is True
+
+    assert renderer._captured_flag_cells(game, upto=1) == frozenset({(5, 5)})
+    assert renderer._captured_flag_cells(game, upto=2) == frozenset()
+
+
+def test_placed_upto_returns_rects_in_history_order(renderer):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True
+
+    assert renderer._placed_upto(game, 0) == []
+    first = renderer._placed_upto(game, 1)
+    assert [(r.top_left, r.width, r.height) for r in first] == [((0, 0), 2, 2)]
+    both = renderer._placed_upto(game, 2)
+    assert [(r.top_left, r.width, r.height) for r in both] == [((0, 0), 2, 2), ((3, 3), 3, 3)]
+
+
+def test_replay_stats_accumulates_area_and_flags(renderer):
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6, 4, 4]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the center flag (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no flag in this footprint
+
+    stats = renderer._replay_stats(game, 2)
+    assert stats[PLAYER_1] == {"area": 36, "flags": 1}
+    assert stats[PLAYER_2] == {"area": 16, "flags": 0}
+
+    partial = renderer._replay_stats(game, 1)
+    assert partial[PLAYER_1] == {"area": 36, "flags": 1}
+    assert partial[PLAYER_2] == {"area": 0, "flags": 0}
+
+
+def test_format_turn_caption_placed_variant(renderer):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 3) is True
+    record = game.history[0]
+    assert renderer._format_turn_caption(game, record) == "Player 1 placed 2x3"
+
+
+def test_format_turn_caption_skip_variant(renderer):
+    game = Game(board_size=4, rng=ScriptedRandom([6, 6]))
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=3, h=4)
+    game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    record = game.history[0]
+    assert renderer._format_turn_caption(game, record) == "Player 1 skipped (rolled 6,6)"
+
+
+def test_format_turn_caption_doubles_variant(renderer):
+    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    record = game.history[0]
+    assert renderer._format_turn_caption(game, record) == "Player 1 placed 2x2 - doubles!"
+
+
+@pytest.mark.parametrize("step", [0, 1, 2])
+def test_draw_replay_smoke(renderer, step):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.state = TurnState.GAME_OVER
+
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=step))
+
+
 def test_status_banner_message_none_on_a_normal_awaiting_roll(renderer):
     game = Game(board_size=6)
     assert renderer._status_banner_message(game) is None
