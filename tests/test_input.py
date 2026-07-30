@@ -396,6 +396,24 @@ def test_wildcard_value_button_click_finalizes_choice_and_advances_state():
     assert ui_state.current_dims == (6, 5)
 
 
+def test_wildcard_value_click_resolves_to_skip_when_every_value_is_illegal():
+    # Fixed die stays 6, which never fits on a 4x4 board regardless of what
+    # the wildcard die becomes - regression test for a soft-lock where
+    # gating the click on legality left zero buttons clickable.
+    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([6, 2, 1, 1]))
+    ui_state = UIState(screen=Screen.PLAYING)
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+    assert game.wildcard_index == 1
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.WILDCARD_VALUE_BUTTON_RECTS[3].center
+    )
+    handle_event(event, game, ui_state)
+
+    assert game.state == TurnState.SKIPPED
+
+
 def test_take_bot_turn_resolves_choosing_wildcard():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0, 6]))
     ui_state = UIState()

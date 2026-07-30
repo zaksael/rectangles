@@ -183,6 +183,15 @@ class Game:
             (b, a): self.board.legal_top_lefts(player, b, a),
         }
 
+    def wildcard_value_is_legal(self, value: int) -> bool:
+        a, b = self.last_roll
+        if self.wildcard_index == 0:
+            a = value
+        else:
+            b = value
+        player = self.current_player
+        return bool(self.board.legal_top_lefts(player, a, b) or self.board.legal_top_lefts(player, b, a))
+
     def attempt_place(self, top_left: tuple[int, int], w: int, h: int) -> bool:
         if self.state != TurnState.CHOOSING_PLACEMENT:
             return False

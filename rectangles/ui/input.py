@@ -187,6 +187,10 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
         return True
 
     if game.state == TurnState.CHOOSING_WILDCARD:
+        # Not gated on wildcard_value_is_legal(): an illegal value still
+        # needs to be choosable so the turn can resolve into its legitimate
+        # skip - if every value happened to be illegal, gating here would
+        # leave no button clickable at all, soft-locking the turn.
         for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
             if rect.collidepoint(pos):
                 _choose_wildcard_value(game, ui_state, value)

@@ -470,16 +470,17 @@ class Renderer:
             self._button(layout.ROLL_BUTTON_RECT, "Roll Dice (D)")
         elif game.state == TurnState.CHOOSING_WILDCARD:
             a, b = game.last_roll
-            a_color = LAST_MOVE_HIGHLIGHT_COLOR if game.wildcard_index == 0 else TEXT_COLOR
-            b_color = LAST_MOVE_HIGHLIGHT_COLOR if game.wildcard_index == 1 else TEXT_COLOR
-            self._text(str(a), (x, y), self.font_dice, a_color)
+            a_label = "*" if game.wildcard_index == 0 else str(a)
+            b_label = "*" if game.wildcard_index == 1 else str(b)
+            self._text(a_label, (x, y), self.font_dice, (0, 0, 0))
             self._text("x", (x + 30, y), self.font_dice)
-            self._text(str(b), (x + 60, y), self.font_dice, b_color)
+            self._text(b_label, (x + 60, y), self.font_dice, (0, 0, 0))
             y += 36
             self._text("Pick a value for the wildcard number:", (x, y), self.font_small, MUTED_TEXT_COLOR)
             mouse_pos = pygame.mouse.get_pos()
             for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
-                self._button(rect, str(value), hovered=rect.collidepoint(mouse_pos))
+                legal = game.wildcard_value_is_legal(value)
+                self._button(rect, str(value), enabled=legal, hovered=legal and rect.collidepoint(mouse_pos))
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
             self._text(f"{a} x {b}", (x, y), self.font_dice)
