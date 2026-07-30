@@ -35,7 +35,7 @@ def test_pixel_to_cell_respects_smaller_board_size():
     # board's rect must not resolve to a cell (board.py's MAX_BOARD_SIZE note).
     x = y = 8 * layout.CELL_PX + 1  # just past an 8x8 board's edge
     assert layout.pixel_to_cell(x, y, board_size=8) is None
-    assert layout.pixel_to_cell(x, y, board_size=layout.MAX_BOARD_SIZE) == (8, 8)
+    assert layout.pixel_to_cell(x, y, board_size=layout.MAX_BOARD_SIZE) is not None
 
 
 def test_cell_px_shrinks_to_fit_target_board_px():

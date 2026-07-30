@@ -21,7 +21,7 @@ higher score at that point wins; equal scores is a tie.
 ## 2. Setup
 
 - The board is an N×N grid of cells. N is agreed before the match (typical
-  choices: 11, 15, or 19); N should be odd if Flag Conquest (§6.1) is in
+  choices: 19, 23, or 27); N should be odd if Flag Conquest (§6.1) is in
   play, so the board has a single, unambiguous center cell.
 - Player 1 is assigned the top-left corner as their starting corner; Player
   2 is assigned the bottom-right corner.
@@ -188,7 +188,7 @@ saved and resumed later exactly where it left off, with no loss of state.
 
 | Setting | Typical choices | Default |
 |---|---|---|
-| Board size | 11×11, 15×15, 19×19 | 11×11 |
+| Board size | 19×19, 23×23, 27×27 | 19×19 |
 | Skip limit | 2, 3, 5 | 3 |
 | Flag Conquest | on / off | off |
 | Flag bonus points | 5, 10, 20 | 10 |

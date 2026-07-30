@@ -1,4 +1,4 @@
-BOARD_SIZE = 11
+BOARD_SIZE = 19
 
 DICE_MIN = 1
 DICE_MAX = 6
@@ -32,7 +32,7 @@ WILDCARD_TRIGGER_VALUE = 1  # rng.randint(DICE_MIN, DICE_MAX) == this triggers i
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both. Board sizes are odd so flag conquest's center cell
 # (size // 2) is always a single unambiguous cell.
-BOARD_SIZE_PRESETS = (11, 15, 19)
+BOARD_SIZE_PRESETS = (19, 23, 27)
 SKIP_LIMIT_PRESETS = (2, 3, 5)
 SERIES_LENGTH_PRESETS = (3, 5)
 FLAG_BONUS_POINTS_PRESETS = (5, 10, 20)
