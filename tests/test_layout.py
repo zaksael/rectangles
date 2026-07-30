@@ -2,12 +2,12 @@ from rectangles.ui import layout
 
 
 def test_cell_rect():
-    rect = layout.cell_rect(2, 3)
+    rect = layout.cell_rect(2, 3, board_size=8)
     assert (rect.x, rect.y, rect.width, rect.height) == (3 * layout.CELL_PX, 2 * layout.CELL_PX, layout.CELL_PX, layout.CELL_PX)
 
 
 def test_piece_rect():
-    rect = layout.piece_rect((1, 2), w=3, h=2)
+    rect = layout.piece_rect((1, 2), w=3, h=2, board_size=8)
     assert (rect.x, rect.y, rect.width, rect.height) == (
         2 * layout.CELL_PX,
         1 * layout.CELL_PX,
@@ -36,6 +36,19 @@ def test_pixel_to_cell_respects_smaller_board_size():
     x = y = 8 * layout.CELL_PX + 1  # just past an 8x8 board's edge
     assert layout.pixel_to_cell(x, y, board_size=8) is None
     assert layout.pixel_to_cell(x, y, board_size=layout.MAX_BOARD_SIZE) == (8, 8)
+
+
+def test_cell_px_shrinks_to_fit_target_board_px():
+    # A board whose natural footprint at the flat CELL_PX would exceed
+    # TARGET_BOARD_PX shrinks its per-cell size to fit back within it.
+    big_size = layout.TARGET_BOARD_PX // layout.CELL_PX + 1
+    assert layout.cell_px(big_size) == layout.TARGET_BOARD_PX // big_size
+    assert layout.cell_px(big_size) < layout.CELL_PX
+
+
+def test_cell_px_stays_flat_for_presets_that_already_fit():
+    for size in (11, 15, 19):
+        assert layout.cell_px(size) == layout.CELL_PX
 
 
 def test_game_over_buttons_are_three_distinct_non_overlapping_rects():

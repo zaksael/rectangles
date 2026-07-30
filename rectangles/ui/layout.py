@@ -14,31 +14,42 @@ from ..constants import (
 
 CELL_PX = 44
 
-# The window is sized to fit the largest selectable board; a smaller chosen
-# board simply renders smaller within that fixed, top-left-anchored area.
+# A board's on-screen footprint is capped at TARGET_BOARD_PX (today's
+# 19 * 44) regardless of board_size, so BOARD_PX/WINDOW_WIDTH stay fixed even
+# if BOARD_SIZE_PRESETS grows to include a bigger tier later - only cell_px()
+# shrinks to make a larger board still fit that same footprint.
+TARGET_BOARD_PX = 836
 MAX_BOARD_SIZE = max(BOARD_SIZE_PRESETS)
-BOARD_PX = MAX_BOARD_SIZE * CELL_PX
+BOARD_PX = TARGET_BOARD_PX
 PANEL_WIDTH = 340
 WINDOW_WIDTH = BOARD_PX + PANEL_WIDTH
 
 
-def cell_rect(r: int, c: int) -> pygame.Rect:
-    return pygame.Rect(c * CELL_PX, r * CELL_PX, CELL_PX, CELL_PX)
+def cell_px(board_size: int) -> int:
+    return min(CELL_PX, TARGET_BOARD_PX // board_size)
 
 
-def piece_rect(top_left: tuple[int, int], w: int, h: int) -> pygame.Rect:
+def cell_rect(r: int, c: int, board_size: int) -> pygame.Rect:
+    px = cell_px(board_size)
+    return pygame.Rect(c * px, r * px, px, px)
+
+
+def piece_rect(top_left: tuple[int, int], w: int, h: int, board_size: int) -> pygame.Rect:
     r, c = top_left
-    return pygame.Rect(c * CELL_PX, r * CELL_PX, w * CELL_PX, h * CELL_PX)
+    px = cell_px(board_size)
+    return pygame.Rect(c * px, r * px, w * px, h * px)
 
 
 def board_rect(board_size: int) -> pygame.Rect:
-    return pygame.Rect(0, 0, board_size * CELL_PX, board_size * CELL_PX)
+    px = cell_px(board_size)
+    return pygame.Rect(0, 0, board_size * px, board_size * px)
 
 
 def pixel_to_cell(x: int, y: int, board_size: int) -> tuple[int, int] | None:
     if not board_rect(board_size).collidepoint(x, y):
         return None
-    return (y // CELL_PX, x // CELL_PX)
+    px = cell_px(board_size)
+    return (y // px, x // px)
 
 
 def _centered_button_row(

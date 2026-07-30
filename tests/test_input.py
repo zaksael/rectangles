@@ -258,7 +258,7 @@ def test_left_click_on_legal_cell_places_piece_and_advances_turn():
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     ui_state = UIState(screen=Screen.PLAYING)
     handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_d), game, ui_state)
-    pos = layout.cell_rect(0, 0).center  # P1's start corner - anchors the first piece
+    pos = layout.cell_rect(0, 0, board_size=6).center  # P1's start corner - anchors the first piece
 
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=pos)
     assert handle_event(event, game, ui_state) is True
@@ -273,7 +273,7 @@ def test_left_click_on_illegal_cell_does_not_place():
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     ui_state = UIState(screen=Screen.PLAYING)
     handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_d), game, ui_state)
-    pos = layout.cell_rect(5, 5).center  # far from P1's start corner - not anchored, illegal
+    pos = layout.cell_rect(5, 5, board_size=6).center  # far from P1's start corner - not anchored, illegal
 
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=pos)
     assert handle_event(event, game, ui_state) is True
@@ -443,7 +443,7 @@ def test_update_hover_sets_top_left_and_legal_flag(monkeypatch):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()
     ui_state = UIState(screen=Screen.PLAYING, current_dims=(2, 3))
-    monkeypatch.setattr(pygame.mouse, "get_pos", lambda: layout.cell_rect(0, 0).center)
+    monkeypatch.setattr(pygame.mouse, "get_pos", lambda: layout.cell_rect(0, 0, board_size=6).center)
 
     update_hover(game, ui_state)
 

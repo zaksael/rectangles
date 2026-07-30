@@ -76,7 +76,7 @@ class Renderer:
             if game.state == TurnState.CHOOSING_PLACEMENT:
                 self._draw_coverable_cells(game, ui_state)
                 if ui_state.hover_top_left is not None:
-                    self._draw_ghost(ui_state)
+                    self._draw_ghost(ui_state, game.board.size)
             self._draw_status_banner(game)
             self._draw_panel(game, ui_state, series)
             if game.state == TurnState.GAME_OVER:
@@ -216,7 +216,7 @@ class Renderer:
     def _draw_grid_cells(self, game: Game) -> None:
         for r in range(game.board.size):
             for c in range(game.board.size):
-                rect = layout.cell_rect(r, c)
+                rect = layout.cell_rect(r, c, game.board.size)
                 pygame.draw.rect(self.screen, EMPTY_CELL_COLOR, rect)
                 pygame.draw.rect(self.screen, GRID_LINE_COLOR, rect, width=1)
 
@@ -229,7 +229,7 @@ class Renderer:
             color = constants.PLAYER_COLORS[player.id]
             border = constants.PLAYER_BORDER_COLORS[player.id]
             for piece in player.pieces:
-                rect = layout.piece_rect(piece.top_left, piece.width, piece.height)
+                rect = layout.piece_rect(piece.top_left, piece.width, piece.height, game.board.size)
                 pygame.draw.rect(self.screen, color, rect)
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
@@ -250,7 +250,7 @@ class Renderer:
         for rect in self._placed_upto(game, step):
             color = constants.PLAYER_COLORS[rect.owner]
             border = constants.PLAYER_BORDER_COLORS[rect.owner]
-            piece_rect = layout.piece_rect(rect.top_left, rect.width, rect.height)
+            piece_rect = layout.piece_rect(rect.top_left, rect.width, rect.height, game.board.size)
             pygame.draw.rect(self.screen, color, piece_rect)
             pygame.draw.rect(self.screen, border, piece_rect, width=3)
 
@@ -268,7 +268,9 @@ class Renderer:
         last_placed = self._last_placed_rect(game, upto)
         if last_placed is None:
             return
-        rect = layout.piece_rect(last_placed.top_left, last_placed.width, last_placed.height).inflate(4, 4)
+        rect = layout.piece_rect(
+            last_placed.top_left, last_placed.width, last_placed.height, game.board.size
+        ).inflate(4, 4)
         pygame.draw.rect(self.screen, LAST_MOVE_HIGHLIGHT_COLOR, rect, width=3)
 
     def _captured_flag_cells(self, game: Game, upto: int | None = None) -> frozenset[tuple[int, int]]:
@@ -278,9 +280,10 @@ class Renderer:
         return game.board.flag_cells.intersection(last_placed.cells())
 
     def _draw_flag_capture_highlight(self, game: Game, upto: int | None = None) -> None:
+        px = layout.cell_px(game.board.size)
         for r, c in self._captured_flag_cells(game, upto):
-            center = layout.cell_rect(r, c).center
-            pygame.draw.circle(self.screen, FLAG_COLOR, center, layout.CELL_PX // 2 - 5, width=4)
+            center = layout.cell_rect(r, c, game.board.size).center
+            pygame.draw.circle(self.screen, FLAG_COLOR, center, px // 2 - 5, width=4)
 
     def _replay_stats(self, game: Game, step: int) -> dict[int, dict[str, int]]:
         stats = {player_id: {"area": 0, "flags": 0} for player_id in game.players}
@@ -325,30 +328,33 @@ class Renderer:
         self.screen.blit(text_surf, text_surf.get_rect(center=banner_rect.center))
 
     def _draw_walls(self, game: Game) -> None:
+        size = game.board.size
+        px = layout.cell_px(size)
         for edge in game.board.wall_edges:
             a, b = tuple(edge)
             (r1, c1), (r2, c2) = (a, b) if a <= b else (b, a)
             if r1 == r2:
                 # Horizontally adjacent cells (c1 < c2): vertical boundary line between them.
-                x = layout.cell_rect(r1, c2).left
-                top = layout.cell_rect(r1, c1).top
-                pygame.draw.line(self.screen, WALL_LINE_COLOR, (x, top), (x, top + layout.CELL_PX), width=4)
+                x = layout.cell_rect(r1, c2, size).left
+                top = layout.cell_rect(r1, c1, size).top
+                pygame.draw.line(self.screen, WALL_LINE_COLOR, (x, top), (x, top + px), width=4)
             else:
                 # Vertically adjacent cells (r1 < r2): horizontal boundary line between them.
-                y = layout.cell_rect(r2, c1).top
-                left = layout.cell_rect(r1, c1).left
-                pygame.draw.line(self.screen, WALL_LINE_COLOR, (left, y), (left + layout.CELL_PX, y), width=4)
+                y = layout.cell_rect(r2, c1, size).top
+                left = layout.cell_rect(r1, c1, size).left
+                pygame.draw.line(self.screen, WALL_LINE_COLOR, (left, y), (left + px, y), width=4)
 
     def _draw_flags(self, game: Game, upto: int | None = None) -> None:
         covered = (
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
+        px = layout.cell_px(game.board.size)
         for r, c in game.board.flag_cells:
             is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
             if is_covered:
                 continue
-            cx, cy = layout.cell_rect(r, c).center
-            half = layout.CELL_PX // 4
+            cx, cy = layout.cell_rect(r, c, game.board.size).center
+            half = px // 4
             points = [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)]
             pygame.draw.polygon(self.screen, FLAG_COLOR, points)
 
@@ -366,14 +372,15 @@ class Renderer:
                 for c in range(c0, c0 + w):
                     covered.add((r, c))
 
-        overlay = pygame.Surface((layout.CELL_PX, layout.CELL_PX), pygame.SRCALPHA)
+        px = layout.cell_px(game.board.size)
+        overlay = pygame.Surface((px, px), pygame.SRCALPHA)
         overlay.fill(COVERABLE_CELL_COLOR)
         for r, c in covered:
-            self.screen.blit(overlay, layout.cell_rect(r, c).topleft)
+            self.screen.blit(overlay, layout.cell_rect(r, c, game.board.size).topleft)
 
-    def _draw_ghost(self, ui_state: UIState) -> None:
+    def _draw_ghost(self, ui_state: UIState, board_size: int) -> None:
         w, h = ui_state.current_dims
-        rect = layout.piece_rect(ui_state.hover_top_left, w, h)
+        rect = layout.piece_rect(ui_state.hover_top_left, w, h, board_size)
         overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         overlay.fill(GHOST_LEGAL_COLOR if ui_state.hover_legal else GHOST_ILLEGAL_COLOR)
         self.screen.blit(overlay, rect.topleft)
