@@ -94,13 +94,12 @@ def test_series_tied_on_cumulative_score_after_all_rounds():
 
 
 def test_new_game_uses_series_settings():
-    series = Series(length=5, board_size=8, skip_limit=4, doubles_enabled=True)
+    series = Series(length=5, board_size=8, skip_limit=4)
 
     game = series.new_game()
 
     assert game.board_size == 8
     assert game.skip_limit == 4
-    assert game.doubles_enabled is True
 
 
 def test_new_game_uses_series_flag_conquest_settings():

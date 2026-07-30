@@ -317,8 +317,8 @@ def test_right_click_rotates_during_choosing_placement():
 
 def _skipped_game() -> Game:
     # Only (3, 3) remains empty; a rolled 6x6 has nowhere to go, so the turn
-    # is skipped. (6, 6) is also doubles, granting a bonus turn.
-    game = Game(board_size=4, doubles_enabled=True, rng=ScriptedRandom([6, 6]))
+    # is skipped.
+    game = Game(board_size=4, rng=ScriptedRandom([6, 6]))
     p1 = game.players[PLAYER_1]
     game.board.place(p1, (0, 0), w=3, h=4)
     game.board.place(p1, (0, 3), w=1, h=3)
@@ -334,7 +334,7 @@ def test_continue_key_space_on_skipped_ends_turn():
     handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE), game, ui_state)
 
     assert game.state == TurnState.AWAITING_ROLL
-    assert game.current_player_id == PLAYER_1  # doubles: same player continues
+    assert game.current_player_id == PLAYER_2
 
 
 def test_continue_button_click_on_skipped_ends_turn():
@@ -345,7 +345,7 @@ def test_continue_button_click_on_skipped_ends_turn():
     handle_event(event, game, ui_state)
 
     assert game.state == TurnState.AWAITING_ROLL
-    assert game.current_player_id == PLAYER_1
+    assert game.current_player_id == PLAYER_2
 
 
 def test_take_bot_turn_rolls_when_awaiting_roll():
@@ -738,20 +738,6 @@ def test_settings_skip_limit_buttons_update_selection():
     assert set(layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS) == set(SKIP_LIMIT_PRESETS)
 
 
-def test_settings_doubles_button_toggles_selection():
-    ui_state = UIState()
-    assert ui_state.selected_doubles_enabled is False
-
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_DOUBLES_BUTTON_RECT.center
-    )
-    assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_doubles_enabled is True
-
-    assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_doubles_enabled is False
-
-
 def test_settings_flag_conquest_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_flag_conquest_enabled is False
@@ -925,10 +911,10 @@ def test_settings_click_position_accounts_for_scroll_offset():
     ui_state = UIState(settings_scroll=50)
     # The button visually sits 50px higher on screen than its content-space rect.
     screen_pos = (
-        layout.SETTINGS_DOUBLES_BUTTON_RECT.centerx,
-        layout.SETTINGS_DOUBLES_BUTTON_RECT.centery - 50,
+        layout.SETTINGS_WALLS_BUTTON_RECT.centerx,
+        layout.SETTINGS_WALLS_BUTTON_RECT.centery - 50,
     )
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=screen_pos)
 
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_doubles_enabled is True
+    assert ui_state.selected_walls_enabled is True

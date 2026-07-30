@@ -127,13 +127,11 @@ class Renderer:
 
         toggle_label_y = layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 70
         for label_text, column_x, rect, enabled_flag in (
-            ("Doubles bonus turn", layout.SETTINGS_RULE_COLUMN_1_X,
-             layout.SETTINGS_DOUBLES_BUTTON_RECT, ui_state.selected_doubles_enabled),
-            ("Flag Conquest", layout.SETTINGS_RULE_COLUMN_2_X,
+            ("Flag Conquest", layout.SETTINGS_RULE_COLUMN_1_X,
              layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT, ui_state.selected_flag_conquest_enabled),
-            ("Walls", layout.SETTINGS_RULE_COLUMN_3_X,
+            ("Walls", layout.SETTINGS_RULE_COLUMN_2_X,
              layout.SETTINGS_WALLS_BUTTON_RECT, ui_state.selected_walls_enabled),
-            ("Wildcard roll", layout.SETTINGS_RULE_COLUMN_4_X,
+            ("Wildcard Roll", layout.SETTINGS_RULE_COLUMN_3_X,
              layout.SETTINGS_WILDCARD_BUTTON_RECT, ui_state.selected_wildcard_enabled),
         ):
             label_surf = self.font.render(label_text, True, TEXT_COLOR)
@@ -150,7 +148,7 @@ class Renderer:
         self.screen.blit(
             flag_bonus_label,
             flag_bonus_label.get_rect(
-                center=(layout.SETTINGS_RULE_COLUMN_2_X, layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 170)
+                center=(layout.SETTINGS_RULE_COLUMN_1_X, layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 170)
             ),
         )
         for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
@@ -298,28 +296,16 @@ class Renderer:
         else:
             a, b = record.roll
             line = f"{player.name} skipped (rolled {a},{b})"
-        if game.doubles_enabled and record.roll[0] == record.roll[1]:
-            line += " - doubles!"
         if record.wildcard_original_roll is not None:
             oa, ob = record.wildcard_original_roll
             line += f" (wildcard: rolled {oa},{ob})"
         return line
-
-    def _is_doubles_bonus_turn(self, game: Game) -> bool:
-        return (
-            game.doubles_enabled
-            and bool(game.history)
-            and game.history[-1].player_id == game.current_player_id
-            and game.history[-1].roll[0] == game.history[-1].roll[1]
-        )
 
     def _status_banner_message(self, game: Game) -> str | None:
         if game.state == TurnState.CHOOSING_WILDCARD:
             return f"Wildcard roll! {game.current_player.name} may change one number"
         if game.state == TurnState.SKIPPED:
             return f"{game.current_player.name} skipped - no legal placement!"
-        if game.state == TurnState.AWAITING_ROLL and self._is_doubles_bonus_turn(game):
-            return f"Doubles! {game.current_player.name} rolls again"
         return None
 
     def _draw_status_banner(self, game: Game) -> None:
@@ -463,10 +449,7 @@ class Renderer:
 
         y = layout.PANEL_STATUS_Y
         if game.state == TurnState.AWAITING_ROLL:
-            prompt = "Your turn - roll the dice!"
-            if self._is_doubles_bonus_turn(game):
-                prompt = "Doubles! Roll again"
-            self._text(prompt, (x, y), self.font, MUTED_TEXT_COLOR)
+            self._text("Your turn - roll the dice!", (x, y), self.font, MUTED_TEXT_COLOR)
             self._button(layout.ROLL_BUTTON_RECT, "Roll Dice (D)")
         elif game.state == TurnState.CHOOSING_WILDCARD:
             a, b = game.last_roll

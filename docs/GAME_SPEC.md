@@ -21,7 +21,7 @@ higher score at that point wins; equal scores is a tie.
 ## 2. Setup
 
 - The board is an N×N grid of cells. N is agreed before the match (typical
-  choices: 11, 15, or 19); N should be odd if Flag Conquest (§6.2) is in
+  choices: 11, 15, or 19); N should be odd if Flag Conquest (§6.1) is in
   play, so the board has a single, unambiguous center cell.
 - Player 1 is assigned the top-left corner as their starting corner; Player
   2 is assigned the bottom-right corner.
@@ -44,11 +44,9 @@ On the active player's turn:
 4. If there is no legal position for the piece in either orientation, the
    turn is skipped instead — no piece is placed, and this counts toward
    that player's skip streak (§7).
-5. Play passes to the other player, unless the Doubles house rule (§6.1)
-   grants an extra turn.
+5. Play passes to the other player.
 
-Turns always alternate between the two players (Player 1 moves first)
-except for that Doubles extension.
+Turns always alternate between the two players (Player 1 moves first).
 
 ## 4. Placement legality
 
@@ -57,7 +55,7 @@ may be placed if and only if all of the following hold:
 
 1. It fits entirely within the board.
 2. Every cell it would cover is currently unclaimed by either player.
-3. If Walls (§6.3) is in play, it does not straddle a wall line.
+3. If Walls (§6.2) is in play, it does not straddle a wall line.
 4. **Anchoring**:
    - A player's *very first* placement of the match must include their own
      starting corner as one of the piece's own corners.
@@ -72,7 +70,7 @@ may be placed if and only if all of the following hold:
 
 - A player's base score is the total number of cells they've claimed —
   i.e. the combined area of every piece they've placed.
-- If Flag Conquest is in play, each flag a player has captured (§6.2) adds
+- If Flag Conquest is in play, each flag a player has captured (§6.1) adds
   a fixed bonus to their score on top of that area.
 - Whoever has the higher score once the game ends (§8) wins; equal scores
   is a tie — except when the game ended by surrender (§9), in which case
@@ -84,14 +82,7 @@ may be placed if and only if all of the following hold:
 Each of these is chosen independently before a match begins, and stays
 fixed for the whole match (and, in series play, for every round of it).
 
-### 6.1 Doubles bonus turn
-
-When enabled: any time a roll comes up doubles (both dice show the same
-number), the same player takes another turn immediately afterward — whether
-or not that roll actually resulted in a placement (a doubles roll that gets
-skipped for lack of any legal spot still earns the repeat turn).
-
-### 6.2 Flag Conquest
+### 6.1 Flag Conquest
 
 When enabled: three flag cells are marked on the board before play begins —
 the two board corners that are *not* either player's starting corner, plus
@@ -102,7 +93,7 @@ one flag at once). Each captured flag permanently earns that player a fixed
 bonus (agreed before the match, e.g. 5, 10, or 20 points) added to their
 score; flags are never lost once captured.
 
-### 6.3 Walls
+### 6.2 Walls
 
 When enabled: two short wall segments (each three cells long) are marked on
 the board before play begins — one positioned near each player's own
@@ -114,18 +105,18 @@ placed straddling a wall line, and two cells on opposite sides of a wall are
 never considered edge-adjacent for the placement rule in §4 — the only way
 past a wall is to build around one of its ends.
 
-### 6.4 Wildcard roll
+### 6.3 Wildcard roll
 
-When enabled: every roll has a fixed 1-in-6 chance of becoming a wildcard
-roll. When it triggers, one of the two just-rolled numbers (chosen at
-random) becomes freely editable — before anything else happens, the active
-player may change that one number to any value 1-6, or leave it as rolled.
-The other number keeps its original value. Once the player finalizes their
-choice, the turn proceeds exactly as usual from the resulting pair: a legal
-placement is made if one exists for that pair, otherwise the turn is
-skipped — including counting toward the skip streak (§7) and, if Doubles
-(§6.1) is also in play, granting a bonus turn should the final pair happen
-to match.
+When enabled: every roll becomes a wildcard roll if either of two conditions
+holds — a fixed 1-in-6 random chance, or the roll came up doubles (both dice
+show the same number). When it triggers, one of the two
+just-rolled numbers (chosen at random) becomes freely editable — before
+anything else happens, the active player may change that one number to any
+value 1-6, or leave it as rolled. The other number keeps its original value.
+Once the player finalizes their choice, the turn proceeds exactly as usual
+from the resulting pair: a legal placement is made if one exists for that
+pair, otherwise the turn is skipped — including counting toward the skip
+streak (§7).
 
 ## 7. Skip limit and being boxed in
 
@@ -199,7 +190,6 @@ saved and resumed later exactly where it left off, with no loss of state.
 |---|---|---|
 | Board size | 11×11, 15×15, 19×19 | 11×11 |
 | Skip limit | 2, 3, 5 | 3 |
-| Doubles bonus turn | on / off | off |
 | Flag Conquest | on / off | off |
 | Flag bonus points | 5, 10, 20 | 10 |
 | Walls | on / off | off |

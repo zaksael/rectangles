@@ -6,7 +6,6 @@ from enum import Enum, auto
 from ..constants import (
     BOARD_SIZE,
     BOT_DIFFICULTY_PRESETS,
-    DOUBLES_ENABLED,
     FLAG_BONUS_POINTS,
     FLAG_CONQUEST_ENABLED,
     SERIES_LENGTH_PRESETS,
@@ -37,7 +36,6 @@ class UIState:
     screen: Screen = Screen.SETTINGS
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
-    selected_doubles_enabled: bool = DOUBLES_ENABLED
     selected_flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED
     selected_flag_bonus_points: int = FLAG_BONUS_POINTS
     selected_walls_enabled: bool = WALLS_ENABLED

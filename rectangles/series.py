@@ -18,7 +18,6 @@ class Series:
     length: int
     board_size: int
     skip_limit: int
-    doubles_enabled: bool = False
     flag_conquest_enabled: bool = False
     flag_bonus_points: int = FLAG_BONUS_POINTS
     walls_enabled: bool = False
@@ -56,7 +55,6 @@ class Series:
         return Game(
             board_size=self.board_size,
             skip_limit=self.skip_limit,
-            doubles_enabled=self.doubles_enabled,
             flag_conquest_enabled=self.flag_conquest_enabled,
             flag_bonus_points=self.flag_bonus_points,
             walls_enabled=self.walls_enabled,

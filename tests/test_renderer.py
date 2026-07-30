@@ -242,14 +242,6 @@ def test_format_turn_caption_skip_variant(renderer):
     assert renderer._format_turn_caption(game, record) == "Player 1 skipped (rolled 6,6)"
 
 
-def test_format_turn_caption_doubles_variant(renderer):
-    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
-    game.roll_dice()
-    assert game.attempt_place((0, 0), 2, 2) is True
-    record = game.history[0]
-    assert renderer._format_turn_caption(game, record) == "Player 1 placed 2x2 - doubles!"
-
-
 def test_format_turn_caption_wildcard_variant(renderer):
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
     game.roll_dice()
@@ -300,25 +292,14 @@ def test_status_banner_message_on_skipped_turn(renderer):
     assert renderer._status_banner_message(game) == "Player 1 skipped - no legal placement!"
 
 
-def test_status_banner_message_on_doubles_bonus_turn(renderer):
-    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
+def test_status_banner_message_on_doubles_triggered_wildcard(renderer):
+    # a == b (2, 2) triggers CHOOSING_WILDCARD via the doubles condition,
+    # independent of the random 1-in-6 chance (scripted to miss, via 4).
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 4, 0]))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 2, 2) is True
-    if not game.check_game_over():
-        game.end_turn()
-    assert game.state == TurnState.AWAITING_ROLL
-    assert game.current_player_id == PLAYER_1  # doubles: same player continues
+    assert game.state == TurnState.CHOOSING_WILDCARD
 
-    assert renderer._status_banner_message(game) == "Doubles! Player 1 rolls again"
-
-
-def test_draw_doubles_banner_smoke(renderer):
-    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
-    game.roll_dice()
-    assert game.attempt_place((0, 0), 2, 2) is True
-    if not game.check_game_over():
-        game.end_turn()
-    renderer.draw(game, UIState(screen=Screen.PLAYING))
+    assert renderer._status_banner_message(game) == "Wildcard roll! Player 1 may change one number"
 
 
 @pytest.mark.parametrize(

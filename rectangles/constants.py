@@ -6,9 +6,6 @@ DICE_MAX = 6
 # A player who is skipped this many turns in a row ends the game.
 SKIP_LIMIT = 3
 
-# Whether rolling doubles grants the same player another turn.
-DOUBLES_ENABLED = False
-
 # Whether flag cells are seeded on the board (see Game.reset()); capturing one
 # awards FLAG_BONUS_POINTS on top of area.
 FLAG_CONQUEST_ENABLED = False
@@ -24,9 +21,11 @@ WALLS_ENABLED = False
 WALL_LINE_OFFSET = 2
 WALL_LINE_LENGTH = 3
 
-# Whether any roll has a chance of becoming a "wildcard roll": one of the two
-# just-rolled numbers (chosen at random) becomes freely editable by the
-# player before the turn proceeds - see Game.roll_dice()/choose_wildcard_value().
+# Whether a roll can become a "wildcard roll": one of the two just-rolled
+# numbers (chosen at random) becomes freely editable by the player before the
+# turn proceeds - see Game.roll_dice()/choose_wildcard_value(). Triggered by
+# either a 1-in-6 random chance (WILDCARD_TRIGGER_VALUE) or doubles (both
+# dice matching).
 WILDCARD_ENABLED = False
 WILDCARD_TRIGGER_VALUE = 1  # rng.randint(DICE_MIN, DICE_MAX) == this triggers it (1-in-6)
 

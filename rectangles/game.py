@@ -8,7 +8,6 @@ from .constants import (
     BOARD_SIZE,
     DICE_MAX,
     DICE_MIN,
-    DOUBLES_ENABLED,
     FLAG_BONUS_POINTS,
     FLAG_CONQUEST_ENABLED,
     PLAYER_1,
@@ -44,7 +43,6 @@ class Game:
         self,
         board_size: int = BOARD_SIZE,
         skip_limit: int = SKIP_LIMIT,
-        doubles_enabled: bool = DOUBLES_ENABLED,
         flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
         flag_bonus_points: int = FLAG_BONUS_POINTS,
         walls_enabled: bool = WALLS_ENABLED,
@@ -53,7 +51,6 @@ class Game:
     ):
         self.board_size = board_size
         self.skip_limit = skip_limit
-        self.doubles_enabled = doubles_enabled
         self.flag_conquest_enabled = flag_conquest_enabled
         self.flag_bonus_points = flag_bonus_points
         self.walls_enabled = walls_enabled
@@ -133,11 +130,16 @@ class Game:
         b = self.rng.randint(DICE_MIN, DICE_MAX)
         self.last_roll = (a, b)
 
-        if self.wildcard_enabled and self.rng.randint(DICE_MIN, DICE_MAX) == WILDCARD_TRIGGER_VALUE:
-            self.wildcard_original_roll = self.last_roll
-            self.wildcard_index = self.rng.randint(0, 1)
-            self.state = TurnState.CHOOSING_WILDCARD
-            return self.last_roll
+        if self.wildcard_enabled:
+            # Doubles trigger a wildcard edit too - this always rolls the
+            # 1-in-6 check regardless, so the amount of rng consumption
+            # doesn't depend on the roll.
+            random_trigger = self.rng.randint(DICE_MIN, DICE_MAX) == WILDCARD_TRIGGER_VALUE
+            if random_trigger or a == b:
+                self.wildcard_original_roll = self.last_roll
+                self.wildcard_index = self.rng.randint(0, 1)
+                self.state = TurnState.CHOOSING_WILDCARD
+                return self.last_roll
 
         self._resolve_roll()
         return self.last_roll
@@ -215,14 +217,7 @@ class Game:
     def end_turn(self) -> None:
         if self.state == TurnState.GAME_OVER:
             return
-        # Reads whatever last_roll currently holds, which is the final,
-        # post-wildcard-edit pair by this point - so editing into a double
-        # grants the bonus turn too, no special-casing needed.
-        is_bonus_turn = (
-            self.doubles_enabled and self.last_roll is not None and self.last_roll[0] == self.last_roll[1]
-        )
-        if not is_bonus_turn:
-            self.current_player_id = PLAYER_2 if self.current_player_id == PLAYER_1 else PLAYER_1
+        self.current_player_id = PLAYER_2 if self.current_player_id == PLAYER_1 else PLAYER_1
         self.last_roll = None
         self.wildcard_index = None
         self.wildcard_original_roll = None

@@ -246,9 +246,6 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         if rect.collidepoint(pos):
             ui_state.selected_skip_limit = value
             return True
-    if layout.SETTINGS_DOUBLES_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_doubles_enabled = not ui_state.selected_doubles_enabled
-        return True
     if layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_flag_conquest_enabled = not ui_state.selected_flag_conquest_enabled
         return True

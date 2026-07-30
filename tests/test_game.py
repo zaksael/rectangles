@@ -44,21 +44,12 @@ def test_skip_when_no_legal_move():
     assert game.last_roll == (6, 6)
 
 
-def test_doubles_grants_bonus_turn_after_placement():
-    game = Game(board_size=6, doubles_enabled=True, rng=ScriptedRandom([2, 2]))
-    game.roll_dice()
-    assert game.attempt_place((0, 0), 2, 2) is True
-
-    if not game.check_game_over():
-        game.end_turn()
-
-    assert game.current_player_id == PLAYER_1
-    assert game.state == TurnState.AWAITING_ROLL
-
-
-def test_doubles_disabled_by_default_turn_always_alternates():
+def test_double_without_wildcard_enabled_turn_alternates_normally():
+    # No more standalone doubles rule: without wildcard_enabled, a double is
+    # just an ordinary roll and the turn still alternates.
     game = Game(board_size=6, rng=ScriptedRandom([2, 2]))
     game.roll_dice()
+    assert game.state == TurnState.CHOOSING_PLACEMENT
     assert game.attempt_place((0, 0), 2, 2) is True
 
     if not game.check_game_over():
@@ -67,8 +58,8 @@ def test_doubles_disabled_by_default_turn_always_alternates():
     assert game.current_player_id == PLAYER_2
 
 
-def test_repeated_double_skips_still_reach_skip_limit_without_alternating():
-    game = Game(board_size=4, skip_limit=2, doubles_enabled=True, rng=ScriptedRandom([6, 6, 6, 6]))
+def test_repeated_skips_reach_skip_limit():
+    game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([6, 6, 6, 6, 6, 6]))
     p1 = game.players[PLAYER_1]
     game.board.place(p1, (0, 0), w=3, h=4)
     game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty; a 6x6 never fits
@@ -78,7 +69,13 @@ def test_repeated_double_skips_still_reach_skip_limit_without_alternating():
     assert p1.consecutive_skips == 1
     assert game.check_game_over() is False
     game.end_turn()
-    assert game.current_player_id == PLAYER_1  # doubles: bonus turn even on a skip
+    assert game.current_player_id == PLAYER_2
+
+    game.roll_dice()  # p2, also stuck at their unmoved start corner (3, 3)
+    assert game.state == TurnState.SKIPPED
+    assert p1.consecutive_skips == 1  # p2's skip doesn't touch p1's streak
+    game.end_turn()
+    assert game.current_player_id == PLAYER_1
 
     game.roll_dice()
     assert p1.consecutive_skips == 2
@@ -214,50 +211,48 @@ def test_reset_restores_initial_state():
 
 
 def test_game_over_detection_after_placement():
-    # Every roll here is a double (1,1), which is unavoidable to script literal
-    # 1x1 placements on a 2x2 board - so under the doubles-bonus-turn rule,
-    # p1 keeps its turn throughout and claims all four cells itself.
-    game = Game(board_size=2, doubles_enabled=True, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
+    # Every roll here is (1,1), the only piece shape that leaves a 2x2 board
+    # exactly evenly split between the two players' corners.
+    game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 1, 1) is True  # p1 anchors at (0,0)
     assert game.check_game_over() is False
     game.end_turn()
-    assert game.current_player_id == PLAYER_1  # doubles: bonus turn
+    assert game.current_player_id == PLAYER_2
+
+    game.roll_dice()
+    assert game.attempt_place((1, 1), 1, 1) is True  # p2 anchors at (1,1)
+    assert game.check_game_over() is False
+    game.end_turn()
+    assert game.current_player_id == PLAYER_1
 
     game.roll_dice()
     assert game.attempt_place((0, 1), 1, 1) is True  # p1 claims (0,1)
     assert game.check_game_over() is False
     game.end_turn()
-    assert game.current_player_id == PLAYER_1
+    assert game.current_player_id == PLAYER_2
 
     game.roll_dice()
-    assert game.attempt_place((1, 0), 1, 1) is True  # p1 claims (1,0)
-    assert game.check_game_over() is False
-    game.end_turn()
-    assert game.current_player_id == PLAYER_1
-
-    game.roll_dice()
-    assert game.attempt_place((1, 1), 1, 1) is True  # p1 claims the last cell
+    assert game.attempt_place((1, 0), 1, 1) is True  # p2 claims the last cell
     assert game.check_game_over() is True
     assert game.state == TurnState.GAME_OVER
 
 
 def test_board_full_reports_board_full_reason():
-    # See test_game_over_detection_after_placement for why every roll is a
-    # double here.
-    game = Game(board_size=2, doubles_enabled=True, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
+    # See test_game_over_detection_after_placement for why every roll is (1,1).
+    game = Game(board_size=2, rng=ScriptedRandom([1, 1, 1, 1, 1, 1, 1, 1]))
     game.roll_dice()
     game.attempt_place((0, 0), 1, 1)
+    game.end_turn()
+    game.roll_dice()
+    game.attempt_place((1, 1), 1, 1)
     game.end_turn()
     game.roll_dice()
     game.attempt_place((0, 1), 1, 1)
     game.end_turn()
     game.roll_dice()
     game.attempt_place((1, 0), 1, 1)
-    game.end_turn()
-    game.roll_dice()
-    game.attempt_place((1, 1), 1, 1)
 
     assert game.check_game_over() is True
     assert game.game_over_reason == GameOverReason.BOARD_FULL
@@ -493,9 +488,8 @@ def test_skip_limit_configurable_via_constructor():
 
 
 def test_skip_streak_isolated_per_player():
-    # None of these rolls are doubles, so turns alternate normally - p2's
-    # own start corner (its only possible anchor, since it hasn't moved) is
-    # pre-occupied so every one of its rolls is an unconditional skip
+    # p2's own start corner (its only possible anchor, since it hasn't moved)
+    # is pre-occupied so every one of its rolls is an unconditional skip
     # regardless of dice value.
     game = Game(board_size=4, skip_limit=2, rng=ScriptedRandom([1, 2, 3, 5, 2, 1, 1, 3]))
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
@@ -506,7 +500,7 @@ def test_skip_streak_isolated_per_player():
     assert game.attempt_place((1, 3), 1, 2) is True
     assert game.check_game_over() is False
     game.end_turn()
-    assert game.current_player_id == PLAYER_2  # not doubles: turn alternates
+    assert game.current_player_id == PLAYER_2
 
     # Turn 2: p2 rolls (3,5) - its start corner (3,3) is already taken, so
     # it can never place anything, regardless of the roll.
@@ -578,8 +572,20 @@ def test_wildcard_edit_can_produce_a_skip():
     assert game.state == TurnState.SKIPPED
 
 
-def test_wildcard_edit_creating_a_double_grants_doubles_bonus_turn():
-    game = Game(board_size=6, doubles_enabled=True, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 1]))
+def test_doubles_roll_triggers_wildcard_even_without_the_random_chance():
+    # a == b (3, 3) alone must trigger CHOOSING_WILDCARD - scripted so the
+    # random 1-in-6 check (4) independently misses, isolating condition (b).
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 4, 1]))
+    game.roll_dice()
+    assert game.last_roll == (3, 3)
+    assert game.wildcard_original_roll == (3, 3)
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+
+def test_wildcard_edit_creating_a_double_does_not_grant_a_bonus_turn():
+    # Doubles no longer grant an extra turn - this was fully replaced by the
+    # merged Wildcard Roll trigger, not kept alongside it.
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 1]))
     game.roll_dice()
     assert game.wildcard_index == 1
 
@@ -589,7 +595,7 @@ def test_wildcard_edit_creating_a_double_grants_doubles_bonus_turn():
 
     assert game.check_game_over() is False
     game.end_turn()
-    assert game.current_player_id == PLAYER_1  # doubles: bonus turn even though it came from an edit
+    assert game.current_player_id == PLAYER_2
     assert game.wildcard_index is None
     assert game.wildcard_original_roll is None
 

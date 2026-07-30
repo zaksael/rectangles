@@ -60,7 +60,6 @@ def run() -> None:
             game = Game(
                 board_size=ui_state.selected_board_size,
                 skip_limit=ui_state.selected_skip_limit,
-                doubles_enabled=ui_state.selected_doubles_enabled,
                 flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
                 flag_bonus_points=ui_state.selected_flag_bonus_points,
                 walls_enabled=ui_state.selected_walls_enabled,
@@ -76,7 +75,6 @@ def run() -> None:
                 length=ui_state.selected_series_length,
                 board_size=ui_state.selected_board_size,
                 skip_limit=ui_state.selected_skip_limit,
-                doubles_enabled=ui_state.selected_doubles_enabled,
                 flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
                 flag_bonus_points=ui_state.selected_flag_bonus_points,
                 walls_enabled=ui_state.selected_walls_enabled,

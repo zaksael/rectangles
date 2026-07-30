@@ -22,9 +22,8 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
   own — touching only your opponent's territory doesn't count.
 - If a roll can't legally be placed anywhere (in either orientation), your
   turn is skipped.
-- Rolling doubles (both dice show the same number) can optionally earn you
-  an immediate extra turn, whether or not that roll could be placed — this
-  house rule is off by default and configurable before each match.
+- Rolling doubles (both dice show the same number) is one of the two ways to
+  trigger a [Wildcard Roll](#wildcard-roll), if that optional mode is on.
 - The game ends when any of the following happens:
   - neither player has any legal placement left anywhere on the board,
   - one player becomes completely boxed in by the opponent's territory (no
@@ -65,13 +64,13 @@ players regardless of which corner they start from.
 
 ## Wildcard Roll
 
-An optional mode, off by default. When turned on, every roll has a fixed
-1-in-6 chance of becoming a wildcard roll: one of the two just-rolled numbers
-(picked at random) becomes yours to change to any value 1-6, or leave as
-rolled — the other number stays fixed. Once you finalize your pick, the turn
-proceeds exactly like a normal roll, placing if that pair fits or skipping if
-it doesn't (including toward the skip streak, and toward a doubles bonus turn
-if your pick happens to match the other die).
+An optional mode, off by default. When turned on, every roll becomes a
+wildcard roll if either of two things happens: a fixed 1-in-6 random chance,
+or the roll comes up doubles (both dice matching). One of the
+two just-rolled numbers (picked at random) becomes yours to change to any
+value 1-6, or leave as rolled — the other number stays fixed. Once you
+finalize your pick, the turn proceeds exactly like a normal roll, placing if
+that pair fits or skipping if it doesn't (including toward the skip streak).
 
 ## Bot opponent
 
@@ -120,7 +119,7 @@ uv run python main.py
 ```
 
 The app opens to a settings screen — pick a board size and skip limit
-(preset buttons), optionally toggle the doubles house rule,
+(preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls),
 [Wildcard Roll](#wildcard-roll), or the [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
@@ -146,11 +145,12 @@ more, so the panel always fits.
 - Rotate the piece with the **Rotate** button, `R`, or right-click.
 - A roll with no legal placement skips your turn automatically after a brief
   pause; click **Continue**/`Space` to skip the wait immediately instead. A
-  banner over the board calls out the skip, and another calls out a doubles
-  bonus turn, so neither is easy to miss.
+  banner over the board calls out the skip, and another calls out a wildcard
+  roll, so neither is easy to miss.
 - A [Wildcard Roll](#wildcard-roll) turn shows both dice, with the editable
-  one highlighted, plus a row of buttons to pick its new value (or click the
-  value already showing to keep it) before placement continues.
+  one shown as a black `*` until you pick its value, plus a row of buttons
+  (grayed out for any value that wouldn't have a legal placement) to choose
+  its new value before placement continues.
 - **New Game** (`N`) at any time during a match to return to the settings
   screen and start a fresh match, or **Exit** (`Esc`) to quit outright.
   Once you've placed at least one piece, either of these (and closing the
