@@ -328,10 +328,10 @@ class Renderer:
             return
         text_surf = self.font.render(message, True, (255, 255, 255))
         banner_rect = text_surf.get_rect().inflate(48, 28)
-        # Centered on the full board column (not just the current board_size's
-        # smaller rect), so it stays on-screen even for the smallest boards.
-        banner_rect.centerx = layout.BOARD_PX // 2
-        banner_rect.top = 16
+        # Centered on the full board square (not just the current board_size's
+        # smaller rect), so it stays on-screen and in the same spot regardless
+        # of which board size is selected.
+        banner_rect.center = (layout.BOARD_PX // 2, layout.BOARD_PX // 2)
         overlay = pygame.Surface(banner_rect.size, pygame.SRCALPHA)
         overlay.fill(STATUS_BANNER_BG_COLOR)
         self.screen.blit(overlay, banner_rect.topleft)
