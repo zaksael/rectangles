@@ -95,10 +95,11 @@ score; flags are never lost once captured.
 
 ### 6.2 Walls
 
-When enabled: two short wall segments (each three cells long) are marked on
-the board before play begins — one positioned near each player's own
-starting corner, offset two rows from the board's center line, each the
-exact mirror image of the other through the board's center. A wall sits
+When enabled: several wall segments are marked on the board before play
+begins, in mirrored pairs — each pair placed at a random position and
+orientation (horizontal or vertical), kept clear of both players' starting
+corners, with the second segment of each pair the exact mirror image of the
+first through the board's center. A wall sits
 *between* two adjacent cells, not on a cell itself — no board area is ever
 removed from play, every cell stays placeable. However, no piece may be
 placed straddling a wall line, and two cells on opposite sides of a wall are

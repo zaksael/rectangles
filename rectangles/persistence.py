@@ -27,6 +27,14 @@ def _rect_from_dict(data: dict, owner: int) -> Rectangle:
     )
 
 
+def _wall_edges_to_list(wall_edges: frozenset[frozenset[tuple[int, int]]]) -> list:
+    return [[list(cell) for cell in edge] for edge in wall_edges]
+
+
+def _wall_edges_from_list(data: list) -> frozenset[frozenset[tuple[int, int]]]:
+    return frozenset(frozenset(tuple(cell) for cell in edge) for edge in data)
+
+
 def _round_to_dict(round_result: RoundResult) -> dict:
     return {
         "area": round_result.area,
@@ -83,6 +91,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "flag_conquest_enabled": game.flag_conquest_enabled,
         "flag_bonus_points": game.flag_bonus_points,
         "walls_enabled": game.walls_enabled,
+        "wall_edges": _wall_edges_to_list(game.board.wall_edges),
         "wildcard_enabled": game.wildcard_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
@@ -128,6 +137,8 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         walls_enabled=data.get("walls_enabled", False),
         wildcard_enabled=data.get("wildcard_enabled", False),
     )
+    if data.get("wall_edges") is not None:
+        game.board.wall_edges = _wall_edges_from_list(data["wall_edges"])
 
     for player_id_str, player_data in data["players"].items():
         player_id = int(player_id_str)

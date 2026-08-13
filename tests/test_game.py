@@ -1,6 +1,12 @@
 import pytest
 
-from rectangles.constants import PLAYER_1, PLAYER_2, WALL_LINE_LENGTH
+from rectangles.constants import (
+    PLAYER_1,
+    PLAYER_2,
+    WALL_EXCLUSION_RADIUS,
+    WALL_LINE_LENGTH,
+    WALL_LINE_PAIRS,
+)
 from rectangles.game import Game, GameOverReason, TurnState
 
 
@@ -313,31 +319,35 @@ def test_walls_disabled_by_default():
     assert game.board.wall_edges == frozenset()
 
 
-def test_reset_computes_two_symmetric_wall_lines_for_odd_board_sizes():
-    for size in (11, 15):
-        game = Game(board_size=size, walls_enabled=True)
-        edges = game.board.wall_edges
-        assert edges != frozenset()
-        assert len(edges) == 2 * WALL_LINE_LENGTH  # exactly two lines, not a ring
+def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
+    for size in (11, 19):
+        for kwargs in ({}, {"flag_conquest_enabled": True}):
+            game = Game(board_size=size, walls_enabled=True, **kwargs)
+            edges = game.board.wall_edges
+            assert edges != frozenset()
+            # At most WALL_LINE_PAIRS pairs, each pair contributing two
+            # WALL_LINE_LENGTH-long lines (the segment plus its mirror).
+            assert len(edges) <= 2 * WALL_LINE_PAIRS * WALL_LINE_LENGTH
 
-        def mirror(cell: tuple[int, int]) -> tuple[int, int]:
-            r, c = cell
-            return (size - 1 - r, size - 1 - c)
+            def mirror(cell: tuple[int, int]) -> tuple[int, int]:
+                r, c = cell
+                return (size - 1 - r, size - 1 - c)
 
-        mirrored = {frozenset({mirror(a), mirror(b)}) for edge in edges for a, b in (tuple(edge),)}
-        assert mirrored == edges  # 180-degree symmetric, so neither player is favored
+            mirrored = {frozenset(mirror(c) for c in edge) for edge in edges}
+            assert mirrored == edges  # 180-degree symmetric, so neither player is favored
 
-        # Exactly two straight lines: every edge's row pair collapses to one of two values.
-        row_pairs = {tuple(sorted({a[0], b[0]})) for edge in edges for a, b in (tuple(edge),)}
-        assert len(row_pairs) == 2
+            touched_cells = {cell for edge in edges for cell in edge}
 
-        # No cell is ever sacrificed, so no wall touches the exact center cell
-        # or either player's own starting corner.
-        center = size // 2
-        touched_cells = {cell for edge in edges for cell in edge}
-        assert (center, center) not in touched_cells
-        assert (0, 0) not in touched_cells
-        assert (size - 1, size - 1) not in touched_cells
+            # No wall cell lands within WALL_EXCLUSION_RADIUS of either
+            # player's starting corner.
+            corners = ((0, 0), (size - 1, size - 1))
+            for r, c in touched_cells:
+                assert all(
+                    max(abs(r - cr), abs(c - cc)) > WALL_EXCLUSION_RADIUS for cr, cc in corners
+                )
+
+            # Walls never overlap flag cells when both modes are enabled.
+            assert not (touched_cells & game.board.flag_cells)
 
 
 def test_attempt_place_captures_single_flag():

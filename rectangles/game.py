@@ -14,8 +14,9 @@ from .constants import (
     PLAYER_2,
     PLAYER_NAMES,
     SKIP_LIMIT,
+    WALL_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
-    WALL_LINE_OFFSET,
+    WALL_LINE_PAIRS,
     WALLS_ENABLED,
     WILDCARD_ENABLED,
     WILDCARD_TRIGGER_VALUE,
@@ -78,7 +79,7 @@ class Game:
             if self.flag_conquest_enabled
             else frozenset()
         )
-        wall_edges = self._wall_edges() if self.walls_enabled else frozenset()
+        wall_edges = self._wall_edges(flag_cells) if self.walls_enabled else frozenset()
         self.board = Board(self.board_size, flag_cells=flag_cells, wall_edges=wall_edges)
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
@@ -100,23 +101,51 @@ class Game:
         self.surrendered_player_id = None
         self.history = []
 
-    def _wall_edges(self) -> frozenset[frozenset[tuple[int, int]]]:
+    def _wall_edges(
+        self, flag_cells: frozenset[tuple[int, int]]
+    ) -> frozenset[frozenset[tuple[int, int]]]:
         size = self.board_size
-        center = size // 2
-        top_row = center - WALL_LINE_OFFSET
-        bottom_row = top_row + 1
-        cols = range(top_row, top_row + WALL_LINE_LENGTH)
+        corners = ((0, 0), (size - 1, size - 1))
 
         def mirror(cell: tuple[int, int]) -> tuple[int, int]:
             r, c = cell
             return (size - 1 - r, size - 1 - c)
 
-        edges: set[frozenset[tuple[int, int]]] = set()
-        for col in cols:
-            a, b = (top_row, col), (bottom_row, col)
-            edges.add(frozenset({a, b}))
-            edges.add(frozenset({mirror(a), mirror(b)}))
-        return frozenset(edges)
+        def excluded(cell: tuple[int, int]) -> bool:
+            r, c = cell
+            return any(max(abs(r - cr), abs(c - cc)) <= WALL_EXCLUSION_RADIUS for cr, cc in corners)
+
+        def segment_edges(
+            horizontal: bool, fixed: int, start: int
+        ) -> list[frozenset[tuple[int, int]]]:
+            if horizontal:
+                return [frozenset({(fixed, i), (fixed + 1, i)}) for i in range(start, start + WALL_LINE_LENGTH)]
+            return [frozenset({(i, fixed), (i, fixed + 1)}) for i in range(start, start + WALL_LINE_LENGTH)]
+
+        occupied: set[tuple[int, int]] = set(flag_cells)
+        result: set[frozenset[tuple[int, int]]] = set()
+
+        for _ in range(WALL_LINE_PAIRS):
+            horizontal = self.rng.randint(0, 1) == 0
+            candidates: list[list[frozenset[tuple[int, int]]]] = []
+            for fixed in range(size - 1):
+                for start in range(size - WALL_LINE_LENGTH + 1):
+                    edges = segment_edges(horizontal, fixed, start)
+                    cells = set().union(*edges)
+                    if cells & {mirror(cell) for cell in cells}:
+                        continue
+                    if any(excluded(cell) for cell in cells) or cells & occupied:
+                        continue
+                    candidates.append(edges)
+            if not candidates:
+                continue
+            edges = candidates[self.rng.randint(0, len(candidates) - 1)]
+            mirrored_edges = [frozenset(mirror(c) for c in edge) for edge in edges]
+            occupied |= set().union(*edges, *mirrored_edges)
+            result.update(edges)
+            result.update(mirrored_edges)
+
+        return frozenset(result)
 
     @property
     def current_player(self) -> Player:

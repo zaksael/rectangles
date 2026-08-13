@@ -11,15 +11,18 @@ SKIP_LIMIT = 3
 FLAG_CONQUEST_ENABLED = False
 FLAG_BONUS_POINTS = 10
 
-# Whether two wall lines are seeded on the board (see Game.reset()). A wall
-# is a barrier between cells, not a cell itself - no cell is ever sacrificed,
-# a piece just can't be placed across the line. One wall sits near Player 1's
-# corner (upper-left of center), the other is its 180-degree rotation mirror
-# near Player 2's corner (lower-right of center) - so it's symmetric for
-# either player, same reasoning as flag conquest's centered flag.
+# Whether wall lines are seeded on the board (see Game.reset()). A wall is a
+# barrier between cells, not a cell itself - no cell is ever sacrificed, a
+# piece just can't be placed across the line. WALL_LINE_PAIRS pairs are
+# placed each game, each pair's orientation (horizontal/vertical) and
+# position randomized and kept outside WALL_EXCLUSION_RADIUS of either
+# player's start corner; every pair's second segment is its first's
+# 180-degree rotation mirror, so the obstacle is always symmetric for either
+# player, same reasoning as flag conquest's centered flag.
 WALLS_ENABLED = False
-WALL_LINE_OFFSET = 2
-WALL_LINE_LENGTH = 3
+WALL_LINE_LENGTH = 5
+WALL_LINE_PAIRS = 2
+WALL_EXCLUSION_RADIUS = 5
 
 # Whether a roll can become a "wildcard roll": one of the two just-rolled
 # numbers (chosen at random) becomes freely editable by the player before the
