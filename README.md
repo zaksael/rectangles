@@ -40,9 +40,10 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 ## Flag Conquest
 
 An optional mode, off by default. When turned on, three flags are seeded on
-the board: the two corners *not* used as a starting corner (upper-right and
-bottom-left), plus the exact center cell — which is why board sizes are
-always odd, so the center is a single, unambiguous cell. Whichever player's
+the board: the exact center cell — which is why board sizes are always odd,
+so the center is a single, unambiguous cell — plus two more flags at a
+random position each game, mirrored through the center so neither player
+starts closer to one than the other. Whichever player's
 placed piece happens to cover a flag captures it immediately, earning a
 configurable number of bonus points (5/10/20, selectable on the settings
 screen) added on top of their area. A single large piece can capture more

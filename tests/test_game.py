@@ -3,7 +3,7 @@ import pytest
 from rectangles.constants import (
     PLAYER_1,
     PLAYER_2,
-    WALL_EXCLUSION_RADIUS,
+    START_CORNER_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
     WALL_LINE_PAIRS,
 )
@@ -308,10 +308,29 @@ def test_flag_conquest_disabled_by_default_no_flags_and_score_equals_area():
     assert game.total_score(p1) == p1.total_area == 4
 
 
-def test_reset_computes_flag_positions_for_odd_board_sizes():
-    for size in (11, 15):
+def test_reset_computes_symmetric_randomized_flags_for_odd_board_sizes():
+    for size in (11, 19):
         game = Game(board_size=size, flag_conquest_enabled=True)
-        assert game.board.flag_cells == frozenset({(0, size - 1), (size - 1, 0), (size // 2, size // 2)})
+        flags = game.board.flag_cells
+        assert len(flags) == 3
+
+        center = (size // 2, size // 2)
+        assert center in flags
+
+        others = flags - {center}
+
+        def mirror(cell: tuple[int, int]) -> tuple[int, int]:
+            r, c = cell
+            return (size - 1 - r, size - 1 - c)
+
+        a, b = others
+        assert mirror(a) == b  # neither player is favored
+
+        corners = ((0, 0), (size - 1, size - 1))
+        for r, c in others:
+            assert all(
+                max(abs(r - cr), abs(c - cc)) > START_CORNER_EXCLUSION_RADIUS for cr, cc in corners
+            )
 
 
 def test_walls_disabled_by_default():
@@ -338,12 +357,12 @@ def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
 
             touched_cells = {cell for edge in edges for cell in edge}
 
-            # No wall cell lands within WALL_EXCLUSION_RADIUS of either
-            # player's starting corner.
+            # No wall cell lands within START_CORNER_EXCLUSION_RADIUS of
+            # either player's starting corner.
             corners = ((0, 0), (size - 1, size - 1))
             for r, c in touched_cells:
                 assert all(
-                    max(abs(r - cr), abs(c - cc)) > WALL_EXCLUSION_RADIUS for cr, cc in corners
+                    max(abs(r - cr), abs(c - cc)) > START_CORNER_EXCLUSION_RADIUS for cr, cc in corners
                 )
 
             # Walls never overlap flag cells when both modes are enabled.
@@ -353,9 +372,11 @@ def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
 def test_attempt_place_captures_single_flag():
     # First move anchored at p1's start corner (0,0): a 6x6 piece (max dice
     # value) reaches from (0,0) to (5,5), the board's center flag.
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6]))
+    # Leading 0 is consumed by the random flag pick during reset(); flag
+    # positions are overridden below anyway.
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6]))
+    game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
-    assert game.board.flag_cells == {(0, 10), (10, 0), (5, 5)}
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True
@@ -365,7 +386,10 @@ def test_attempt_place_captures_single_flag():
 
 
 def test_attempt_place_captures_two_flags_in_one_placement():
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([5, 6, 1, 1, 6, 6]))
+    # Leading 0 is consumed by the random flag pick during reset(); flag
+    # positions are overridden below anyway.
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 5, 6, 1, 1, 6, 6]))
+    game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
 
     # P1's first move: anchored at (0,0), covers rows0-5/cols0-4 - no flags,

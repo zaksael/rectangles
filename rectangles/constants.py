@@ -6,8 +6,15 @@ DICE_MAX = 6
 # A player who is skipped this many turns in a row ends the game.
 SKIP_LIMIT = 3
 
+# Shared by Flag Conquest and Walls: neither will place a special cell
+# within this Chebyshev distance of either player's start corner, keeping
+# both features clear of the opening moves.
+START_CORNER_EXCLUSION_RADIUS = 5
+
 # Whether flag cells are seeded on the board (see Game.reset()); capturing one
-# awards FLAG_BONUS_POINTS on top of area.
+# awards FLAG_BONUS_POINTS on top of area. The center flag is always seeded;
+# the other two are a random cell (outside START_CORNER_EXCLUSION_RADIUS) plus
+# its 180-degree rotation mirror, so neither player is favored.
 FLAG_CONQUEST_ENABLED = False
 FLAG_BONUS_POINTS = 10
 
@@ -15,14 +22,13 @@ FLAG_BONUS_POINTS = 10
 # barrier between cells, not a cell itself - no cell is ever sacrificed, a
 # piece just can't be placed across the line. WALL_LINE_PAIRS pairs are
 # placed each game, each pair's orientation (horizontal/vertical) and
-# position randomized and kept outside WALL_EXCLUSION_RADIUS of either
-# player's start corner; every pair's second segment is its first's
+# position randomized and kept outside START_CORNER_EXCLUSION_RADIUS of
+# either player's start corner; every pair's second segment is its first's
 # 180-degree rotation mirror, so the obstacle is always symmetric for either
 # player, same reasoning as flag conquest's centered flag.
 WALLS_ENABLED = False
 WALL_LINE_LENGTH = 5
 WALL_LINE_PAIRS = 2
-WALL_EXCLUSION_RADIUS = 5
 
 # Whether a roll can become a "wildcard roll": one of the two just-rolled
 # numbers (chosen at random) becomes freely editable by the player before the

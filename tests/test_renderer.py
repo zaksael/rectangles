@@ -67,7 +67,8 @@ def test_draw_skipped_smoke(renderer):
 
 
 def test_draw_flag_conquest_smoke(renderer):
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6]))
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag, leaves 2 uncaptured
     if not game.check_game_over():
@@ -146,14 +147,16 @@ def test_captured_flag_cells_none_without_flag_conquest(renderer):
 
 
 def test_captured_flag_cells_on_the_last_placement(renderer):
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6]))
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
     assert renderer._captured_flag_cells(game) == frozenset({(5, 5)})
 
 
 def test_captured_flag_cells_ignores_earlier_placements(renderer):
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6, 4, 4]))
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6, 4, 4]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
     if not game.check_game_over():
@@ -177,7 +180,8 @@ def test_last_placed_rect_upto_ignores_later_placements(renderer):
 
 
 def test_captured_flag_cells_upto_ignores_later_placements(renderer):
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6, 4, 4]))
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6, 4, 4]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
     if not game.check_game_over():
@@ -206,7 +210,8 @@ def test_placed_upto_returns_rects_in_history_order(renderer):
 
 
 def test_replay_stats_accumulates_area_and_flags(renderer):
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([6, 6, 4, 4]))
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6, 4, 4]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the center flag (5, 5)
     if not game.check_game_over():

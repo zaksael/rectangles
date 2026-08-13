@@ -85,8 +85,9 @@ fixed for the whole match (and, in series play, for every round of it).
 ### 6.1 Flag Conquest
 
 When enabled: three flag cells are marked on the board before play begins —
-the two board corners that are *not* either player's starting corner, plus
-the board's exact center cell. A flag cell behaves like any other empty
+the board's exact center cell (always present) plus two more flags at a
+random position each game, mirrored through the center so neither player is
+favored. A flag cell behaves like any other empty
 cell for placement purposes; whichever player's piece happens to cover it
 captures it immediately (a single large enough piece can capture more than
 one flag at once). Each captured flag permanently earns that player a fixed

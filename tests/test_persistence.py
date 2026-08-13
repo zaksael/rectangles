@@ -135,7 +135,10 @@ def test_round_trip_preserves_game_over_state(tmp_path):
 
 def test_round_trip_preserves_flag_conquest_state(tmp_path):
     path = tmp_path / "save.json"
-    game = Game(board_size=11, flag_conquest_enabled=True, flag_bonus_points=20, rng=ScriptedRandom([6, 6]))
+    # Leading 0 is consumed by the random flag pick during reset(); flag
+    # positions are overridden below anyway.
+    game = Game(board_size=11, flag_conquest_enabled=True, flag_bonus_points=20, rng=ScriptedRandom([0, 6, 6]))
+    game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
     p1 = game.players[PLAYER_1]

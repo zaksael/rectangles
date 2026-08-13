@@ -9,7 +9,7 @@ from .game import Game, GameOverReason, TurnState
 from .models import Player, Rectangle, TurnRecord
 from .series import RoundResult, Series
 
-SAVE_FORMAT_VERSION = 1
+SAVE_FORMAT_VERSION = 2
 SAVE_DIR = Path.home() / ".rectangles_game"
 DEFAULT_SAVE_PATH = SAVE_DIR / "save.json"
 
@@ -90,6 +90,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "skip_limit": game.skip_limit,
         "flag_conquest_enabled": game.flag_conquest_enabled,
         "flag_bonus_points": game.flag_bonus_points,
+        "flag_cells": [list(cell) for cell in game.board.flag_cells],
         "walls_enabled": game.walls_enabled,
         "wall_edges": _wall_edges_to_list(game.board.wall_edges),
         "wildcard_enabled": game.wildcard_enabled,
@@ -137,6 +138,8 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         walls_enabled=data.get("walls_enabled", False),
         wildcard_enabled=data.get("wildcard_enabled", False),
     )
+    if data.get("flag_cells") is not None:
+        game.board.flag_cells = frozenset(tuple(cell) for cell in data["flag_cells"])
     if data.get("wall_edges") is not None:
         game.board.wall_edges = _wall_edges_from_list(data["wall_edges"])
 
