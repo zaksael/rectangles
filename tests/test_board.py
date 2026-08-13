@@ -179,3 +179,48 @@ def test_legal_top_lefts_matches_brute_force_can_place():
         if board.can_place(p1, (r, c), w, h)
     }
     assert board.legal_top_lefts(p1, w, h) == expected
+
+
+def test_reachable_empty_cells_seeds_from_start_corner_before_first_move():
+    board = Board(size=6)
+    p1, _ = make_players(6)
+    reachable = board.reachable_empty_cells(p1)
+    assert len(reachable) == 36  # whole empty board, including the opponent's own corner
+    assert (0, 0) in reachable
+    assert (5, 5) in reachable  # optimistic: reachable-by-either isn't excluded
+
+
+def test_reachable_empty_cells_expands_past_immediate_frontier():
+    board = Board(size=6)
+    p1, _ = make_players(6)
+    board.place(p1, (0, 0), w=2, h=2)  # frontier is just the 1-cell ring around it
+    reachable = board.reachable_empty_cells(p1)
+    assert reachable > board.frontier(p1)  # strictly more than the one-hop frontier
+    assert (5, 5) in reachable  # nothing blocks the flood-fill from reaching the far corner
+
+
+def test_reachable_empty_cells_stops_at_opponent_territory():
+    board = Board(size=6)
+    p1, p2 = make_players(6)
+    board.place(p1, (0, 0), w=1, h=1)
+    board.place(p2, (0, 3), w=1, h=6)  # entire column 3 - fully seals off columns 4-5
+    reachable = board.reachable_empty_cells(p1)
+    assert (0, 3) not in reachable  # owned by the opponent, not empty
+    assert (0, 2) in reachable  # still open on p1's side
+    for r in range(6):
+        for c in range(4, 6):
+            assert (r, c) not in reachable  # unreachable without crossing p2's territory
+
+
+def test_reachable_empty_cells_respects_walls():
+    # A full-width wall between rows 2 and 3 - no path around it exists, unlike
+    # a single short segment the flood-fill could just route past.
+    wall = frozenset({frozenset({(2, c), (3, c)}) for c in range(6)})
+    board = Board(size=6, wall_edges=wall)
+    p1, _ = make_players(6)
+    board.place(p1, (2, 2), w=1, h=1)
+    reachable = board.reachable_empty_cells(p1)
+    assert (2, 3) in reachable  # unwalled neighbor still counts
+    for r in range(3, 6):
+        for c in range(6):
+            assert (r, c) not in reachable  # unreachable on the far side of the wall

@@ -3,8 +3,9 @@ from __future__ import annotations
 import pygame
 
 from .. import constants, persistence
+from ..board import Board
 from ..game import Game, GameOverReason, TurnState
-from ..models import Rectangle, TurnRecord
+from ..models import Player, Rectangle, TurnRecord
 from ..series import RoundResult, Series
 from . import layout
 from .state import ConfirmAction, Screen, UIState
@@ -285,11 +286,26 @@ class Renderer:
             center = layout.cell_rect(r, c, game.board.size).center
             pygame.draw.circle(self.screen, FLAG_COLOR, center, px // 2 - 5, width=4)
 
+    def _board_at_step(self, game: Game, step: int) -> Board:
+        board = Board(game.board.size, flag_cells=game.board.flag_cells, wall_edges=game.board.wall_edges)
+        scratch = {player_id: Player(player_id, "", (0, 0)) for player_id in game.players}
+        for rect in self._placed_upto(game, step):
+            board.place(scratch[rect.owner], rect.top_left, rect.width, rect.height)
+        return board
+
     def _replay_stats(self, game: Game, step: int) -> dict[int, dict[str, int]]:
         stats = {player_id: {"area": 0, "flags": 0} for player_id in game.players}
         for rect in self._placed_upto(game, step):
             stats[rect.owner]["area"] += rect.area
             stats[rect.owner]["flags"] += len(game.board.flag_cells.intersection(rect.cells()))
+
+        board = self._board_at_step(game, step)
+        for player_id, player in game.players.items():
+            reachable = board.reachable_empty_cells(player)
+            stats[player_id]["potential_area"] = len(reachable)
+            stats[player_id]["potential_flag_points"] = (
+                len(reachable & board.flag_cells) * game.flag_bonus_points
+            )
         return stats
 
     def _format_turn_caption(self, game: Game, record: TurnRecord) -> str:
@@ -447,6 +463,11 @@ class Renderer:
             label = f"{player.name}: {game.total_score(player)}"
             if player.flags_captured:
                 label += f"  F{player.flags_captured}"
+            potential = game.potential_stats(player)
+            if potential["area"]:
+                label += f"  +{potential['area']} area"
+            if game.flag_conquest_enabled and potential["flag_points"]:
+                label += f"  +{potential['flag_points']} flag"
             if player.consecutive_skips:
                 label += f"  (skipped {player.consecutive_skips}/{game.skip_limit})"
             self._text(label, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
@@ -655,6 +676,10 @@ class Renderer:
             label = f"{player.name}: {s['area']}"
             if game.flag_conquest_enabled:
                 label += f"  F{s['flags']}"
+            if s["potential_area"]:
+                label += f"  +{s['potential_area']} area"
+            if game.flag_conquest_enabled and s["potential_flag_points"]:
+                label += f"  +{s['potential_flag_points']} flag"
             self._text(label, (x + 26, y), self.font, TEXT_COLOR)
             y += layout.PANEL_SCORE_ROW_HEIGHT
         self._divider(layout.PANEL_DIVIDER_2_Y)

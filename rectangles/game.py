@@ -302,6 +302,13 @@ class Game:
     def total_score(self, player: Player) -> int:
         return player.total_area + player.flags_captured * self.flag_bonus_points
 
+    def potential_stats(self, player: Player) -> dict[str, int]:
+        reachable = self.board.reachable_empty_cells(player)
+        return {
+            "area": len(reachable),
+            "flag_points": len(reachable & self.board.flag_cells) * self.flag_bonus_points,
+        }
+
     def winner(self) -> int | None:
         if self.game_over_reason == GameOverReason.SURRENDER and self.surrendered_player_id is not None:
             return PLAYER_2 if self.surrendered_player_id == PLAYER_1 else PLAYER_1

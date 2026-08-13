@@ -220,12 +220,30 @@ def test_replay_stats_accumulates_area_and_flags(renderer):
     assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no flag in this footprint
 
     stats = renderer._replay_stats(game, 2)
-    assert stats[PLAYER_1] == {"area": 36, "flags": 1}
-    assert stats[PLAYER_2] == {"area": 16, "flags": 0}
+    assert stats[PLAYER_1]["area"] == 36
+    assert stats[PLAYER_1]["flags"] == 1
+    assert stats[PLAYER_2]["area"] == 16
+    assert stats[PLAYER_2]["flags"] == 0
 
     partial = renderer._replay_stats(game, 1)
-    assert partial[PLAYER_1] == {"area": 36, "flags": 1}
-    assert partial[PLAYER_2] == {"area": 0, "flags": 0}
+    assert partial[PLAYER_1]["area"] == 36
+    assert partial[PLAYER_1]["flags"] == 1
+    assert partial[PLAYER_2]["area"] == 0
+    assert partial[PLAYER_2]["flags"] == 0
+
+
+def test_replay_stats_includes_potential_area_and_flag_points(renderer):
+    game = Game(board_size=6, flag_conquest_enabled=True, flag_bonus_points=5, rng=ScriptedRandom([2, 2]))
+    game.board.flag_cells = frozenset({(5, 5)})
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True  # 4 area, no flag captured
+    if not game.check_game_over():
+        game.end_turn()
+
+    stats = renderer._replay_stats(game, 1)
+    reachable = game.board.reachable_empty_cells(game.players[PLAYER_1])
+    assert stats[PLAYER_1]["potential_area"] == len(reachable)
+    assert stats[PLAYER_1]["potential_flag_points"] == 5  # the one reachable, uncaptured flag
 
 
 def test_format_turn_caption_placed_variant(renderer):
@@ -271,6 +289,16 @@ def test_draw_replay_smoke(renderer, step):
     game.state = TurnState.GAME_OVER
 
     renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=step))
+
+
+def test_draw_replay_flag_conquest_smoke(renderer):
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True
+    game.state = TurnState.GAME_OVER
+
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1))
 
 
 def test_status_banner_message_none_on_a_normal_awaiting_roll(renderer):

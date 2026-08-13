@@ -428,6 +428,30 @@ def test_total_score_can_decide_a_winner_area_alone_would_not():
     assert game.winner() == PLAYER_2  # but the flag bonus decides it
 
 
+def test_potential_stats_area_and_flag_points():
+    game = Game(board_size=4, flag_conquest_enabled=True, flag_bonus_points=7)
+    p1 = game.players[PLAYER_1]
+    game.board.flag_cells = frozenset({(0, 1), (3, 2)})
+    game.board.place(p1, (0, 0), w=1, h=1)
+
+    stats = game.potential_stats(p1)
+
+    assert stats["area"] == 15  # every other cell on the 4x4 board is still open
+    assert stats["flag_points"] == 14  # both reachable flags, 2 * flag_bonus_points(7)
+
+
+def test_potential_stats_excludes_already_captured_flags():
+    game = Game(board_size=4, flag_conquest_enabled=True, flag_bonus_points=7)
+    p1 = game.players[PLAYER_1]
+    game.board.flag_cells = frozenset({(0, 1)})
+    game.board.place(p1, (0, 0), w=2, h=1)  # covers (0,0) and (0,1), capturing the flag
+    p1.flags_captured = 1
+
+    stats = game.potential_stats(p1)
+
+    assert stats["flag_points"] == 0  # already captured cell isn't empty anymore, so it drops out
+
+
 def test_surrender_winner_unaffected_by_flag_bonus():
     game = Game(board_size=8, flag_conquest_enabled=True, flag_bonus_points=100)
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]

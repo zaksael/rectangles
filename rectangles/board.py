@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import deque
+
 from .constants import BOARD_SIZE
 from .models import Player, Rectangle
 
@@ -111,6 +113,27 @@ class Board:
                     ):
                         result.add((nr, nc))
         return result
+
+    def reachable_empty_cells(self, player: Player) -> set[tuple[int, int]]:
+        if player.has_moved:
+            seeds = self.frontier(player)
+        elif self.is_empty(*player.start_corner):
+            seeds = {player.start_corner}
+        else:
+            seeds = set()
+
+        visited = set(seeds)
+        queue = deque(seeds)
+        while queue:
+            r, c = queue.popleft()
+            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                if (nr, nc) in visited or not self.in_bounds(nr, nc):
+                    continue
+                if self._grid[nr][nc] is not None or self.is_edge_walled((r, c), (nr, nc)):
+                    continue
+                visited.add((nr, nc))
+                queue.append((nr, nc))
+        return visited
 
     def legal_top_lefts(self, player: Player, w: int, h: int) -> set[tuple[int, int]]:
         result: set[tuple[int, int]] = set()
