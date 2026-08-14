@@ -94,7 +94,9 @@ Once the bot is on, pick its difficulty:
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, and Wildcard Roll, if enabled) are locked in once for every round. Every
+Flag Conquest, Walls, and Wildcard Roll, if enabled) are locked in once for every round. Who
+goes first alternates each round (Player 1 starts round 1, Player 2 starts
+round 2, and so on), regardless of who won the previous round. Every
 round's score (same rules as above) adds to each player's running series
 total — a landslide round counts for more than a squeaker — so the whole
 series is always played out, and the player with the higher cumulative

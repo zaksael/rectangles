@@ -52,7 +52,7 @@ class Series:
         return None
 
     def new_game(self) -> Game:
-        return Game(
+        game = Game(
             board_size=self.board_size,
             skip_limit=self.skip_limit,
             flag_conquest_enabled=self.flag_conquest_enabled,
@@ -60,3 +60,5 @@ class Series:
             walls_enabled=self.walls_enabled,
             wildcard_enabled=self.wildcard_enabled,
         )
+        game.current_player_id = PLAYER_1 if self.games_played % 2 == 0 else PLAYER_2
+        return game

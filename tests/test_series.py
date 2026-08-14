@@ -117,3 +117,15 @@ def test_new_game_defaults_flag_conquest_disabled():
     game = series.new_game()
 
     assert game.flag_conquest_enabled is False
+
+
+def test_new_game_alternates_starting_player_by_round():
+    series = Series(length=3, board_size=11, skip_limit=2)
+
+    assert series.new_game().current_player_id == PLAYER_1
+
+    series.record_game(_finished_game(1, 0, 0, 0))
+    assert series.new_game().current_player_id == PLAYER_2
+
+    series.record_game(_finished_game(1, 0, 0, 0))
+    assert series.new_game().current_player_id == PLAYER_1
