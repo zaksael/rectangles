@@ -4,7 +4,6 @@ from rectangles import persistence
 from rectangles.constants import (
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
-    FLAG_BONUS_POINTS_PRESETS,
     PLAYER_1,
     PLAYER_2,
     SERIES_LENGTH_PRESETS,
@@ -776,26 +775,6 @@ def test_settings_wildcard_button_toggles_selection():
 
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_wildcard_enabled is False
-
-
-def test_settings_flag_bonus_buttons_update_selection():
-    ui_state = UIState(selected_flag_conquest_enabled=True)
-    for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
-        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
-        assert handle_settings_event(event, ui_state) is True
-        assert ui_state.selected_flag_bonus_points == value
-    assert set(layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS) == set(FLAG_BONUS_POINTS_PRESETS)
-
-
-def test_settings_flag_bonus_buttons_ignored_while_flag_conquest_disabled():
-    ui_state = UIState()
-    default_value = ui_state.selected_flag_bonus_points
-    for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
-        if value == default_value:
-            continue
-        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
-        assert handle_settings_event(event, ui_state) is True
-        assert ui_state.selected_flag_bonus_points == default_value
 
 
 def test_settings_bot_button_toggles_selection():

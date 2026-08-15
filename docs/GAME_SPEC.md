@@ -92,8 +92,7 @@ favored. A flag cell behaves like any other empty
 cell for placement purposes; whichever player's piece happens to cover it
 captures it immediately (a single large enough piece can capture more than
 one flag at once). Each captured flag permanently earns that player a fixed
-bonus (agreed before the match, e.g. 5, 10, or 20 points) added to their
-score; flags are never lost once captured.
+10-point bonus added to their score; flags are never lost once captured.
 
 ### 6.2 Walls
 
@@ -205,7 +204,7 @@ saved and resumed later exactly where it left off, with no loss of state.
 | Board size | 19×19, 23×23, 27×27 | 19×19 |
 | Skip limit | 2, 3, 5 | 3 |
 | Flag Conquest | on / off | off |
-| Flag bonus points | 5, 10, 20 | 10 |
+| Flag bonus points | 10 (fixed) | 10 |
 | Walls | on / off | off |
 | Obstacles | on / off | off |
 | Wildcard roll | on / off | off |

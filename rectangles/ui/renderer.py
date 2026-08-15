@@ -144,26 +144,6 @@ class Renderer:
                 rect, "ON" if enabled_flag else "OFF", selected=enabled_flag, hovered=hovered(rect)
             )
 
-        flag_bonus_label = self.font.render(
-            "Flag bonus points",
-            True,
-            TEXT_COLOR if ui_state.selected_flag_conquest_enabled else MUTED_TEXT_COLOR,
-        )
-        self.screen.blit(
-            flag_bonus_label,
-            flag_bonus_label.get_rect(
-                center=(layout.SETTINGS_RULE_COLUMN_1_X, layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 170)
-            ),
-        )
-        for value, rect in layout.SETTINGS_FLAG_BONUS_BUTTON_RECTS.items():
-            self._button(
-                rect,
-                f"+{value}",
-                enabled=ui_state.selected_flag_conquest_enabled,
-                selected=value == ui_state.selected_flag_bonus_points,
-                hovered=ui_state.selected_flag_conquest_enabled and hovered(rect),
-            )
-
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
         self._button(

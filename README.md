@@ -45,8 +45,7 @@ so the center is a single, unambiguous cell — plus two more flags at a
 random position each game, mirrored through the center so neither player
 starts closer to one than the other. Whichever player's
 placed piece happens to cover a flag captures it immediately, earning a
-configurable number of bonus points (5/10/20, selectable on the settings
-screen) added on top of their area. A single large piece can capture more
+fixed bonus of 10 points added on top of their area. A single large piece can capture more
 than one flag at once if it covers them both. A gold ring marks whichever
 flag cell(s) your most recent placement captured, so a capture doesn't go
 unnoticed.
@@ -133,7 +132,7 @@ uv run python main.py
 
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle
-[Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls),
+[Flag Conquest](#flag-conquest), [Walls](#walls),
 [Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll), or the
 [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click

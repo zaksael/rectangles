@@ -55,7 +55,6 @@ WILDCARD_TRIGGER_VALUE = 1  # rng.randint(DICE_MIN, DICE_MAX) == this triggers i
 BOARD_SIZE_PRESETS = (19, 23, 27)
 SKIP_LIMIT_PRESETS = (2, 3, 5)
 SERIES_LENGTH_PRESETS = (3, 5)
-FLAG_BONUS_POINTS_PRESETS = (5, 10, 20)
 
 # Bot opponent difficulty: Basic picks a random legal placement, Greedy
 # prefers capturing flags, Blocking prefers denying the opponent's frontier.
