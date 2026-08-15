@@ -73,6 +73,9 @@ may be placed if and only if all of the following hold:
   i.e. the combined area of every piece they've placed.
 - If Flag Conquest is in play, each flag a player has captured (§6.1) adds
   a fixed bonus to their score on top of that area.
+- If Enclosure Penalty is in play, each empty cell currently self-enclosed
+  by that player's own territory (§6.5) docks a fixed amount from their
+  score - a live figure, recomputed continuously as the board changes.
 - Whoever has the higher score once the game ends (§8) wins; equal scores
   is a tie — except when the game ended by surrender (§9), in which case
   the surrendering player's opponent always wins outright, regardless of
@@ -129,6 +132,24 @@ Once the player finalizes their choice, the turn proceeds exactly as usual
 from the resulting pair: a legal placement is made if one exists for that
 pair, otherwise the turn is skipped — including counting toward the skip
 streak (§7).
+
+### 6.5 Enclosure Penalty
+
+When enabled: any connected group of empty cells bordered (ignoring
+obstacle cells and wall-blocked edges - neither counts as anyone's
+territory) by exactly one player's cells is self-enclosed for that
+player, and each cell in it docks 1 point from that player's score (§5)
+for as long as the enclosure lasts. A gap bordered by both players, by
+neither, or that touches the board's outer edge at all, is never
+penalized — the board edge already does part of the enclosing for
+free, so a gap that reaches it isn't one the player fully closed off
+themselves. This isn't
+a permanent or one-time effect — it's recomputed fresh from the current
+board continuously, so the penalty appears the instant a hole becomes
+enclosed and disappears the instant it's broken open again (even
+partially). Since every player's own frontier always includes their
+self-enclosed cells, nothing is ever physically unfillable this way —
+the penalty is pressure to plug gaps promptly, not a trap.
 
 ## 7. Skip limit and being boxed in
 
@@ -207,6 +228,7 @@ saved and resumed later exactly where it left off, with no loss of state.
 | Walls | on / off | off |
 | Obstacles | on / off | off |
 | Wildcard roll | on / off | off |
+| Enclosure Penalty | on / off | off |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
 | Dice | two six-sided | — |

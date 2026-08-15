@@ -258,6 +258,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     if layout.SETTINGS_WILDCARD_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_wildcard_enabled = not ui_state.selected_wildcard_enabled
         return True
+    if layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT.collidepoint(pos):
+        ui_state.selected_self_enclosed_penalty_enabled = not ui_state.selected_self_enclosed_penalty_enabled
+        return True
     if layout.SETTINGS_ALL_RULES_BUTTON_RECT.collidepoint(pos):
         ui_state.toggle_all_house_rules()
         return True

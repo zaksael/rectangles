@@ -64,6 +64,7 @@ def run() -> None:
                 walls_enabled=ui_state.selected_walls_enabled,
                 obstacles_enabled=ui_state.selected_obstacles_enabled,
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
+                self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
             )
             series = None
             series_game_recorded = False
@@ -79,6 +80,7 @@ def run() -> None:
                 walls_enabled=ui_state.selected_walls_enabled,
                 obstacles_enabled=ui_state.selected_obstacles_enabled,
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
+                self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
             )
             game = series.new_game()
             series_game_recorded = False

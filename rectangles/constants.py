@@ -47,6 +47,14 @@ OBSTACLE_OWNER = -1
 # whenever the roll comes up doubles (both dice matching).
 WILDCARD_ENABLED = False
 
+# Whether empty cells fully enclosed by one player's own territory dock that
+# player points (see Board.self_enclosed_cell_counts()/Game.total_score()) -
+# a live, dynamic penalty for leaving unfilled holes, not a one-time or
+# permanent effect: it's recomputed fresh from the current board every time,
+# same as total_area itself, and drops the moment the hole is broken open.
+SELF_ENCLOSED_PENALTY_ENABLED = False
+SELF_ENCLOSED_PENALTY_PER_CELL = 1
+
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both. Board sizes are odd so flag conquest's center cell
 # (size // 2) is always a single unambiguous cell.

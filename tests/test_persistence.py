@@ -282,6 +282,31 @@ def test_round_trip_preserves_choosing_wildcard_state(tmp_path):
     assert loaded.state == TurnState.CHOOSING_PLACEMENT
 
 
+def test_round_trip_preserves_self_enclosed_penalty_state(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=11, self_enclosed_penalty_enabled=True)
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.self_enclosed_penalty_enabled is True
+
+
+def test_load_game_old_format_without_self_enclosed_penalty_key_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["self_enclosed_penalty_enabled"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.self_enclosed_penalty_enabled is False
+
+
 def test_round_trip_preserves_series(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)

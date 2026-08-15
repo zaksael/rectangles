@@ -8,6 +8,7 @@ from ..constants import (
     BOT_DIFFICULTY_PRESETS,
     FLAG_CONQUEST_ENABLED,
     OBSTACLES_ENABLED,
+    SELF_ENCLOSED_PENALTY_ENABLED,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
     WALLS_ENABLED,
@@ -40,6 +41,7 @@ class UIState:
     selected_walls_enabled: bool = WALLS_ENABLED
     selected_obstacles_enabled: bool = OBSTACLES_ENABLED
     selected_wildcard_enabled: bool = WILDCARD_ENABLED
+    selected_self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED
     selected_bot_enabled: bool = False
     selected_bot_difficulty: str = BOT_DIFFICULTY_PRESETS[0]
     selected_series_length: int = SERIES_LENGTH_PRESETS[0]
@@ -69,6 +71,7 @@ class UIState:
             and self.selected_walls_enabled
             and self.selected_obstacles_enabled
             and self.selected_wildcard_enabled
+            and self.selected_self_enclosed_penalty_enabled
         )
 
     def toggle_all_house_rules(self) -> None:
@@ -77,3 +80,4 @@ class UIState:
         self.selected_walls_enabled = value
         self.selected_obstacles_enabled = value
         self.selected_wildcard_enabled = value
+        self.selected_self_enclosed_penalty_enabled = value

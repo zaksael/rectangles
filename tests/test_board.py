@@ -195,6 +195,57 @@ def test_set_obstacle_cells_clears_old_sentinel_and_seeds_new():
     assert board.is_empty(3, 3) is False  # new obstacle cell seeded
 
 
+def test_self_enclosed_cell_counts_credits_hole_bordered_by_one_player_only():
+    board = Board(size=6)
+    p1, p2 = make_players(6)
+    board.place(p1, (1, 2), w=1, h=1)
+    board.place(p1, (3, 2), w=1, h=1)
+    board.place(p1, (2, 1), w=1, h=1)
+    board.place(p1, (2, 3), w=1, h=1)
+    # Gives the rest of the board (the "outer" empty region) a second
+    # owner, so it isn't wrongly counted as self-enclosed too.
+    board.place(p2, (5, 5), w=1, h=1)
+
+    assert board.self_enclosed_cell_counts() == {p1.id: 1}
+
+
+def test_self_enclosed_cell_counts_ignores_regions_bordered_by_both_players():
+    board = Board(size=4)
+    p1, p2 = make_players(4)
+    board.place(p1, (0, 0), w=1, h=1)
+    board.place(p2, (3, 3), w=1, h=1)
+
+    assert board.self_enclosed_cell_counts() == {}
+
+
+def test_self_enclosed_cell_counts_excludes_regions_touching_the_board_edge():
+    # (0, 2) is bordered by only p1 among in-bounds neighbors, but its 4th
+    # neighbor is off the top edge - the board edge did part of the
+    # enclosing for free, so it must not be penalized.
+    board = Board(size=6)
+    p1, p2 = make_players(6)
+    board.place(p1, (1, 2), w=1, h=1)
+    board.place(p1, (0, 1), w=1, h=1)
+    board.place(p1, (0, 3), w=1, h=1)
+    board.place(p2, (5, 5), w=1, h=1)
+
+    assert board.self_enclosed_cell_counts() == {}
+
+
+def test_self_enclosed_cell_counts_treats_obstacle_cells_as_neutral():
+    # Obstacle-adjacent cell must not count the obstacle as a second
+    # "owner" - it should behave like an ordinary boundary, same as a
+    # board edge or a wall, not like a third player.
+    board = Board(size=6, obstacle_cells=frozenset({(2, 3)}))
+    p1, p2 = make_players(6)
+    board.place(p1, (1, 2), w=1, h=1)
+    board.place(p1, (3, 2), w=1, h=1)
+    board.place(p1, (2, 1), w=1, h=1)
+    board.place(p2, (5, 5), w=1, h=1)
+
+    assert board.self_enclosed_cell_counts() == {p1.id: 1}
+
+
 def test_legal_top_lefts_matches_brute_force_can_place():
     board = Board(size=6)
     p1, p2 = make_players(6)

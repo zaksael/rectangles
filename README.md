@@ -81,6 +81,20 @@ value 1-6, or leave as rolled — the other number stays fixed. Once you
 finalize your pick, the turn proceeds exactly like a normal roll, placing if
 that pair fits or skipping if it doesn't (including toward the skip streak).
 
+## Enclosure Penalty
+
+An optional mode, off by default. When turned on, any empty cell that's
+fully surrounded by only *your own* territory docks you 1 point — a live
+penalty, recomputed every frame from the current board, not a one-time or
+permanent effect. Filling the hole back in (even partially, breaking the
+enclosure) drops the penalty immediately. A gap bordered by both players,
+by neither (walled off or [Obstacles](#obstacles)-bound), or that touches
+the board's outer edge at all, is never penalized — the edge already does
+part of the enclosing for free, so only a hole your own territory fully
+closes off, with no help from the edge, counts. The live panel shows the
+penalty separately from your score (e.g. "-3 enclosed") so it's never
+silently baked into the total.
+
 ## Bot opponent
 
 Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
@@ -101,7 +115,7 @@ Once the bot is on, pick its difficulty:
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, Obstacles, and Wildcard Roll, if enabled) are locked in once for every round. Who
+Flag Conquest, Walls, Obstacles, Wildcard Roll, and Enclosure Penalty, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
 round's score (same rules as above) adds to each player's running series
@@ -132,8 +146,9 @@ uv run python main.py
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest), [Walls](#walls),
-[Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll) (or click **Turn All
-ON**/**Turn All OFF** to flip all four at once), or the
+[Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll),
+[Enclosure Penalty](#enclosure-penalty) (or click **Turn All
+ON**/**Turn All OFF** to flip all five at once), or the
 [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see

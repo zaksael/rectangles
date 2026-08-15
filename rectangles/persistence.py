@@ -61,6 +61,7 @@ def _series_to_dict(series: Series) -> dict:
         "walls_enabled": series.walls_enabled,
         "obstacles_enabled": series.obstacles_enabled,
         "wildcard_enabled": series.wildcard_enabled,
+        "self_enclosed_penalty_enabled": series.self_enclosed_penalty_enabled,
         "scores": series.scores,
         "games_played": series.games_played,
         "rounds": [_round_to_dict(r) for r in series.rounds],
@@ -77,6 +78,7 @@ def _series_from_dict(data: dict) -> Series:
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
         wildcard_enabled=data.get("wildcard_enabled", False),
+        self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
     )
     series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
     series.games_played = data["games_played"]
@@ -98,6 +100,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "obstacles_enabled": game.obstacles_enabled,
         "obstacle_cells": [list(cell) for cell in game.board.obstacle_cells],
         "wildcard_enabled": game.wildcard_enabled,
+        "self_enclosed_penalty_enabled": game.self_enclosed_penalty_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
         "last_roll": list(game.last_roll) if game.last_roll is not None else None,
@@ -142,6 +145,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
         wildcard_enabled=data.get("wildcard_enabled", False),
+        self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
     )
     if data.get("flag_cells") is not None:
         game.board.flag_cells = frozenset(tuple(cell) for cell in data["flag_cells"])

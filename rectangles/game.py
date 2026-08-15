@@ -15,6 +15,8 @@ from .constants import (
     PLAYER_1,
     PLAYER_2,
     PLAYER_NAMES,
+    SELF_ENCLOSED_PENALTY_ENABLED,
+    SELF_ENCLOSED_PENALTY_PER_CELL,
     SKIP_LIMIT,
     START_CORNER_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
@@ -61,6 +63,7 @@ class Game:
         walls_enabled: bool = WALLS_ENABLED,
         obstacles_enabled: bool = OBSTACLES_ENABLED,
         wildcard_enabled: bool = WILDCARD_ENABLED,
+        self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
@@ -70,6 +73,7 @@ class Game:
         self.walls_enabled = walls_enabled
         self.obstacles_enabled = obstacles_enabled
         self.wildcard_enabled = wildcard_enabled
+        self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -327,7 +331,11 @@ class Game:
         return False
 
     def total_score(self, player: Player) -> int:
-        return player.total_area + player.flags_captured * self.flag_bonus_points
+        score = player.total_area + player.flags_captured * self.flag_bonus_points
+        if self.self_enclosed_penalty_enabled:
+            penalty = self.board.self_enclosed_cell_counts().get(player.id, 0)
+            score -= penalty * SELF_ENCLOSED_PENALTY_PER_CELL
+        return score
 
     def potential_stats(self, player: Player) -> dict[str, int]:
         reachable = self.board.reachable_empty_cells(player)

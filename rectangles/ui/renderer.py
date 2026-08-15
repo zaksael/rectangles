@@ -137,6 +137,8 @@ class Renderer:
              layout.SETTINGS_OBSTACLES_BUTTON_RECT, ui_state.selected_obstacles_enabled),
             ("Wildcard Roll", layout.SETTINGS_RULE_COLUMN_4_X,
              layout.SETTINGS_WILDCARD_BUTTON_RECT, ui_state.selected_wildcard_enabled),
+            ("Enclosure Penalty", layout.SETTINGS_RULE_COLUMN_5_X,
+             layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT, ui_state.selected_self_enclosed_penalty_enabled),
         ):
             label_surf = self.font.render(label_text, True, TEXT_COLOR)
             self.screen.blit(label_surf, label_surf.get_rect(center=(column_x, toggle_label_y)))
@@ -463,6 +465,10 @@ class Renderer:
             label = f"{player.name}: {game.total_score(player)}"
             if player.flags_captured:
                 label += f"  F{player.flags_captured}"
+            if game.self_enclosed_penalty_enabled:
+                penalty_cells = game.board.self_enclosed_cell_counts().get(player.id, 0)
+                if penalty_cells:
+                    label += f"  -{penalty_cells * constants.SELF_ENCLOSED_PENALTY_PER_CELL} enclosed"
             potential = game.potential_stats(player)
             if potential["area"]:
                 label += f"  +{potential['area']} area"

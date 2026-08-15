@@ -151,6 +151,47 @@ class Board:
                 queue.append((nr, nc))
         return visited
 
+    def self_enclosed_cell_counts(self) -> dict[int, int]:
+        # A connected empty region bordered (ignoring wall-blocked edges)
+        # by exactly one player's cells is "self-enclosed" for that player -
+        # unless it also touches the board's outer edge, in which case it's
+        # never penalized: the board edge did part of the enclosing for
+        # free, so it isn't a gap the player actually closed off themselves.
+        # Obstacle cells contribute no owner (same as a wall) - they don't
+        # make a region "shared" or "unowned" any differently than an
+        # ordinary boundary would.
+        counts: dict[int, int] = {}
+        visited: set[tuple[int, int]] = set()
+        for r in range(self.size):
+            for c in range(self.size):
+                if (r, c) in visited or self._grid[r][c] is not None:
+                    continue
+                region: list[tuple[int, int]] = []
+                owners: set[int] = set()
+                touches_edge = False
+                queue = deque([(r, c)])
+                visited.add((r, c))
+                while queue:
+                    cr, cc = queue.popleft()
+                    region.append((cr, cc))
+                    for nr, nc in ((cr - 1, cc), (cr + 1, cc), (cr, cc - 1), (cr, cc + 1)):
+                        if not self.in_bounds(nr, nc):
+                            touches_edge = True
+                            continue
+                        if self.is_edge_walled((cr, cc), (nr, nc)):
+                            continue
+                        owner = self._grid[nr][nc]
+                        if owner is None:
+                            if (nr, nc) not in visited:
+                                visited.add((nr, nc))
+                                queue.append((nr, nc))
+                        elif owner != OBSTACLE_OWNER:
+                            owners.add(owner)
+                if not touches_edge and len(owners) == 1:
+                    owner = next(iter(owners))
+                    counts[owner] = counts.get(owner, 0) + len(region)
+        return counts
+
     def legal_top_lefts(self, player: Player, w: int, h: int) -> set[tuple[int, int]]:
         result: set[tuple[int, int]] = set()
         for r in range(self.size - h + 1):

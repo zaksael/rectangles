@@ -4,6 +4,7 @@ from rectangles.constants import (
     OBSTACLE_CELL_PAIRS,
     PLAYER_1,
     PLAYER_2,
+    SELF_ENCLOSED_PENALTY_PER_CELL,
     START_CORNER_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
     WALL_LINE_PAIRS,
@@ -691,3 +692,38 @@ def test_choose_wildcard_value_raises_for_out_of_range_value(value):
     game.roll_dice()
     with pytest.raises(ValueError):
         game.choose_wildcard_value(value)
+
+
+def test_self_enclosed_penalty_disabled_by_default_score_equals_area():
+    game = Game(board_size=6)
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=2, h=2)
+    assert game.total_score(p1) == p1.total_area == 4
+
+
+def test_self_enclosed_penalty_docks_points_for_a_self_enclosed_hole():
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (1, 2), w=1, h=1)
+    game.board.place(p1, (3, 2), w=1, h=1)
+    game.board.place(p1, (2, 1), w=1, h=1)
+    game.board.place(p1, (2, 3), w=1, h=1)
+    game.board.place(p2, (5, 5), w=1, h=1)
+
+    assert p1.total_area == 4
+    assert game.total_score(p1) == 4 - SELF_ENCLOSED_PENALTY_PER_CELL  # one enclosed cell at (2, 2)
+    assert game.total_score(p2) == p2.total_area  # p2's own area is untouched
+
+
+def test_self_enclosed_penalty_drops_once_the_hole_is_filled():
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (1, 2), w=1, h=1)
+    game.board.place(p1, (3, 2), w=1, h=1)
+    game.board.place(p1, (2, 1), w=1, h=1)
+    game.board.place(p1, (2, 3), w=1, h=1)
+    game.board.place(p2, (5, 5), w=1, h=1)
+    assert game.total_score(p1) == p1.total_area - SELF_ENCLOSED_PENALTY_PER_CELL
+
+    game.board.place(p1, (2, 2), w=1, h=1)
+    assert game.total_score(p1) == p1.total_area  # hole filled - live penalty drops immediately

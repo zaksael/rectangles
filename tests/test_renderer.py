@@ -86,6 +86,11 @@ def test_draw_obstacles_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_self_enclosed_penalty_smoke(renderer):
+    game = Game(board_size=11, self_enclosed_penalty_enabled=True)
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 def test_draw_choosing_wildcard_smoke(renderer):
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 0]))
     game.roll_dice()
