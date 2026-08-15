@@ -777,6 +777,37 @@ def test_settings_wildcard_button_toggles_selection():
     assert ui_state.selected_wildcard_enabled is False
 
 
+def test_settings_all_rules_button_turns_all_on_then_all_off():
+    ui_state = UIState()
+    assert ui_state.all_house_rules_enabled is False
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_ALL_RULES_BUTTON_RECT.center
+    )
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_flag_conquest_enabled is True
+    assert ui_state.selected_walls_enabled is True
+    assert ui_state.selected_obstacles_enabled is True
+    assert ui_state.selected_wildcard_enabled is True
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_flag_conquest_enabled is False
+    assert ui_state.selected_walls_enabled is False
+    assert ui_state.selected_obstacles_enabled is False
+    assert ui_state.selected_wildcard_enabled is False
+
+
+def test_settings_all_rules_button_turns_all_on_from_a_mixed_state():
+    ui_state = UIState(selected_flag_conquest_enabled=True, selected_walls_enabled=False)
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_ALL_RULES_BUTTON_RECT.center
+    )
+    assert handle_settings_event(event, ui_state) is True
+
+    assert ui_state.all_house_rules_enabled is True
+
+
 def test_settings_bot_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_bot_enabled is False

@@ -144,6 +144,12 @@ class Renderer:
                 rect, "ON" if enabled_flag else "OFF", selected=enabled_flag, hovered=hovered(rect)
             )
 
+        self._button(
+            layout.SETTINGS_ALL_RULES_BUTTON_RECT,
+            "Turn All OFF" if ui_state.all_house_rules_enabled else "Turn All ON",
+            hovered=hovered(layout.SETTINGS_ALL_RULES_BUTTON_RECT),
+        )
+
         bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
         self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
         self._button(

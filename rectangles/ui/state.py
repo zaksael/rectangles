@@ -61,3 +61,19 @@ class UIState:
         self.history_scroll = 0
         self.settings_scroll = 0
         self.replay_step = 0
+
+    @property
+    def all_house_rules_enabled(self) -> bool:
+        return (
+            self.selected_flag_conquest_enabled
+            and self.selected_walls_enabled
+            and self.selected_obstacles_enabled
+            and self.selected_wildcard_enabled
+        )
+
+    def toggle_all_house_rules(self) -> None:
+        value = not self.all_house_rules_enabled
+        self.selected_flag_conquest_enabled = value
+        self.selected_walls_enabled = value
+        self.selected_obstacles_enabled = value
+        self.selected_wildcard_enabled = value

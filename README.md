@@ -133,7 +133,8 @@ uv run python main.py
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest), [Walls](#walls),
-[Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll), or the
+[Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll) (or click **Turn All
+ON**/**Turn All OFF** to flip all four at once), or the
 [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
