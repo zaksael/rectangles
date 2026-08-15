@@ -87,7 +87,7 @@ def test_draw_obstacles_smoke(renderer):
 
 
 def test_draw_choosing_wildcard_smoke(renderer):
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 0]))
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
     renderer.draw(game, UIState(screen=Screen.PLAYING))
@@ -271,13 +271,13 @@ def test_format_turn_caption_skip_variant(renderer):
 
 
 def test_format_turn_caption_wildcard_variant(renderer):
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0]))
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
     game.choose_wildcard_value(6)
     assert game.attempt_place((0, 0), 6, 5) is True
     record = game.history[0]
-    assert renderer._format_turn_caption(game, record) == "Player 1 placed 6x5 (wildcard: rolled 3,5)"
+    assert renderer._format_turn_caption(game, record) == "Player 1 placed 6x5 (wildcard: rolled 5,5)"
 
 
 @pytest.mark.parametrize("step", [0, 1, 2])
@@ -312,7 +312,7 @@ def test_status_banner_message_none_on_a_normal_awaiting_roll(renderer):
 
 
 def test_status_banner_message_on_choosing_wildcard(renderer):
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 0]))
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
 
@@ -328,16 +328,6 @@ def test_status_banner_message_on_skipped_turn(renderer):
     assert game.state == TurnState.SKIPPED
 
     assert renderer._status_banner_message(game) == "Player 1 skipped - no legal placement!"
-
-
-def test_status_banner_message_on_doubles_triggered_wildcard(renderer):
-    # a == b (2, 2) triggers CHOOSING_WILDCARD via the doubles condition,
-    # independent of the random 1-in-6 chance (scripted to miss, via 4).
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 4, 0]))
-    game.roll_dice()
-    assert game.state == TurnState.CHOOSING_WILDCARD
-
-    assert renderer._status_banner_message(game) == "Wildcard roll! Player 1 may change one number"
 
 
 @pytest.mark.parametrize(

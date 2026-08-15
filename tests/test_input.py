@@ -380,7 +380,7 @@ def test_take_bot_turn_places_when_choosing_placement():
 
 
 def test_wildcard_value_button_click_finalizes_choice_and_advances_state():
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0]))
     ui_state = UIState(screen=Screen.PLAYING)
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
@@ -399,7 +399,7 @@ def test_wildcard_value_click_resolves_to_skip_when_every_value_is_illegal():
     # Fixed die stays 6, which never fits on a 4x4 board regardless of what
     # the wildcard die becomes - regression test for a soft-lock where
     # gating the click on legality left zero buttons clickable.
-    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([6, 2, 1, 1]))
+    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([6, 6, 1]))
     ui_state = UIState(screen=Screen.PLAYING)
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
@@ -414,7 +414,7 @@ def test_wildcard_value_click_resolves_to_skip_when_every_value_is_illegal():
 
 
 def test_take_bot_turn_resolves_choosing_wildcard():
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0, 6]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0, 6]))
     ui_state = UIState()
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD

@@ -265,7 +265,7 @@ def test_load_game_old_format_without_wildcard_key_defaults_disabled(tmp_path):
 
 def test_round_trip_preserves_choosing_wildcard_state(tmp_path):
     path = tmp_path / "save.json"
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0]))
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
 
@@ -275,7 +275,7 @@ def test_round_trip_preserves_choosing_wildcard_state(tmp_path):
     assert loaded_series is None
     assert loaded.state == TurnState.CHOOSING_WILDCARD
     assert loaded.wildcard_index == 0
-    assert loaded.wildcard_original_roll == (3, 5)
+    assert loaded.wildcard_original_roll == (5, 5)
 
     loaded.choose_wildcard_value(6)
     assert loaded.last_roll == (6, 5)

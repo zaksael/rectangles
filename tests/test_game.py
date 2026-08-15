@@ -630,21 +630,19 @@ def test_wildcard_disabled_by_default_never_triggers():
     assert game.state == TurnState.CHOOSING_PLACEMENT
 
 
-def test_wildcard_not_triggered_leaves_roll_unchanged():
-    # Third scripted value (2) misses WILDCARD_TRIGGER_VALUE (1), so this
-    # behaves exactly like a normal roll.
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 2]))
+def test_wildcard_not_triggered_on_a_non_double_roll():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5]))
     assert game.roll_dice() == (3, 5)
     assert game.state == TurnState.CHOOSING_PLACEMENT
     assert game.wildcard_index is None
 
 
 def test_wildcard_triggers_and_lets_player_edit_one_number():
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
-    assert game.roll_dice() == (3, 5)
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0]))
+    assert game.roll_dice() == (5, 5)
     assert game.state == TurnState.CHOOSING_WILDCARD
     assert game.wildcard_index == 0
-    assert game.wildcard_original_roll == (3, 5)
+    assert game.wildcard_original_roll == (5, 5)
 
     game.choose_wildcard_value(6)
     assert game.last_roll == (6, 5)
@@ -653,7 +651,7 @@ def test_wildcard_triggers_and_lets_player_edit_one_number():
 
 
 def test_wildcard_edit_can_produce_a_skip():
-    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 1, 1]))
+    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 1]))
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
 
@@ -662,26 +660,16 @@ def test_wildcard_edit_can_produce_a_skip():
     assert game.state == TurnState.SKIPPED
 
 
-def test_doubles_roll_triggers_wildcard_even_without_the_random_chance():
-    # a == b (3, 3) alone must trigger CHOOSING_WILDCARD - scripted so the
-    # random 1-in-6 check (4) independently misses, isolating condition (b).
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 4, 1]))
-    game.roll_dice()
-    assert game.last_roll == (3, 3)
-    assert game.wildcard_original_roll == (3, 3)
-    assert game.state == TurnState.CHOOSING_WILDCARD
-
-
-def test_wildcard_edit_creating_a_double_does_not_grant_a_bonus_turn():
+def test_wildcard_resolution_does_not_grant_a_bonus_turn():
     # Doubles no longer grant an extra turn - this was fully replaced by the
     # merged Wildcard Roll trigger, not kept alongside it.
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 1]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 1]))
     game.roll_dice()
     assert game.wildcard_index == 1
 
-    game.choose_wildcard_value(3)  # (3, 5) -> (3, 3)
-    assert game.last_roll == (3, 3)
-    assert game.attempt_place((0, 0), 3, 3) is True
+    game.choose_wildcard_value(5)  # (3, 3) -> (3, 5)
+    assert game.last_roll == (3, 5)
+    assert game.attempt_place((0, 0), 3, 5) is True
 
     assert game.check_game_over() is False
     game.end_turn()
@@ -699,7 +687,7 @@ def test_choose_wildcard_value_raises_when_not_choosing_wildcard():
 
 @pytest.mark.parametrize("value", [0, 7])
 def test_choose_wildcard_value_raises_for_out_of_range_value(value):
-    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 3, 0]))
     game.roll_dice()
     with pytest.raises(ValueError):
         game.choose_wildcard_value(value)

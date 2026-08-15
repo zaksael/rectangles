@@ -74,9 +74,8 @@ the board as a solid dark square.
 
 ## Wildcard Roll
 
-An optional mode, off by default. When turned on, every roll becomes a
-wildcard roll if either of two things happens: a fixed 1-in-6 random chance,
-or the roll comes up doubles (both dice matching). One of the
+An optional mode, off by default. When turned on, every roll that comes up
+doubles (both dice matching) becomes a wildcard roll. One of the
 two just-rolled numbers (picked at random) becomes yours to change to any
 value 1-6, or leave as rolled — the other number stays fixed. Once you
 finalize your pick, the turn proceeds exactly like a normal roll, placing if

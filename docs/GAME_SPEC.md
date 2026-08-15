@@ -120,9 +120,8 @@ player, for the whole match.
 
 ### 6.4 Wildcard roll
 
-When enabled: every roll becomes a wildcard roll if either of two conditions
-holds — a fixed 1-in-6 random chance, or the roll came up doubles (both dice
-show the same number). When it triggers, one of the two
+When enabled: every roll that comes up doubles (both dice show the same
+number) becomes a wildcard roll. When it triggers, one of the two
 just-rolled numbers (chosen at random) becomes freely editable — before
 anything else happens, the active player may change that one number to any
 value 1-6, or leave it as rolled. The other number keeps its original value.

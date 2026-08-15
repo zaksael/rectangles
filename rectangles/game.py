@@ -21,7 +21,6 @@ from .constants import (
     WALL_LINE_PAIRS,
     WALLS_ENABLED,
     WILDCARD_ENABLED,
-    WILDCARD_TRIGGER_VALUE,
 )
 from .models import Player, TurnRecord
 
@@ -211,16 +210,11 @@ class Game:
         b = self.rng.randint(DICE_MIN, DICE_MAX)
         self.last_roll = (a, b)
 
-        if self.wildcard_enabled:
-            # Doubles trigger a wildcard edit too - this always rolls the
-            # 1-in-6 check regardless, so the amount of rng consumption
-            # doesn't depend on the roll.
-            random_trigger = self.rng.randint(DICE_MIN, DICE_MAX) == WILDCARD_TRIGGER_VALUE
-            if random_trigger or a == b:
-                self.wildcard_original_roll = self.last_roll
-                self.wildcard_index = self.rng.randint(0, 1)
-                self.state = TurnState.CHOOSING_WILDCARD
-                return self.last_roll
+        if self.wildcard_enabled and a == b:
+            self.wildcard_original_roll = self.last_roll
+            self.wildcard_index = self.rng.randint(0, 1)
+            self.state = TurnState.CHOOSING_WILDCARD
+            return self.last_roll
 
         self._resolve_roll()
         return self.last_roll

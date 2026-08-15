@@ -43,11 +43,9 @@ OBSTACLE_OWNER = -1
 
 # Whether a roll can become a "wildcard roll": one of the two just-rolled
 # numbers (chosen at random) becomes freely editable by the player before the
-# turn proceeds - see Game.roll_dice()/choose_wildcard_value(). Triggered by
-# either a 1-in-6 random chance (WILDCARD_TRIGGER_VALUE) or doubles (both
-# dice matching).
+# turn proceeds - see Game.roll_dice()/choose_wildcard_value(). Triggered
+# whenever the roll comes up doubles (both dice matching).
 WILDCARD_ENABLED = False
-WILDCARD_TRIGGER_VALUE = 1  # rng.randint(DICE_MIN, DICE_MAX) == this triggers it (1-in-6)
 
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both. Board sizes are odd so flag conquest's center cell
