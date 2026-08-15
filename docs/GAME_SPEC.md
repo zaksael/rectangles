@@ -27,8 +27,7 @@ higher score at that point wins; equal scores is a tie.
   2 is assigned the bottom-right corner.
 - Two standard six-sided dice are used.
 - Before play begins, the following are fixed for the whole match: board
-  size, the skip limit (§7), and whichever optional rules (§6) are in play,
-  each with their own parameters (e.g. flag bonus point value).
+  size, the skip limit (§7), and whichever optional rules (§6) are in play.
 
 ## 3. Turn structure
 

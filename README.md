@@ -22,8 +22,8 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
   own — touching only your opponent's territory doesn't count.
 - If a roll can't legally be placed anywhere (in either orientation), your
   turn is skipped.
-- Rolling doubles (both dice show the same number) is one of the two ways to
-  trigger a [Wildcard Roll](#wildcard-roll), if that optional mode is on.
+- Rolling doubles (both dice show the same number) triggers a
+  [Wildcard Roll](#wildcard-roll), if that optional mode is on.
 - The game ends when any of the following happens:
   - neither player has any legal placement left anywhere on the board,
   - one player becomes completely boxed in by the opponent's territory (no
