@@ -204,6 +204,40 @@ def test_load_game_old_format_without_walls_key_defaults_disabled(tmp_path):
     assert loaded.board.wall_edges == frozenset()
 
 
+def test_round_trip_preserves_obstacles_state(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=11, obstacles_enabled=True)
+    obstacle_cells = game.board.obstacle_cells
+    assert obstacle_cells != frozenset()
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.obstacles_enabled is True
+    assert loaded.board.obstacle_cells == obstacle_cells
+    # The loaded obstacle cells must actually be seeded into _grid, not just
+    # tracked as metadata - a placement on one of them must stay illegal.
+    for r, c in obstacle_cells:
+        assert loaded.board.is_empty(r, c) is False
+
+
+def test_load_game_old_format_without_obstacles_key_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["obstacles_enabled"]
+    del data["obstacle_cells"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.obstacles_enabled is False
+    assert loaded.board.obstacle_cells == frozenset()
+
+
 def test_round_trip_preserves_wildcard_state(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=11, wildcard_enabled=True)

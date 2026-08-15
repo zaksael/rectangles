@@ -10,6 +10,8 @@ from .constants import (
     DICE_MIN,
     FLAG_BONUS_POINTS,
     FLAG_CONQUEST_ENABLED,
+    OBSTACLE_CELL_PAIRS,
+    OBSTACLES_ENABLED,
     PLAYER_1,
     PLAYER_2,
     PLAYER_NAMES,
@@ -39,6 +41,17 @@ class GameOverReason(Enum):
     SURRENDER = auto()
 
 
+def _mirror_cell(cell: tuple[int, int], size: int) -> tuple[int, int]:
+    r, c = cell
+    return (size - 1 - r, size - 1 - c)
+
+
+def _near_start_corner(cell: tuple[int, int], size: int) -> bool:
+    r, c = cell
+    corners = ((0, 0), (size - 1, size - 1))
+    return any(max(abs(r - cr), abs(c - cc)) <= START_CORNER_EXCLUSION_RADIUS for cr, cc in corners)
+
+
 class Game:
     def __init__(
         self,
@@ -47,6 +60,7 @@ class Game:
         flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
         flag_bonus_points: int = FLAG_BONUS_POINTS,
         walls_enabled: bool = WALLS_ENABLED,
+        obstacles_enabled: bool = OBSTACLES_ENABLED,
         wildcard_enabled: bool = WILDCARD_ENABLED,
         rng: random.Random | None = None,
     ):
@@ -55,6 +69,7 @@ class Game:
         self.flag_conquest_enabled = flag_conquest_enabled
         self.flag_bonus_points = flag_bonus_points
         self.walls_enabled = walls_enabled
+        self.obstacles_enabled = obstacles_enabled
         self.wildcard_enabled = wildcard_enabled
         self.rng = rng or random.Random()
         self.board: Board
@@ -76,7 +91,15 @@ class Game:
         size = self.board_size
         flag_cells = self._flag_cells() if self.flag_conquest_enabled else frozenset()
         wall_edges = self._wall_edges(flag_cells) if self.walls_enabled else frozenset()
-        self.board = Board(self.board_size, flag_cells=flag_cells, wall_edges=wall_edges)
+        obstacle_cells = (
+            self._obstacle_cells(flag_cells, wall_edges) if self.obstacles_enabled else frozenset()
+        )
+        self.board = Board(
+            self.board_size,
+            flag_cells=flag_cells,
+            wall_edges=wall_edges,
+            obstacle_cells=obstacle_cells,
+        )
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
             PLAYER_2: Player(
@@ -100,39 +123,22 @@ class Game:
     def _flag_cells(self) -> frozenset[tuple[int, int]]:
         size = self.board_size
         center = (size // 2, size // 2)
-        corners = ((0, 0), (size - 1, size - 1))
-
-        def mirror(cell: tuple[int, int]) -> tuple[int, int]:
-            r, c = cell
-            return (size - 1 - r, size - 1 - c)
 
         candidates = [
             (r, c)
             for r in range(size)
             for c in range(size)
-            if (r, c) != center
-            and all(max(abs(r - cr), abs(c - cc)) > START_CORNER_EXCLUSION_RADIUS for cr, cc in corners)
+            if (r, c) != center and not _near_start_corner((r, c), size)
         ]
         if not candidates:
             return frozenset({center})
         cell = candidates[self.rng.randint(0, len(candidates) - 1)]
-        return frozenset({center, cell, mirror(cell)})
+        return frozenset({center, cell, _mirror_cell(cell, size)})
 
     def _wall_edges(
         self, flag_cells: frozenset[tuple[int, int]]
     ) -> frozenset[frozenset[tuple[int, int]]]:
         size = self.board_size
-        corners = ((0, 0), (size - 1, size - 1))
-
-        def mirror(cell: tuple[int, int]) -> tuple[int, int]:
-            r, c = cell
-            return (size - 1 - r, size - 1 - c)
-
-        def excluded(cell: tuple[int, int]) -> bool:
-            r, c = cell
-            return any(
-                max(abs(r - cr), abs(c - cc)) <= START_CORNER_EXCLUSION_RADIUS for cr, cc in corners
-            )
 
         def segment_edges(
             horizontal: bool, fixed: int, start: int
@@ -151,18 +157,45 @@ class Game:
                 for start in range(size - WALL_LINE_LENGTH + 1):
                     edges = segment_edges(horizontal, fixed, start)
                     cells = set().union(*edges)
-                    if cells & {mirror(cell) for cell in cells}:
+                    if cells & {_mirror_cell(cell, size) for cell in cells}:
                         continue
-                    if any(excluded(cell) for cell in cells) or cells & occupied:
+                    if any(_near_start_corner(cell, size) for cell in cells) or cells & occupied:
                         continue
                     candidates.append(edges)
             if not candidates:
                 continue
             edges = candidates[self.rng.randint(0, len(candidates) - 1)]
-            mirrored_edges = [frozenset(mirror(c) for c in edge) for edge in edges]
+            mirrored_edges = [frozenset(_mirror_cell(c, size) for c in edge) for edge in edges]
             occupied |= set().union(*edges, *mirrored_edges)
             result.update(edges)
             result.update(mirrored_edges)
+
+        return frozenset(result)
+
+    def _obstacle_cells(
+        self,
+        flag_cells: frozenset[tuple[int, int]],
+        wall_edges: frozenset[frozenset[tuple[int, int]]],
+    ) -> frozenset[tuple[int, int]]:
+        size = self.board_size
+        occupied: set[tuple[int, int]] = set(flag_cells) | {cell for edge in wall_edges for cell in edge}
+        result: set[tuple[int, int]] = set()
+
+        for _ in range(OBSTACLE_CELL_PAIRS):
+            candidates = [
+                (r, c)
+                for r in range(size)
+                for c in range(size)
+                if (r, c) not in occupied and not _near_start_corner((r, c), size)
+            ]
+            if not candidates:
+                continue
+            cell = candidates[self.rng.randint(0, len(candidates) - 1)]
+            mirrored = _mirror_cell(cell, size)
+            occupied.add(cell)
+            occupied.add(mirrored)
+            result.add(cell)
+            result.add(mirrored)
 
         return frozenset(result)
 

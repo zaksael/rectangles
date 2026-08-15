@@ -1,6 +1,7 @@
 import pytest
 
 from rectangles.constants import (
+    OBSTACLE_CELL_PAIRS,
     PLAYER_1,
     PLAYER_2,
     START_CORNER_EXCLUSION_RADIUS,
@@ -367,6 +368,37 @@ def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
 
             # Walls never overlap flag cells when both modes are enabled.
             assert not (touched_cells & game.board.flag_cells)
+
+
+def test_obstacles_disabled_by_default():
+    game = Game(board_size=11)
+    assert game.board.obstacle_cells == frozenset()
+
+
+def test_reset_computes_symmetric_randomized_obstacles_for_odd_board_sizes():
+    for size in (11, 19):
+        for kwargs in ({}, {"flag_conquest_enabled": True}, {"walls_enabled": True}):
+            game = Game(board_size=size, obstacles_enabled=True, **kwargs)
+            cells = game.board.obstacle_cells
+            assert cells != frozenset()
+            assert len(cells) <= 2 * OBSTACLE_CELL_PAIRS
+
+            def mirror(cell: tuple[int, int]) -> tuple[int, int]:
+                r, c = cell
+                return (size - 1 - r, size - 1 - c)
+
+            assert {mirror(c) for c in cells} == cells  # 180-degree symmetric
+
+            corners = ((0, 0), (size - 1, size - 1))
+            for r, c in cells:
+                assert all(
+                    max(abs(r - cr), abs(c - cc)) > START_CORNER_EXCLUSION_RADIUS for cr, cc in corners
+                )
+
+            # Never overlaps flag cells or wall-touched cells when those modes are also on.
+            assert not (cells & game.board.flag_cells)
+            wall_cells = {cell for edge in game.board.wall_edges for cell in edge}
+            assert not (cells & wall_cells)
 
 
 def test_attempt_place_captures_single_flag():

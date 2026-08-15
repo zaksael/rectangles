@@ -257,6 +257,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
     if layout.SETTINGS_WALLS_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_walls_enabled = not ui_state.selected_walls_enabled
         return True
+    if layout.SETTINGS_OBSTACLES_BUTTON_RECT.collidepoint(pos):
+        ui_state.selected_obstacles_enabled = not ui_state.selected_obstacles_enabled
+        return True
     if layout.SETTINGS_WILDCARD_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_wildcard_enabled = not ui_state.selected_wildcard_enabled
         return True

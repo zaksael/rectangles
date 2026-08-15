@@ -63,6 +63,7 @@ def run() -> None:
                 flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
                 flag_bonus_points=ui_state.selected_flag_bonus_points,
                 walls_enabled=ui_state.selected_walls_enabled,
+                obstacles_enabled=ui_state.selected_obstacles_enabled,
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
             )
             series = None
@@ -78,6 +79,7 @@ def run() -> None:
                 flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
                 flag_bonus_points=ui_state.selected_flag_bonus_points,
                 walls_enabled=ui_state.selected_walls_enabled,
+                obstacles_enabled=ui_state.selected_obstacles_enabled,
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
             )
             game = series.new_game()

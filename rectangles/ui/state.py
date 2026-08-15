@@ -8,6 +8,7 @@ from ..constants import (
     BOT_DIFFICULTY_PRESETS,
     FLAG_BONUS_POINTS,
     FLAG_CONQUEST_ENABLED,
+    OBSTACLES_ENABLED,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
     WALLS_ENABLED,
@@ -39,6 +40,7 @@ class UIState:
     selected_flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED
     selected_flag_bonus_points: int = FLAG_BONUS_POINTS
     selected_walls_enabled: bool = WALLS_ENABLED
+    selected_obstacles_enabled: bool = OBSTACLES_ENABLED
     selected_wildcard_enabled: bool = WILDCARD_ENABLED
     selected_bot_enabled: bool = False
     selected_bot_difficulty: str = BOT_DIFFICULTY_PRESETS[0]

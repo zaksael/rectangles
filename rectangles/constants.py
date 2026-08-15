@@ -30,6 +30,17 @@ WALLS_ENABLED = False
 WALL_LINE_LENGTH = 5
 WALL_LINE_PAIRS = 2
 
+# Whether obstacle cells are seeded on the board (see Game.reset()). Unlike
+# Walls (which block adjacency but leave the cell itself free), an obstacle
+# cell is simply never placeable - seeded into Board._grid with the
+# OBSTACLE_OWNER sentinel at construction time. OBSTACLE_CELL_PAIRS mirrored
+# pairs are placed each game, randomized and kept outside
+# START_CORNER_EXCLUSION_RADIUS of either start corner and clear of flag
+# cells/wall cells, same placement reasoning as Flag Conquest/Walls.
+OBSTACLES_ENABLED = False
+OBSTACLE_CELL_PAIRS = 2
+OBSTACLE_OWNER = -1
+
 # Whether a roll can become a "wildcard roll": one of the two just-rolled
 # numbers (chosen at random) becomes freely editable by the player before the
 # turn proceeds - see Game.roll_dice()/choose_wildcard_value(). Triggered by

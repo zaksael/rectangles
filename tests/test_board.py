@@ -165,6 +165,36 @@ def test_board_wall_edges_excluded_from_frontier():
     assert (2, 3) in board.frontier(p1)  # unwalled neighbor still counts
 
 
+def test_board_obstacle_cells_default_empty():
+    board = Board(size=6)
+    assert board.obstacle_cells == frozenset()
+
+
+def test_board_obstacle_cells_block_placement_and_frontier():
+    board = Board(size=6, obstacle_cells=frozenset({(2, 2)}))
+    p1, _ = make_players(6)
+    board.place(p1, (2, 1), w=1, h=1)
+    assert board.is_empty(2, 2) is False
+    assert board.can_place(p1, (2, 2), w=1, h=1) is False
+    assert (2, 2) not in board.frontier(p1)
+    assert (2, 3) not in board.frontier(p1)  # not adjacent to any owned cell
+
+
+def test_board_obstacle_cells_excluded_from_reachable_empty_cells():
+    board = Board(size=6, obstacle_cells=frozenset({(0, 1)}))
+    p1, _ = make_players(6)
+    reachable = board.reachable_empty_cells(p1)
+    assert (0, 1) not in reachable
+
+
+def test_set_obstacle_cells_clears_old_sentinel_and_seeds_new():
+    board = Board(size=6, obstacle_cells=frozenset({(1, 1)}))
+    board.set_obstacle_cells(frozenset({(3, 3)}))
+    assert board.obstacle_cells == frozenset({(3, 3)})
+    assert board.is_empty(1, 1) is True  # old obstacle cell released
+    assert board.is_empty(3, 3) is False  # new obstacle cell seeded
+
+
 def test_legal_top_lefts_matches_brute_force_can_place():
     board = Board(size=6)
     p1, p2 = make_players(6)

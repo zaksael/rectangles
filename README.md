@@ -64,6 +64,15 @@ ends. Each pair's second segment is the exact mirror image of the first
 through the board's center, so the obstacle is symmetric for both players
 regardless of which corner they start from.
 
+## Obstacles
+
+An optional mode, off by default. When turned on, a handful of individual
+cells are seeded on the board in mirrored pairs, randomly placed and kept
+clear of both starting corners, Flag Conquest's flags, and Walls' lines.
+Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
+cover it, and it never counts as a legal move for either player. Shown on
+the board as a solid dark square.
+
 ## Wildcard Roll
 
 An optional mode, off by default. When turned on, every roll becomes a
@@ -94,7 +103,7 @@ Once the bot is on, pick its difficulty:
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, and Wildcard Roll, if enabled) are locked in once for every round. Who
+Flag Conquest, Walls, Obstacles, and Wildcard Roll, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
 round's score (same rules as above) adds to each player's running series
@@ -125,7 +134,8 @@ uv run python main.py
 The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest) (and its bonus-points preset), [Walls](#walls),
-[Wildcard Roll](#wildcard-roll), or the [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
+[Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll), or the
+[bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
 [Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`

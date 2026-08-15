@@ -31,6 +31,7 @@ CARD_BG_COLOR = (255, 255, 255)
 CARD_BORDER_COLOR = (215, 215, 222)
 FLAG_COLOR = (230, 180, 30)
 WALL_LINE_COLOR = (90, 88, 96)
+OBSTACLE_COLOR = (60, 60, 65)
 LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
 STATUS_BANNER_BG_COLOR = (20, 20, 24, 215)
 
@@ -132,7 +133,9 @@ class Renderer:
              layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT, ui_state.selected_flag_conquest_enabled),
             ("Walls", layout.SETTINGS_RULE_COLUMN_2_X,
              layout.SETTINGS_WALLS_BUTTON_RECT, ui_state.selected_walls_enabled),
-            ("Wildcard Roll", layout.SETTINGS_RULE_COLUMN_3_X,
+            ("Obstacles", layout.SETTINGS_RULE_COLUMN_3_X,
+             layout.SETTINGS_OBSTACLES_BUTTON_RECT, ui_state.selected_obstacles_enabled),
+            ("Wildcard Roll", layout.SETTINGS_RULE_COLUMN_4_X,
              layout.SETTINGS_WILDCARD_BUTTON_RECT, ui_state.selected_wildcard_enabled),
         ):
             label_surf = self.font.render(label_text, True, TEXT_COLOR)
@@ -225,6 +228,7 @@ class Renderer:
         self._draw_grid_cells(game)
 
         self._draw_flags(game)
+        self._draw_obstacles(game)
 
         for player in game.players.values():
             color = constants.PLAYER_COLORS[player.id]
@@ -247,6 +251,7 @@ class Renderer:
         self._draw_grid_cells(game)
 
         self._draw_flags(game, upto=step)
+        self._draw_obstacles(game)
 
         for rect in self._placed_upto(game, step):
             color = constants.PLAYER_COLORS[rect.owner]
@@ -287,7 +292,12 @@ class Renderer:
             pygame.draw.circle(self.screen, FLAG_COLOR, center, px // 2 - 5, width=4)
 
     def _board_at_step(self, game: Game, step: int) -> Board:
-        board = Board(game.board.size, flag_cells=game.board.flag_cells, wall_edges=game.board.wall_edges)
+        board = Board(
+            game.board.size,
+            flag_cells=game.board.flag_cells,
+            wall_edges=game.board.wall_edges,
+            obstacle_cells=game.board.obstacle_cells,
+        )
         scratch = {player_id: Player(player_id, "", (0, 0)) for player_id in game.players}
         for rect in self._placed_upto(game, step):
             board.place(scratch[rect.owner], rect.top_left, rect.width, rect.height)
@@ -373,6 +383,10 @@ class Renderer:
             half = px // 4
             points = [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)]
             pygame.draw.polygon(self.screen, FLAG_COLOR, points)
+
+    def _draw_obstacles(self, game: Game) -> None:
+        for r, c in game.board.obstacle_cells:
+            pygame.draw.rect(self.screen, OBSTACLE_COLOR, layout.cell_rect(r, c, game.board.size))
 
     def _draw_coverable_cells(self, game: Game, ui_state: UIState) -> None:
         if ui_state.current_dims is None:

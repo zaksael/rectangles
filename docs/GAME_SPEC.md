@@ -54,7 +54,8 @@ A candidate piece — a given width and height, at a given board position —
 may be placed if and only if all of the following hold:
 
 1. It fits entirely within the board.
-2. Every cell it would cover is currently unclaimed by either player.
+2. Every cell it would cover is currently unclaimed by either player, and
+   none of them is an obstacle cell (§6.3), if Obstacles is in play.
 3. If Walls (§6.2) is in play, it does not straddle a wall line.
 4. **Anchoring**:
    - A player's *very first* placement of the match must include their own
@@ -107,7 +108,18 @@ placed straddling a wall line, and two cells on opposite sides of a wall are
 never considered edge-adjacent for the placement rule in §4 — the only way
 past a wall is to build around one of its ends.
 
-### 6.3 Wildcard roll
+### 6.3 Obstacles
+
+When enabled: a small number of individual cells are marked on the board
+before play begins, in mirrored pairs — each pair placed at a random
+position, kept clear of both players' starting corners and of any Flag
+Conquest or Walls cells already in play, with the second cell of each pair
+the exact mirror image of the first through the board's center. Unlike a
+wall, an obstacle cell is a piece of the board itself that is permanently
+unplaceable — no candidate placement may ever cover it (§4), for either
+player, for the whole match.
+
+### 6.4 Wildcard roll
 
 When enabled: every roll becomes a wildcard roll if either of two conditions
 holds — a fixed 1-in-6 random chance, or the roll came up doubles (both dice
@@ -195,6 +207,7 @@ saved and resumed later exactly where it left off, with no loss of state.
 | Flag Conquest | on / off | off |
 | Flag bonus points | 5, 10, 20 | 10 |
 | Walls | on / off | off |
+| Obstacles | on / off | off |
 | Wildcard roll | on / off | off |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |

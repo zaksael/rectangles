@@ -59,6 +59,7 @@ def _series_to_dict(series: Series) -> dict:
         "flag_conquest_enabled": series.flag_conquest_enabled,
         "flag_bonus_points": series.flag_bonus_points,
         "walls_enabled": series.walls_enabled,
+        "obstacles_enabled": series.obstacles_enabled,
         "wildcard_enabled": series.wildcard_enabled,
         "scores": series.scores,
         "games_played": series.games_played,
@@ -74,6 +75,7 @@ def _series_from_dict(data: dict) -> Series:
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
+        obstacles_enabled=data.get("obstacles_enabled", False),
         wildcard_enabled=data.get("wildcard_enabled", False),
     )
     series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
@@ -93,6 +95,8 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "flag_cells": [list(cell) for cell in game.board.flag_cells],
         "walls_enabled": game.walls_enabled,
         "wall_edges": _wall_edges_to_list(game.board.wall_edges),
+        "obstacles_enabled": game.obstacles_enabled,
+        "obstacle_cells": [list(cell) for cell in game.board.obstacle_cells],
         "wildcard_enabled": game.wildcard_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
@@ -136,12 +140,15 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
+        obstacles_enabled=data.get("obstacles_enabled", False),
         wildcard_enabled=data.get("wildcard_enabled", False),
     )
     if data.get("flag_cells") is not None:
         game.board.flag_cells = frozenset(tuple(cell) for cell in data["flag_cells"])
     if data.get("wall_edges") is not None:
         game.board.wall_edges = _wall_edges_from_list(data["wall_edges"])
+    if data.get("obstacle_cells") is not None:
+        game.board.set_obstacle_cells(frozenset(tuple(cell) for cell in data["obstacle_cells"]))
 
     for player_id_str, player_data in data["players"].items():
         player_id = int(player_id_str)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 
-from .constants import BOARD_SIZE
+from .constants import BOARD_SIZE, OBSTACLE_OWNER
 from .models import Player, Rectangle
 
 
@@ -12,11 +12,27 @@ class Board:
         size: int = BOARD_SIZE,
         flag_cells: frozenset[tuple[int, int]] = frozenset(),
         wall_edges: frozenset[frozenset[tuple[int, int]]] = frozenset(),
+        obstacle_cells: frozenset[tuple[int, int]] = frozenset(),
     ):
         self.size = size
         self.flag_cells = flag_cells
         self.wall_edges = wall_edges
+        self.obstacle_cells = obstacle_cells
         self._grid: list[list[int | None]] = [[None] * size for _ in range(size)]
+        for r, c in obstacle_cells:
+            self._grid[r][c] = OBSTACLE_OWNER
+
+    def set_obstacle_cells(self, cells: frozenset[tuple[int, int]]) -> None:
+        # Unlike flag_cells/wall_edges (pure metadata a caller can safely
+        # overwrite as a bare attribute), obstacle cells are baked into
+        # _grid at construction time - persistence.py's load path needs
+        # this to swap a freshly-reset Game's (wrong) rolled obstacles for
+        # the saved ones without leaving the old sentinel cells stuck.
+        for r, c in self.obstacle_cells:
+            self._grid[r][c] = None
+        self.obstacle_cells = cells
+        for r, c in cells:
+            self._grid[r][c] = OBSTACLE_OWNER
 
     def in_bounds(self, r: int, c: int) -> bool:
         return 0 <= r < self.size and 0 <= c < self.size

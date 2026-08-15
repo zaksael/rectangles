@@ -81,6 +81,11 @@ def test_draw_walls_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_obstacles_smoke(renderer):
+    game = Game(board_size=11, obstacles_enabled=True)
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 def test_draw_choosing_wildcard_smoke(renderer):
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([3, 5, 1, 0]))
     game.roll_dice()
