@@ -662,6 +662,19 @@ def test_wildcard_edit_can_produce_a_skip():
     assert game.state == TurnState.SKIPPED
 
 
+def test_wildcard_skips_the_picker_when_every_value_is_illegal():
+    # Fixed die stays 6, which never fits on a 4x4 board regardless of what
+    # the wildcard die becomes - forcing a click through an all-illegal
+    # picker would be a pointless extra step, so roll_dice() should resolve
+    # straight to the skip instead of entering CHOOSING_WILDCARD at all.
+    game = Game(board_size=4, wildcard_enabled=True, rng=ScriptedRandom([6, 6, 1]))
+    game.roll_dice()
+
+    assert game.state == TurnState.SKIPPED
+    assert game.wildcard_index is None
+    assert game.history[-1].wildcard_original_roll == (6, 6)
+
+
 def test_wildcard_resolution_does_not_grant_a_bonus_turn():
     # Doubles no longer grant an extra turn - this was fully replaced by the
     # merged Wildcard Roll trigger, not kept alongside it.

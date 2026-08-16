@@ -221,8 +221,16 @@ class Game:
         if self.wildcard_enabled and a == b:
             self.wildcard_original_roll = self.last_roll
             self.wildcard_index = self.rng.randint(0, 1)
-            self.state = TurnState.CHOOSING_WILDCARD
-            return self.last_roll
+            if any(self.wildcard_value_is_legal(v) for v in range(DICE_MIN, DICE_MAX + 1)):
+                self.state = TurnState.CHOOSING_WILDCARD
+                return self.last_roll
+            # No wildcard value would produce a legal placement either -
+            # forcing the player through a picker where every option is
+            # illegal is a pointless extra click, so resolve straight into
+            # the skip it would have ended in anyway. wildcard_original_roll
+            # stays set so the skip's history entry still records it as a
+            # wildcard roll.
+            self.wildcard_index = None
 
         self._resolve_roll()
         return self.last_roll

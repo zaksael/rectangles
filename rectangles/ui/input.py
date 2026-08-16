@@ -206,10 +206,10 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
         if game.can_reroll() and layout.REROLL_WILDCARD_BUTTON_RECT.collidepoint(pos):
             _reroll(game, ui_state)
             return True
-        # Not gated on wildcard_value_is_legal(): an illegal value still
-        # needs to be choosable so the turn can resolve into its legitimate
-        # skip - if every value happened to be illegal, gating here would
-        # leave no button clickable at all, soft-locking the turn.
+        # Not gated on wildcard_value_is_legal(): individual values can still
+        # be illegal (that's what the grayed-out buttons show) even though
+        # roll_dice() guarantees at least one of the six is legal whenever
+        # this state is reached at all.
         for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
             if rect.collidepoint(pos):
                 _choose_wildcard_value(game, ui_state, value)

@@ -130,7 +130,9 @@ value 1-6, or leave it as rolled. The other number keeps its original value.
 Once the player finalizes their choice, the turn proceeds exactly as usual
 from the resulting pair: a legal placement is made if one exists for that
 pair, otherwise the turn is skipped — including counting toward the skip
-streak (§7).
+streak (§7). If no possible value for the editable number would ever
+produce a legal placement, the choice is skipped entirely and the turn
+resolves straight to that skip.
 
 ### 6.5 Enclosure Penalty
 

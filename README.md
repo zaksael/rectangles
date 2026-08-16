@@ -80,6 +80,9 @@ two just-rolled numbers (picked at random) becomes yours to change to any
 value 1-6, or leave as rolled — the other number stays fixed. Once you
 finalize your pick, the turn proceeds exactly like a normal roll, placing if
 that pair fits or skipping if it doesn't (including toward the skip streak).
+If no number you could pick would ever fit, the pick is skipped entirely and
+the turn resolves straight to a skip — no pointless click through an
+all-illegal picker.
 
 ## Enclosure Penalty
 
