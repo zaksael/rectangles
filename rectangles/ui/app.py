@@ -32,7 +32,7 @@ def run() -> None:
     game: Game | None = None
     series: Series | None = None
     series_game_recorded = False
-    auto_action_at = 0
+    auto_action_at: int | None = None
     ui_state = UIState()
     renderer = Renderer(screen)
 
@@ -72,7 +72,7 @@ def run() -> None:
             )
             series = None
             series_game_recorded = False
-            auto_action_at = 0
+            auto_action_at = None
             ui_state.game_requested = False
 
         if ui_state.series_requested:
@@ -89,7 +89,7 @@ def run() -> None:
             )
             game = series.new_game()
             series_game_recorded = False
-            auto_action_at = 0
+            auto_action_at = None
             ui_state.series_requested = False
 
         if ui_state.resume_requested:
@@ -99,36 +99,49 @@ def run() -> None:
             else:
                 game, series = loaded
             series_game_recorded = False
-            auto_action_at = 0
+            auto_action_at = None
             ui_state.resume_requested = False
 
         if ui_state.next_game_requested:
             game = series.new_game()
             series_game_recorded = False
-            auto_action_at = 0
+            auto_action_at = None
             ui_state.next_game_requested = False
 
         if series is not None and game is not None and game.state == TurnState.GAME_OVER and not series_game_recorded:
             series.record_game(game)
             series_game_recorded = True
 
-        if (
+        should_auto_act = (
             ui_state.screen == Screen.PLAYING
             and game is not None
             and game.state != TurnState.GAME_OVER
             and ui_state.pending_confirmation is None
-            and pygame.time.get_ticks() >= auto_action_at
-        ):
-            if game_input.is_bots_turn(game, ui_state):
-                game_input.take_bot_turn(game, ui_state)
-                auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
-            elif game.state == TurnState.SKIPPED and not game.can_reroll():
+            and (
+                game_input.is_bots_turn(game, ui_state)
                 # Gated on can_reroll(): with a reroll charge available,
                 # SKIPPED is a real decision (Reroll vs Skip) and must wait
                 # for the player, same as CHOOSING_PLACEMENT/CHOOSING_WILDCARD
                 # never auto-advance either.
+                or (game.state == TurnState.SKIPPED and not game.can_reroll())
+            )
+        )
+        if not should_auto_act:
+            auto_action_at = None
+        elif auto_action_at is None:
+            # Arm rather than fire immediately: the state that makes this turn
+            # auto-actionable (e.g. a human's wildcard click resolving into an
+            # un-rerollable skip) may have just become true this very frame.
+            # Firing immediately here would skip straight to the next turn
+            # without ever letting renderer.draw() show the state that got
+            # skipped - looking to the player like their click did nothing.
+            auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
+        elif pygame.time.get_ticks() >= auto_action_at:
+            if game_input.is_bots_turn(game, ui_state):
+                game_input.take_bot_turn(game, ui_state)
+            else:
                 game_input.continue_turn(game)
-                auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
+            auto_action_at = None
 
         if ui_state.screen == Screen.PLAYING and not game_input.is_bots_turn(game, ui_state):
             game_input.update_hover(game, ui_state)
