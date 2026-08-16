@@ -463,6 +463,17 @@ class Renderer:
             return f"R{remaining}"
         return f"Reroll ({remaining}/{constants.REROLL_LIMIT})"
 
+    def _draw_score_row(
+        self, x: int, y: int, player_id: int, primary: str, suffixes: list[str], color: tuple[int, int, int]
+    ) -> None:
+        swatch = pygame.Rect(x, y + 2, 18, 18)
+        pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player_id], swatch)
+        self._text(primary, (x + 26, y), self.font, color)
+        if suffixes:
+            self._text(
+                "  ".join(suffixes), (x + 26, y + layout.PANEL_SCORE_LINE2_DY), self.font_small, MUTED_TEXT_COLOR
+            )
+
     def _draw_panel(self, game: Game, ui_state: UIState, series: Series | None = None) -> None:
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
@@ -485,12 +496,9 @@ class Renderer:
                     x - 8, y - 4, layout.PANEL_CONTENT_WIDTH + 16, layout.PANEL_SCORE_ROW_HEIGHT - 6
                 )
                 pygame.draw.rect(self.screen, ROW_ACTIVE_BG_COLOR, row_rect, border_radius=6)
-            swatch = pygame.Rect(x, y + 2, 18, 18)
-            pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             primary = f"{player.name}: {game.total_score(player)}"
             if player.flags_captured:
                 primary += f"  F{player.flags_captured}"
-            self._text(primary, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
 
             suffixes = []
             if game.self_enclosed_penalty_enabled:
@@ -504,13 +512,7 @@ class Renderer:
                 suffixes.append(f"+{potential['flag_points']} flag")
             if player.consecutive_skips:
                 suffixes.append(f"skipped {player.consecutive_skips}/{game.skip_limit}")
-            if suffixes:
-                self._text(
-                    "  ".join(suffixes),
-                    (x + 26, y + layout.PANEL_SCORE_LINE2_DY),
-                    self.font_small,
-                    MUTED_TEXT_COLOR,
-                )
+            self._draw_score_row(x, y, player.id, primary, suffixes, TEXT_COLOR if active else MUTED_TEXT_COLOR)
             y += layout.PANEL_SCORE_ROW_HEIGHT
 
         self._divider(layout.PANEL_DIVIDER_2_Y)
@@ -718,26 +720,17 @@ class Renderer:
         y = layout.PANEL_SCORE_Y
         stats = self._replay_stats(game, step)
         for player in game.players.values():
-            swatch = pygame.Rect(x, y + 2, 18, 18)
-            pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             s = stats[player.id]
             primary = f"{player.name}: {s['area']}"
             if game.flag_conquest_enabled:
                 primary += f"  F{s['flags']}"
-            self._text(primary, (x + 26, y), self.font, TEXT_COLOR)
 
             suffixes = []
             if s["potential_area"]:
                 suffixes.append(f"+{s['potential_area']} area")
             if game.flag_conquest_enabled and s["potential_flag_points"]:
                 suffixes.append(f"+{s['potential_flag_points']} flag")
-            if suffixes:
-                self._text(
-                    "  ".join(suffixes),
-                    (x + 26, y + layout.PANEL_SCORE_LINE2_DY),
-                    self.font_small,
-                    MUTED_TEXT_COLOR,
-                )
+            self._draw_score_row(x, y, player.id, primary, suffixes, TEXT_COLOR)
             y += layout.PANEL_SCORE_ROW_HEIGHT
         self._divider(layout.PANEL_DIVIDER_2_Y)
 
