@@ -15,6 +15,8 @@ from .constants import (
     PLAYER_1,
     PLAYER_2,
     PLAYER_NAMES,
+    REROLL_ENABLED,
+    REROLL_LIMIT,
     SELF_ENCLOSED_PENALTY_ENABLED,
     SELF_ENCLOSED_PENALTY_PER_CELL,
     SKIP_LIMIT,
@@ -64,6 +66,7 @@ class Game:
         obstacles_enabled: bool = OBSTACLES_ENABLED,
         wildcard_enabled: bool = WILDCARD_ENABLED,
         self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
+        reroll_enabled: bool = REROLL_ENABLED,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
@@ -74,6 +77,7 @@ class Game:
         self.obstacles_enabled = obstacles_enabled
         self.wildcard_enabled = wildcard_enabled
         self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
+        self.reroll_enabled = reroll_enabled
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -244,15 +248,50 @@ class Game:
             self.state = TurnState.CHOOSING_PLACEMENT
         else:
             self.state = TurnState.SKIPPED
-            self.current_player.consecutive_skips += 1
-            self.history.append(
-                TurnRecord(
-                    self.current_player_id,
-                    self.last_roll,
-                    placed=None,
-                    wildcard_original_roll=self.wildcard_original_roll,
-                )
+            # Defer committing the skip while a reroll charge could still be
+            # spent instead - nothing should be recorded until the player's
+            # final choice, same principle CHOOSING_PLACEMENT/CHOOSING_WILDCARD
+            # already follow (attempt_place()/choose_wildcard_value() are the
+            # only things that ever commit anything there).
+            if not self.can_reroll():
+                self._commit_skip()
+
+    def _commit_skip(self) -> None:
+        self.current_player.consecutive_skips += 1
+        self.history.append(
+            TurnRecord(
+                self.current_player_id,
+                self.last_roll,
+                placed=None,
+                wildcard_original_roll=self.wildcard_original_roll,
             )
+        )
+
+    def confirm_skip(self) -> None:
+        if self.state != TurnState.SKIPPED:
+            raise ValueError(f"Cannot confirm a skip in state {self.state}")
+        if self.can_reroll():
+            self._commit_skip()
+
+    def can_reroll(self) -> bool:
+        return self.reroll_enabled and self.current_player.rerolls_used < REROLL_LIMIT
+
+    def reroll(self) -> None:
+        if self.state not in (
+            TurnState.CHOOSING_WILDCARD,
+            TurnState.CHOOSING_PLACEMENT,
+            TurnState.SKIPPED,
+        ):
+            raise ValueError(f"Cannot reroll in state {self.state}")
+        if not self.can_reroll():
+            raise ValueError("No reroll charges available")
+
+        self.current_player.rerolls_used += 1
+        self.wildcard_index = None
+        self.wildcard_original_roll = None
+        self.legal_cache = {}
+        self.state = TurnState.AWAITING_ROLL
+        self.roll_dice()
 
     def legal_placements_for_roll(self) -> dict[tuple[int, int], set[tuple[int, int]]]:
         if self.last_roll is None:

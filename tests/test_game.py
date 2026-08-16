@@ -4,6 +4,7 @@ from rectangles.constants import (
     OBSTACLE_CELL_PAIRS,
     PLAYER_1,
     PLAYER_2,
+    REROLL_LIMIT,
     SELF_ENCLOSED_PENALTY_PER_CELL,
     START_CORNER_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
@@ -677,6 +678,101 @@ def test_wildcard_resolution_does_not_grant_a_bonus_turn():
     assert game.current_player_id == PLAYER_2
     assert game.wildcard_index is None
     assert game.wildcard_original_roll is None
+
+
+def test_reroll_disabled_by_default():
+    game = Game(rng=ScriptedRandom([4, 6]))
+    game.roll_dice()
+    assert game.can_reroll() is False
+
+
+def test_reroll_from_choosing_placement_gets_a_fresh_roll():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([2, 3, 4, 5]))
+    game.roll_dice()
+    assert game.last_roll == (2, 3)
+    p1 = game.players[PLAYER_1]
+    assert game.can_reroll() is True
+
+    game.reroll()
+    assert p1.rerolls_used == 1
+    assert game.last_roll == (4, 5)
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+
+def test_reroll_charges_are_capped_and_raise_once_exhausted():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([2, 3] * (REROLL_LIMIT + 1)))
+    game.roll_dice()
+    for _ in range(REROLL_LIMIT):
+        game.reroll()
+    p1 = game.players[PLAYER_1]
+    assert p1.rerolls_used == REROLL_LIMIT
+    assert game.can_reroll() is False
+    with pytest.raises(ValueError):
+        game.reroll()
+
+
+def test_reroll_raises_outside_a_pending_roll():
+    game = Game(board_size=6, reroll_enabled=True)
+    with pytest.raises(ValueError):
+        game.reroll()  # AWAITING_ROLL - nothing to discard
+
+
+def test_skip_commit_is_deferred_while_a_reroll_charge_is_available():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    p1 = game.players[PLAYER_1]
+    assert p1.consecutive_skips == 0  # not committed yet
+    assert game.history == []
+
+
+def test_confirm_skip_commits_a_deferred_skip():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    p1 = game.players[PLAYER_1]
+
+    game.confirm_skip()
+    assert p1.consecutive_skips == 1
+    assert len(game.history) == 1
+    assert game.history[0].placed is None
+
+
+def test_confirm_skip_is_a_noop_when_already_committed():
+    # reroll disabled -> _resolve_roll() commits immediately, same as today;
+    # confirm_skip() must not double-count it.
+    game = Game(board_size=2, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    p1 = game.players[PLAYER_1]
+    assert p1.consecutive_skips == 1
+
+    game.confirm_skip()
+    assert p1.consecutive_skips == 1
+    assert len(game.history) == 1
+
+
+def test_reroll_from_skipped_never_commits_the_discarded_skip():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6, 1, 1]))
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    p1 = game.players[PLAYER_1]
+
+    game.reroll()
+    assert p1.rerolls_used == 1
+    assert p1.consecutive_skips == 0  # the discarded skip was never recorded
+    assert game.history == []
+    assert game.last_roll == (1, 1)
+
+
+def test_reroll_from_choosing_wildcard_discards_the_pending_wildcard():
+    game = Game(board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([3, 3, 0, 4, 5]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    game.reroll()
+    assert game.last_roll == (4, 5)
+    assert game.wildcard_index is None
+    assert game.wildcard_original_roll is None
+    assert game.state == TurnState.CHOOSING_PLACEMENT
 
 
 def test_choose_wildcard_value_raises_when_not_choosing_wildcard():

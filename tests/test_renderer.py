@@ -98,6 +98,27 @@ def test_draw_choosing_wildcard_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_choosing_placement_with_reroll_smoke(renderer):
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([2, 3]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    renderer.draw(game, UIState(screen=Screen.PLAYING, current_dims=(2, 3)))
+
+
+def test_draw_skipped_with_reroll_smoke(renderer):
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
+def test_draw_choosing_wildcard_with_reroll_smoke(renderer):
+    game = Game(board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([3, 3, 0]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 def test_draw_last_move_highlight_smoke(renderer):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()

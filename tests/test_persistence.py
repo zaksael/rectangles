@@ -307,6 +307,35 @@ def test_load_game_old_format_without_self_enclosed_penalty_key_defaults_disable
     assert loaded.self_enclosed_penalty_enabled is False
 
 
+def test_round_trip_preserves_reroll_state(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=11, reroll_enabled=True)
+    game.players[PLAYER_1].rerolls_used = 1
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.reroll_enabled is True
+    assert loaded.players[PLAYER_1].rerolls_used == 1
+
+
+def test_load_game_old_format_without_reroll_key_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["reroll_enabled"]
+    del data["players"][PLAYER_1]["rerolls_used"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.reroll_enabled is False
+    assert loaded.players[PLAYER_1].rerolls_used == 0
+
+
 def test_round_trip_preserves_series(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)

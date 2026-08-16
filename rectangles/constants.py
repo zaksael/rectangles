@@ -55,6 +55,12 @@ WILDCARD_ENABLED = False
 SELF_ENCLOSED_PENALTY_ENABLED = False
 SELF_ENCLOSED_PENALTY_PER_CELL = 1
 
+# Whether a player may discard their current roll and roll fresh instead of
+# accepting it - see Game.reroll()/Game.can_reroll(). Capped at REROLL_LIMIT
+# uses per player per game (not per turn, not per series round).
+REROLL_ENABLED = False
+REROLL_LIMIT = 2
+
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both. Board sizes are odd so flag conquest's center cell
 # (size // 2) is always a single unambiguous cell.

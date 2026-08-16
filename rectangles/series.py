@@ -24,6 +24,7 @@ class Series:
     obstacles_enabled: bool = False
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
+    reroll_enabled: bool = False
     scores: dict[int, int] = field(default_factory=lambda: {PLAYER_1: 0, PLAYER_2: 0})
     games_played: int = 0
     rounds: list[RoundResult] = field(default_factory=list)
@@ -63,6 +64,7 @@ class Series:
             obstacles_enabled=self.obstacles_enabled,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
+            reroll_enabled=self.reroll_enabled,
         )
         game.current_player_id = PLAYER_1 if self.games_played % 2 == 0 else PLAYER_2
         return game

@@ -139,6 +139,8 @@ class Renderer:
              layout.SETTINGS_WILDCARD_BUTTON_RECT, ui_state.selected_wildcard_enabled),
             ("Enclosure Penalty", layout.SETTINGS_RULE_COLUMN_5_X,
              layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT, ui_state.selected_self_enclosed_penalty_enabled),
+            ("Reroll", layout.SETTINGS_RULE_COLUMN_6_X,
+             layout.SETTINGS_REROLL_BUTTON_RECT, ui_state.selected_reroll_enabled),
         ):
             label_surf = self.font.render(label_text, True, TEXT_COLOR)
             self.screen.blit(label_surf, label_surf.get_rect(center=(column_x, toggle_label_y)))
@@ -437,6 +439,12 @@ class Renderer:
             self.screen, DIVIDER_COLOR, (layout.PANEL_X, y), (layout.PANEL_X + layout.PANEL_CONTENT_WIDTH, y)
         )
 
+    def _reroll_label(self, game: Game, short: bool = False) -> str:
+        remaining = constants.REROLL_LIMIT - game.current_player.rerolls_used
+        if short:
+            return f"R{remaining}"
+        return f"Reroll ({remaining}/{constants.REROLL_LIMIT})"
+
     def _draw_panel(self, game: Game, ui_state: UIState, series: Series | None = None) -> None:
         window_height = self.screen.get_height()
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.panel_rect(window_height))
@@ -498,6 +506,8 @@ class Renderer:
             for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
                 legal = game.wildcard_value_is_legal(value)
                 self._button(rect, str(value), enabled=legal, hovered=legal and rect.collidepoint(mouse_pos))
+            if game.can_reroll():
+                self._button(layout.REROLL_WILDCARD_BUTTON_RECT, self._reroll_label(game, short=True))
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
             self._text(f"{a} x {b}", (x, y), self.font_dice)
@@ -507,14 +517,21 @@ class Renderer:
             y += 26
             self._text("Click the board to place", (x, y), self.font_small, MUTED_TEXT_COLOR)
             self._button(layout.ROTATE_BUTTON_RECT, "Rotate (R)")
+            if game.can_reroll():
+                self._button(layout.REROLL_PLACEMENT_BUTTON_RECT, self._reroll_label(game))
         elif game.state == TurnState.SKIPPED:
             a, b = game.last_roll
             self._text(f"{a} x {b}", (x, y), self.font_dice)
             y += 36
             self._text("No legal placement", (x, y), self.font, (170, 40, 40))
             y += 24
-            self._text("for this roll - turn skipped.", (x, y), self.font_small, MUTED_TEXT_COLOR)
-            self._button(layout.CONTINUE_BUTTON_RECT, "Continue (Space)")
+            if game.can_reroll():
+                self._text("for this roll.", (x, y), self.font_small, MUTED_TEXT_COLOR)
+                self._button(layout.REROLL_SKIPPED_BUTTON_RECT, self._reroll_label(game))
+                self._button(layout.SKIP_BUTTON_RECT, "Skip (Space)")
+            else:
+                self._text("for this roll - turn skipped.", (x, y), self.font_small, MUTED_TEXT_COLOR)
+                self._button(layout.CONTINUE_BUTTON_RECT, "Continue (Space)")
         elif game.state == TurnState.GAME_OVER:
             self._text("Game over - see below", (x, y), self.font, MUTED_TEXT_COLOR)
 

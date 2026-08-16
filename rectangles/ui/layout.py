@@ -100,17 +100,18 @@ SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS = _centered_button_row(
     BOT_DIFFICULTY_PRESETS, y=395, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
 )
 
-# Five evenly-spaced toggle columns within the House Rules card - each column
-# centered in its own fifth of the card's width, so the same margin
+# Six evenly-spaced toggle columns within the House Rules card - each column
+# centered in its own sixth of the card's width, so the same margin
 # separates every button from its neighbors and from the card edges.
-SETTINGS_RULE_COLUMN_1_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 1 // 10
-SETTINGS_RULE_COLUMN_2_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 3 // 10
-SETTINGS_RULE_COLUMN_3_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 5 // 10
-SETTINGS_RULE_COLUMN_4_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 7 // 10
-SETTINGS_RULE_COLUMN_5_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 9 // 10
+SETTINGS_RULE_COLUMN_1_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 1 // 12
+SETTINGS_RULE_COLUMN_2_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 3 // 12
+SETTINGS_RULE_COLUMN_3_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 5 // 12
+SETTINGS_RULE_COLUMN_4_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 7 // 12
+SETTINGS_RULE_COLUMN_5_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 9 // 12
+SETTINGS_RULE_COLUMN_6_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 11 // 12
 
 _RULE_TOGGLE_Y = SETTINGS_HOUSE_RULES_CARD_RECT.top + 100
-_RULE_BUTTON_W = 130
+_RULE_BUTTON_W = 120
 SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(
     SETTINGS_RULE_COLUMN_1_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
 )
@@ -125,6 +126,9 @@ SETTINGS_WILDCARD_BUTTON_RECT = pygame.Rect(
 )
 SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT = pygame.Rect(
     SETTINGS_RULE_COLUMN_5_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
+)
+SETTINGS_REROLL_BUTTON_RECT = pygame.Rect(
+    SETTINGS_RULE_COLUMN_6_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
 )
 
 SETTINGS_ALL_RULES_BUTTON_RECT = pygame.Rect(
@@ -226,6 +230,28 @@ ROLL_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WID
 CONTINUE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
 ROTATE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, 160, 40)
 
+# Reroll, CHOOSING_PLACEMENT: fills the rest of the row to the right of
+# ROTATE_BUTTON_RECT. Only drawn/clickable when reroll_enabled and the
+# current player still has charges - Rotate alone (unchanged) otherwise.
+_REROLL_PLACEMENT_GAP = 12
+REROLL_PLACEMENT_BUTTON_RECT = pygame.Rect(
+    ROTATE_BUTTON_RECT.right + _REROLL_PLACEMENT_GAP,
+    PANEL_ACTION_BUTTON_Y,
+    PANEL_CONTENT_WIDTH - ROTATE_BUTTON_RECT.width - _REROLL_PLACEMENT_GAP,
+    40,
+)
+
+# Reroll, SKIPPED: splits CONTINUE_BUTTON_RECT's full-width row 50/50, same
+# gap pattern as confirm_yes_button_rect/confirm_no_button_rect below. Only
+# drawn when reroll_enabled and charges remain - CONTINUE_BUTTON_RECT alone
+# (unchanged) otherwise.
+_SKIP_BUTTON_GAP = 12
+_skip_half_w = (PANEL_CONTENT_WIDTH - _SKIP_BUTTON_GAP) // 2
+REROLL_SKIPPED_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, _skip_half_w, 56)
+SKIP_BUTTON_RECT = pygame.Rect(
+    PANEL_X + _skip_half_w + _SKIP_BUTTON_GAP, PANEL_ACTION_BUTTON_Y, _skip_half_w, 56
+)
+
 # 2 rows x 3 columns: the 72px gap before PANEL_HISTORY_DIVIDER_Y only fits
 # two rows at a shrunk 32px button height (32*2 + 6px row gap = 70px).
 _WILDCARD_BUTTON_W = 40
@@ -244,6 +270,17 @@ WILDCARD_VALUE_BUTTON_RECTS = {
     )
     for i, value in enumerate(range(DICE_MIN, DICE_MAX + 1))
 }
+
+# Reroll, CHOOSING_WILDCARD: the only state with real space pressure. The
+# 2x3 value grid is centered with slack on both sides (row width 136px of
+# the 292px content width) - this drops into the leftover slack on row 2,
+# flush to the panel's right edge, rather than shrinking the value buttons.
+REROLL_WILDCARD_BUTTON_RECT = pygame.Rect(
+    _WILDCARD_ROW_X + 3 * (_WILDCARD_BUTTON_W + _WILDCARD_BUTTON_GAP),
+    PANEL_ACTION_BUTTON_Y + (_WILDCARD_BUTTON_H + _WILDCARD_ROW_GAP),
+    PANEL_X + PANEL_CONTENT_WIDTH - (_WILDCARD_ROW_X + 3 * (_WILDCARD_BUTTON_W + _WILDCARD_BUTTON_GAP)),
+    _WILDCARD_BUTTON_H,
+)
 
 # Turn-history log fills the gap between the action button and the footer.
 PANEL_HISTORY_DIVIDER_Y = 372

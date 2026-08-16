@@ -413,6 +413,92 @@ def test_wildcard_value_click_resolves_to_skip_when_every_value_is_illegal():
     assert game.state == TurnState.SKIPPED
 
 
+def test_reroll_click_in_choosing_placement_gets_a_fresh_roll():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([2, 3, 4, 5]))
+    ui_state = UIState(screen=Screen.PLAYING)
+    game.roll_dice()
+    ui_state.current_dims = (2, 3)
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.REROLL_PLACEMENT_BUTTON_RECT.center
+    )
+    handle_event(event, game, ui_state)
+
+    assert game.players[PLAYER_1].rerolls_used == 1
+    assert game.last_roll == (4, 5)
+    assert ui_state.current_dims == (4, 5)
+
+
+def test_reroll_click_in_choosing_wildcard_discards_the_pending_wildcard():
+    game = Game(
+        board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([3, 3, 0, 4, 5])
+    )
+    ui_state = UIState(screen=Screen.PLAYING)
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.REROLL_WILDCARD_BUTTON_RECT.center
+    )
+    handle_event(event, game, ui_state)
+
+    assert game.players[PLAYER_1].rerolls_used == 1
+    assert game.last_roll == (4, 5)
+    assert game.wildcard_original_roll is None
+
+
+def test_reroll_click_in_skipped_never_commits_the_discarded_skip():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6, 1, 1]))
+    ui_state = UIState(screen=Screen.PLAYING)
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.REROLL_SKIPPED_BUTTON_RECT.center
+    )
+    handle_event(event, game, ui_state)
+
+    p1 = game.players[PLAYER_1]
+    assert p1.rerolls_used == 1
+    assert p1.consecutive_skips == 0
+    assert game.history == []
+    assert game.last_roll == (1, 1)
+
+
+def test_skip_button_click_in_skipped_commits_the_skip():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
+    ui_state = UIState(screen=Screen.PLAYING)
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+    p1 = game.players[PLAYER_1]
+    assert p1.consecutive_skips == 0
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SKIP_BUTTON_RECT.center)
+    handle_event(event, game, ui_state)
+
+    assert p1.consecutive_skips == 1
+    assert len(game.history) == 1
+
+
+def test_take_bot_turn_never_uses_reroll_even_when_available():
+    # Bot always accepts whatever it rolls/skips - reroll charges are a
+    # human-only resource, matching how the bot already handles Wildcard
+    # Roll (always accepts a random value, never "declines").
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
+    ui_state = UIState()
+    game.current_player_id = PLAYER_2
+    ui_state.selected_bot_enabled = True
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+
+    take_bot_turn(game, ui_state)
+
+    p2 = game.players[PLAYER_2]
+    assert p2.rerolls_used == 0
+    assert p2.consecutive_skips == 1
+
+
 def test_take_bot_turn_resolves_choosing_wildcard():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0, 6]))
     ui_state = UIState()
@@ -791,6 +877,18 @@ def test_settings_self_enclosed_penalty_button_toggles_selection():
     assert ui_state.selected_self_enclosed_penalty_enabled is False
 
 
+def test_settings_reroll_button_toggles_selection():
+    ui_state = UIState()
+    assert ui_state.selected_reroll_enabled is False
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_REROLL_BUTTON_RECT.center)
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_reroll_enabled is True
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_reroll_enabled is False
+
+
 def test_settings_all_rules_button_turns_all_on_then_all_off():
     ui_state = UIState()
     assert ui_state.all_house_rules_enabled is False
@@ -804,6 +902,7 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
     assert ui_state.selected_obstacles_enabled is True
     assert ui_state.selected_wildcard_enabled is True
     assert ui_state.selected_self_enclosed_penalty_enabled is True
+    assert ui_state.selected_reroll_enabled is True
 
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_flag_conquest_enabled is False
@@ -811,6 +910,7 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
     assert ui_state.selected_obstacles_enabled is False
     assert ui_state.selected_wildcard_enabled is False
     assert ui_state.selected_self_enclosed_penalty_enabled is False
+    assert ui_state.selected_reroll_enabled is False
 
 
 def test_settings_all_rules_button_turns_all_on_from_a_mixed_state():

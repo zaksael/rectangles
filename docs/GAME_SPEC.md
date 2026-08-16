@@ -150,6 +150,20 @@ partially). Since every player's own frontier always includes their
 self-enclosed cells, nothing is ever physically unfillable this way —
 the penalty is pressure to plug gaps promptly, not a trap.
 
+### 6.6 Reroll
+
+When enabled: each player may discard their current roll — both dice —
+and roll fresh, instead of accepting it, up to 2 times per game (not per
+turn, not per round of a series). A reroll is available any time a roll
+is pending and not yet committed: while choosing where to place it,
+while picking a Wildcard Roll value (§6.4, discarding that pending edit
+entirely), or when it would otherwise result in a skip. Each use costs
+exactly one of the two charges, regardless of which of those situations
+prompted it. Declining to reroll a would-be skip and accepting it
+instead costs nothing extra beyond the skip itself — the skip only
+counts toward the skip streak (§7) once the player actually accepts it,
+not before. An automated opponent never uses its rerolls.
+
 ## 7. Skip limit and being boxed in
 
 - A player who is skipped several turns *in a row* — a limit agreed before
@@ -228,6 +242,8 @@ saved and resumed later exactly where it left off, with no loss of state.
 | Obstacles | on / off | off |
 | Wildcard roll | on / off | off |
 | Enclosure Penalty | on / off | off |
+| Reroll | on / off | off |
+| Reroll charges | 2 per player per game (fixed) | 2 |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
 | Dice | two six-sided | — |

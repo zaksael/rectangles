@@ -71,7 +71,15 @@ def _choose_wildcard_value(game: Game, ui_state: UIState, value: int) -> None:
         ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
 
 
+def _reroll(game: Game, ui_state: UIState) -> None:
+    game.reroll()
+    if game.state == TurnState.CHOOSING_PLACEMENT:
+        a, b = game.last_roll
+        ui_state.current_dims = (a, b) if game.legal_cache.get((a, b)) else (b, a)
+
+
 def continue_turn(game: Game) -> None:
+    game.confirm_skip()
     if not game.check_game_over():
         game.end_turn()
 
@@ -187,6 +195,9 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
         return True
 
     if game.state == TurnState.CHOOSING_WILDCARD:
+        if game.can_reroll() and layout.REROLL_WILDCARD_BUTTON_RECT.collidepoint(pos):
+            _reroll(game, ui_state)
+            return True
         # Not gated on wildcard_value_is_legal(): an illegal value still
         # needs to be choosable so the turn can resolve into its legitimate
         # skip - if every value happened to be illegal, gating here would
@@ -198,13 +209,21 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
         return True
 
     if game.state == TurnState.SKIPPED:
-        if layout.CONTINUE_BUTTON_RECT.collidepoint(pos):
+        if game.can_reroll():
+            if layout.REROLL_SKIPPED_BUTTON_RECT.collidepoint(pos):
+                _reroll(game, ui_state)
+            elif layout.SKIP_BUTTON_RECT.collidepoint(pos):
+                continue_turn(game)
+        elif layout.CONTINUE_BUTTON_RECT.collidepoint(pos):
             continue_turn(game)
         return True
 
     if game.state == TurnState.CHOOSING_PLACEMENT:
         if layout.ROTATE_BUTTON_RECT.collidepoint(pos):
             _rotate(ui_state)
+            return True
+        if game.can_reroll() and layout.REROLL_PLACEMENT_BUTTON_RECT.collidepoint(pos):
+            _reroll(game, ui_state)
             return True
         cell = layout.pixel_to_cell(*pos, game.board.size)
         if cell is None or ui_state.current_dims is None:
@@ -260,6 +279,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         return True
     if layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT.collidepoint(pos):
         ui_state.selected_self_enclosed_penalty_enabled = not ui_state.selected_self_enclosed_penalty_enabled
+        return True
+    if layout.SETTINGS_REROLL_BUTTON_RECT.collidepoint(pos):
+        ui_state.selected_reroll_enabled = not ui_state.selected_reroll_enabled
         return True
     if layout.SETTINGS_ALL_RULES_BUTTON_RECT.collidepoint(pos):
         ui_state.toggle_all_house_rules()

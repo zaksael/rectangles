@@ -65,6 +65,7 @@ def run() -> None:
                 obstacles_enabled=ui_state.selected_obstacles_enabled,
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
                 self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
+                reroll_enabled=ui_state.selected_reroll_enabled,
             )
             series = None
             series_game_recorded = False
@@ -81,6 +82,7 @@ def run() -> None:
                 obstacles_enabled=ui_state.selected_obstacles_enabled,
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
                 self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
+                reroll_enabled=ui_state.selected_reroll_enabled,
             )
             game = series.new_game()
             series_game_recorded = False
@@ -117,7 +119,11 @@ def run() -> None:
             if game_input.is_bots_turn(game, ui_state):
                 game_input.take_bot_turn(game, ui_state)
                 auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
-            elif game.state == TurnState.SKIPPED:
+            elif game.state == TurnState.SKIPPED and not game.can_reroll():
+                # Gated on can_reroll(): with a reroll charge available,
+                # SKIPPED is a real decision (Reroll vs Skip) and must wait
+                # for the player, same as CHOOSING_PLACEMENT/CHOOSING_WILDCARD
+                # never auto-advance either.
                 game_input.continue_turn(game)
                 auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
 

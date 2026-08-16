@@ -95,6 +95,18 @@ closes off, with no help from the edge, counts. The live panel shows the
 penalty separately from your score (e.g. "-3 enclosed") so it's never
 silently baked into the total.
 
+## Reroll
+
+An optional mode, off by default. Each player gets 2 rerolls per game (not
+per turn, not per series round) to discard their current roll — both
+dice — and roll fresh instead of accepting it. Usable any time a roll is
+pending and you haven't committed to it yet: while choosing where to place,
+while picking a [Wildcard Roll](#wildcard-roll) value, or when a roll would
+otherwise skip your turn. Each use costs exactly one charge, no matter which
+of those three situations you're in. The button shows your remaining count,
+e.g. "Reroll (1/2)", and disappears once you're out. The bot never uses its
+rerolls — it's a human-only resource.
+
 ## Bot opponent
 
 Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
@@ -115,7 +127,7 @@ Once the bot is on, pick its difficulty:
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, Obstacles, Wildcard Roll, and Enclosure Penalty, if enabled) are locked in once for every round. Who
+Flag Conquest, Walls, Obstacles, Wildcard Roll, Enclosure Penalty, and Reroll, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
 round's score (same rules as above) adds to each player's running series
@@ -147,8 +159,8 @@ The app opens to a settings screen — pick a board size and skip limit
 (preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest), [Walls](#walls),
 [Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll),
-[Enclosure Penalty](#enclosure-penalty) (or click **Turn All
-ON**/**Turn All OFF** to flip all five at once), or the
+[Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll) (or click
+**Turn All ON**/**Turn All OFF** to flip all six at once), or the
 [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
 single match, or pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
@@ -179,6 +191,12 @@ more, so the panel always fits.
   one shown as a black `*` until you pick its value, plus a row of buttons
   (grayed out for any value that wouldn't have a legal placement) to choose
   its new value before placement continues.
+- With [Reroll](#reroll) on and a charge left, a **Reroll** button appears
+  alongside the normal action for that turn — next to **Rotate** while
+  choosing placement, alongside the value buttons on a wildcard roll, or
+  in place of the single **Continue** button on a skip (split into
+  **Reroll**/**Skip**). A skip with a reroll available waits for your
+  choice instead of auto-continuing.
 - **New Game** (`N`) at any time during a match to return to the settings
   screen and start a fresh match, or **Exit** (`Esc`) to quit outright.
   Once you've placed at least one piece, either of these (and closing the
