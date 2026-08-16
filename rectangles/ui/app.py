@@ -26,7 +26,7 @@ os.environ.setdefault("SDL_VIDEO_HIGHDPI_DISABLED", "1")
 def run() -> None:
     pygame.init()
     pygame.display.set_caption("Rectangles")
-    screen = pygame.display.set_mode((layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT), pygame.RESIZABLE)
     clock = pygame.time.Clock()
 
     game: Game | None = None
@@ -40,10 +40,13 @@ def run() -> None:
     while running:
         for event in pygame.event.get():
             if event.type == pygame.VIDEORESIZE:
-                # Width is pinned (every board/settings/panel column position
-                # assumes it) - only the requested height is honored.
-                height = max(event.h, layout.MIN_WINDOW_HEIGHT)
-                screen = pygame.display.set_mode((layout.WINDOW_WIDTH, height), pygame.RESIZABLE)
+                # The whole UI is drawn onto a fixed-size canvas and scaled to
+                # fit (see layout.compute_scale/Renderer.draw), so the real
+                # window is free to resize in both directions - only clamped
+                # to a small usability floor, not the design size.
+                width = max(event.w, layout.MIN_REAL_WINDOW_WIDTH)
+                height = max(event.h, layout.MIN_REAL_WINDOW_HEIGHT)
+                screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
                 renderer.resize(screen)
                 continue
             if ui_state.screen == Screen.SETTINGS:

@@ -34,43 +34,54 @@ WALL_LINE_COLOR = (90, 88, 96)
 OBSTACLE_COLOR = (60, 60, 65)
 LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
 STATUS_BANNER_BG_COLOR = (20, 20, 24, 215)
+LETTERBOX_COLOR = (10, 10, 12)
 
 
 class Renderer:
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-        # The settings screen's content can be taller than the actual window
-        # (see layout.SETTINGS_CONTENT_HEIGHT vs. the live window height); it's
-        # drawn onto this full-height virtual surface and scrolled into view.
-        self._settings_surface = pygame.Surface((layout.WINDOW_WIDTH, layout.SETTINGS_CONTENT_HEIGHT))
+        # Everything is drawn onto this fixed-size virtual canvas (see
+        # layout.DESIGN_WIDTH/DESIGN_HEIGHT), then draw() scales the finished
+        # canvas to fit whatever the real, freely-resizable window is.
+        self._canvas = pygame.Surface((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT))
+        # The settings screen's content can be taller than the canvas (see
+        # layout.SETTINGS_CONTENT_HEIGHT vs. DESIGN_HEIGHT); it's drawn onto
+        # this full-height virtual surface and scrolled into view.
+        self._settings_surface = pygame.Surface((layout.DESIGN_WIDTH, layout.SETTINGS_CONTENT_HEIGHT))
         self.font = pygame.font.SysFont("arial", 20)
         self.font_small = pygame.font.SysFont("arial", 15)
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
         self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
         self._hand_cursor = False
+        self._mouse_pos = (0, 0)
 
     def resize(self, screen: pygame.Surface) -> None:
         self.screen = screen
 
     def draw(self, game: Game | None, ui_state: UIState, series: Series | None = None) -> None:
+        real_width, real_height = self.screen.get_size()
+        self._mouse_pos = layout.to_design_coords(*pygame.mouse.get_pos(), real_width, real_height)
+
+        real_screen, self.screen = self.screen, self._canvas
         self.screen.fill(BG_COLOR)
         self._hand_cursor = False
         if ui_state.screen == Screen.SETTINGS:
-            window_width, window_height = self.screen.get_size()
             self._settings_surface.fill(BG_COLOR)
-            real_screen, self.screen = self.screen, self._settings_surface
+            canvas, self.screen = self.screen, self._settings_surface
             self._draw_settings_screen(ui_state)
-            self.screen = real_screen
-            visible = pygame.Rect(0, ui_state.settings_scroll, window_width, window_height)
+            self.screen = canvas
+            visible = pygame.Rect(0, ui_state.settings_scroll, layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT)
             self.screen.blit(self._settings_surface, (0, 0), area=visible)
-            if ui_state.settings_scroll < layout.settings_max_scroll(window_height):
-                # On a short window this strip can sit over genuine (clipped)
-                # content rather than blank space below it - mask it first so
-                # the hint always reads cleanly instead of overlapping.
-                strip = pygame.Rect(0, window_height - 26, window_width, 26)
+            if ui_state.settings_scroll < layout.SETTINGS_MAX_SCROLL:
+                # If scrolled content remains, this strip can sit over genuine
+                # (clipped) content rather than blank space below it - mask it
+                # first so the hint always reads cleanly instead of overlapping.
+                strip = pygame.Rect(0, layout.DESIGN_HEIGHT - 26, layout.DESIGN_WIDTH, 26)
                 self.screen.fill(BG_COLOR, strip)
                 hint = self.font_small.render("scroll for more ▼", True, MUTED_TEXT_COLOR)
-                self.screen.blit(hint, hint.get_rect(center=(window_width // 2, window_height - 14)))
+                self.screen.blit(
+                    hint, hint.get_rect(center=(layout.DESIGN_WIDTH // 2, layout.DESIGN_HEIGHT - 14))
+                )
         elif ui_state.screen == Screen.REPLAY:
             self._draw_replay(game, ui_state)
         else:
@@ -91,11 +102,18 @@ class Renderer:
             )
         except pygame.error:
             pass  # no real cursor to set under a headless/dummy video driver
+
+        self.screen = real_screen
+        scale, offset_x, offset_y = layout.compute_scale(real_width, real_height)
+        self.screen.fill(LETTERBOX_COLOR)
+        scaled_size = (round(layout.DESIGN_WIDTH * scale), round(layout.DESIGN_HEIGHT * scale))
+        scaled_canvas = pygame.transform.smoothscale(self._canvas, scaled_size)
+        self.screen.blit(scaled_canvas, (offset_x, offset_y))
         pygame.display.flip()
 
     def _draw_settings_screen(self, ui_state: UIState) -> None:
-        center_x = layout.WINDOW_WIDTH // 2
-        mouse_pos = pygame.mouse.get_pos()
+        center_x = layout.DESIGN_WIDTH // 2
+        mouse_pos = self._mouse_pos
 
         def hovered(rect: pygame.Rect) -> bool:
             return rect.collidepoint(mouse_pos)
@@ -414,7 +432,7 @@ class Renderer:
         selected: bool = False,
         hovered: bool = False,
     ) -> None:
-        if enabled and rect.collidepoint(pygame.mouse.get_pos()):
+        if enabled and rect.collidepoint(self._mouse_pos):
             self._hand_cursor = True
         if not enabled:
             color = BUTTON_DISABLED_COLOR
@@ -446,8 +464,7 @@ class Renderer:
         return f"Reroll ({remaining}/{constants.REROLL_LIMIT})"
 
     def _draw_panel(self, game: Game, ui_state: UIState, series: Series | None = None) -> None:
-        window_height = self.screen.get_height()
-        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.panel_rect(window_height))
+        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
 
         self._text("RECTANGLES", (x, layout.PANEL_HEADER_Y), self.font_big)
@@ -502,7 +519,7 @@ class Renderer:
             self._text(b_label, (x + 60, y), self.font_dice, (0, 0, 0))
             y += 36
             self._text("Pick a value for the wildcard number:", (x, y), self.font_small, MUTED_TEXT_COLOR)
-            mouse_pos = pygame.mouse.get_pos()
+            mouse_pos = self._mouse_pos
             for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
                 legal = game.wildcard_value_is_legal(value)
                 self._button(rect, str(value), enabled=legal, hovered=legal and rect.collidepoint(mouse_pos))
@@ -543,10 +560,10 @@ class Renderer:
         if series is not None:
             self._draw_series_stats(series)
 
-        self._divider(layout.panel_footer_divider_y(window_height))
-        self._button(layout.surrender_button_rect(window_height), "Surrender (S)")
-        self._button(layout.new_game_button_rect(window_height), "New Game (N)")
-        self._button(layout.exit_button_rect(window_height), "Exit (Esc)")
+        self._divider(layout.PANEL_FOOTER_DIVIDER_Y)
+        self._button(layout.SURRENDER_BUTTON_RECT, "Surrender (S)")
+        self._button(layout.NEW_GAME_BUTTON_RECT, "New Game (N)")
+        self._button(layout.EXIT_BUTTON_RECT, "Exit (Esc)")
 
     def _draw_history(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X
@@ -675,11 +692,10 @@ class Renderer:
 
     def _draw_replay(self, game: Game, ui_state: UIState) -> None:
         step = ui_state.replay_step
-        window_width, window_height = self.screen.get_size()
 
         self._draw_replay_board(game, step)
 
-        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.panel_rect(window_height))
+        pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
         self._text("REPLAY", (x, layout.PANEL_HEADER_Y), self.font_big)
         self._text(
@@ -717,7 +733,7 @@ class Renderer:
                 caption += f" at ({r},{c})"
         self._text(caption, (x, layout.PANEL_STATUS_Y), self.font, TEXT_COLOR)
 
-        rects = layout.replay_button_rects(window_width, window_height)
+        rects = layout.REPLAY_BUTTON_RECTS
         self._button(rects["first"], "|< First", enabled=step > 0)
         self._button(rects["prev"], "< Prev", enabled=step > 0)
         self._button(rects["next"], "Next >", enabled=step < len(game.history))
@@ -744,9 +760,8 @@ class Renderer:
             headline = f"{game.players[winner].name} wins!"
         score_line = f"{p1.name}: {game.total_score(p1)}    {p2.name}: {game.total_score(p2)}"
 
-        window_width, window_height = self.screen.get_size()
-        center_x = window_width // 2
-        center_y = window_height // 2
+        center_x = layout.DESIGN_WIDTH // 2
+        center_y = layout.DESIGN_HEIGHT // 2
 
         if game.game_over_reason == GameOverReason.SKIP_LIMIT and game.skipped_out_player_id is not None:
             skipped_player = game.players[game.skipped_out_player_id]
@@ -779,10 +794,10 @@ class Renderer:
         self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, reason_y)))
 
         new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
-        new_game_rect = layout.game_over_new_game_button_rect(window_width, window_height)
+        new_game_rect = layout.GAME_OVER_NEW_GAME_BUTTON_RECT
         self._button(new_game_rect, new_game_label)
-        self._button(layout.game_over_replay_button_rect(window_width, window_height), "Replay")
-        self._button(layout.game_over_exit_button_rect(window_width, window_height), "Exit (Esc)")
+        self._button(layout.GAME_OVER_REPLAY_BUTTON_RECT, "Replay")
+        self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
 
         if series is not None and series.rounds:
             columns = self._series_table_columns(series, panel=False)
@@ -803,8 +818,7 @@ class Renderer:
         overlay.fill(OVERLAY_COLOR)
         self.screen.blit(overlay, (0, 0))
 
-        window_width, window_height = self.screen.get_size()
-        dialog_rect = layout.confirm_dialog_rect(window_width, window_height)
+        dialog_rect = layout.CONFIRM_DIALOG_RECT
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, dialog_rect, border_radius=8)
 
         if ui_state.pending_confirmation == ConfirmAction.SURRENDER:
@@ -822,5 +836,5 @@ class Renderer:
         message_rect = message_surf.get_rect(center=(dialog_rect.centerx, dialog_rect.top + 56))
         self.screen.blit(message_surf, message_rect)
 
-        self._button(layout.confirm_yes_button_rect(window_width, window_height), "Yes (Enter)")
-        self._button(layout.confirm_no_button_rect(window_width, window_height), "No (Esc)")
+        self._button(layout.CONFIRM_YES_BUTTON_RECT, "Yes (Enter)")
+        self._button(layout.CONFIRM_NO_BUTTON_RECT, "No (Esc)")

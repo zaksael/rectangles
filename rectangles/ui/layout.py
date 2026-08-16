@@ -14,14 +14,59 @@ from ..constants import (
 CELL_PX = 44
 
 # A board's on-screen footprint is capped at TARGET_BOARD_PX (today's
-# 19 * 44) regardless of board_size, so BOARD_PX/WINDOW_WIDTH stay fixed even
+# 19 * 44) regardless of board_size, so BOARD_PX/DESIGN_WIDTH stay fixed even
 # if BOARD_SIZE_PRESETS grows to include a bigger tier later - only cell_px()
 # shrinks to make a larger board still fit that same footprint.
 TARGET_BOARD_PX = 836
 MAX_BOARD_SIZE = max(BOARD_SIZE_PRESETS)
 BOARD_PX = TARGET_BOARD_PX
 PANEL_WIDTH = 340
-WINDOW_WIDTH = BOARD_PX + PANEL_WIDTH
+
+# Everything below is drawn onto one fixed-size virtual canvas at this design
+# resolution; the finished canvas is then uniformly scaled (see
+# compute_scale()) to fit the real, freely-resizable window - so nothing
+# past this point ever needs to know the real window size. Values unchanged
+# from the old fixed WINDOW_WIDTH/WINDOW_HEIGHT. DESIGN_HEIGHT is sized to
+# comfortably fit the panel's worst-case content (a maxed-out history log
+# plus a capped series-stats table both showing, bottom ~696px - see
+# PANEL_SERIES_MAX_ROWS/PANEL_HISTORY_MAX_ROWS below) with margin, and never
+# below the board's own footprint either.
+DESIGN_WIDTH = BOARD_PX + PANEL_WIDTH
+DESIGN_HEIGHT = max(BOARD_PX, 860)
+
+# The real OS window can't shrink below this - a usability floor only (so it
+# can't be dragged to something with no visible content), not a layout
+# constraint; scaling handles any real size above it gracefully.
+MIN_REAL_WINDOW_WIDTH = 480
+MIN_REAL_WINDOW_HEIGHT = 360
+
+# Clamp how far the canvas can be scaled up: past ~3x a design pixel looks
+# visibly blurry. No lower clamp - MIN_REAL_WINDOW_WIDTH/HEIGHT above already
+# keep the real window (and therefore this scale) from going small enough to
+# need one, so a second floor here would just be dead code.
+_MAX_SCALE = 3.0
+
+
+def compute_scale(real_width: int, real_height: int) -> tuple[float, int, int]:
+    """Uniform scale + centering offset to fit the DESIGN_WIDTH x
+    DESIGN_HEIGHT canvas into a real_width x real_height window, preserving
+    aspect ratio (board cells must stay square) - any leftover space becomes
+    letterbox/pillarbox bars rather than stretching the canvas unevenly."""
+    scale = min(real_width / DESIGN_WIDTH, real_height / DESIGN_HEIGHT)
+    scale = min(_MAX_SCALE, scale)
+    offset_x = (real_width - round(DESIGN_WIDTH * scale)) // 2
+    offset_y = (real_height - round(DESIGN_HEIGHT * scale)) // 2
+    return scale, offset_x, offset_y
+
+
+def to_design_coords(real_x: int, real_y: int, real_width: int, real_height: int) -> tuple[int, int]:
+    """Inverse of compute_scale: maps a real-window pixel (e.g. a mouse
+    position) back to the fixed design canvas' coordinate space, the space
+    every rect in this module is defined in. Shared by renderer.py (hover/
+    cursor checks) and input.py (click/scroll hit-testing) - the one place
+    this transform happens, rather than duplicated at each call site."""
+    scale, offset_x, offset_y = compute_scale(real_width, real_height)
+    return (round((real_x - offset_x) / scale), round((real_y - offset_y) / scale))
 
 
 def cell_px(board_size: int) -> int:
@@ -54,7 +99,7 @@ def pixel_to_cell(x: int, y: int, board_size: int) -> tuple[int, int] | None:
 def _centered_button_row(
     values: tuple[int | str, ...],
     y: int,
-    center_x: int = WINDOW_WIDTH // 2,
+    center_x: int = DESIGN_WIDTH // 2,
     button_w: int = 90,
     button_h: int = 50,
     gap: int = 16,
@@ -73,8 +118,8 @@ def _centered_button_row(
 # below holding every optional toggle (Flag Conquest/Walls/Wildcard Roll and
 # any future ones), so new house rules grow that one card sideways/downward
 # instead of making "Board Setup" taller and lopsided again.
-SETTINGS_LEFT_COLUMN_X = WINDOW_WIDTH // 2 - 260
-SETTINGS_RIGHT_COLUMN_X = WINDOW_WIDTH // 2 + 260
+SETTINGS_LEFT_COLUMN_X = DESIGN_WIDTH // 2 - 260
+SETTINGS_RIGHT_COLUMN_X = DESIGN_WIDTH // 2 + 260
 
 SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 330)
 SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
@@ -142,7 +187,7 @@ _SETTINGS_BUTTON_GAP = 20
 # than a hardcoded Y, so the two never overlap.
 _SETTINGS_START_BUTTONS_Y = SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 12
 _SETTINGS_BUTTONS_START_X = (
-    WINDOW_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
+    DESIGN_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
 ) // 2
 
 SETTINGS_START_BUTTON_RECT = pygame.Rect(
@@ -173,44 +218,24 @@ SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
 )
 
 # The settings screen's own full button stack, top to bottom - independent of
-# the actual window height. When it's taller than the actual window, the
-# settings screen scrolls (see settings_max_scroll() and
-# Renderer._settings_surface) rather than growing the window to fit, so
-# adding another settings row never risks pushing the window past what a
-# small display can show.
+# the real window entirely now. When it's taller than DESIGN_HEIGHT, the
+# settings screen scrolls within the canvas (see SETTINGS_MAX_SCROLL and
+# Renderer._settings_surface) rather than growing the canvas to fit, so
+# adding another settings row never risks pushing the design canvas past a
+# sensible size.
 SETTINGS_CONTENT_HEIGHT = SETTINGS_RESUME_BUTTON_RECT.bottom + 20
 
-
-def settings_max_scroll(window_height: int) -> int:
-    return max(0, SETTINGS_CONTENT_HEIGHT - window_height)
-
-
-# The window is resizable (see ui/app.py); width is pinned at WINDOW_WIDTH
-# (every board/settings/panel column position assumes it), only height
-# flexes. Every panel constant below that depends on the window's bottom
-# edge (the footer + everything under it) reads live window height as a
-# parameter instead of baking in a fixed constant, precisely so shrinking
-# the window doesn't clip them - EXCEPT the history and (capped, see
-# PANEL_SERIES_MAX_ROWS below) series-stats blocks below the roll button,
-# which are fixed-from-the-top positions like the rest of that section, so
-# they don't reflow. MIN_WINDOW_HEIGHT is therefore a real floor, not just a
-# nicety: it's the smallest height at which the footer (top = window_height
-# - 144) still clears the worst case those two fixed blocks can reach - a
-# maxed-out history log plus a capped series-stats table both showing,
-# bottom ~696 (PANEL_SERIES_START_Y=596 + PANEL_SERIES_MAX_ROWS(5)*
-# PANEL_SERIES_ROW_HEIGHT(20)) - with a bit of margin. WINDOW_HEIGHT (the
-# initial/default size) is never below this floor either.
-MIN_WINDOW_HEIGHT = 860
-WINDOW_HEIGHT = max(BOARD_PX, MIN_WINDOW_HEIGHT)
+# How far the settings screen can scroll past the fixed DESIGN_HEIGHT canvas
+# - 0 at today's content height (the whole card stack already fits within
+# DESIGN_HEIGHT), but stays real infrastructure for whenever a future
+# settings row grows SETTINGS_CONTENT_HEIGHT past it.
+SETTINGS_MAX_SCROLL = max(0, SETTINGS_CONTENT_HEIGHT - DESIGN_HEIGHT)
 
 PANEL_PADDING = 24
 PANEL_X = BOARD_PX + PANEL_PADDING
 PANEL_CONTENT_WIDTH = PANEL_WIDTH - 2 * PANEL_PADDING
 
-
-def panel_rect(window_height: int) -> pygame.Rect:
-    return pygame.Rect(BOARD_PX, 0, PANEL_WIDTH, window_height)
-
+PANEL_RECT = pygame.Rect(BOARD_PX, 0, PANEL_WIDTH, DESIGN_HEIGHT)
 
 # The panel is laid out as fixed vertical sections (header / scoreboard /
 # status / action button / footer), each given a generous, hand-measured
@@ -242,7 +267,7 @@ REROLL_PLACEMENT_BUTTON_RECT = pygame.Rect(
 )
 
 # Reroll, SKIPPED: splits CONTINUE_BUTTON_RECT's full-width row 50/50, same
-# gap pattern as confirm_yes_button_rect/confirm_no_button_rect below. Only
+# gap pattern as CONFIRM_YES_BUTTON_RECT/CONFIRM_NO_BUTTON_RECT below. Only
 # drawn when reroll_enabled and charges remain - CONTINUE_BUTTON_RECT alone
 # (unchanged) otherwise.
 _SKIP_BUTTON_GAP = 12
@@ -289,39 +314,27 @@ PANEL_HISTORY_START_Y = 412
 PANEL_HISTORY_ROW_HEIGHT = 22
 PANEL_HISTORY_MAX_ROWS = 6
 
-# The footer (divider + Surrender/New Game/Exit) anchors to the bottom of the
-# *actual* window rather than a fixed offset from the top, so it tracks a
-# live resize instead of drifting into (or leaving a gap above) the content
-# above it.
-def panel_footer_divider_y(window_height: int) -> int:
-    return window_height - 144
+# The footer (divider + Surrender/New Game/Exit) anchors to the bottom of
+# the fixed DESIGN_HEIGHT canvas - a plain constant now, same as everything
+# else here, since the canvas itself never resizes (see compute_scale()).
+PANEL_FOOTER_DIVIDER_Y = DESIGN_HEIGHT - 144
 
-
-def surrender_button_rect(window_height: int) -> pygame.Rect:
-    return pygame.Rect(PANEL_X, panel_footer_divider_y(window_height) + 16, PANEL_CONTENT_WIDTH, 40)
-
+SURRENDER_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_FOOTER_DIVIDER_Y + 16, PANEL_CONTENT_WIDTH, 40)
 
 _FOOTER_BUTTON_GAP = 12
 _FOOTER_BUTTON_W = (PANEL_CONTENT_WIDTH - _FOOTER_BUTTON_GAP) // 2
 
-
-def new_game_button_rect(window_height: int) -> pygame.Rect:
-    return pygame.Rect(PANEL_X, window_height - 76, _FOOTER_BUTTON_W, 44)
-
-
-def exit_button_rect(window_height: int) -> pygame.Rect:
-    return pygame.Rect(
-        PANEL_X + _FOOTER_BUTTON_W + _FOOTER_BUTTON_GAP, window_height - 76, _FOOTER_BUTTON_W, 44
-    )
-
+NEW_GAME_BUTTON_RECT = pygame.Rect(PANEL_X, DESIGN_HEIGHT - 76, _FOOTER_BUTTON_W, 44)
+EXIT_BUTTON_RECT = pygame.Rect(
+    PANEL_X + _FOOTER_BUTTON_W + _FOOTER_BUTTON_GAP, DESIGN_HEIGHT - 76, _FOOTER_BUTTON_W, 44
+)
 
 # The history log's content never exceeds PANEL_HISTORY_MAX_ROWS, leaving a fixed idle
 # gap before the footer divider - the series stats block (when a series is active) lives
 # in that gap instead of needing its own dynamic layout. PANEL_SERIES_MAX_ROWS caps that
 # block the same way (header + up to this many more lines, truncating older rounds behind
 # a "N earlier" note - see Renderer._draw_series_stats) so its height stays bounded
-# regardless of series length, which matters now that the footer above can be much
-# closer than it used to be on a shrunk window.
+# regardless of series length.
 PANEL_SERIES_DIVIDER_Y = 558
 PANEL_SERIES_LABEL_Y = 572
 PANEL_SERIES_START_Y = 596
@@ -338,80 +351,58 @@ PANEL_HISTORY_REGION_RECT = pygame.Rect(
 _CONFIRM_DIALOG_WIDTH = 420
 _CONFIRM_DIALOG_HEIGHT = 170
 
-
-def confirm_dialog_rect(window_width: int, window_height: int) -> pygame.Rect:
-    return pygame.Rect(
-        (window_width - _CONFIRM_DIALOG_WIDTH) // 2,
-        (window_height - _CONFIRM_DIALOG_HEIGHT) // 2,
-        _CONFIRM_DIALOG_WIDTH,
-        _CONFIRM_DIALOG_HEIGHT,
-    )
-
+CONFIRM_DIALOG_RECT = pygame.Rect(
+    (DESIGN_WIDTH - _CONFIRM_DIALOG_WIDTH) // 2,
+    (DESIGN_HEIGHT - _CONFIRM_DIALOG_HEIGHT) // 2,
+    _CONFIRM_DIALOG_WIDTH,
+    _CONFIRM_DIALOG_HEIGHT,
+)
 
 _CONFIRM_BUTTON_W = 140
 _CONFIRM_BUTTON_H = 48
 _CONFIRM_BUTTON_GAP = 20
+_confirm_buttons_y = CONFIRM_DIALOG_RECT.bottom - 64
+_confirm_buttons_x = (DESIGN_WIDTH - (2 * _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP)) // 2
 
-
-def _confirm_buttons_origin(window_width: int, window_height: int) -> tuple[int, int]:
-    y = confirm_dialog_rect(window_width, window_height).bottom - 64
-    x = (window_width - (2 * _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP)) // 2
-    return x, y
-
-
-def confirm_yes_button_rect(window_width: int, window_height: int) -> pygame.Rect:
-    x, y = _confirm_buttons_origin(window_width, window_height)
-    return pygame.Rect(x, y, _CONFIRM_BUTTON_W, _CONFIRM_BUTTON_H)
-
-
-def confirm_no_button_rect(window_width: int, window_height: int) -> pygame.Rect:
-    x, y = _confirm_buttons_origin(window_width, window_height)
-    return pygame.Rect(x + _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP, y, _CONFIRM_BUTTON_W, _CONFIRM_BUTTON_H)
-
+CONFIRM_YES_BUTTON_RECT = pygame.Rect(_confirm_buttons_x, _confirm_buttons_y, _CONFIRM_BUTTON_W, _CONFIRM_BUTTON_H)
+CONFIRM_NO_BUTTON_RECT = pygame.Rect(
+    _confirm_buttons_x + _CONFIRM_BUTTON_W + _CONFIRM_BUTTON_GAP,
+    _confirm_buttons_y,
+    _CONFIRM_BUTTON_W,
+    _CONFIRM_BUTTON_H,
+)
 
 _GAME_OVER_BUTTON_W = 150
 _GAME_OVER_BUTTON_H = 48
 _GAME_OVER_BUTTON_GAP = 20
+_game_over_buttons_y = DESIGN_HEIGHT // 2 + 80
+_game_over_buttons_x = (DESIGN_WIDTH - (3 * _GAME_OVER_BUTTON_W + 2 * _GAME_OVER_BUTTON_GAP)) // 2
 
-
-def _game_over_buttons_origin(window_width: int, window_height: int) -> tuple[int, int]:
-    y = window_height // 2 + 80
-    x = (window_width - (3 * _GAME_OVER_BUTTON_W + 2 * _GAME_OVER_BUTTON_GAP)) // 2
-    return x, y
-
-
-def game_over_new_game_button_rect(window_width: int, window_height: int) -> pygame.Rect:
-    x, y = _game_over_buttons_origin(window_width, window_height)
-    return pygame.Rect(x, y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H)
-
-
-def game_over_replay_button_rect(window_width: int, window_height: int) -> pygame.Rect:
-    x, y = _game_over_buttons_origin(window_width, window_height)
-    return pygame.Rect(
-        x + _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP, y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
-    )
-
-
-def game_over_exit_button_rect(window_width: int, window_height: int) -> pygame.Rect:
-    x, y = _game_over_buttons_origin(window_width, window_height)
-    return pygame.Rect(
-        x + 2 * (_GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP), y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
-    )
-
+GAME_OVER_NEW_GAME_BUTTON_RECT = pygame.Rect(
+    _game_over_buttons_x, _game_over_buttons_y, _GAME_OVER_BUTTON_W, _GAME_OVER_BUTTON_H
+)
+GAME_OVER_REPLAY_BUTTON_RECT = pygame.Rect(
+    _game_over_buttons_x + _GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP,
+    _game_over_buttons_y,
+    _GAME_OVER_BUTTON_W,
+    _GAME_OVER_BUTTON_H,
+)
+GAME_OVER_EXIT_BUTTON_RECT = pygame.Rect(
+    _game_over_buttons_x + 2 * (_GAME_OVER_BUTTON_W + _GAME_OVER_BUTTON_GAP),
+    _game_over_buttons_y,
+    _GAME_OVER_BUTTON_W,
+    _GAME_OVER_BUTTON_H,
+)
 
 _REPLAY_BUTTON_W = 110
 _REPLAY_BUTTON_H = 44
 _REPLAY_BUTTON_GAP = 12
 _REPLAY_BUTTON_Y_OFFSET = 76
 
-
-def replay_button_rects(window_width: int, window_height: int) -> dict[str, pygame.Rect]:
-    y = window_height - _REPLAY_BUTTON_Y_OFFSET
-    return _centered_button_row(
-        ("first", "prev", "next", "last", "back"),
-        y,
-        center_x=window_width // 2,
-        button_w=_REPLAY_BUTTON_W,
-        button_h=_REPLAY_BUTTON_H,
-        gap=_REPLAY_BUTTON_GAP,
-    )
+REPLAY_BUTTON_RECTS = _centered_button_row(
+    ("first", "prev", "next", "last", "back"),
+    DESIGN_HEIGHT - _REPLAY_BUTTON_Y_OFFSET,
+    button_w=_REPLAY_BUTTON_W,
+    button_h=_REPLAY_BUTTON_H,
+    gap=_REPLAY_BUTTON_GAP,
+)

@@ -168,13 +168,13 @@ single match, or pick a series length (3 or 5 rounds) and click
 button appears next time so you can pick up where you left off (including
 the series score, if one was in progress).
 
-The window can be resized taller or shorter to fit your screen (width is
-fixed). If it's shorter than the settings screen needs, the settings screen
-scrolls — use the mouse wheel, or watch for a "scroll for more" hint at the
-bottom of the window. In-game, the side panel's own scrollable bits (the
-turn history, and the series stats table during a series) are capped
-instead: each shows only its most recent entries plus a note when there's
-more, so the panel always fits.
+The window can be freely resized in any direction to fit your screen — the
+whole UI (board, panel, settings screen) scales together to fill it, with
+board cells always staying square; a window whose proportions don't match
+adds a plain border on the narrow sides rather than stretching anything.
+In-game, the side panel's own scrollable bits (the turn history, and the
+series stats table during a series) are capped instead: each shows only its
+most recent entries plus a note when there's more, so the panel always fits.
 
 - **Roll Dice** (`D`) to get a piece for your turn.
 - All cells where your rolled piece could legally go are highlighted green;

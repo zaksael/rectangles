@@ -12,7 +12,6 @@ from rectangles.constants import (
 from rectangles.game import Game, TurnState
 from rectangles.series import Series
 from rectangles.ui import layout
-from rectangles.ui import input as game_input
 from rectangles.ui.input import (
     compute_top_left,
     handle_event,
@@ -553,7 +552,7 @@ def test_game_over_new_game_button_without_series_returns_to_settings():
     game.state = TurnState.GAME_OVER
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_new_game_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state, series=None) is True
 
     assert ui_state.screen == Screen.SETTINGS
@@ -566,7 +565,7 @@ def test_game_over_new_game_button_with_incomplete_series_requests_next_game():
     series.record_game(_finished_game(6, 1, 0))  # 1 of 3 rounds played, not yet decided
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_new_game_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state, series) is True
 
     assert ui_state.next_game_requested is True
@@ -582,7 +581,7 @@ def test_game_over_new_game_button_with_completed_series_returns_to_settings():
     series.record_game(_finished_game(6, 1, 0))  # all 3 rounds played
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_new_game_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state, series) is True
 
     assert ui_state.next_game_requested is False
@@ -607,7 +606,7 @@ def test_game_over_exit_button_click_returns_false():
     game.state = TurnState.GAME_OVER
     ui_state = UIState(screen=Screen.PLAYING)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.game_over_exit_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_EXIT_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state) is False
 
 
@@ -631,7 +630,7 @@ def test_game_over_replay_button_click_enters_replay_screen():
     event = pygame.event.Event(
         pygame.MOUSEBUTTONDOWN,
         button=1,
-        pos=layout.game_over_replay_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center,
+        pos=layout.GAME_OVER_REPLAY_BUTTON_RECT.center,
     )
     assert handle_event(event, game, ui_state, series=None) is True
 
@@ -642,7 +641,7 @@ def test_game_over_replay_button_click_enters_replay_screen():
 def test_replay_first_prev_next_last_button_navigation():
     game = _played_game()  # one history entry: step ranges over [0, 1]
     ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
-    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    rects = layout.REPLAY_BUTTON_RECTS
 
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["prev"].center)
     assert handle_replay_event(event, ui_state, game) is True
@@ -679,7 +678,7 @@ def test_replay_first_and_last_buttons_jump_across_multiple_steps():
     assert game.attempt_place((0, 2), 1, 2) is True
     assert len(game.history) == 3
 
-    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    rects = layout.REPLAY_BUTTON_RECTS
 
     ui_state = UIState(screen=Screen.REPLAY, replay_step=3)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["first"].center)
@@ -729,7 +728,7 @@ def test_replay_escape_and_back_button_return_to_playing():
     assert ui_state.screen == Screen.PLAYING
 
     ui_state = UIState(screen=Screen.REPLAY, replay_step=1)
-    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    rects = layout.REPLAY_BUTTON_RECTS
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["back"].center)
     handle_replay_event(event, ui_state, game)
     assert ui_state.screen == Screen.PLAYING
@@ -750,7 +749,7 @@ def test_confirm_yes_button_click_performs_new_game():
     game = _played_game()
     ui_state = UIState(screen=Screen.PLAYING, pending_confirmation=ConfirmAction.NEW_GAME)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.confirm_yes_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.CONFIRM_YES_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
@@ -761,7 +760,7 @@ def test_confirm_no_button_click_cancels():
     game = _played_game()
     ui_state = UIState(screen=Screen.PLAYING, pending_confirmation=ConfirmAction.NEW_GAME)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.confirm_no_button_rect(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT).center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.CONFIRM_NO_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
@@ -1011,13 +1010,13 @@ def test_settings_exit_button_click_returns_false():
 
 
 def test_settings_mousewheel_scrolls_and_clamps(monkeypatch):
-    # A deliberately short window, so there's always real scroll headroom to
-    # clamp against here regardless of how tall the settings content is at
-    # the real default window size (which may need little or no scrolling).
-    short_window = (layout.WINDOW_WIDTH, 400)
-    monkeypatch.setattr(game_input, "_current_window_size", lambda: short_window)
-    max_scroll = layout.settings_max_scroll(short_window[1])
-    assert max_scroll >= 40  # sanity check: the scenario below still needs real clamping
+    # SETTINGS_MAX_SCROLL is 0 at today's content height (the whole card
+    # stack already fits within DESIGN_HEIGHT - see layout.py) - fake real
+    # scroll headroom directly rather than via window size, since the real
+    # window no longer affects how much design-space content fits at all
+    # (see layout.compute_scale/DESIGN_HEIGHT).
+    max_scroll = 200
+    monkeypatch.setattr(layout, "SETTINGS_MAX_SCROLL", max_scroll)
 
     ui_state = UIState()
 

@@ -52,10 +52,9 @@ def test_cell_px_stays_flat_for_presets_that_already_fit():
 
 
 def test_game_over_buttons_are_three_distinct_non_overlapping_rects():
-    w, h = layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT
-    new_game = layout.game_over_new_game_button_rect(w, h)
-    replay = layout.game_over_replay_button_rect(w, h)
-    exit_rect = layout.game_over_exit_button_rect(w, h)
+    new_game = layout.GAME_OVER_NEW_GAME_BUTTON_RECT
+    replay = layout.GAME_OVER_REPLAY_BUTTON_RECT
+    exit_rect = layout.GAME_OVER_EXIT_BUTTON_RECT
     rects = [new_game, replay, exit_rect]
     assert len(rects) == len(set((r.x, r.y) for r in rects))
     for a, b in ((new_game, replay), (replay, exit_rect)):
@@ -64,9 +63,36 @@ def test_game_over_buttons_are_three_distinct_non_overlapping_rects():
 
 
 def test_replay_button_rects_returns_five_non_overlapping_rects():
-    rects = layout.replay_button_rects(layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    rects = layout.REPLAY_BUTTON_RECTS
     assert set(rects.keys()) == {"first", "prev", "next", "last", "back"}
     ordered = [rects["first"], rects["prev"], rects["next"], rects["last"], rects["back"]]
     for a, b in zip(ordered, ordered[1:]):
         assert not a.colliderect(b)
         assert a.right <= b.left
+
+
+def test_compute_scale_fits_design_canvas_uniformly():
+    scale, offset_x, offset_y = layout.compute_scale(layout.DESIGN_WIDTH * 2, layout.DESIGN_HEIGHT * 2)
+    assert scale == 2.0
+    assert (offset_x, offset_y) == (0, 0)
+
+
+def test_compute_scale_letterboxes_mismatched_aspect_ratio():
+    # Much wider than the design canvas at the same height - height is the
+    # binding dimension, so extra width becomes pillarbox bars either side.
+    scale, offset_x, offset_y = layout.compute_scale(layout.DESIGN_WIDTH * 4, layout.DESIGN_HEIGHT)
+    assert scale == 1.0
+    assert offset_x > 0
+    assert offset_y == 0
+
+
+def test_compute_scale_clamps_to_max():
+    huge_scale, _, _ = layout.compute_scale(layout.DESIGN_WIDTH * 100, layout.DESIGN_HEIGHT * 100)
+    assert huge_scale == layout._MAX_SCALE
+
+
+def test_to_design_coords_round_trips_through_compute_scale():
+    real_width, real_height = layout.DESIGN_WIDTH * 2, layout.DESIGN_HEIGHT * 2
+    scale, offset_x, offset_y = layout.compute_scale(real_width, real_height)
+    real_x, real_y = offset_x + 40 * scale, offset_y + 60 * scale
+    assert layout.to_design_coords(real_x, real_y, real_width, real_height) == (40, 60)

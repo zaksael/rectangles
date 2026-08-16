@@ -11,12 +11,21 @@ from .state import ConfirmAction, Screen, UIState
 
 
 def _current_window_size() -> tuple[int, int]:
-    # The real window can be resized (see ui/app.py's VIDEORESIZE handling), so
-    # click/scroll hit-testing against window-size-dependent layout rects needs
-    # the live size, not the static layout.WINDOW_WIDTH/HEIGHT defaults. Falls
-    # back to those defaults when no display exists yet (e.g. headless tests).
+    # The real window can be resized (see ui/app.py's VIDEORESIZE handling) and
+    # freely scaled relative to the fixed design canvas (see layout.compute_scale),
+    # so translating a real mouse/click position needs the live real size, not
+    # a static default. Falls back to the design size when no display exists
+    # yet (e.g. headless tests) - equivalent to an unscaled 1:1 canvas.
     surface = pygame.display.get_surface()
-    return surface.get_size() if surface is not None else (layout.WINDOW_WIDTH, layout.WINDOW_HEIGHT)
+    return surface.get_size() if surface is not None else (layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT)
+
+
+def _design_pos(pos: tuple[int, int]) -> tuple[int, int]:
+    # Every layout rect is defined in the fixed design canvas' coordinate
+    # space; a real mouse/click position must be mapped back into that space
+    # before any hit-testing - the one place this happens, mirroring
+    # Renderer._mouse_pos on the drawing side.
+    return layout.to_design_coords(*pos, *_current_window_size())
 
 
 def compute_top_left(game: Game, w: int, h: int, cell: tuple[int, int]) -> tuple[int, int]:
@@ -109,7 +118,7 @@ def update_hover(game: Game, ui_state: UIState) -> None:
     if game.state != TurnState.CHOOSING_PLACEMENT or ui_state.current_dims is None:
         ui_state.hover_top_left = None
         return
-    cell = layout.pixel_to_cell(*pygame.mouse.get_pos(), game.board.size)
+    cell = layout.pixel_to_cell(*_design_pos(pygame.mouse.get_pos()), game.board.size)
     if cell is None:
         ui_state.hover_top_left = None
         return
@@ -147,42 +156,41 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
         _clamp_replay_step(ui_state, game)
         return True
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        window_width, window_height = _current_window_size()
-        rects = layout.replay_button_rects(window_width, window_height)
-        if rects["first"].collidepoint(event.pos):
+        pos = _design_pos(event.pos)
+        rects = layout.REPLAY_BUTTON_RECTS
+        if rects["first"].collidepoint(pos):
             ui_state.replay_step = 0
-        elif rects["prev"].collidepoint(event.pos):
+        elif rects["prev"].collidepoint(pos):
             ui_state.replay_step -= 1
-        elif rects["next"].collidepoint(event.pos):
+        elif rects["next"].collidepoint(pos):
             ui_state.replay_step += 1
-        elif rects["last"].collidepoint(event.pos):
+        elif rects["last"].collidepoint(pos):
             ui_state.replay_step = len(game.history)
-        elif rects["back"].collidepoint(event.pos):
+        elif rects["back"].collidepoint(pos):
             ui_state.screen = Screen.PLAYING
         _clamp_replay_step(ui_state, game)
     return True
 
 
 def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, series: Series | None) -> bool:
-    window_width, window_height = _current_window_size()
     if game.state == TurnState.GAME_OVER:
-        if layout.game_over_new_game_button_rect(window_width, window_height).collidepoint(pos):
+        if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
             _advance_or_end_series(series, ui_state)
-        elif layout.game_over_replay_button_rect(window_width, window_height).collidepoint(pos):
+        elif layout.GAME_OVER_REPLAY_BUTTON_RECT.collidepoint(pos):
             ui_state.screen = Screen.REPLAY
             ui_state.replay_step = 0
-        elif layout.game_over_exit_button_rect(window_width, window_height).collidepoint(pos):
+        elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
             return False
         return True
 
-    if layout.new_game_button_rect(window_height).collidepoint(pos):
+    if layout.NEW_GAME_BUTTON_RECT.collidepoint(pos):
         _request_new_game(game, ui_state)
         return True
 
-    if layout.exit_button_rect(window_height).collidepoint(pos):
+    if layout.EXIT_BUTTON_RECT.collidepoint(pos):
         return _request_quit(game, ui_state)
 
-    if layout.surrender_button_rect(window_height).collidepoint(pos):
+    if layout.SURRENDER_BUTTON_RECT.collidepoint(pos):
         _request_surrender(ui_state)
         return True
 
@@ -313,9 +321,9 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
 
 
 def _handle_settings_mousewheel(event: pygame.event.Event, ui_state: UIState) -> None:
-    _, window_height = _current_window_size()
-    max_scroll = layout.settings_max_scroll(window_height)
-    ui_state.settings_scroll = max(0, min(ui_state.settings_scroll - event.y * 40, max_scroll))
+    ui_state.settings_scroll = max(
+        0, min(ui_state.settings_scroll - event.y * 40, layout.SETTINGS_MAX_SCROLL)
+    )
 
 
 def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
@@ -331,10 +339,12 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     if event.type == pygame.MOUSEWHEEL:
         _handle_settings_mousewheel(event, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        # Click positions are in real-window coordinates; the settings
-        # content itself may be scrolled up within a taller virtual surface
-        # (see Renderer._settings_surface), so translate back before hit-testing.
-        pos = (event.pos[0], event.pos[1] + ui_state.settings_scroll)
+        # Click positions are in real-window coordinates; map back into the
+        # design canvas first, then account for the settings content itself
+        # possibly being scrolled up within a taller virtual surface (see
+        # Renderer._settings_surface) before hit-testing.
+        design_x, design_y = _design_pos(event.pos)
+        pos = (design_x, design_y + ui_state.settings_scroll)
         return _handle_settings_left_click(pos, ui_state)
     return True
 
@@ -374,11 +384,11 @@ def _handle_confirm_event(event: pygame.event.Event, game: Game, ui_state: UISta
             ui_state.pending_confirmation = None
         return True
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        window_width, window_height = _current_window_size()
-        if layout.confirm_yes_button_rect(window_width, window_height).collidepoint(event.pos):
+        pos = _design_pos(event.pos)
+        if layout.CONFIRM_YES_BUTTON_RECT.collidepoint(pos):
             ui_state.pending_confirmation = None
             return _resolve_confirmation(action, game, ui_state)
-        if layout.confirm_no_button_rect(window_width, window_height).collidepoint(event.pos):
+        if layout.CONFIRM_NO_BUTTON_RECT.collidepoint(pos):
             ui_state.pending_confirmation = None
     return True
 
@@ -394,7 +404,7 @@ def _resolve_confirmation(action: ConfirmAction | None, game: Game, ui_state: UI
 
 
 def _handle_mousewheel(event: pygame.event.Event, game: Game, ui_state: UIState) -> None:
-    if not layout.PANEL_HISTORY_REGION_RECT.collidepoint(pygame.mouse.get_pos()):
+    if not layout.PANEL_HISTORY_REGION_RECT.collidepoint(_design_pos(pygame.mouse.get_pos())):
         return
     max_offset = max(0, len(game.history) - layout.PANEL_HISTORY_MAX_ROWS)
     ui_state.history_scroll = max(0, min(ui_state.history_scroll + event.y, max_offset))
@@ -412,7 +422,7 @@ def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState, serie
         _handle_mousewheel(event, game, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
-            if not _handle_left_click(event.pos, game, ui_state, series):
+            if not _handle_left_click(_design_pos(event.pos), game, ui_state, series):
                 return False
         elif event.button == 3 and game.state == TurnState.CHOOSING_PLACEMENT and not is_bots_turn(
             game, ui_state
