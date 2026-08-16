@@ -487,21 +487,30 @@ class Renderer:
                 pygame.draw.rect(self.screen, ROW_ACTIVE_BG_COLOR, row_rect, border_radius=6)
             swatch = pygame.Rect(x, y + 2, 18, 18)
             pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
-            label = f"{player.name}: {game.total_score(player)}"
+            primary = f"{player.name}: {game.total_score(player)}"
             if player.flags_captured:
-                label += f"  F{player.flags_captured}"
+                primary += f"  F{player.flags_captured}"
+            self._text(primary, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
+
+            suffixes = []
             if game.self_enclosed_penalty_enabled:
                 penalty_cells = game.board.self_enclosed_cell_counts().get(player.id, 0)
                 if penalty_cells:
-                    label += f"  -{penalty_cells * constants.SELF_ENCLOSED_PENALTY_PER_CELL} enclosed"
+                    suffixes.append(f"-{penalty_cells * constants.SELF_ENCLOSED_PENALTY_PER_CELL} enclosed")
             potential = game.potential_stats(player)
             if potential["area"]:
-                label += f"  +{potential['area']} area"
+                suffixes.append(f"+{potential['area']} area")
             if game.flag_conquest_enabled and potential["flag_points"]:
-                label += f"  +{potential['flag_points']} flag"
+                suffixes.append(f"+{potential['flag_points']} flag")
             if player.consecutive_skips:
-                label += f"  (skipped {player.consecutive_skips}/{game.skip_limit})"
-            self._text(label, (x + 26, y), self.font, TEXT_COLOR if active else MUTED_TEXT_COLOR)
+                suffixes.append(f"skipped {player.consecutive_skips}/{game.skip_limit}")
+            if suffixes:
+                self._text(
+                    "  ".join(suffixes),
+                    (x + 26, y + layout.PANEL_SCORE_LINE2_DY),
+                    self.font_small,
+                    MUTED_TEXT_COLOR,
+                )
             y += layout.PANEL_SCORE_ROW_HEIGHT
 
         self._divider(layout.PANEL_DIVIDER_2_Y)
@@ -712,14 +721,23 @@ class Renderer:
             swatch = pygame.Rect(x, y + 2, 18, 18)
             pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player.id], swatch)
             s = stats[player.id]
-            label = f"{player.name}: {s['area']}"
+            primary = f"{player.name}: {s['area']}"
             if game.flag_conquest_enabled:
-                label += f"  F{s['flags']}"
+                primary += f"  F{s['flags']}"
+            self._text(primary, (x + 26, y), self.font, TEXT_COLOR)
+
+            suffixes = []
             if s["potential_area"]:
-                label += f"  +{s['potential_area']} area"
+                suffixes.append(f"+{s['potential_area']} area")
             if game.flag_conquest_enabled and s["potential_flag_points"]:
-                label += f"  +{s['potential_flag_points']} flag"
-            self._text(label, (x + 26, y), self.font, TEXT_COLOR)
+                suffixes.append(f"+{s['potential_flag_points']} flag")
+            if suffixes:
+                self._text(
+                    "  ".join(suffixes),
+                    (x + 26, y + layout.PANEL_SCORE_LINE2_DY),
+                    self.font_small,
+                    MUTED_TEXT_COLOR,
+                )
             y += layout.PANEL_SCORE_ROW_HEIGHT
         self._divider(layout.PANEL_DIVIDER_2_Y)
 

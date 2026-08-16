@@ -26,13 +26,22 @@ PANEL_WIDTH = 340
 # resolution; the finished canvas is then uniformly scaled (see
 # compute_scale()) to fit the real, freely-resizable window - so nothing
 # past this point ever needs to know the real window size. Values unchanged
-# from the old fixed WINDOW_WIDTH/WINDOW_HEIGHT. DESIGN_HEIGHT is sized to
-# comfortably fit the panel's worst-case content (a maxed-out history log
-# plus a capped series-stats table both showing, bottom ~696px - see
+# from the old fixed WINDOW_WIDTH/WINDOW_HEIGHT except for _SCORE_ROW_DELTA
+# below. DESIGN_HEIGHT is sized to comfortably fit the panel's worst-case
+# content (a maxed-out history log plus a capped series-stats table both
+# showing, bottom ~696px + _SCORE_ROW_DELTA - see
 # PANEL_SERIES_MAX_ROWS/PANEL_HISTORY_MAX_ROWS below) with margin, and never
 # below the board's own footprint either.
 DESIGN_WIDTH = BOARD_PX + PANEL_WIDTH
-DESIGN_HEIGHT = max(BOARD_PX, 860)
+
+# Each player's score row grew from one line to two (see PANEL_SCORE_ROW_HEIGHT
+# below - a single line couldn't fit "Name: score  F#  -N enclosed  +N area
+# +N flag  skipped n/n" within PANEL_CONTENT_WIDTH, it ran off the panel/canvas
+# edge). Every fixed Y constant from PANEL_DIVIDER_2_Y down, plus DESIGN_HEIGHT
+# itself, shifts down by this same delta so the pre-existing budget/margins
+# between sections (history log, series stats, footer) stay exactly as before.
+_SCORE_ROW_DELTA = 24
+DESIGN_HEIGHT = max(BOARD_PX, 860 + _SCORE_ROW_DELTA)
 
 # The real OS window can't shrink below this - a usability floor only (so it
 # can't be dragged to something with no visible content), not a layout
@@ -245,11 +254,15 @@ PANEL_HEADER_Y = 28
 PANEL_DIVIDER_1_Y = 82
 
 PANEL_SCORE_Y = 104
-PANEL_SCORE_ROW_HEIGHT = 34
-PANEL_DIVIDER_2_Y = 192
+# Row height (was 34, single line) grew to fit a second, smaller "suffix"
+# line (enclosure penalty / potential area & flag / skip streak) below the
+# name+score+flags line - see _SCORE_ROW_DELTA above.
+PANEL_SCORE_ROW_HEIGHT = 34 + _SCORE_ROW_DELTA
+PANEL_SCORE_LINE2_DY = 22
+PANEL_DIVIDER_2_Y = 192 + _SCORE_ROW_DELTA
 
-PANEL_STATUS_Y = 216
-PANEL_ACTION_BUTTON_Y = 300
+PANEL_STATUS_Y = 216 + _SCORE_ROW_DELTA
+PANEL_ACTION_BUTTON_Y = 300 + _SCORE_ROW_DELTA
 
 ROLL_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
 CONTINUE_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)
@@ -308,9 +321,9 @@ REROLL_WILDCARD_BUTTON_RECT = pygame.Rect(
 )
 
 # Turn-history log fills the gap between the action button and the footer.
-PANEL_HISTORY_DIVIDER_Y = 372
-PANEL_HISTORY_LABEL_Y = 386
-PANEL_HISTORY_START_Y = 412
+PANEL_HISTORY_DIVIDER_Y = 372 + _SCORE_ROW_DELTA
+PANEL_HISTORY_LABEL_Y = 386 + _SCORE_ROW_DELTA
+PANEL_HISTORY_START_Y = 412 + _SCORE_ROW_DELTA
 PANEL_HISTORY_ROW_HEIGHT = 22
 PANEL_HISTORY_MAX_ROWS = 6
 
@@ -335,9 +348,9 @@ EXIT_BUTTON_RECT = pygame.Rect(
 # block the same way (header + up to this many more lines, truncating older rounds behind
 # a "N earlier" note - see Renderer._draw_series_stats) so its height stays bounded
 # regardless of series length.
-PANEL_SERIES_DIVIDER_Y = 558
-PANEL_SERIES_LABEL_Y = 572
-PANEL_SERIES_START_Y = 596
+PANEL_SERIES_DIVIDER_Y = 558 + _SCORE_ROW_DELTA
+PANEL_SERIES_LABEL_Y = 572 + _SCORE_ROW_DELTA
+PANEL_SERIES_START_Y = 596 + _SCORE_ROW_DELTA
 PANEL_SERIES_ROW_HEIGHT = 20
 PANEL_SERIES_MAX_ROWS = 5
 
