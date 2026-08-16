@@ -230,6 +230,7 @@ uv run pytest
 
 ```
 rectangles/
+├── constants.py    # tunable game/UI values (board sizes, limits, presets)
 ├── models.py       # Rectangle, Player, TurnRecord
 ├── board.py        # grid + placement legality
 ├── game.py         # turn state machine, scoring, game-over rules
@@ -239,6 +240,6 @@ rectangles/
 └── ui/             # Pygame rendering and input (all Pygame code lives here)
 ```
 
-The rules engine (`models.py`, `board.py`, `game.py`, `series.py`, `bot.py`)
-has no dependency on Pygame, so it's fully unit-testable headlessly — see
-`tests/`.
+The rules engine (`constants.py`, `models.py`, `board.py`, `game.py`,
+`series.py`, `bot.py`) has no dependency on Pygame, so it's fully
+unit-testable headlessly — see `tests/`.
