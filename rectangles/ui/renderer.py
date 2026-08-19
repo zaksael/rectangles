@@ -306,14 +306,16 @@ class Renderer:
             wall_edges=game.board.wall_edges,
             obstacle_cells=game.board.obstacle_cells,
         )
-        scratch = {player_id: Player(player_id, "", (0, 0)) for player_id in game.players}
+        scratch = {
+            player_id: Player(player_id, "", game.players[player_id].start_corner) for player_id in game.players
+        }
         return board, scratch
 
-    def _board_at_step(self, game: Game, step: int) -> Board:
+    def _board_at_step(self, game: Game, step: int) -> tuple[Board, dict[int, Player]]:
         board, scratch = self._new_scratch_board(game)
         for rect in self._placed_upto(game, step):
             board.place(scratch[rect.owner], rect.top_left, rect.width, rect.height)
-        return board
+        return board, scratch
 
     def _replay_stats(self, game: Game, step: int) -> dict[int, dict[str, int]]:
         stats = {player_id: {"area": 0, "flags": 0} for player_id in game.players}
@@ -321,8 +323,8 @@ class Renderer:
             stats[rect.owner]["area"] += rect.area
             stats[rect.owner]["flags"] += len(game.board.flag_cells.intersection(rect.cells()))
 
-        board = self._board_at_step(game, step)
-        for player_id, player in game.players.items():
+        board, scratch = self._board_at_step(game, step)
+        for player_id, player in scratch.items():
             reachable = board.reachable_empty_cells(player)
             stats[player_id]["potential_area"] = len(reachable)
             stats[player_id]["potential_flag_points"] = (

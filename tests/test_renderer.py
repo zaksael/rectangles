@@ -242,6 +242,35 @@ def test_placed_upto_returns_rects_in_history_order(renderer):
     assert [(r.top_left, r.width, r.height) for r in both] == [((0, 0), 2, 2), ((3, 3), 3, 3)]
 
 
+def test_new_scratch_board_seeds_real_start_corners(renderer):
+    # Regression: scratch players used to be seeded with a hardcoded (0, 0)
+    # start_corner, correct for Player 1 but wrong for Player 2 - harmless
+    # while nothing called legal_top_lefts (which reads start_corner) on a
+    # scratch board, but silently wrong for anything that does.
+    game = Game(board_size=6)
+    _, scratch = renderer._new_scratch_board(game)
+    assert scratch[PLAYER_1].start_corner == game.players[PLAYER_1].start_corner == (0, 0)
+    assert scratch[PLAYER_2].start_corner == game.players[PLAYER_2].start_corner == (5, 5)
+
+
+def test_replay_stats_uses_historical_not_live_has_moved(renderer):
+    # Regression: potential_area/flag_points read `has_moved` off the *live*
+    # Player object, which is already True for Player 2 by the time both
+    # players have moved - even at step 1, where Player 2 genuinely hasn't
+    # placed anything yet historically. That wrongly skipped the
+    # start-corner seeding branch and silently zeroed their potential area.
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True  # Player 2 now has_moved live
+
+    stats = renderer._replay_stats(game, 1)  # only Player 1 has moved at this step
+    assert stats[PLAYER_2]["potential_area"] > 0
+
+
 def test_replay_stats_accumulates_area_and_flags(renderer):
     # Leading 0 is consumed by the random flag pick during reset().
     game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6, 4, 4]))
