@@ -7,6 +7,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
+from rectangles.models import Rectangle, TurnRecord
 from rectangles.series import Series
 from rectangles.ui.renderer import Renderer
 from rectangles.ui.state import ConfirmAction, Screen, UIState
@@ -275,6 +276,40 @@ def test_replay_stats_includes_potential_area_and_flag_points(renderer):
     reachable = game.board.reachable_empty_cells(game.players[PLAYER_1])
     assert stats[PLAYER_1]["potential_area"] == len(reachable)
     assert stats[PLAYER_1]["potential_flag_points"] == 5  # the one reachable, uncaptured flag
+
+
+def test_score_history_accumulates_scores_per_step(renderer):
+    # Leading 0 is consumed by the random flag pick during reset().
+    game = Game(board_size=11, flag_conquest_enabled=True, flag_bonus_points=5, rng=ScriptedRandom([0, 6, 6, 4, 4]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the center flag (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no flag in this footprint
+
+    history = renderer._score_history(game)
+    assert history[PLAYER_1] == [0, 36 + 5, 36 + 5]
+    assert history[PLAYER_2] == [0, 0, 16]
+
+
+def test_score_history_applies_self_enclosed_penalty_when_ring_completes(renderer):
+    # Same ring-around-(2,2) layout as
+    # test_board.py::test_self_enclosed_cell_counts_credits_hole_bordered_by_one_player_only,
+    # fabricated directly into game.history (same technique test_input.py uses for game.history)
+    # rather than played out through real turns, since _score_history only reads history/board.place.
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    game.history = [
+        TurnRecord(player_id=PLAYER_1, roll=(1, 1), placed=Rectangle((1, 2), 1, 1, PLAYER_1)),
+        TurnRecord(player_id=PLAYER_2, roll=(1, 1), placed=Rectangle((5, 5), 1, 1, PLAYER_2)),
+        TurnRecord(player_id=PLAYER_1, roll=(1, 1), placed=Rectangle((3, 2), 1, 1, PLAYER_1)),
+        TurnRecord(player_id=PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+        TurnRecord(player_id=PLAYER_1, roll=(1, 1), placed=Rectangle((2, 3), 1, 1, PLAYER_1)),
+    ]
+
+    history = renderer._score_history(game)
+    assert history[PLAYER_1][4] == 3  # 3 of 4 ring cells placed, ring not yet closed
+    assert history[PLAYER_1][5] == 4 - 1  # 4th ring cell closes it, encloses (2, 2)
 
 
 def test_format_turn_caption_placed_variant(renderer):

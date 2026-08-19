@@ -299,7 +299,7 @@ class Renderer:
             center = layout.cell_rect(r, c, game.board.size).center
             pygame.draw.circle(self.screen, FLAG_COLOR, center, px // 2 - 5, width=4)
 
-    def _board_at_step(self, game: Game, step: int) -> Board:
+    def _new_scratch_board(self, game: Game) -> tuple[Board, dict[int, Player]]:
         board = Board(
             game.board.size,
             flag_cells=game.board.flag_cells,
@@ -307,6 +307,10 @@ class Renderer:
             obstacle_cells=game.board.obstacle_cells,
         )
         scratch = {player_id: Player(player_id, "", (0, 0)) for player_id in game.players}
+        return board, scratch
+
+    def _board_at_step(self, game: Game, step: int) -> Board:
+        board, scratch = self._new_scratch_board(game)
         for rect in self._placed_upto(game, step):
             board.place(scratch[rect.owner], rect.top_left, rect.width, rect.height)
         return board
@@ -325,6 +329,56 @@ class Renderer:
                 len(reachable & board.flag_cells) * game.flag_bonus_points
             )
         return stats
+
+    def _score_history(self, game: Game) -> dict[int, list[int]]:
+        board, scratch = self._new_scratch_board(game)
+        area = {player_id: 0 for player_id in game.players}
+        flags = {player_id: 0 for player_id in game.players}
+        history = {player_id: [0] for player_id in game.players}
+        for record in game.history:
+            if record.placed is not None:
+                rect = record.placed
+                board.place(scratch[rect.owner], rect.top_left, rect.width, rect.height)
+                area[rect.owner] += rect.area
+                flags[rect.owner] += len(game.board.flag_cells.intersection(rect.cells()))
+            penalty = board.self_enclosed_cell_counts() if game.self_enclosed_penalty_enabled else {}
+            for player_id in game.players:
+                score = area[player_id] + flags[player_id] * game.flag_bonus_points
+                score -= penalty.get(player_id, 0) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
+                history[player_id].append(score)
+        return history
+
+    def _draw_score_chart(self, game: Game, ui_state: UIState) -> None:
+        x = layout.PANEL_X
+        self._text("SCORE HISTORY", (x, layout.REPLAY_SCORE_CHART_LABEL_Y), self.font_small, MUTED_TEXT_COLOR)
+
+        rect = layout.REPLAY_SCORE_CHART_RECT
+        pygame.draw.rect(self.screen, CARD_BG_COLOR, rect, border_radius=6)
+        pygame.draw.rect(self.screen, CARD_BORDER_COLOR, rect, width=1, border_radius=6)
+
+        steps = len(game.history)
+        if steps == 0:
+            return
+
+        history = self._score_history(game)
+        all_scores = [score for series in history.values() for score in series]
+        lo, hi = min(0, min(all_scores)), max(all_scores)
+        if hi == lo:
+            hi = lo + 1
+
+        inner = rect.inflate(-16, -16)
+
+        def point(step: int, score: int) -> tuple[int, int]:
+            px = inner.left + round(step / steps * inner.width)
+            py = inner.bottom - round((score - lo) / (hi - lo) * inner.height)
+            return px, py
+
+        for player_id, series in history.items():
+            points = [point(step, score) for step, score in enumerate(series)]
+            pygame.draw.lines(self.screen, constants.PLAYER_COLORS[player_id], False, points, width=2)
+
+        marker_x = inner.left + round(ui_state.replay_step / steps * inner.width)
+        pygame.draw.line(self.screen, MUTED_TEXT_COLOR, (marker_x, inner.top), (marker_x, inner.bottom))
 
     def _format_turn_caption(self, game: Game, record: TurnRecord) -> str:
         player = game.players[record.player_id]
@@ -743,6 +797,8 @@ class Renderer:
                 r, c = record.placed.top_left
                 caption += f" at ({r},{c})"
         self._text(caption, (x, layout.PANEL_STATUS_Y), self.font, TEXT_COLOR)
+
+        self._draw_score_chart(game, ui_state)
 
         rects = layout.REPLAY_BUTTON_RECTS
         self._button(rects["first"], "|< First", enabled=step > 0)

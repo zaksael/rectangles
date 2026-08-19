@@ -412,3 +412,9 @@ REPLAY_BUTTON_RECTS = _centered_button_row(
     button_h=_REPLAY_BUTTON_H,
     gap=_REPLAY_BUTTON_GAP,
 )
+
+# Score-history chart: sits in the large idle gap the replay panel leaves
+# between the caption (ends ~264) and the nav button row above (top 808) -
+# no DESIGN_HEIGHT growth needed, unlike most panel additions.
+REPLAY_SCORE_CHART_LABEL_Y = 300
+REPLAY_SCORE_CHART_RECT = pygame.Rect(PANEL_X, 326, PANEL_CONTENT_WIDTH, 440)
