@@ -506,6 +506,25 @@ class Renderer:
         font = font or self.font
         self.screen.blit(font.render(text, True, color), pos)
 
+    def _wrap_text(self, text: str, font, max_width: int) -> list[str]:
+        words = text.split(" ")
+        lines = [words[0]]
+        for word in words[1:]:
+            candidate = f"{lines[-1]} {word}"
+            if font.size(candidate)[0] <= max_width:
+                lines[-1] = candidate
+            else:
+                lines.append(word)
+        return lines
+
+    def _draw_wrapped_text(
+        self, text: str, pos: tuple[int, int], font, max_width: int, color: tuple[int, int, int] = TEXT_COLOR
+    ) -> None:
+        x, y = pos
+        for line in self._wrap_text(text, font, max_width):
+            self._text(line, (x, y), font, color)
+            y += font.get_linesize()
+
     def _divider(self, y: int) -> None:
         pygame.draw.line(
             self.screen, DIVIDER_COLOR, (layout.PANEL_X, y), (layout.PANEL_X + layout.PANEL_CONTENT_WIDTH, y)
@@ -796,7 +815,7 @@ class Renderer:
             if record.placed is not None:
                 r, c = record.placed.top_left
                 caption += f" at ({r},{c})"
-        self._text(caption, (x, layout.PANEL_STATUS_Y), self.font, TEXT_COLOR)
+        self._draw_wrapped_text(caption, (x, layout.PANEL_STATUS_Y), self.font, layout.PANEL_CONTENT_WIDTH)
 
         self._draw_score_chart(game, ui_state)
 

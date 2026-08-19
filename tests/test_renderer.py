@@ -9,6 +9,7 @@ from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Rectangle, TurnRecord
 from rectangles.series import Series
+from rectangles.ui import layout
 from rectangles.ui.renderer import Renderer
 from rectangles.ui.state import ConfirmAction, Screen, UIState
 
@@ -291,6 +292,20 @@ def test_score_history_accumulates_scores_per_step(renderer):
     history = renderer._score_history(game)
     assert history[PLAYER_1] == [0, 36 + 5, 36 + 5]
     assert history[PLAYER_2] == [0, 0, 16]
+
+
+def test_wrap_text_splits_long_captions_to_fit_the_panel(renderer):
+    # Regression: the replay caption for a wildcard placement ("Player 1
+    # placed 6x5 (wildcard: rolled 5,5) at (0,0)") used to be drawn
+    # unwrapped and ran off the panel/canvas edge entirely.
+    caption = "Player 1 placed 6x5 (wildcard: rolled 5,5) at (0,0)"
+    max_width = layout.PANEL_CONTENT_WIDTH
+
+    lines = renderer._wrap_text(caption, renderer.font, max_width)
+
+    assert len(lines) > 1
+    assert " ".join(lines) == caption
+    assert all(renderer.font.size(line)[0] <= max_width for line in lines)
 
 
 def test_score_history_applies_self_enclosed_penalty_when_ring_completes(renderer):
