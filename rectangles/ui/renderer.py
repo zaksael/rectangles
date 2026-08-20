@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from .. import constants, persistence
+from .. import bot, constants, persistence
 from ..board import Board
 from ..game import Game, GameOverReason, TurnState
 from ..models import Player, Rectangle, TurnRecord
@@ -35,6 +35,7 @@ OBSTACLE_COLOR = (60, 60, 65)
 LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
 STATUS_BANNER_BG_COLOR = (20, 20, 24, 215)
 LETTERBOX_COLOR = (10, 10, 12)
+ANALYSIS_WARNING_COLOR = (200, 70, 40)
 
 
 class Renderer:
@@ -349,6 +350,52 @@ class Renderer:
                 score -= penalty.get(player_id, 0) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
                 history[player_id].append(score)
         return history
+
+    def _turn_analysis(self, game: Game, step: int) -> list[str]:
+        if step == 0:
+            return []
+        record = game.history[step - 1]
+        if record.placed is None:
+            return []  # skips are never mistakes - no legal placement existed
+
+        board, scratch = self._board_at_step(game, step - 1)
+        player = scratch[record.player_id]
+        a, b = record.roll
+        candidates = [
+            (top_left, w, h)
+            for w, h in ((a, b), (b, a))
+            for top_left in board.legal_top_lefts(player, w, h)
+        ]
+        chosen = (record.placed.top_left, record.placed.width, record.placed.height)
+        notes: list[str] = []
+
+        if game.flag_conquest_enabled:
+            chosen_score = bot.flag_score(chosen, board.flag_cells)
+            best_score = max(bot.flag_score(c, board.flag_cells) for c in candidates)
+            if best_score > chosen_score:
+                notes.append(f"missed flag capture (+{best_score - chosen_score} available)")
+
+        opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
+        opponent_frontier = board.frontier(scratch[opponent_id])
+        chosen_score = bot.blocking_score(chosen, opponent_frontier)
+        best_score = max(bot.blocking_score(c, opponent_frontier) for c in candidates)
+        if best_score > chosen_score:
+            notes.append(f"missed denial (+{best_score - chosen_score} cells available)")
+
+        if game.self_enclosed_penalty_enabled:
+            before = board.self_enclosed_cell_counts().get(player.id, 0)
+            board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
+            after = board.self_enclosed_cell_counts().get(player.id, 0)
+            if after > before:
+                notes.append(f"created a {after - before}-cell self-enclosed hole")
+
+        return notes
+
+    def _draw_turn_analysis(self, game: Game, step: int) -> None:
+        y = layout.REPLAY_ANALYSIS_Y
+        for note in self._turn_analysis(game, step):
+            self._text(f"! {note}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
+            y += self.font_small.get_linesize()
 
     def _draw_score_chart(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X
@@ -818,6 +865,7 @@ class Renderer:
                 r, c = record.placed.top_left
                 caption += f" at ({r},{c})"
         self._draw_wrapped_text(caption, (x, layout.PANEL_STATUS_Y), self.font, layout.PANEL_CONTENT_WIDTH)
+        self._draw_turn_analysis(game, step)
 
         self._draw_score_chart(game, ui_state)
 

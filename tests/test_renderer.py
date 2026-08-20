@@ -356,6 +356,92 @@ def test_score_history_applies_self_enclosed_penalty_when_ring_completes(rendere
     assert history[PLAYER_1][5] == 4 - 1  # 4th ring cell closes it, encloses (2, 2)
 
 
+def test_turn_analysis_empty_at_step_zero(renderer):
+    game = Game(board_size=6)
+    assert renderer._turn_analysis(game, 0) == []
+
+
+def test_turn_analysis_empty_for_a_skip(renderer):
+    game = Game(board_size=4, rng=ScriptedRandom([6, 6]))
+    p1 = game.players[PLAYER_1]
+    game.board.place(p1, (0, 0), w=3, h=4)
+    game.board.place(p1, (0, 3), w=1, h=3)  # only (3, 3) remains empty
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+
+    assert renderer._turn_analysis(game, 1) == []
+
+
+def test_turn_analysis_flags_a_missed_flag_capture(renderer):
+    # P1's first-ever move: legal_top_lefts collapses to one top_left per
+    # orientation (anchored at the start corner), so the two candidates are
+    # just the (1,4)/(4,1) orientation swap. The chosen 1x4 strip down
+    # column 0 scores 0 against the flag at (0,3); the unchosen 4x1 strip
+    # along row 0 scores 1.
+    game = Game(board_size=6, flag_conquest_enabled=True)
+    game.board.flag_cells = frozenset({(0, 3)})
+    game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
+
+    assert renderer._turn_analysis(game, 1) == ["missed flag capture (+1 available)"]
+
+
+def test_turn_analysis_flags_a_missed_denial(renderer):
+    # Same layout as test_bot.py::test_choose_placement_blocking_prefers_denying_opponent_frontier
+    # ((2, 3) is the one frontier cell that denies P2), but the historical
+    # move picked (2, 1) instead.
+    game = Game(board_size=6)
+    game.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+    ]
+
+    assert renderer._turn_analysis(game, 3) == ["missed denial (+1 cells available)"]
+
+
+def test_turn_analysis_flags_a_self_created_enclosure(renderer):
+    # Same ring-around-(2,2) layout as
+    # test_score_history_applies_self_enclosed_penalty_when_ring_completes -
+    # the final placement at (2, 3) is the one that closes the ring.
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    game.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((1, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((5, 5), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((3, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 3), 1, 1, PLAYER_1)),
+    ]
+
+    assert renderer._turn_analysis(game, 5) == ["created a 1-cell self-enclosed hole"]
+
+
+def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(renderer):
+    # Regression companion to test_new_scratch_board_seeds_real_start_corners:
+    # P2's first-ever move is anchored at their real corner (5, 5), not a
+    # hardcoded (0, 0) - if it were wrong, legal_top_lefts would come back
+    # empty/mismatched and this move would (wrongly) look sub-optimal.
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True  # anchored at P2's real corner (5, 5)
+
+    assert renderer._turn_analysis(game, 2) == []
+
+
+def test_draw_replay_turn_analysis_smoke(renderer):
+    game = Game(
+        board_size=6, flag_conquest_enabled=True, self_enclosed_penalty_enabled=True, rng=ScriptedRandom([2, 3])
+    )
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 3) is True
+    game.state = TurnState.GAME_OVER
+
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1))
+
+
 def test_format_turn_caption_placed_variant(renderer):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()

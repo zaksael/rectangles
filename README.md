@@ -214,8 +214,11 @@ most recent entries plus a note when there's more, so the panel always fits.
   and starts the next round instead, until the series itself is decided.
 - **Replay** the finished game turn-by-turn: step through the board with
   First/Prev/Next/Last (or the arrow/Home/End keys), seeing each turn's
-  roll, placement, each player's running area/flags at that point, and a
-  score-history chart plotting both players' scores across the whole game.
+  roll, placement, each player's running area/flags at that point, a
+  score-history chart plotting both players' scores across the whole game,
+  and — for the turn just taken — any flagged missed opportunities (a
+  bigger flag capture, more opponent denial, or a self-enclosed hole the
+  placement created) versus the best other legal option that roll.
   **Back**/`Esc` returns to the summary screen.
 - The side panel keeps a running **History** log of every placement and
   skip, most recent first; scroll the mouse wheel over it to see older

@@ -413,8 +413,18 @@ REPLAY_BUTTON_RECTS = _centered_button_row(
     gap=_REPLAY_BUTTON_GAP,
 )
 
+# Turn analysis notes: up to 3 short "missed X" lines below the
+# (possibly 2-line-wrapped) caption, in the same idle gap the score chart
+# below already lives in - shifting the chart down by _REPLAY_ANALYSIS_DELTA
+# rather than growing DESIGN_HEIGHT, same idiom the caption-wrap fix used.
+REPLAY_ANALYSIS_Y = 292  # 6px below the caption's worst case: PANEL_STATUS_Y(240) + 2*23
+
+_REPLAY_ANALYSIS_DELTA = 60  # room for up to 3 notes (3*18=54px) plus margin
+
 # Score-history chart: sits in the large idle gap the replay panel leaves
 # between the caption (ends ~264) and the nav button row above (top 808) -
 # no DESIGN_HEIGHT growth needed, unlike most panel additions.
-REPLAY_SCORE_CHART_LABEL_Y = 300
-REPLAY_SCORE_CHART_RECT = pygame.Rect(PANEL_X, 326, PANEL_CONTENT_WIDTH, 440)
+REPLAY_SCORE_CHART_LABEL_Y = 300 + _REPLAY_ANALYSIS_DELTA
+REPLAY_SCORE_CHART_RECT = pygame.Rect(
+    PANEL_X, 326 + _REPLAY_ANALYSIS_DELTA, PANEL_CONTENT_WIDTH, 440 - _REPLAY_ANALYSIS_DELTA
+)
