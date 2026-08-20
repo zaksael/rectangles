@@ -62,10 +62,20 @@ def test_game_over_buttons_are_three_distinct_non_overlapping_rects():
     assert new_game.y == replay.y == exit_rect.y
 
 
-def test_replay_button_rects_returns_five_non_overlapping_rects():
+def test_replay_button_rects_returns_nine_non_overlapping_rects():
     rects = layout.REPLAY_BUTTON_RECTS
-    assert set(rects.keys()) == {"first", "prev", "next", "last", "back"}
-    ordered = [rects["first"], rects["prev"], rects["next"], rects["last"], rects["back"]]
+    assert set(rects.keys()) == {"first", "prev", "next", "last", "play", "Slow", "Normal", "Fast", "back"}
+    ordered = [
+        rects["first"],
+        rects["prev"],
+        rects["next"],
+        rects["last"],
+        rects["play"],
+        rects["Slow"],
+        rects["Normal"],
+        rects["Fast"],
+        rects["back"],
+    ]
     for a, b in zip(ordered, ordered[1:]):
         assert not a.colliderect(b)
         assert a.right <= b.left

@@ -7,6 +7,7 @@ from ..constants import (
     BOT_DIFFICULTY_PRESETS,
     DICE_MAX,
     DICE_MIN,
+    REPLAY_SPEED_PRESETS,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
 )
@@ -405,8 +406,15 @@ _REPLAY_BUTTON_H = 44
 _REPLAY_BUTTON_GAP = 12
 _REPLAY_BUTTON_Y_OFFSET = 76
 
+# Speed-preset keys ride in the same row as Play/Back rather than a row of
+# their own - a real render check at the default 19x19 board size showed
+# REPLAY_BUTTON_RECTS already overlaps the board's bottom edge slightly, and
+# a second row above it would have deepened that overlap; folding the 3
+# speed buttons in here keeps the footprint to one row. Widest label ("Back
+# (Esc)", measured at 97px against the real font) still fits comfortably in
+# the existing 110px button width even at 9 buttons across.
 REPLAY_BUTTON_RECTS = _centered_button_row(
-    ("first", "prev", "next", "last", "back"),
+    ("first", "prev", "next", "last", "play") + REPLAY_SPEED_PRESETS + ("back",),
     DESIGN_HEIGHT - _REPLAY_BUTTON_Y_OFFSET,
     button_w=_REPLAY_BUTTON_W,
     button_h=_REPLAY_BUTTON_H,

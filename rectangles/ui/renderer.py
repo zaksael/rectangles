@@ -874,6 +874,11 @@ class Renderer:
         self._button(rects["prev"], "< Prev", enabled=step > 0)
         self._button(rects["next"], "Next >", enabled=step < len(game.history))
         self._button(rects["last"], "Last >|", enabled=step < len(game.history))
+        self._button(
+            rects["play"], "Pause" if ui_state.replay_autoplay else "Play", selected=ui_state.replay_autoplay
+        )
+        for value in constants.REPLAY_SPEED_PRESETS:
+            self._button(rects[value], value, selected=ui_state.replay_speed == value)
         self._button(rects["back"], "Back (Esc)")
 
     def _draw_game_over(self, game: Game, series: Series | None = None) -> None:

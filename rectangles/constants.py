@@ -72,6 +72,12 @@ SERIES_LENGTH_PRESETS = (3, 5)
 # prefers capturing flags, Blocking prefers denying the opponent's frontier.
 BOT_DIFFICULTY_PRESETS = ("Basic", "Greedy", "Blocking")
 
+# Replay-screen autoplay step interval, selectable via a speed picker -
+# brackets AUTO_ACTION_DELAY_MS (ui/app.py's bot-turn pacing delay, 500ms) as
+# a reference point for what "one step" already feels like in this app.
+REPLAY_SPEED_PRESETS = ("Slow", "Normal", "Fast")
+REPLAY_SPEED_MS = {"Slow": 1200, "Normal": 600, "Fast": 250}
+
 PLAYER_1 = 1
 PLAYER_2 = 2
 

@@ -218,7 +218,9 @@ most recent entries plus a note when there's more, so the panel always fits.
   score-history chart plotting both players' scores across the whole game,
   and — for the turn just taken — any flagged missed opportunities (a
   bigger flag capture, more opponent denial, or a self-enclosed hole the
-  placement created) versus the best other legal option that roll.
+  placement created) versus the best other legal option that roll. Hit
+  **Play** to watch it advance automatically at your chosen Slow/Normal/Fast
+  pace — it stops at the last step, and any manual navigation pauses it.
   **Back**/`Esc` returns to the summary screen.
 - The side panel keeps a running **History** log of every placement and
   skip, most recent first; scroll the mouse wheel over it to see older

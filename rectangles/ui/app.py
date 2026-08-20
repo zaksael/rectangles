@@ -5,6 +5,7 @@ import os
 import pygame
 
 from .. import persistence
+from ..constants import REPLAY_SPEED_MS
 from ..game import Game, TurnState
 from ..series import Series
 from . import input as game_input
@@ -33,6 +34,7 @@ def run() -> None:
     series: Series | None = None
     series_game_recorded = False
     auto_action_at: int | None = None
+    replay_autoplay_at: int | None = None
     ui_state = UIState()
     renderer = Renderer(screen)
 
@@ -142,6 +144,24 @@ def run() -> None:
             else:
                 game_input.continue_turn(game)
             auto_action_at = None
+
+        should_autoplay = (
+            ui_state.screen == Screen.REPLAY
+            and ui_state.replay_autoplay
+            and game is not None
+            and ui_state.replay_step < len(game.history)
+        )
+        if not should_autoplay:
+            replay_autoplay_at = None
+        elif replay_autoplay_at is None:
+            # Same arm-then-fire idiom as auto_action_at above - guarantees at
+            # least one render at the current step before advancing.
+            replay_autoplay_at = pygame.time.get_ticks() + REPLAY_SPEED_MS[ui_state.replay_speed]
+        elif pygame.time.get_ticks() >= replay_autoplay_at:
+            ui_state.replay_step += 1
+            if ui_state.replay_step >= len(game.history):
+                ui_state.replay_autoplay = False  # stop-and-pause at the end, no looping
+            replay_autoplay_at = None
 
         if ui_state.screen == Screen.PLAYING and not game_input.is_bots_turn(game, ui_state):
             game_input.update_hover(game, ui_state)

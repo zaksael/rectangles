@@ -8,6 +8,7 @@ from ..constants import (
     BOT_DIFFICULTY_PRESETS,
     FLAG_CONQUEST_ENABLED,
     OBSTACLES_ENABLED,
+    REPLAY_SPEED_PRESETS,
     REROLL_ENABLED,
     SELF_ENCLOSED_PENALTY_ENABLED,
     SERIES_LENGTH_PRESETS,
@@ -56,6 +57,8 @@ class UIState:
     history_scroll: int = 0
     settings_scroll: int = 0
     replay_step: int = 0
+    replay_autoplay: bool = False
+    replay_speed: str = REPLAY_SPEED_PRESETS[1]
 
     def reset(self) -> None:
         self.current_dims = None

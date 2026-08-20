@@ -724,6 +724,62 @@ def test_replay_quit_event_returns_false():
     assert handle_replay_event(event, ui_state, game) is False
 
 
+def test_game_over_replay_button_click_resets_autoplay():
+    game = _played_game()
+    game.state = TurnState.GAME_OVER
+    ui_state = UIState(screen=Screen.PLAYING, replay_autoplay=True)
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_REPLAY_BUTTON_RECT.center
+    )
+    handle_event(event, game, ui_state, series=None)
+
+    assert ui_state.replay_autoplay is False
+
+
+def test_replay_play_button_toggles_autoplay():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=0)
+    rects = layout.REPLAY_BUTTON_RECTS
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["play"].center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_autoplay is True
+
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_autoplay is False
+
+
+def test_replay_speed_button_sets_speed_without_touching_autoplay():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=0, replay_autoplay=True)
+    rects = layout.REPLAY_BUTTON_RECTS
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["Fast"].center)
+    handle_replay_event(event, ui_state, game)
+
+    assert ui_state.replay_speed == "Fast"
+    assert ui_state.replay_autoplay is True
+
+
+def test_replay_manual_nav_buttons_pause_autoplay():
+    game = _played_game()
+    rects = layout.REPLAY_BUTTON_RECTS
+    for key in ("first", "prev", "next", "last"):
+        ui_state = UIState(screen=Screen.REPLAY, replay_step=1, replay_autoplay=True)
+        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects[key].center)
+        handle_replay_event(event, ui_state, game)
+        assert ui_state.replay_autoplay is False, key
+
+
+def test_replay_manual_nav_keys_pause_autoplay():
+    game = _played_game()
+    for key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_HOME, pygame.K_END):
+        ui_state = UIState(screen=Screen.REPLAY, replay_step=1, replay_autoplay=True)
+        handle_replay_event(pygame.event.Event(pygame.KEYDOWN, key=key), ui_state, game)
+        assert ui_state.replay_autoplay is False, key
+
+
 # --- Confirmation dialog, mouse path -------------------------------------
 
 

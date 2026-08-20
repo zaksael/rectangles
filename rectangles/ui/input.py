@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 
 from .. import bot, persistence
-from ..constants import DICE_MAX, DICE_MIN, PLAYER_2
+from ..constants import DICE_MAX, DICE_MIN, PLAYER_2, REPLAY_SPEED_PRESETS
 from ..game import Game, TurnState
 from ..series import Series
 from . import layout
@@ -143,6 +143,10 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
     if event.type == pygame.QUIT:
         return False
     if event.type == pygame.KEYDOWN:
+        # Any keyboard nav counts as taking manual control - none of these
+        # keys are bound to Play/speed (click-only), so this is safe to do
+        # unconditionally before the specific key dispatch below.
+        ui_state.replay_autoplay = False
         if event.key == pygame.K_ESCAPE:
             ui_state.screen = Screen.PLAYING
         elif event.key in (pygame.K_RIGHT, pygame.K_DOWN):
@@ -158,6 +162,8 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         pos = _design_pos(event.pos)
         rects = layout.REPLAY_BUTTON_RECTS
+        if any(rects[k].collidepoint(pos) for k in ("first", "prev", "next", "last")):
+            ui_state.replay_autoplay = False
         if rects["first"].collidepoint(pos):
             ui_state.replay_step = 0
         elif rects["prev"].collidepoint(pos):
@@ -166,8 +172,15 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
             ui_state.replay_step += 1
         elif rects["last"].collidepoint(pos):
             ui_state.replay_step = len(game.history)
+        elif rects["play"].collidepoint(pos):
+            ui_state.replay_autoplay = not ui_state.replay_autoplay
         elif rects["back"].collidepoint(pos):
             ui_state.screen = Screen.PLAYING
+        else:
+            for value in REPLAY_SPEED_PRESETS:
+                if rects[value].collidepoint(pos):
+                    ui_state.replay_speed = value
+                    break
         _clamp_replay_step(ui_state, game)
     return True
 
@@ -179,6 +192,7 @@ def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, seri
         elif layout.GAME_OVER_REPLAY_BUTTON_RECT.collidepoint(pos):
             ui_state.screen = Screen.REPLAY
             ui_state.replay_step = 0
+            ui_state.replay_autoplay = False
         elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
             return False
         return True

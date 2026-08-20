@@ -487,6 +487,25 @@ def test_draw_replay_smoke(renderer, step):
     renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=step))
 
 
+@pytest.mark.parametrize("autoplay", [True, False])
+def test_draw_replay_autoplay_controls_smoke(renderer, autoplay):
+    game = Game(board_size=6, rng=ScriptedRandom([2, 2, 3, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((3, 3), 3, 3) is True
+    if not game.check_game_over():
+        game.end_turn()
+    game.state = TurnState.GAME_OVER
+
+    for speed in ("Slow", "Normal", "Fast"):
+        renderer.draw(
+            game, UIState(screen=Screen.REPLAY, replay_step=1, replay_autoplay=autoplay, replay_speed=speed)
+        )
+
+
 def test_draw_replay_flag_conquest_smoke(renderer):
     # Leading 0 is consumed by the random flag pick during reset().
     game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6]))
