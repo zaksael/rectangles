@@ -215,9 +215,11 @@ most recent entries plus a note when there's more, so the panel always fits.
 - **Replay** the finished game turn-by-turn: step through the board with
   First/Prev/Next/Last (or the arrow/Home/End keys), seeing each turn's
   roll, placement, each player's running area/flags at that point, a
-  score-history chart plotting both players' scores across the whole game,
-  and — for the turn just taken — any flagged missed opportunities (a
-  bigger flag capture, more opponent denial, or a self-enclosed hole the
+  score-history chart plotting both players' scores across the whole game
+  (every flagged turn also marked on the chart with a dot, so a bad turn
+  is visible at a glance without stepping through the whole game), and —
+  for the turn just taken — any flagged missed opportunities (a bigger
+  flag capture, more opponent denial, or a self-enclosed hole the
   placement created) versus the best other legal option that roll. Hit
   **Play** to watch it advance automatically at your chosen Slow/Normal/Fast
   pace — it stops at the last step, and any manual navigation pauses it.

@@ -358,7 +358,7 @@ def test_score_history_applies_self_enclosed_penalty_when_ring_completes(rendere
 
 def test_turn_analysis_empty_at_step_zero(renderer):
     game = Game(board_size=6)
-    assert renderer._turn_analysis(game, 0) == []
+    assert renderer._turn_analyses(game).get(0, []) == []
 
 
 def test_turn_analysis_empty_for_a_skip(renderer):
@@ -369,7 +369,7 @@ def test_turn_analysis_empty_for_a_skip(renderer):
     game.roll_dice()
     assert game.state == TurnState.SKIPPED
 
-    assert renderer._turn_analysis(game, 1) == []
+    assert renderer._turn_analyses(game).get(1, []) == []
 
 
 def test_turn_analysis_flags_a_missed_flag_capture(renderer):
@@ -382,7 +382,7 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
-    assert renderer._turn_analysis(game, 1) == ["missed flag capture (+1 available)"]
+    assert renderer._turn_analyses(game)[1] == ["missed flag capture (+1 available)"]
 
 
 def test_turn_analysis_flags_a_missed_denial(renderer):
@@ -396,7 +396,7 @@ def test_turn_analysis_flags_a_missed_denial(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analysis(game, 3) == ["missed denial (+1 cells available)"]
+    assert renderer._turn_analyses(game)[3] == ["missed denial (+1 cells available)"]
 
 
 def test_turn_analysis_flags_a_self_created_enclosure(renderer):
@@ -412,7 +412,7 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 3), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analysis(game, 5) == ["created a 1-cell self-enclosed hole"]
+    assert renderer._turn_analyses(game)[5] == ["created a 1-cell self-enclosed hole"]
 
 
 def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(renderer):
@@ -428,7 +428,51 @@ def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(ren
     game.roll_dice()
     assert game.attempt_place((3, 3), 3, 3) is True  # anchored at P2's real corner (5, 5)
 
-    assert renderer._turn_analysis(game, 2) == []
+    assert renderer._turn_analyses(game).get(2, []) == []
+
+
+def test_turn_analyses_omits_clean_steps_from_the_dict(renderer):
+    # Sparse dict shape: a step with no notes has no key at all (not an
+    # empty list) - lets a plain `in` check double as the marker set for
+    # the score chart.
+    game = Game(board_size=6)
+    game.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+    ]
+
+    assert set(renderer._turn_analyses(game).keys()) == {3}
+
+
+def test_turn_analyses_caches_across_calls_for_the_same_game(renderer):
+    game = Game(board_size=6)
+    game.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+    ]
+
+    first = renderer._turn_analyses(game)
+    second = renderer._turn_analyses(game)
+
+    assert first is second
+
+
+def test_turn_analyses_cache_busts_for_a_different_game(renderer):
+    game_a = Game(board_size=6)
+    game_a.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+    ]
+    game_b = Game(board_size=6)
+
+    first = renderer._turn_analyses(game_a)
+    second = renderer._turn_analyses(game_b)
+
+    assert first is not second
+    assert second == {}
 
 
 def test_draw_replay_turn_analysis_smoke(renderer):
@@ -440,6 +484,18 @@ def test_draw_replay_turn_analysis_smoke(renderer):
     game.state = TurnState.GAME_OVER
 
     renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1))
+
+
+def test_draw_score_chart_with_a_flagged_turn_smoke(renderer):
+    game = Game(board_size=6)
+    game.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+    ]
+    game.state = TurnState.GAME_OVER
+
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=3))
 
 
 def test_format_turn_caption_placed_variant(renderer):

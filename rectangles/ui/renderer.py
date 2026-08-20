@@ -55,6 +55,7 @@ class Renderer:
         self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
         self._hand_cursor = False
         self._mouse_pos = (0, 0)
+        self._turn_analyses_cache: tuple[Game, int, dict[int, list[str]]] | None = None
 
     def resize(self, screen: pygame.Surface) -> None:
         self.screen = screen
@@ -351,49 +352,66 @@ class Renderer:
                 history[player_id].append(score)
         return history
 
-    def _turn_analysis(self, game: Game, step: int) -> list[str]:
-        if step == 0:
-            return []
-        record = game.history[step - 1]
-        if record.placed is None:
-            return []  # skips are never mistakes - no legal placement existed
+    def _turn_analyses(self, game: Game) -> dict[int, list[str]]:
+        # Whole-game, one incremental O(N) walk (same shape as _score_history)
+        # rather than N separate from-scratch board reconstructions - cached
+        # below since this is the one case in Renderer where recompute-every-
+        # frame is actually too expensive to skip a cache (unlike everywhere
+        # else here, which is cheap enough to just redo each draw() call).
+        # Cache key holds the actual game object (compared via `is`), not
+        # id(game): an int id can be reused once an earlier game is garbage
+        # collected, causing a false cache hit against an unrelated game -
+        # holding a live reference here prevents that outright.
+        if self._turn_analyses_cache is not None:
+            cached_game, cached_history_len, cached_analyses = self._turn_analyses_cache
+            if cached_game is game and cached_history_len == len(game.history):
+                return cached_analyses
 
-        board, scratch = self._board_at_step(game, step - 1)
-        player = scratch[record.player_id]
-        a, b = record.roll
-        candidates = [
-            (top_left, w, h)
-            for w, h in ((a, b), (b, a))
-            for top_left in board.legal_top_lefts(player, w, h)
-        ]
-        chosen = (record.placed.top_left, record.placed.width, record.placed.height)
-        notes: list[str] = []
+        board, scratch = self._new_scratch_board(game)
+        analyses: dict[int, list[str]] = {}
+        for step, record in enumerate(game.history, start=1):
+            if record.placed is None:
+                continue  # skips are never mistakes - no legal placement existed
 
-        if game.flag_conquest_enabled:
-            chosen_score = bot.flag_score(chosen, board.flag_cells)
-            best_score = max(bot.flag_score(c, board.flag_cells) for c in candidates)
+            player = scratch[record.player_id]
+            a, b = record.roll
+            candidates = [
+                (top_left, w, h)
+                for w, h in ((a, b), (b, a))
+                for top_left in board.legal_top_lefts(player, w, h)
+            ]
+            chosen = (record.placed.top_left, record.placed.width, record.placed.height)
+            notes: list[str] = []
+
+            if game.flag_conquest_enabled:
+                chosen_score = bot.flag_score(chosen, board.flag_cells)
+                best_score = max(bot.flag_score(c, board.flag_cells) for c in candidates)
+                if best_score > chosen_score:
+                    notes.append(f"missed flag capture (+{best_score - chosen_score} available)")
+
+            opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
+            opponent_frontier = board.frontier(scratch[opponent_id])
+            chosen_score = bot.blocking_score(chosen, opponent_frontier)
+            best_score = max(bot.blocking_score(c, opponent_frontier) for c in candidates)
             if best_score > chosen_score:
-                notes.append(f"missed flag capture (+{best_score - chosen_score} available)")
+                notes.append(f"missed denial (+{best_score - chosen_score} cells available)")
 
-        opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
-        opponent_frontier = board.frontier(scratch[opponent_id])
-        chosen_score = bot.blocking_score(chosen, opponent_frontier)
-        best_score = max(bot.blocking_score(c, opponent_frontier) for c in candidates)
-        if best_score > chosen_score:
-            notes.append(f"missed denial (+{best_score - chosen_score} cells available)")
-
-        if game.self_enclosed_penalty_enabled:
-            before = board.self_enclosed_cell_counts().get(player.id, 0)
+            before = board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
             board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
-            after = board.self_enclosed_cell_counts().get(player.id, 0)
-            if after > before:
-                notes.append(f"created a {after - before}-cell self-enclosed hole")
+            if game.self_enclosed_penalty_enabled:
+                after = board.self_enclosed_cell_counts().get(player.id, 0)
+                if after > before:
+                    notes.append(f"created a {after - before}-cell self-enclosed hole")
 
-        return notes
+            if notes:
+                analyses[step] = notes
+
+        self._turn_analyses_cache = (game, len(game.history), analyses)
+        return analyses
 
     def _draw_turn_analysis(self, game: Game, step: int) -> None:
         y = layout.REPLAY_ANALYSIS_Y
-        for note in self._turn_analysis(game, step):
+        for note in self._turn_analyses(game).get(step, []):
             self._text(f"! {note}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
             y += self.font_small.get_linesize()
 
@@ -425,6 +443,10 @@ class Renderer:
         for player_id, series in history.items():
             points = [point(step, score) for step, score in enumerate(series)]
             pygame.draw.lines(self.screen, constants.PLAYER_COLORS[player_id], False, points, width=2)
+
+        for step in self._turn_analyses(game):
+            player_id = game.history[step - 1].player_id
+            pygame.draw.circle(self.screen, ANALYSIS_WARNING_COLOR, point(step, history[player_id][step]), 4)
 
         marker_x = inner.left + round(ui_state.replay_step / steps * inner.width)
         pygame.draw.line(self.screen, MUTED_TEXT_COLOR, (marker_x, inner.top), (marker_x, inner.bottom))
