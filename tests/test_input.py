@@ -762,6 +762,19 @@ def test_replay_speed_button_sets_speed_without_touching_autoplay():
     assert ui_state.replay_autoplay is True
 
 
+def test_replay_reveal_button_toggles_without_touching_autoplay():
+    game = _played_game()
+    ui_state = UIState(screen=Screen.REPLAY, replay_step=0, replay_autoplay=True)
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.REPLAY_REVEAL_BUTTON_RECT.center)
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_show_better_option is True
+    assert ui_state.replay_autoplay is True
+
+    handle_replay_event(event, ui_state, game)
+    assert ui_state.replay_show_better_option is False
+
+
 def test_replay_manual_nav_buttons_pause_autoplay():
     game = _played_game()
     rects = layout.REPLAY_BUTTON_RECTS

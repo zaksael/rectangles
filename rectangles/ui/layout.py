@@ -436,3 +436,7 @@ REPLAY_SCORE_CHART_LABEL_Y = 300 + _REPLAY_ANALYSIS_DELTA
 REPLAY_SCORE_CHART_RECT = pygame.Rect(
     PANEL_X, 326 + _REPLAY_ANALYSIS_DELTA, PANEL_CONTENT_WIDTH, 440 - _REPLAY_ANALYSIS_DELTA
 )
+
+# Toggle for revealing each flagged turn's better-scoring candidate - sits in
+# the remaining idle gap between the chart's bottom and the nav row above it.
+REPLAY_REVEAL_BUTTON_RECT = pygame.Rect(PANEL_X, REPLAY_SCORE_CHART_RECT.bottom + 4, PANEL_CONTENT_WIDTH, 32)

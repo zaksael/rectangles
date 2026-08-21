@@ -36,6 +36,7 @@ LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
 STATUS_BANNER_BG_COLOR = (20, 20, 24, 215)
 LETTERBOX_COLOR = (10, 10, 12)
 ANALYSIS_WARNING_COLOR = (200, 70, 40)
+ANALYSIS_SUGGESTION_COLOR = (60, 130, 220, 140)
 
 
 class Renderer:
@@ -55,7 +56,9 @@ class Renderer:
         self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
         self._hand_cursor = False
         self._mouse_pos = (0, 0)
-        self._turn_analyses_cache: tuple[Game, int, dict[int, list[str]]] | None = None
+        self._turn_analyses_cache: (
+            tuple[Game, int, dict[int, list[tuple[str, tuple[tuple[int, int], int, int] | None]]]] | None
+        ) = None
 
     def resize(self, screen: pygame.Surface) -> None:
         self.screen = screen
@@ -352,7 +355,7 @@ class Renderer:
                 history[player_id].append(score)
         return history
 
-    def _turn_analyses(self, game: Game) -> dict[int, list[str]]:
+    def _turn_analyses(self, game: Game) -> dict[int, list[tuple[str, tuple[tuple[int, int], int, int] | None]]]:
         # Whole-game, one incremental O(N) walk (same shape as _score_history)
         # rather than N separate from-scratch board reconstructions - cached
         # below since this is the one case in Renderer where recompute-every-
@@ -381,27 +384,29 @@ class Renderer:
                 for top_left in board.legal_top_lefts(player, w, h)
             ]
             chosen = (record.placed.top_left, record.placed.width, record.placed.height)
-            notes: list[str] = []
+            notes: list[tuple[str, tuple[tuple[int, int], int, int] | None]] = []
 
             if game.flag_conquest_enabled:
                 chosen_score = bot.flag_score(chosen, board.flag_cells)
-                best_score = max(bot.flag_score(c, board.flag_cells) for c in candidates)
+                best_candidate = max(candidates, key=lambda c: bot.flag_score(c, board.flag_cells))
+                best_score = bot.flag_score(best_candidate, board.flag_cells)
                 if best_score > chosen_score:
-                    notes.append(f"missed flag capture (+{best_score - chosen_score} available)")
+                    notes.append((f"missed flag capture (+{best_score - chosen_score} available)", best_candidate))
 
             opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
             opponent_frontier = board.frontier(scratch[opponent_id])
             chosen_score = bot.blocking_score(chosen, opponent_frontier)
-            best_score = max(bot.blocking_score(c, opponent_frontier) for c in candidates)
+            best_candidate = max(candidates, key=lambda c: bot.blocking_score(c, opponent_frontier))
+            best_score = bot.blocking_score(best_candidate, opponent_frontier)
             if best_score > chosen_score:
-                notes.append(f"missed denial (+{best_score - chosen_score} cells available)")
+                notes.append((f"missed denial (+{best_score - chosen_score} cells available)", best_candidate))
 
             before = board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
             board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
             if game.self_enclosed_penalty_enabled:
                 after = board.self_enclosed_cell_counts().get(player.id, 0)
                 if after > before:
-                    notes.append(f"created a {after - before}-cell self-enclosed hole")
+                    notes.append((f"created a {after - before}-cell self-enclosed hole", None))
 
             if notes:
                 analyses[step] = notes
@@ -409,11 +414,27 @@ class Renderer:
         self._turn_analyses_cache = (game, len(game.history), analyses)
         return analyses
 
-    def _draw_turn_analysis(self, game: Game, step: int) -> None:
+    def _draw_turn_analysis(self, game: Game, step: int, ui_state: UIState) -> None:
         y = layout.REPLAY_ANALYSIS_Y
-        for note in self._turn_analyses(game).get(step, []):
-            self._text(f"! {note}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
+        for message, candidate in self._turn_analyses(game).get(step, []):
+            if ui_state.replay_show_better_option and candidate is not None:
+                (r, c), w, h = candidate
+                message = f"{message} - try {w}x{h} at ({r},{c})"
+            self._text(f"! {message}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
             y += self.font_small.get_linesize()
+
+    def _draw_analysis_suggestions(self, game: Game, step: int, ui_state: UIState) -> None:
+        if not ui_state.replay_show_better_option:
+            return
+        for _message, candidate in self._turn_analyses(game).get(step, []):
+            if candidate is None:
+                continue
+            top_left, w, h = candidate
+            rect = layout.piece_rect(top_left, w, h, game.board.size)
+            overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            overlay.fill(ANALYSIS_SUGGESTION_COLOR)
+            self.screen.blit(overlay, rect.topleft)
+            pygame.draw.rect(self.screen, ANALYSIS_SUGGESTION_COLOR[:3], rect, width=2)
 
     def _draw_score_chart(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X
@@ -849,6 +870,7 @@ class Renderer:
         step = ui_state.replay_step
 
         self._draw_replay_board(game, step)
+        self._draw_analysis_suggestions(game, step, ui_state)
 
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
@@ -887,7 +909,7 @@ class Renderer:
                 r, c = record.placed.top_left
                 caption += f" at ({r},{c})"
         self._draw_wrapped_text(caption, (x, layout.PANEL_STATUS_Y), self.font, layout.PANEL_CONTENT_WIDTH)
-        self._draw_turn_analysis(game, step)
+        self._draw_turn_analysis(game, step, ui_state)
 
         self._draw_score_chart(game, ui_state)
 
@@ -902,6 +924,12 @@ class Renderer:
         for value in constants.REPLAY_SPEED_PRESETS:
             self._button(rects[value], value, selected=ui_state.replay_speed == value)
         self._button(rects["back"], "Back (Esc)")
+
+        self._button(
+            layout.REPLAY_REVEAL_BUTTON_RECT,
+            "Hide Better Option" if ui_state.replay_show_better_option else "Show Better Option",
+            selected=ui_state.replay_show_better_option,
+        )
 
     def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)

@@ -382,7 +382,7 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
-    assert renderer._turn_analyses(game)[1] == ["missed flag capture (+1 available)"]
+    assert renderer._turn_analyses(game)[1] == [("missed flag capture (+1 available)", ((0, 0), 4, 1))]
 
 
 def test_turn_analysis_flags_a_missed_denial(renderer):
@@ -396,7 +396,7 @@ def test_turn_analysis_flags_a_missed_denial(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analyses(game)[3] == ["missed denial (+1 cells available)"]
+    assert renderer._turn_analyses(game)[3] == [("missed denial (+1 cells available)", ((2, 3), 1, 1))]
 
 
 def test_turn_analysis_flags_a_self_created_enclosure(renderer):
@@ -412,7 +412,7 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 3), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analyses(game)[5] == ["created a 1-cell self-enclosed hole"]
+    assert renderer._turn_analyses(game)[5] == [("created a 1-cell self-enclosed hole", None)]
 
 
 def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(renderer):
@@ -473,6 +473,33 @@ def test_turn_analyses_cache_busts_for_a_different_game(renderer):
 
     assert first is not second
     assert second == {}
+
+
+def test_show_better_option_reveals_the_candidate_in_the_note_text(renderer, monkeypatch):
+    game = Game(board_size=6, flag_conquest_enabled=True)
+    game.board.flag_cells = frozenset({(0, 3)})
+    game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
+
+    drawn = []
+    monkeypatch.setattr(renderer, "_text", lambda text, *a, **k: drawn.append(text))
+
+    renderer._draw_turn_analysis(game, 1, UIState(replay_show_better_option=False))
+    assert drawn == ["! missed flag capture (+1 available)"]
+
+    drawn.clear()
+    renderer._draw_turn_analysis(game, 1, UIState(replay_show_better_option=True))
+    assert drawn == ["! missed flag capture (+1 available) - try 4x1 at (0,0)"]
+
+
+def test_draw_replay_with_show_better_option_smoke(renderer):
+    game = Game(
+        board_size=6, flag_conquest_enabled=True, self_enclosed_penalty_enabled=True, rng=ScriptedRandom([2, 3])
+    )
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 3) is True
+    game.state = TurnState.GAME_OVER
+
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1, replay_show_better_option=True))
 
 
 def test_draw_replay_turn_analysis_smoke(renderer):

@@ -59,6 +59,7 @@ class UIState:
     replay_step: int = 0
     replay_autoplay: bool = False
     replay_speed: str = REPLAY_SPEED_PRESETS[1]
+    replay_show_better_option: bool = False
 
     def reset(self) -> None:
         self.current_dims = None

@@ -176,6 +176,8 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
             ui_state.replay_autoplay = not ui_state.replay_autoplay
         elif rects["back"].collidepoint(pos):
             ui_state.screen = Screen.PLAYING
+        elif layout.REPLAY_REVEAL_BUTTON_RECT.collidepoint(pos):
+            ui_state.replay_show_better_option = not ui_state.replay_show_better_option
         else:
             for value in REPLAY_SPEED_PRESETS:
                 if rects[value].collidepoint(pos):
