@@ -54,7 +54,10 @@ def run() -> None:
                 screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
                 renderer.resize(screen)
                 continue
-            if ui_state.screen == Screen.SETTINGS:
+            if ui_state.screen == Screen.MODE_SELECT:
+                if not game_input.handle_mode_select_event(event, ui_state):
+                    running = False
+            elif ui_state.screen == Screen.SETTINGS:
                 if not game_input.handle_settings_event(event, ui_state):
                     running = False
             elif ui_state.screen == Screen.REPLAY:
@@ -139,7 +142,7 @@ def run() -> None:
         if ui_state.resume_requested:
             loaded = persistence.load_game()
             if loaded is None:
-                ui_state.screen = Screen.SETTINGS
+                ui_state.screen = Screen.MODE_SELECT
             else:
                 game, series = loaded
             tournament = None

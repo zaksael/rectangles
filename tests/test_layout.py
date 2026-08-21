@@ -106,3 +106,19 @@ def test_to_design_coords_round_trips_through_compute_scale():
     scale, offset_x, offset_y = layout.compute_scale(real_width, real_height)
     real_x, real_y = offset_x + 40 * scale, offset_y + 60 * scale
     assert layout.to_design_coords(real_x, real_y, real_width, real_height) == (40, 60)
+
+
+def test_settings_action_row_y_only_differs_for_tournament_mode():
+    assert layout.settings_action_row_y("Single") == layout.settings_action_row_y("Series")
+    assert layout.settings_action_row_y("Single") < layout.settings_action_row_y("Tournament")
+
+
+def test_settings_max_scroll_is_zero_outside_tournament_mode():
+    assert layout.settings_max_scroll("Single") == 0
+    assert layout.settings_max_scroll("Series") == 0
+    assert layout.settings_max_scroll("Tournament") > 0
+
+
+def test_settings_content_height_max_covers_every_mode():
+    for mode in ("Single", "Series", "Tournament"):
+        assert layout.settings_content_height(mode) <= layout.SETTINGS_CONTENT_HEIGHT_MAX

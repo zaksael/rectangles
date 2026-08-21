@@ -7,6 +7,7 @@ from ..constants import (
     BOARD_SIZE,
     BOT_DIFFICULTY_PRESETS,
     FLAG_CONQUEST_ENABLED,
+    GAME_MODE_PRESETS,
     OBSTACLES_ENABLED,
     REPLAY_SPEED_PRESETS,
     REROLL_ENABLED,
@@ -20,6 +21,7 @@ from ..constants import (
 
 
 class Screen(Enum):
+    MODE_SELECT = auto()
     SETTINGS = auto()
     PLAYING = auto()
     REPLAY = auto()
@@ -38,7 +40,8 @@ class UIState:
     hover_top_left: tuple[int, int] | None = None
     hover_legal: bool = False
 
-    screen: Screen = Screen.SETTINGS
+    screen: Screen = Screen.MODE_SELECT
+    selected_game_mode: str = GAME_MODE_PRESETS[0]
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
     selected_flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED

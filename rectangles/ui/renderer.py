@@ -48,9 +48,11 @@ class Renderer:
         # canvas to fit whatever the real, freely-resizable window is.
         self._canvas = pygame.Surface((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT))
         # The settings screen's content can be taller than the canvas (see
-        # layout.SETTINGS_CONTENT_HEIGHT vs. DESIGN_HEIGHT); it's drawn onto
-        # this full-height virtual surface and scrolled into view.
-        self._settings_surface = pygame.Surface((layout.DESIGN_WIDTH, layout.SETTINGS_CONTENT_HEIGHT))
+        # layout.settings_content_height(mode) vs. DESIGN_HEIGHT); it's drawn
+        # onto this full-height virtual surface and scrolled into view. Sized
+        # for the tallest mode (Tournament) since this is allocated once,
+        # before any mode is ever chosen - see SETTINGS_CONTENT_HEIGHT_MAX.
+        self._settings_surface = pygame.Surface((layout.DESIGN_WIDTH, layout.SETTINGS_CONTENT_HEIGHT_MAX))
         self.font = pygame.font.SysFont("arial", 20)
         self.font_small = pygame.font.SysFont("arial", 15)
         self.font_big = pygame.font.SysFont("arial", 30, bold=True)
@@ -77,14 +79,16 @@ class Renderer:
         real_screen, self.screen = self.screen, self._canvas
         self.screen.fill(BG_COLOR)
         self._hand_cursor = False
-        if ui_state.screen == Screen.SETTINGS:
+        if ui_state.screen == Screen.MODE_SELECT:
+            self._draw_mode_select_screen(ui_state)
+        elif ui_state.screen == Screen.SETTINGS:
             self._settings_surface.fill(BG_COLOR)
             canvas, self.screen = self.screen, self._settings_surface
             self._draw_settings_screen(ui_state)
             self.screen = canvas
             visible = pygame.Rect(0, ui_state.settings_scroll, layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT)
             self.screen.blit(self._settings_surface, (0, 0), area=visible)
-            if ui_state.settings_scroll < layout.SETTINGS_MAX_SCROLL:
+            if ui_state.settings_scroll < layout.settings_max_scroll(ui_state.selected_game_mode):
                 # If scrolled content remains, this strip can sit over genuine
                 # (clipped) content rather than blank space below it - mask it
                 # first so the hint always reads cleanly instead of overlapping.
@@ -125,7 +129,7 @@ class Renderer:
         self.screen.blit(scaled_canvas, (offset_x, offset_y))
         pygame.display.flip()
 
-    def _draw_settings_screen(self, ui_state: UIState) -> None:
+    def _draw_mode_select_screen(self, ui_state: UIState) -> None:
         center_x = layout.DESIGN_WIDTH // 2
         mouse_pos = self._mouse_pos
 
@@ -134,15 +138,48 @@ class Renderer:
 
         title_surf = self.font_big.render("RECTANGLES", True, TEXT_COLOR)
         self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, 56)))
-        subtitle_surf = self.font.render("Choose your settings", True, MUTED_TEXT_COLOR)
+        subtitle_surf = self.font.render("Choose a game mode", True, MUTED_TEXT_COLOR)
         self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 96)))
 
-        for card_rect, header in (
+        for mode, rect in layout.MODE_SELECT_BUTTON_RECTS.items():
+            self._button(
+                rect,
+                mode,
+                selected=mode == ui_state.selected_game_mode,
+                hovered=hovered(rect),
+            )
+
+        if persistence.has_save():
+            self._button(
+                layout.MODE_SELECT_RESUME_BUTTON_RECT,
+                "Resume Game (R)",
+                hovered=hovered(layout.MODE_SELECT_RESUME_BUTTON_RECT),
+            )
+        self._button(
+            layout.MODE_SELECT_EXIT_BUTTON_RECT, "Exit (Esc)", hovered=hovered(layout.MODE_SELECT_EXIT_BUTTON_RECT)
+        )
+
+    def _draw_settings_screen(self, ui_state: UIState) -> None:
+        center_x = layout.DESIGN_WIDTH // 2
+        mouse_pos = self._mouse_pos
+        mode = ui_state.selected_game_mode
+
+        def hovered(rect: pygame.Rect) -> bool:
+            return rect.collidepoint(mouse_pos)
+
+        title_surf = self.font_big.render("RECTANGLES", True, TEXT_COLOR)
+        self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, 56)))
+        subtitle_surf = self.font.render(f"{mode} - choose your settings", True, MUTED_TEXT_COLOR)
+        self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 96)))
+
+        cards = [
             (layout.SETTINGS_BOARD_CARD_RECT, "Board Setup"),
             (layout.SETTINGS_MATCH_CARD_RECT, "Opponent & Match"),
             (layout.SETTINGS_HOUSE_RULES_CARD_RECT, "House Rules"),
-            (layout.SETTINGS_TOURNAMENT_CARD_RECT, "Tournament"),
-        ):
+        ]
+        if mode == "Tournament":
+            cards.append((layout.SETTINGS_TOURNAMENT_CARD_RECT, "Tournament"))
+        for card_rect, header in cards:
             pygame.draw.rect(self.screen, CARD_BG_COLOR, card_rect, border_radius=12)
             pygame.draw.rect(self.screen, CARD_BORDER_COLOR, card_rect, width=1, border_radius=12)
             header_surf = self.font.render(header, True, TEXT_COLOR)
@@ -187,90 +224,77 @@ class Renderer:
             hovered=hovered(layout.SETTINGS_ALL_RULES_BUTTON_RECT),
         )
 
-        bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
-        self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
-        self._button(
-            layout.SETTINGS_BOT_BUTTON_RECT,
-            "ON" if ui_state.selected_bot_enabled else "OFF",
-            selected=ui_state.selected_bot_enabled,
-            hovered=hovered(layout.SETTINGS_BOT_BUTTON_RECT),
-        )
-
-        series_label = self.font.render("Series length (for Start Series)", True, TEXT_COLOR)
-        self.screen.blit(series_label, series_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 280)))
-        for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+        if mode != "Tournament":
+            bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
+            self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
             self._button(
-                rect, f"{value} Rounds", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
+                layout.SETTINGS_BOT_BUTTON_RECT,
+                "ON" if ui_state.selected_bot_enabled else "OFF",
+                selected=ui_state.selected_bot_enabled,
+                hovered=hovered(layout.SETTINGS_BOT_BUTTON_RECT),
             )
 
-        difficulty_label = self.font.render(
-            "Bot difficulty",
-            True,
-            TEXT_COLOR if ui_state.selected_bot_enabled else MUTED_TEXT_COLOR,
-        )
-        self.screen.blit(
-            difficulty_label, difficulty_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 375))
-        )
-        for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
-            self._button(
-                rect,
-                value,
-                enabled=ui_state.selected_bot_enabled,
-                selected=value == ui_state.selected_bot_difficulty,
-                hovered=ui_state.selected_bot_enabled and hovered(rect),
+            difficulty_label = self.font.render(
+                "Bot difficulty",
+                True,
+                TEXT_COLOR if ui_state.selected_bot_enabled else MUTED_TEXT_COLOR,
             )
-
-        tournament_size_label = self.font.render("Tournament size", True, TEXT_COLOR)
-        self.screen.blit(
-            tournament_size_label,
-            tournament_size_label.get_rect(
-                center=(layout.SETTINGS_TOURNAMENT_CARD_RECT.centerx, layout.SETTINGS_TOURNAMENT_CARD_RECT.top + 66)
-            ),
-        )
-        for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
-            self._button(
-                rect, f"{value} Players", selected=value == ui_state.tournament_size, hovered=hovered(rect)
+            self.screen.blit(
+                difficulty_label, difficulty_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 375))
             )
-        for i in range(ui_state.tournament_size):
-            is_bot = ui_state.tournament_slot_is_bot[i]
-            label_surf = self.font_small.render(f"Slot {i + 1}", True, TEXT_COLOR)
-            label_y = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].centery
-            self.screen.blit(label_surf, label_surf.get_rect(midleft=(layout.SETTINGS_TOURNAMENT_SLOT_LABEL_X, label_y)))
-            toggle_rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i]
-            self._button(toggle_rect, "Bot" if is_bot else "Human", selected=is_bot, hovered=hovered(toggle_rect))
-            for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+            for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
                 self._button(
                     rect,
                     value,
-                    enabled=is_bot,
-                    selected=is_bot and value == ui_state.tournament_slot_difficulty[i],
-                    hovered=is_bot and hovered(rect),
+                    enabled=ui_state.selected_bot_enabled,
+                    selected=value == ui_state.selected_bot_difficulty,
+                    hovered=ui_state.selected_bot_enabled and hovered(rect),
                 )
-        self._button(
-            layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT,
-            "Start Tournament",
-            hovered=hovered(layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT),
-        )
 
-        self._button(
-            layout.SETTINGS_START_BUTTON_RECT,
-            "Start Game (Space)",
-            hovered=hovered(layout.SETTINGS_START_BUTTON_RECT),
-        )
-        self._button(
-            layout.SETTINGS_START_SERIES_BUTTON_RECT,
-            "Start Series",
-            hovered=hovered(layout.SETTINGS_START_SERIES_BUTTON_RECT),
-        )
-        self._button(
-            layout.SETTINGS_EXIT_BUTTON_RECT, "Exit (Esc)", hovered=hovered(layout.SETTINGS_EXIT_BUTTON_RECT)
-        )
-        if persistence.has_save():
-            self._button(
-                layout.SETTINGS_RESUME_BUTTON_RECT,
-                "Resume Game (R)",
-                hovered=hovered(layout.SETTINGS_RESUME_BUTTON_RECT),
+        if mode != "Single":
+            series_label = self.font.render("Series length", True, TEXT_COLOR)
+            self.screen.blit(series_label, series_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 280)))
+            for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+                self._button(
+                    rect, f"{value} Rounds", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
+                )
+
+        if mode == "Tournament":
+            tournament_size_label = self.font.render("Tournament size", True, TEXT_COLOR)
+            self.screen.blit(
+                tournament_size_label,
+                tournament_size_label.get_rect(
+                    center=(layout.SETTINGS_TOURNAMENT_CARD_RECT.centerx, layout.SETTINGS_TOURNAMENT_CARD_RECT.top + 66)
+                ),
             )
+            for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+                self._button(
+                    rect, f"{value} Players", selected=value == ui_state.tournament_size, hovered=hovered(rect)
+                )
+            for i in range(ui_state.tournament_size):
+                is_bot = ui_state.tournament_slot_is_bot[i]
+                label_surf = self.font_small.render(f"Slot {i + 1}", True, TEXT_COLOR)
+                label_y = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].centery
+                self.screen.blit(label_surf, label_surf.get_rect(midleft=(layout.SETTINGS_TOURNAMENT_SLOT_LABEL_X, label_y)))
+                toggle_rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i]
+                self._button(toggle_rect, "Bot" if is_bot else "Human", selected=is_bot, hovered=hovered(toggle_rect))
+                for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+                    self._button(
+                        rect,
+                        value,
+                        enabled=is_bot,
+                        selected=is_bot and value == ui_state.tournament_slot_difficulty[i],
+                        hovered=is_bot and hovered(rect),
+                    )
+
+        start_label = {"Single": "Start Game (Space)", "Series": "Start Series (Space)", "Tournament": "Start Tournament (Space)"}[mode]
+        start_rect = layout.settings_start_button_rect(mode)
+        self._button(start_rect, start_label, hovered=hovered(start_rect))
+
+        exit_rect = layout.settings_exit_button_rect(mode)
+        self._button(exit_rect, "Exit (Esc)", hovered=hovered(exit_rect))
+        back_rect = layout.settings_back_button_rect(mode)
+        self._button(back_rect, "Back", hovered=hovered(back_rect))
 
     def _draw_grid_cells(self, game: Game) -> None:
         for r in range(game.board.size):

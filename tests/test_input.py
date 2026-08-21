@@ -19,6 +19,7 @@ from rectangles.ui.input import (
     build_tournament_participants,
     compute_top_left,
     handle_event,
+    handle_mode_select_event,
     handle_replay_event,
     handle_settings_event,
     handle_tournament_event,
@@ -92,7 +93,7 @@ def test_new_game_key_without_history_resets_immediately():
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
-    assert ui_state.screen == Screen.SETTINGS
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_new_game_key_with_history_requests_confirmation():
@@ -114,7 +115,7 @@ def test_confirm_new_game_with_enter_performs_reset():
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
-    assert ui_state.screen == Screen.SETTINGS
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_cancel_new_game_with_escape_leaves_state_untouched():
@@ -534,7 +535,7 @@ def test_update_hover_clears_outside_choosing_placement():
 # --- Game-over navigation, with and without a series --------------------
 
 
-def test_game_over_new_game_button_without_series_returns_to_settings():
+def test_game_over_new_game_button_without_series_returns_to_mode_select():
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
     ui_state = UIState(screen=Screen.PLAYING)
@@ -542,7 +543,7 @@ def test_game_over_new_game_button_without_series_returns_to_settings():
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
     assert handle_event(event, game, ui_state, series=None) is True
 
-    assert ui_state.screen == Screen.SETTINGS
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_game_over_new_game_button_with_incomplete_series_requests_next_game():
@@ -559,7 +560,7 @@ def test_game_over_new_game_button_with_incomplete_series_requests_next_game():
     assert ui_state.screen == Screen.PLAYING  # app.py builds the next round; no screen change here
 
 
-def test_game_over_new_game_button_with_completed_series_returns_to_settings():
+def test_game_over_new_game_button_with_completed_series_returns_to_mode_select():
     game = Game(board_size=6)
     game.state = TurnState.GAME_OVER
     series = Series(length=3, board_size=6, skip_limit=3)
@@ -572,7 +573,7 @@ def test_game_over_new_game_button_with_completed_series_returns_to_settings():
     assert handle_event(event, game, ui_state, series) is True
 
     assert ui_state.next_game_requested is False
-    assert ui_state.screen == Screen.SETTINGS
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_game_over_key_n_with_incomplete_series_requests_next_game():
@@ -853,7 +854,7 @@ def test_confirm_yes_button_click_performs_new_game():
     assert handle_event(event, game, ui_state) is True
 
     assert ui_state.pending_confirmation is None
-    assert ui_state.screen == Screen.SETTINGS
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_confirm_no_button_click_cancels():
@@ -874,9 +875,11 @@ def test_settings_quit_event_returns_false():
     assert handle_settings_event(pygame.event.Event(pygame.QUIT), UIState()) is False
 
 
-def test_settings_escape_key_returns_false():
+def test_settings_escape_key_returns_to_mode_select():
+    ui_state = UIState()
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)
-    assert handle_settings_event(event, UIState()) is False
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_settings_space_key_starts_game(monkeypatch):
@@ -890,16 +893,16 @@ def test_settings_space_key_starts_game(monkeypatch):
     assert ui_state.screen == Screen.PLAYING
 
 
-def test_settings_r_key_resumes_only_when_a_save_exists(monkeypatch):
+def test_mode_select_r_key_resumes_only_when_a_save_exists(monkeypatch):
     ui_state = UIState()
     event = pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r)
 
     monkeypatch.setattr(persistence, "has_save", lambda: False)
-    handle_settings_event(event, ui_state)
+    handle_mode_select_event(event, ui_state)
     assert ui_state.resume_requested is False
 
     monkeypatch.setattr(persistence, "has_save", lambda: True)
-    handle_settings_event(event, ui_state)
+    handle_mode_select_event(event, ui_state)
     assert ui_state.resume_requested is True
     assert ui_state.screen == Screen.PLAYING
 
@@ -1067,9 +1070,11 @@ def test_settings_series_length_buttons_update_selection():
 def test_settings_start_game_button_click_deletes_save_and_starts(monkeypatch):
     deleted = []
     monkeypatch.setattr(persistence, "delete_save", lambda: deleted.append(True))
-    ui_state = UIState()
+    ui_state = UIState(selected_game_mode="Single")
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_START_BUTTON_RECT.center)
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Single").center
+    )
     assert handle_settings_event(event, ui_state) is True
 
     assert ui_state.game_requested is True
@@ -1079,10 +1084,10 @@ def test_settings_start_game_button_click_deletes_save_and_starts(monkeypatch):
 
 def test_settings_start_series_button_click_starts_series(monkeypatch):
     monkeypatch.setattr(persistence, "delete_save", lambda: None)
-    ui_state = UIState()
+    ui_state = UIState(selected_game_mode="Series")
 
     event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_START_SERIES_BUTTON_RECT.center
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Series").center
     )
     assert handle_settings_event(event, ui_state) is True
 
@@ -1090,33 +1095,73 @@ def test_settings_start_series_button_click_starts_series(monkeypatch):
     assert ui_state.screen == Screen.PLAYING
 
 
-def test_settings_resume_button_click_only_when_a_save_exists(monkeypatch):
+def test_settings_start_tournament_button_click_starts_tournament(monkeypatch):
+    monkeypatch.setattr(persistence, "delete_save", lambda: None)
+    ui_state = UIState(selected_game_mode="Tournament")
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Tournament").center
+    )
+    assert handle_settings_event(event, ui_state) is True
+
+    assert ui_state.tournament_requested is True
+    assert ui_state.screen == Screen.TOURNAMENT
+
+
+def test_settings_back_button_click_returns_to_mode_select():
     ui_state = UIState()
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_RESUME_BUTTON_RECT.center)
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_back_button_rect("Single").center
+    )
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.screen == Screen.MODE_SELECT
+
+
+def test_mode_select_resume_button_click_only_when_a_save_exists(monkeypatch):
+    ui_state = UIState()
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.MODE_SELECT_RESUME_BUTTON_RECT.center
+    )
 
     monkeypatch.setattr(persistence, "has_save", lambda: False)
-    handle_settings_event(event, ui_state)
+    handle_mode_select_event(event, ui_state)
     assert ui_state.resume_requested is False
 
     monkeypatch.setattr(persistence, "has_save", lambda: True)
-    handle_settings_event(event, ui_state)
+    handle_mode_select_event(event, ui_state)
     assert ui_state.resume_requested is True
     assert ui_state.screen == Screen.PLAYING
 
 
 def test_settings_exit_button_click_returns_false():
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_EXIT_BUTTON_RECT.center)
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_exit_button_rect("Single").center
+    )
     assert handle_settings_event(event, UIState()) is False
 
 
+def test_mode_select_exit_button_click_returns_false():
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.MODE_SELECT_EXIT_BUTTON_RECT.center)
+    assert handle_mode_select_event(event, UIState()) is False
+
+
+def test_mode_select_button_click_selects_mode_and_enters_settings():
+    for mode, rect in layout.MODE_SELECT_BUTTON_RECTS.items():
+        ui_state = UIState()
+        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+        assert handle_mode_select_event(event, ui_state) is True
+        assert ui_state.selected_game_mode == mode
+        assert ui_state.screen == Screen.SETTINGS
+
+
 def test_settings_mousewheel_scrolls_and_clamps(monkeypatch):
-    # SETTINGS_MAX_SCROLL is 0 at today's content height (the whole card
-    # stack already fits within DESIGN_HEIGHT - see layout.py) - fake real
-    # scroll headroom directly rather than via window size, since the real
-    # window no longer affects how much design-space content fits at all
-    # (see layout.compute_scale/DESIGN_HEIGHT).
+    # settings_max_scroll() is 0 at today's content height for Single/Series
+    # (the whole card stack already fits within DESIGN_HEIGHT - see
+    # layout.py) - fake real scroll headroom directly rather than via window
+    # size, since the real window no longer affects how much design-space
+    # content fits at all (see layout.compute_scale/DESIGN_HEIGHT).
     max_scroll = 200
-    monkeypatch.setattr(layout, "SETTINGS_MAX_SCROLL", max_scroll)
+    monkeypatch.setattr(layout, "settings_max_scroll", lambda mode: max_scroll)
 
     ui_state = UIState()
 
@@ -1149,7 +1194,7 @@ def test_settings_click_position_accounts_for_scroll_offset():
 
 
 def test_settings_tournament_size_buttons_update_selection():
-    ui_state = UIState()
+    ui_state = UIState(selected_game_mode="Tournament")
     for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
         event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
         assert handle_settings_event(event, ui_state) is True
@@ -1158,7 +1203,7 @@ def test_settings_tournament_size_buttons_update_selection():
 
 
 def test_settings_tournament_slot_toggle_switches_human_to_bot():
-    ui_state = UIState()
+    ui_state = UIState(selected_game_mode="Tournament")
     rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[0]
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
@@ -1170,7 +1215,7 @@ def test_settings_tournament_slot_toggle_switches_human_to_bot():
 
 
 def test_settings_tournament_slot_difficulty_only_updates_when_slot_is_bot():
-    ui_state = UIState()
+    ui_state = UIState(selected_game_mode="Tournament")
     rect = layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[0]["Greedy"]
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
@@ -1183,7 +1228,7 @@ def test_settings_tournament_slot_difficulty_only_updates_when_slot_is_bot():
 
 
 def test_settings_tournament_slot_click_ignores_rows_past_the_selected_size():
-    ui_state = UIState(tournament_size=4)
+    ui_state = UIState(selected_game_mode="Tournament", tournament_size=4)
     rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[6]  # only reachable at the 8-slot preset
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
@@ -1192,17 +1237,14 @@ def test_settings_tournament_slot_click_ignores_rows_past_the_selected_size():
     assert ui_state.tournament_slot_is_bot[6] is False
 
 
-def test_settings_start_tournament_button_click_starts_tournament(monkeypatch):
-    monkeypatch.setattr(persistence, "delete_save", lambda: None)
-    ui_state = UIState()
+def test_settings_tournament_slot_click_ignored_outside_tournament_mode():
+    ui_state = UIState(selected_game_mode="Single")
+    rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[0]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT.center
-    )
-    assert handle_settings_event(event, ui_state) is True
+    handle_settings_event(event, ui_state)
 
-    assert ui_state.tournament_requested is True
-    assert ui_state.screen == Screen.TOURNAMENT
+    assert ui_state.tournament_slot_is_bot[0] is False
 
 
 def test_build_tournament_participants_names_humans_and_bots_independently():
@@ -1277,7 +1319,7 @@ def test_handle_tournament_event_new_tournament_button_when_complete():
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.TOURNAMENT_ACTION_BUTTON_RECT.center)
 
     assert handle_tournament_event(event, ui_state, tournament) is True
-    assert ui_state.screen == Screen.SETTINGS
+    assert ui_state.screen == Screen.MODE_SELECT
 
 
 def test_is_bots_turn_generalizes_to_either_seat_via_active_bot_seats():

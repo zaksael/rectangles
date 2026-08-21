@@ -180,20 +180,24 @@ uv sync
 uv run python main.py
 ```
 
-The app opens to a settings screen — pick a board size and skip limit
-(preset buttons), optionally toggle
+The app opens to a game mode screen — pick **Single**, **Series**, or
+**Tournament**. If you quit mid-match, a **Resume Game**/`R` button appears
+there too, skipping mode selection entirely and picking up exactly where you
+left off (including the series score, if one was in progress). **Exit**/`Esc`
+quits.
+
+Picking a mode leads to a settings screen tailored to it — pick a board size
+and skip limit (preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest), [Walls](#walls),
 [Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll),
 [Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll) (or click
-**Turn All ON**/**Turn All OFF** to flip all six at once), or the
-[bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
-single match, pick a series length (3 or 5 rounds) and click
-**Start Series** to play a match series against the same opponent (see
-[Series mode](#series-mode) above), or fill in the **Tournament** card's seats
-(4 or 8, each Human or Bot) and click **Start Tournament** for a bracket (see
-[Tournament mode](#tournament-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
-button appears next time so you can pick up where you left off (including
-the series score, if one was in progress).
+**Turn All ON**/**Turn All OFF** to flip all six at once), and whatever else
+that mode needs: the [bot opponent](#bot-opponent) (and its difficulty
+preset) and a series length for **Single**/**Series**, or the
+**Tournament** card's seats (4 or 8, each Human or Bot) for **Tournament**
+(see [Series mode](#series-mode)/[Tournament mode](#tournament-mode) above).
+Click **Start**/`Space` to begin, or **Back** to return and pick a different
+mode.
 
 The window can be freely resized in any direction to fit your screen — the
 whole UI (board, panel, settings screen) scales together to fill it, with

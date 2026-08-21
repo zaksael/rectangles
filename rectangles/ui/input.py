@@ -47,7 +47,7 @@ def _rotate(ui_state: UIState) -> None:
 
 def _new_game(ui_state: UIState) -> None:
     ui_state.reset()
-    ui_state.screen = Screen.SETTINGS
+    ui_state.screen = Screen.MODE_SELECT
 
 
 def _request_new_game(game: Game, ui_state: UIState) -> None:
@@ -338,6 +338,18 @@ def _start_tournament(ui_state: UIState) -> None:
     persistence.delete_save()
 
 
+_MODE_STARTERS = {"Single": _start_game, "Series": _start_series, "Tournament": _start_tournament}
+
+
+def _start_selected_mode(ui_state: UIState) -> None:
+    _MODE_STARTERS[ui_state.selected_game_mode](ui_state)
+
+
+def _select_game_mode(ui_state: UIState, mode: str) -> None:
+    ui_state.selected_game_mode = mode
+    ui_state.screen = Screen.SETTINGS
+
+
 def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool:
     for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
         if rect.collidepoint(pos):
@@ -380,40 +392,34 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         if rect.collidepoint(pos):
             ui_state.selected_series_length = value
             return True
-    for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
-        if rect.collidepoint(pos):
-            ui_state.tournament_size = value
-            return True
-    for i in range(ui_state.tournament_size):
-        if layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].collidepoint(pos):
-            ui_state.tournament_slot_is_bot[i] = not ui_state.tournament_slot_is_bot[i]
-            return True
-        if ui_state.tournament_slot_is_bot[i]:
-            for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
-                if rect.collidepoint(pos):
-                    ui_state.tournament_slot_difficulty[i] = value
-                    return True
-    if layout.SETTINGS_START_BUTTON_RECT.collidepoint(pos):
-        _start_game(ui_state)
+    if ui_state.selected_game_mode == "Tournament":
+        for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+            if rect.collidepoint(pos):
+                ui_state.tournament_size = value
+                return True
+        for i in range(ui_state.tournament_size):
+            if layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].collidepoint(pos):
+                ui_state.tournament_slot_is_bot[i] = not ui_state.tournament_slot_is_bot[i]
+                return True
+            if ui_state.tournament_slot_is_bot[i]:
+                for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+                    if rect.collidepoint(pos):
+                        ui_state.tournament_slot_difficulty[i] = value
+                        return True
+    if layout.settings_start_button_rect(ui_state.selected_game_mode).collidepoint(pos):
+        _start_selected_mode(ui_state)
         return True
-    if layout.SETTINGS_START_SERIES_BUTTON_RECT.collidepoint(pos):
-        _start_series(ui_state)
+    if layout.settings_back_button_rect(ui_state.selected_game_mode).collidepoint(pos):
+        ui_state.screen = Screen.MODE_SELECT
         return True
-    if layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT.collidepoint(pos):
-        _start_tournament(ui_state)
-        return True
-    if persistence.has_save() and layout.SETTINGS_RESUME_BUTTON_RECT.collidepoint(pos):
-        _resume_game(ui_state)
-        return True
-    if layout.SETTINGS_EXIT_BUTTON_RECT.collidepoint(pos):
+    if layout.settings_exit_button_rect(ui_state.selected_game_mode).collidepoint(pos):
         return False
     return True
 
 
 def _handle_settings_mousewheel(event: pygame.event.Event, ui_state: UIState) -> None:
-    ui_state.settings_scroll = max(
-        0, min(ui_state.settings_scroll - event.y * 40, layout.SETTINGS_MAX_SCROLL)
-    )
+    max_scroll = layout.settings_max_scroll(ui_state.selected_game_mode)
+    ui_state.settings_scroll = max(0, min(ui_state.settings_scroll - event.y * 40, max_scroll))
 
 
 def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
@@ -421,11 +427,9 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
         return False
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
-            return False
-        if event.key == pygame.K_SPACE:
-            _start_game(ui_state)
-        elif event.key == pygame.K_r and persistence.has_save():
-            _resume_game(ui_state)
+            ui_state.screen = Screen.MODE_SELECT
+        elif event.key == pygame.K_SPACE:
+            _start_selected_mode(ui_state)
     if event.type == pygame.MOUSEWHEEL:
         _handle_settings_mousewheel(event, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -436,6 +440,28 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
         design_x, design_y = _design_pos(event.pos)
         pos = (design_x, design_y + ui_state.settings_scroll)
         return _handle_settings_left_click(pos, ui_state)
+    return True
+
+
+def handle_mode_select_event(event: pygame.event.Event, ui_state: UIState) -> bool:
+    if event.type == pygame.QUIT:
+        return False
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+            return False
+        if event.key == pygame.K_r and persistence.has_save():
+            _resume_game(ui_state)
+    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        pos = _design_pos(event.pos)
+        for mode, rect in layout.MODE_SELECT_BUTTON_RECTS.items():
+            if rect.collidepoint(pos):
+                _select_game_mode(ui_state, mode)
+                return True
+        if persistence.has_save() and layout.MODE_SELECT_RESUME_BUTTON_RECT.collidepoint(pos):
+            _resume_game(ui_state)
+            return True
+        if layout.MODE_SELECT_EXIT_BUTTON_RECT.collidepoint(pos):
+            return False
     return True
 
 

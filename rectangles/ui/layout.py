@@ -7,6 +7,7 @@ from ..constants import (
     BOT_DIFFICULTY_PRESETS,
     DICE_MAX,
     DICE_MIN,
+    GAME_MODE_PRESETS,
     REPLAY_SPEED_PRESETS,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
@@ -116,6 +117,36 @@ def _centered_button_row(
     }
 
 
+# Game Mode select screen (Screen.MODE_SELECT) - the very first screen, shown
+# before Settings. Simple, short, and never scrolls: 3 stacked mode buttons,
+# then Resume (only when persistence.has_save() - it skips mode/settings
+# selection entirely, since a resumed save's mode is already baked in) and
+# Exit below, in fixed slots - Exit doesn't reflow up when Resume is absent,
+# same "stays put in its slot either way" precedent the old Exit/Resume row
+# already established.
+_MODE_BUTTON_W = 360
+_MODE_BUTTON_H = 80
+_MODE_BUTTON_GAP = 24
+_MODE_BUTTONS_TOP = 260
+
+MODE_SELECT_BUTTON_RECTS = {
+    mode: pygame.Rect(
+        DESIGN_WIDTH // 2 - _MODE_BUTTON_W // 2,
+        _MODE_BUTTONS_TOP + i * (_MODE_BUTTON_H + _MODE_BUTTON_GAP),
+        _MODE_BUTTON_W,
+        _MODE_BUTTON_H,
+    )
+    for i, mode in enumerate(GAME_MODE_PRESETS)
+}
+_mode_buttons_bottom = _MODE_BUTTONS_TOP + len(GAME_MODE_PRESETS) * (_MODE_BUTTON_H + _MODE_BUTTON_GAP)
+
+MODE_SELECT_RESUME_BUTTON_RECT = pygame.Rect(
+    DESIGN_WIDTH // 2 - 100, _mode_buttons_bottom + 40, 200, 48
+)
+MODE_SELECT_EXIT_BUTTON_RECT = pygame.Rect(
+    DESIGN_WIDTH // 2 - 100, MODE_SELECT_RESUME_BUTTON_RECT.bottom + 12, 200, 48
+)
+
 # Settings are grouped into three cards rather than one ever-taller vertical
 # stack: "Board Setup" and "Opponent & Match" side by side on top (same
 # height, so neither dwarfs the other), and a full-width "House Rules" card
@@ -184,21 +215,21 @@ SETTINGS_ALL_RULES_BUTTON_RECT = pygame.Rect(
     SETTINGS_HOUSE_RULES_CARD_RECT.centerx - 100, SETTINGS_HOUSE_RULES_CARD_RECT.top + 160, 200, 40
 )
 
-# Tournament card: a 4th, self-contained card below House Rules, with its own
-# "Start Tournament" button at its own bottom (not squeezed into the shared
-# Start Game/Start Series row below, which stays untouched at 2 buttons).
-# Sized for TOURNAMENT_MAX_SLOTS rows regardless of the currently selected
-# preset, so switching between 4 and 8 slots never resizes the card - unused
-# rows (beyond the selected size) simply aren't drawn/clickable.
+# Tournament card: a 4th, self-contained card below House Rules - only shown
+# at all once "Tournament" is the mode chosen on the Game Mode select screen
+# (see settings_action_row_y() below), since starting is now always through
+# the one shared Start button, not a card-local one. Sized for
+# TOURNAMENT_MAX_SLOTS rows regardless of the currently selected preset, so
+# switching between 4 and 8 slots never resizes the card - unused rows
+# (beyond the selected size) simply aren't drawn/clickable.
 TOURNAMENT_MAX_SLOTS = max(TOURNAMENT_SIZE_PRESETS)
 _TOURNAMENT_SLOT_ROW_H = 40
 _TOURNAMENT_HEADER_H = 140  # card header text + "Tournament size" label + size-preset row
-_TOURNAMENT_START_BUTTON_H = 48
 SETTINGS_TOURNAMENT_CARD_RECT = pygame.Rect(
     SETTINGS_BOARD_CARD_RECT.left,
     SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 20,
     SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
-    _TOURNAMENT_HEADER_H + TOURNAMENT_MAX_SLOTS * _TOURNAMENT_SLOT_ROW_H + _TOURNAMENT_START_BUTTON_H + 20,
+    _TOURNAMENT_HEADER_H + TOURNAMENT_MAX_SLOTS * _TOURNAMENT_SLOT_ROW_H + 24,
 )
 
 SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS = _centered_button_row(
@@ -235,63 +266,95 @@ SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS = [
     for i in range(TOURNAMENT_MAX_SLOTS)
 ]
 
-SETTINGS_START_TOURNAMENT_BUTTON_RECT = pygame.Rect(
-    SETTINGS_TOURNAMENT_CARD_RECT.centerx - 110,
-    SETTINGS_TOURNAMENT_CARD_RECT.bottom - _TOURNAMENT_START_BUTTON_H - 16,
-    220,
-    _TOURNAMENT_START_BUTTON_H,
-)
-
 _SETTINGS_BUTTON_W = 200
 _SETTINGS_BUTTON_H = 56
 _SETTINGS_BUTTON_GAP = 20
-# Derived from the Tournament card (now the tallest/lowest of the four)
-# rather than a hardcoded Y, so nothing ever overlaps.
-_SETTINGS_START_BUTTONS_Y = SETTINGS_TOURNAMENT_CARD_RECT.bottom + 12
+# 2-button-wide centered span, still used by the secondary (Exit/Back) row
+# below - the primary row now holds a single mode-labeled Start button
+# instead of two, so it's centered independently (see
+# settings_start_button_rect() below).
 _SETTINGS_BUTTONS_START_X = (
     DESIGN_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
 ) // 2
 
-SETTINGS_START_BUTTON_RECT = pygame.Rect(
-    _SETTINGS_BUTTONS_START_X, _SETTINGS_START_BUTTONS_Y, _SETTINGS_BUTTON_W, _SETTINGS_BUTTON_H
-)
-SETTINGS_START_SERIES_BUTTON_RECT = pygame.Rect(
-    _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
-    _SETTINGS_START_BUTTONS_Y,
-    _SETTINGS_BUTTON_W,
-    _SETTINGS_BUTTON_H,
-)
-
-# Exit / Resume share one centered row below Start Game / Start Series
-# (mirroring that row's side-by-side layout) rather than two stacked rows -
-# Resume is only ever drawn/clickable when a save exists (see
-# persistence.has_save()), but Exit stays put in its left slot either way.
 _SETTINGS_SECONDARY_BUTTON_H = 48
-_SETTINGS_SECONDARY_BUTTONS_Y = _SETTINGS_START_BUTTONS_Y + _SETTINGS_BUTTON_H + 12
 
-SETTINGS_EXIT_BUTTON_RECT = pygame.Rect(
-    _SETTINGS_BUTTONS_START_X, _SETTINGS_SECONDARY_BUTTONS_Y, _SETTINGS_BUTTON_W, _SETTINGS_SECONDARY_BUTTON_H
-)
-SETTINGS_RESUME_BUTTON_RECT = pygame.Rect(
-    _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
-    _SETTINGS_SECONDARY_BUTTONS_Y,
-    _SETTINGS_BUTTON_W,
-    _SETTINGS_SECONDARY_BUTTON_H,
-)
 
-# The settings screen's own full button stack, top to bottom - independent of
-# the real window entirely now. When it's taller than DESIGN_HEIGHT, the
-# settings screen scrolls within the canvas (see SETTINGS_MAX_SCROLL and
-# Renderer._settings_surface) rather than growing the canvas to fit, so
-# adding another settings row never risks pushing the design canvas past a
-# sensible size.
-SETTINGS_CONTENT_HEIGHT = SETTINGS_RESUME_BUTTON_RECT.bottom + 20
+def settings_action_row_y(mode: str) -> int:
+    # The one place mode changes the layout: with the Tournament card only
+    # present in Tournament mode, the Start-button row begins right after
+    # whichever card is actually last on screen - House Rules otherwise,
+    # the Tournament card when it's mode is selected. Everything above this
+    # point (Board Setup/Match/House Rules) is always at the same fixed
+    # position regardless of mode, so this is the only reflow this screen
+    # ever needs.
+    if mode == "Tournament":
+        return SETTINGS_TOURNAMENT_CARD_RECT.bottom + 12
+    return SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 12
+
+
+# Wider than the 2-button-row width below (_SETTINGS_BUTTON_W) - alone in
+# its own row now (not sharing with a second button), it needs room for its
+# longest label, "Start Tournament (Space)" (measured ~230px at the panel
+# font).
+_SETTINGS_START_BUTTON_W = 260
+
+
+def settings_start_button_rect(mode: str) -> pygame.Rect:
+    return pygame.Rect(
+        DESIGN_WIDTH // 2 - _SETTINGS_START_BUTTON_W // 2,
+        settings_action_row_y(mode),
+        _SETTINGS_START_BUTTON_W,
+        _SETTINGS_BUTTON_H,
+    )
+
+
+def _settings_secondary_row_y(mode: str) -> int:
+    return settings_action_row_y(mode) + _SETTINGS_BUTTON_H + 12
+
+
+# Exit / Back share one centered row below the Start button (mirroring that
+# row's centered layout) rather than two stacked rows - Back returns to the
+# Game Mode select screen (Resume now lives there instead, see MODE_SELECT_*
+# below), and is always drawn/clickable, same as Exit.
+def settings_exit_button_rect(mode: str) -> pygame.Rect:
+    return pygame.Rect(
+        _SETTINGS_BUTTONS_START_X, _settings_secondary_row_y(mode), _SETTINGS_BUTTON_W, _SETTINGS_SECONDARY_BUTTON_H
+    )
+
+
+def settings_back_button_rect(mode: str) -> pygame.Rect:
+    return pygame.Rect(
+        _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
+        _settings_secondary_row_y(mode),
+        _SETTINGS_BUTTON_W,
+        _SETTINGS_SECONDARY_BUTTON_H,
+    )
+
+
+# The settings screen's own full button stack, top to bottom, for the given
+# mode - independent of the real window entirely now. When it's taller than
+# DESIGN_HEIGHT, the settings screen scrolls within the canvas (see
+# settings_max_scroll() and Renderer._settings_surface) rather than growing
+# the canvas to fit, so adding another settings row never risks pushing the
+# design canvas past a sensible size.
+def settings_content_height(mode: str) -> int:
+    return settings_back_button_rect(mode).bottom + 20
+
 
 # How far the settings screen can scroll past the fixed DESIGN_HEIGHT canvas
-# - 0 at today's content height (the whole card stack already fits within
-# DESIGN_HEIGHT), but stays real infrastructure for whenever a future
-# settings row grows SETTINGS_CONTENT_HEIGHT past it.
-SETTINGS_MAX_SCROLL = max(0, SETTINGS_CONTENT_HEIGHT - DESIGN_HEIGHT)
+# for the given mode - 0 for Single/Series (the card stack fits within
+# DESIGN_HEIGHT once the Tournament card is hidden), only Tournament mode
+# still scrolls.
+def settings_max_scroll(mode: str) -> int:
+    return max(0, settings_content_height(mode) - DESIGN_HEIGHT)
+
+
+# Tournament mode is always the tallest (it's the only mode with the extra
+# card) - Renderer._settings_surface is allocated once, before any mode is
+# ever chosen, so it must be sized for this worst case regardless of which
+# mode ends up selected; only the visible blit height varies per mode.
+SETTINGS_CONTENT_HEIGHT_MAX = settings_content_height("Tournament")
 
 PANEL_PADDING = 24
 PANEL_X = BOARD_PX + PANEL_PADDING

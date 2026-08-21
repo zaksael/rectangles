@@ -38,8 +38,13 @@ def renderer():
     return Renderer(screen)
 
 
-def test_draw_settings_screen_smoke(renderer):
-    renderer.draw(None, UIState(screen=Screen.SETTINGS))
+def test_draw_mode_select_screen_smoke(renderer):
+    renderer.draw(None, UIState(screen=Screen.MODE_SELECT))
+
+
+@pytest.mark.parametrize("mode", ["Single", "Series", "Tournament"])
+def test_draw_settings_screen_each_mode_smoke(renderer, mode):
+    renderer.draw(None, UIState(screen=Screen.SETTINGS, selected_game_mode=mode))
 
 
 def test_draw_awaiting_roll_smoke(renderer):
@@ -793,7 +798,7 @@ def _bracket(n=4):
 
 
 def test_draw_settings_screen_with_tournament_bot_slots_smoke(renderer):
-    ui_state = UIState(screen=Screen.SETTINGS, tournament_size=8)
+    ui_state = UIState(screen=Screen.SETTINGS, selected_game_mode="Tournament", tournament_size=8)
     ui_state.tournament_slot_is_bot[1] = True
     renderer.draw(None, ui_state)
 

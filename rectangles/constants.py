@@ -73,6 +73,10 @@ SERIES_LENGTH_PRESETS = (3, 5)
 # needed anywhere.
 TOURNAMENT_SIZE_PRESETS = (4, 8)
 
+# Chosen up front on the Game Mode select screen, before the settings screen
+# (which then only shows what the chosen mode needs).
+GAME_MODE_PRESETS = ("Single", "Series", "Tournament")
+
 # Bot opponent difficulty: Basic picks a random legal placement, Greedy
 # prefers capturing flags, Blocking prefers denying the opponent's frontier.
 BOT_DIFFICULTY_PRESETS = ("Basic", "Greedy", "Blocking")
