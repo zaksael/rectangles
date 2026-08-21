@@ -415,6 +415,29 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
     assert renderer._turn_analyses(game)[5] == [("created a 1-cell self-enclosed hole", None)]
 
 
+def test_turn_analysis_does_not_flag_a_forced_enclosure(renderer):
+    # Every cell is already covered except a 1-wide pocket (2,2)-(2,3)
+    # leading to an edge-adjacent 2x2 gap at (2,4) and P2's own corner cell.
+    # board.legal_top_lefts for the closing 2x2 roll collapses to exactly
+    # one position (every other candidate is blocked by already-P1 cells) -
+    # sealing it does create a new self-enclosed hole, but since there was
+    # no other legal move to make, it should not be flagged as a mistake.
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    p2_cell = (5, 5)
+    empties = {(2, 2), (2, 3), (2, 4), (2, 5), (3, 4), (3, 5)}
+    history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((r, c), 1, 1, PLAYER_1))
+        for r in range(6)
+        for c in range(6)
+        if (r, c) not in empties and (r, c) != p2_cell
+    ]
+    history.append(TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle(p2_cell, 1, 1, PLAYER_2)))
+    history.append(TurnRecord(PLAYER_1, roll=(2, 2), placed=Rectangle((2, 4), 2, 2, PLAYER_1)))
+    game.history = history
+
+    assert renderer._turn_analyses(game).get(len(history), []) == []
+
+
 def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(renderer):
     # Regression companion to test_new_scratch_board_seeds_real_start_corners:
     # P2's first-ever move is anchored at their real corner (5, 5), not a
@@ -488,7 +511,7 @@ def test_show_better_option_reveals_the_candidate_in_the_note_text(renderer, mon
 
     drawn.clear()
     renderer._draw_turn_analysis(game, 1, UIState(replay_show_better_option=True))
-    assert drawn == ["! missed flag capture (+1 available) - try 4x1 at (0,0)"]
+    assert " ".join(drawn) == "! missed flag capture (+1 available) - try 4x1 at (0,0)"
 
 
 def test_draw_replay_with_show_better_option_smoke(renderer):

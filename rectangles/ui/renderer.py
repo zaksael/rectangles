@@ -371,7 +371,7 @@ class Renderer:
                 return cached_analyses
 
         board, scratch = self._new_scratch_board(game)
-        analyses: dict[int, list[str]] = {}
+        analyses: dict[int, list[tuple[str, tuple[tuple[int, int], int, int] | None]]] = {}
         for step, record in enumerate(game.history, start=1):
             if record.placed is None:
                 continue  # skips are never mistakes - no legal placement existed
@@ -383,6 +383,11 @@ class Renderer:
                 for w, h in ((a, b), (b, a))
                 for top_left in board.legal_top_lefts(player, w, h)
             ]
+            # A turn with only one legal option (forced move) was never a
+            # choice, so it can't be flagged as a mistake - matters for
+            # self-enclosure below, which (unlike flag/denial) doesn't
+            # already fall out of the best-vs-chosen comparison.
+            had_alternative = len(set(candidates)) > 1
             chosen = (record.placed.top_left, record.placed.width, record.placed.height)
             notes: list[tuple[str, tuple[tuple[int, int], int, int] | None]] = []
 
@@ -405,7 +410,7 @@ class Renderer:
             board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
             if game.self_enclosed_penalty_enabled:
                 after = board.self_enclosed_cell_counts().get(player.id, 0)
-                if after > before:
+                if after > before and had_alternative:
                     notes.append((f"created a {after - before}-cell self-enclosed hole", None))
 
             if notes:
@@ -420,8 +425,9 @@ class Renderer:
             if ui_state.replay_show_better_option and candidate is not None:
                 (r, c), w, h = candidate
                 message = f"{message} - try {w}x{h} at ({r},{c})"
-            self._text(f"! {message}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
-            y += self.font_small.get_linesize()
+            for line in self._wrap_text(f"! {message}", self.font_small, layout.PANEL_CONTENT_WIDTH):
+                self._text(line, (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
+                y += self.font_small.get_linesize()
 
     def _draw_analysis_suggestions(self, game: Game, step: int, ui_state: UIState) -> None:
         if not ui_state.replay_show_better_option:
