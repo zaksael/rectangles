@@ -141,6 +141,28 @@ tied series. Both the in-game panel and the between-rounds screen show a
 round-by-round breakdown (each round's score, plus flag bonus points when
 Flag Conquest is on) alongside series-wide totals.
 
+## Tournament mode
+
+Play a single-elimination bracket with 4 or 8 participants: board size, skip
+limit, and mode settings are locked in once for the whole tournament, and
+each bracket pairing is played as a full match series (same length as the
+series length picked on the settings screen), not a single game. Fill each
+seat as Human or Bot on the settings screen — a bot seat picks its own
+difficulty independently, so a tournament can mix human and bot opponents
+(or run entirely bot-vs-bot) in any combination. Seeding is random each
+tournament, so the bracket order changes every time.
+
+If a match's series ends in a tied cumulative score, one extra sudden-death
+game decides who advances (if that game is somehow also an exact tie, a
+coin flip breaks it). A **Bracket** button on the game-over screen shows the
+tournament tree at any point — who's played, who advanced, and who's still
+to come — without leaving the game you just finished; the same screen also
+opens automatically once a fresh tournament is seeded (before its first
+match) and once the whole tournament is decided (showing the champion).
+Quitting mid-tournament only preserves the match currently in progress, not
+the rest of the bracket — resuming a save always drops back to a plain
+single match/series.
+
 ## Requirements
 
 - Python 3.10+
@@ -165,9 +187,11 @@ The app opens to a settings screen — pick a board size and skip limit
 [Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll) (or click
 **Turn All ON**/**Turn All OFF** to flip all six at once), or the
 [bot opponent](#bot-opponent) (and its difficulty preset), then click **Start Game**/`Space` for a
-single match, or pick a series length (3 or 5 rounds) and click
+single match, pick a series length (3 or 5 rounds) and click
 **Start Series** to play a match series against the same opponent (see
-[Series mode](#series-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
+[Series mode](#series-mode) above), or fill in the **Tournament** card's seats
+(4 or 8, each Human or Bot) and click **Start Tournament** for a bracket (see
+[Tournament mode](#tournament-mode) above). **Exit**/`Esc` quits. If you quit mid-match, a **Resume Game**/`R`
 button appears next time so you can pick up where you left off (including
 the series score, if one was in progress).
 
@@ -246,11 +270,12 @@ rectangles/
 ├── board.py        # grid + placement legality
 ├── game.py         # turn state machine, scoring, game-over rules
 ├── series.py       # N-round match series (cumulative score, next-round setup)
+├── tournament.py   # single-elimination bracket (participants, matches, tiebreaks)
 ├── bot.py          # picks a placement for the bot opponent (Basic/Greedy/Blocking)
 ├── persistence.py  # save/load a game (and series, if one is in progress)
 └── ui/             # Pygame rendering and input (all Pygame code lives here)
 ```
 
 The rules engine (`constants.py`, `models.py`, `board.py`, `game.py`,
-`series.py`, `bot.py`) has no dependency on Pygame, so it's fully
-unit-testable headlessly — see `tests/`.
+`series.py`, `tournament.py`, `bot.py`) has no dependency on Pygame, so it's
+fully unit-testable headlessly — see `tests/`.

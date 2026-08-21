@@ -7,6 +7,7 @@ from ..board import Board
 from ..game import Game, GameOverReason, TurnState
 from ..models import Player, Rectangle, TurnRecord
 from ..series import RoundResult, Series
+from ..tournament import Bracket
 from . import layout
 from .state import ConfirmAction, Screen, UIState
 
@@ -63,7 +64,13 @@ class Renderer:
     def resize(self, screen: pygame.Surface) -> None:
         self.screen = screen
 
-    def draw(self, game: Game | None, ui_state: UIState, series: Series | None = None) -> None:
+    def draw(
+        self,
+        game: Game | None,
+        ui_state: UIState,
+        series: Series | None = None,
+        tournament: Bracket | None = None,
+    ) -> None:
         real_width, real_height = self.screen.get_size()
         self._mouse_pos = layout.to_design_coords(*pygame.mouse.get_pos(), real_width, real_height)
 
@@ -89,6 +96,8 @@ class Renderer:
                 )
         elif ui_state.screen == Screen.REPLAY:
             self._draw_replay(game, ui_state)
+        elif ui_state.screen == Screen.TOURNAMENT:
+            self._draw_tournament(tournament)
         else:
             self._draw_board(game)
             if game.state == TurnState.CHOOSING_PLACEMENT:
@@ -96,9 +105,9 @@ class Renderer:
                 if ui_state.hover_top_left is not None:
                     self._draw_ghost(ui_state, game.board.size)
             self._draw_status_banner(game)
-            self._draw_panel(game, ui_state, series)
+            self._draw_panel(game, ui_state, series, tournament)
             if game.state == TurnState.GAME_OVER:
-                self._draw_game_over(game, series)
+                self._draw_game_over(game, series, tournament)
             if ui_state.pending_confirmation is not None:
                 self._draw_confirm_dialog(game, ui_state)
         try:
@@ -132,6 +141,7 @@ class Renderer:
             (layout.SETTINGS_BOARD_CARD_RECT, "Board Setup"),
             (layout.SETTINGS_MATCH_CARD_RECT, "Opponent & Match"),
             (layout.SETTINGS_HOUSE_RULES_CARD_RECT, "House Rules"),
+            (layout.SETTINGS_TOURNAMENT_CARD_RECT, "Tournament"),
         ):
             pygame.draw.rect(self.screen, CARD_BG_COLOR, card_rect, border_radius=12)
             pygame.draw.rect(self.screen, CARD_BORDER_COLOR, card_rect, width=1, border_radius=12)
@@ -209,6 +219,38 @@ class Renderer:
                 selected=value == ui_state.selected_bot_difficulty,
                 hovered=ui_state.selected_bot_enabled and hovered(rect),
             )
+
+        tournament_size_label = self.font.render("Tournament size", True, TEXT_COLOR)
+        self.screen.blit(
+            tournament_size_label,
+            tournament_size_label.get_rect(
+                center=(layout.SETTINGS_TOURNAMENT_CARD_RECT.centerx, layout.SETTINGS_TOURNAMENT_CARD_RECT.top + 66)
+            ),
+        )
+        for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+            self._button(
+                rect, f"{value} Players", selected=value == ui_state.tournament_size, hovered=hovered(rect)
+            )
+        for i in range(ui_state.tournament_size):
+            is_bot = ui_state.tournament_slot_is_bot[i]
+            label_surf = self.font_small.render(f"Slot {i + 1}", True, TEXT_COLOR)
+            label_y = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].centery
+            self.screen.blit(label_surf, label_surf.get_rect(midleft=(layout.SETTINGS_TOURNAMENT_SLOT_LABEL_X, label_y)))
+            toggle_rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i]
+            self._button(toggle_rect, "Bot" if is_bot else "Human", selected=is_bot, hovered=hovered(toggle_rect))
+            for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+                self._button(
+                    rect,
+                    value,
+                    enabled=is_bot,
+                    selected=is_bot and value == ui_state.tournament_slot_difficulty[i],
+                    hovered=is_bot and hovered(rect),
+                )
+        self._button(
+            layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT,
+            "Start Tournament",
+            hovered=hovered(layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT),
+        )
 
         self._button(
             layout.SETTINGS_START_BUTTON_RECT,
@@ -670,15 +712,37 @@ class Renderer:
                 "  ".join(suffixes), (x + 26, y + layout.PANEL_SCORE_LINE2_DY), self.font_small, MUTED_TEXT_COLOR
             )
 
-    def _draw_panel(self, game: Game, ui_state: UIState, series: Series | None = None) -> None:
+    def _tournament_match_number(self, tournament: Bracket) -> tuple[int, int]:
+        played = sum(len(round_) for round_ in tournament.rounds[:-1]) + tournament.current_match_index + 1
+        total = len(tournament.participants) - 1
+        return played, total
+
+    def _draw_panel(
+        self, game: Game, ui_state: UIState, series: Series | None = None, tournament: Bracket | None = None
+    ) -> None:
         pygame.draw.rect(self.screen, PANEL_BG_COLOR, layout.PANEL_RECT)
         x = layout.PANEL_X
 
         self._text("RECTANGLES", (x, layout.PANEL_HEADER_Y), self.font_big)
-        if series is not None:
+        match = tournament.current_match() if tournament is not None else None
+        is_tiebreak = match is not None and game is match.tiebreak_game
+        if is_tiebreak:
             p1, p2 = game.players[constants.PLAYER_1], game.players[constants.PLAYER_2]
+            played, total = self._tournament_match_number(tournament)
+            self._text(
+                f"Match {played}/{total} · Tiebreak · {p1.name} vs {p2.name}",
+                (x, layout.PANEL_HEADER_Y + 34),
+                self.font_small,
+                MUTED_TEXT_COLOR,
+            )
+        elif series is not None:
+            p1, p2 = game.players[constants.PLAYER_1], game.players[constants.PLAYER_2]
+            prefix = ""
+            if tournament is not None:
+                played, total = self._tournament_match_number(tournament)
+                prefix = f"Match {played}/{total} · "
             series_line = (
-                f"{series.length} Rounds · Game {series.games_played + 1} · "
+                f"{prefix}{series.length} Rounds · Game {series.games_played + 1} · "
                 f"{p1.name} {series.scores[constants.PLAYER_1]}-{series.scores[constants.PLAYER_2]} {p2.name}"
             )
             self._text(series_line, (x, layout.PANEL_HEADER_Y + 34), self.font_small, MUTED_TEXT_COLOR)
@@ -962,7 +1026,7 @@ class Renderer:
             selected=ui_state.replay_show_better_option,
         )
 
-    def _draw_game_over(self, game: Game, series: Series | None = None) -> None:
+    def _draw_game_over(self, game: Game, series: Series | None = None, tournament: Bracket | None = None) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         overlay.fill(OVERLAY_COLOR)
         self.screen.blit(overlay, (0, 0))
@@ -970,8 +1034,17 @@ class Renderer:
         p1, p2 = game.players[constants.PLAYER_1], game.players[constants.PLAYER_2]
         winner = game.winner()
 
-        series_complete = series is not None and series.is_complete()
-        if series_complete:
+        match = tournament.current_match() if tournament is not None else None
+        is_tiebreak = match is not None and game is match.tiebreak_game
+
+        series_complete = series is not None and series.is_complete() and not is_tiebreak
+        if is_tiebreak:
+            headline = (
+                f"{game.players[winner].name} wins the tiebreak!"
+                if winner is not None
+                else "Tiebreak tied - resolving by chance..."
+            )
+        elif series_complete:
             series_winner = series.winner()
             headline = (
                 "Series tied!" if series_winner is None else f"{game.players[series_winner].name} wins the series!"
@@ -1015,18 +1088,35 @@ class Renderer:
         reason_surf = self.font_small.render(reason_line, True, (200, 200, 200))
         self.screen.blit(reason_surf, reason_surf.get_rect(center=(center_x, reason_y)))
 
-        new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
+        if is_tiebreak:
+            new_game_label = "Next Match (N)"
+        elif tournament is not None:
+            if series is not None and not series.is_complete():
+                new_game_label = "Next Game (N)"
+            elif series is not None and series.winner() is None:
+                new_game_label = "Tiebreak (N)"
+            else:
+                new_game_label = "Next Match (N)"
+        else:
+            new_game_label = "New Game (N)" if series is None or series_complete else "Next Game (N)"
         new_game_rect = layout.GAME_OVER_NEW_GAME_BUTTON_RECT
         self._button(new_game_rect, new_game_label)
         self._button(layout.GAME_OVER_REPLAY_BUTTON_RECT, "Replay")
         self._button(layout.GAME_OVER_EXIT_BUTTON_RECT, "Exit (Esc)")
+        if tournament is not None:
+            self._button(layout.GAME_OVER_BRACKET_BUTTON_RECT, "Bracket")
 
         if series is not None and series.rounds:
+            # Pushed down an extra row when the Bracket button is also drawn
+            # below the New Game/Replay/Exit row, so the two never overlap.
+            table_top = new_game_rect.bottom + 40
+            if tournament is not None:
+                table_top = layout.GAME_OVER_BRACKET_BUTTON_RECT.bottom + 24
             columns = self._series_table_columns(series, panel=False)
             table_width = sum(width for _, width in columns)
             self._draw_table(
                 center_x - table_width // 2,
-                new_game_rect.bottom + 40,
+                table_top,
                 columns,
                 self._series_table_rows(series),
                 layout.PANEL_SERIES_ROW_HEIGHT,
@@ -1034,6 +1124,52 @@ class Renderer:
                 (200, 200, 200),
                 (200, 200, 200),
             )
+
+    def _draw_tournament(self, tournament: Bracket) -> None:
+        center_x = layout.DESIGN_WIDTH // 2
+        title_surf = self.font_big.render("TOURNAMENT BRACKET", True, TEXT_COLOR)
+        self.screen.blit(title_surf, title_surf.get_rect(center=(center_x, layout.TOURNAMENT_TITLE_Y)))
+
+        total_rounds = len(tournament.participants).bit_length() - 1
+        round_names = [f"Round {i + 1}" for i in range(total_rounds - 1)] + ["Final"]
+
+        for round_index in range(total_rounds):
+            column = layout.tournament_column_rect(round_index, total_rounds)
+            header_surf = self.font.render(round_names[round_index], True, MUTED_TEXT_COLOR)
+            self.screen.blit(header_surf, header_surf.get_rect(center=(column.centerx, column.top - 30)))
+
+            if round_index < len(tournament.rounds):
+                matches = tournament.rounds[round_index]
+                for row, match in enumerate(matches):
+                    a = tournament.participants[match.participant_a]
+                    b = tournament.participants[match.participant_b]
+                    line = f"{a.name}  vs  {b.name}"
+                    color = TEXT_COLOR
+                    if match.winner is not None:
+                        winner_name = tournament.participants[match.winner].name
+                        line += f"   →  {winner_name}"
+                        color = BUTTON_SELECTED_COLOR
+                    y = column.top + row * layout.TOURNAMENT_ROW_HEIGHT
+                    self._draw_wrapped_text(line, (column.left, y), self.font_small, column.width, color)
+            else:
+                y = column.top
+                self._text("TBD", (column.left, y), self.font_small, MUTED_TEXT_COLOR)
+
+        if tournament.is_complete():
+            champion = tournament.champion()
+            label = f"Champion: {champion.name}"
+            button_label = "New Tournament"
+        elif tournament.current_match().series is None:
+            played, total = self._tournament_match_number(tournament)
+            label = f"Ready for match {played} of {total}"
+            button_label = f"Begin Match {played}"
+        else:
+            label = "Tournament in progress"
+            button_label = "Back"
+
+        label_surf = self.font.render(label, True, TEXT_COLOR)
+        self.screen.blit(label_surf, label_surf.get_rect(center=(center_x, layout.TOURNAMENT_ACTION_BUTTON_RECT.top - 30)))
+        self._button(layout.TOURNAMENT_ACTION_BUTTON_RECT, button_label)
 
     def _draw_confirm_dialog(self, game: Game, ui_state: UIState) -> None:
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)

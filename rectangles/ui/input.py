@@ -3,9 +3,10 @@ from __future__ import annotations
 import pygame
 
 from .. import bot, persistence
-from ..constants import DICE_MAX, DICE_MIN, PLAYER_2, REPLAY_SPEED_PRESETS
+from ..constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, REPLAY_SPEED_PRESETS
 from ..game import Game, TurnState
 from ..series import Series
+from ..tournament import Bracket, Match, Participant
 from . import layout
 from .state import ConfirmAction, Screen, UIState
 
@@ -94,7 +95,13 @@ def continue_turn(game: Game) -> None:
 
 
 def is_bots_turn(game: Game, ui_state: UIState) -> bool:
-    return ui_state.selected_bot_enabled and game.current_player_id == PLAYER_2
+    return game.current_player_id in ui_state.active_bot_seats
+
+
+def plain_bot_seats(ui_state: UIState) -> dict[int, str]:
+    # For a plain (non-tournament) Start Game/Series/Resume - the bot, if
+    # on, is always seated PLAYER_2, per the settings-screen toggle.
+    return {PLAYER_2: ui_state.selected_bot_difficulty} if ui_state.selected_bot_enabled else {}
 
 
 def take_bot_turn(game: Game, ui_state: UIState) -> None:
@@ -107,11 +114,50 @@ def take_bot_turn(game: Game, ui_state: UIState) -> None:
     elif game.state == TurnState.SKIPPED:
         continue_turn(game)
     elif game.state == TurnState.CHOOSING_PLACEMENT:
-        top_left, w, h = bot.choose_placement(game, ui_state.selected_bot_difficulty)
+        difficulty = ui_state.active_bot_seats[game.current_player_id]
+        top_left, w, h = bot.choose_placement(game, difficulty)
         if game.attempt_place(top_left, w, h):
             if not game.check_game_over():
                 game.end_turn()
             ui_state.reset()
+
+
+def build_tournament_participants(ui_state: UIState) -> list[Participant]:
+    participants: list[Participant] = []
+    human_n = 0
+    bot_n = 0
+    for i in range(ui_state.tournament_size):
+        if ui_state.tournament_slot_is_bot[i]:
+            bot_n += 1
+            difficulty = ui_state.tournament_slot_difficulty[i]
+            participants.append(Participant(name=f"Bot {bot_n} ({difficulty})", is_bot=True, bot_difficulty=difficulty))
+        else:
+            human_n += 1
+            participants.append(Participant(name=f"Player {human_n}"))
+    return participants
+
+
+def apply_match_identity(game: Game, tournament: Bracket, match: Match, ui_state: UIState) -> None:
+    # Post-construction override, same pattern Series.new_game() already uses
+    # for current_player_id and persistence.py's load path already uses for
+    # player.name - a fresh Game()/Series.new_game() always resets both to
+    # generic defaults, so this must be re-applied every round of a match,
+    # not just once at match start.
+    p_a = tournament.participants[match.participant_a]
+    p_b = tournament.participants[match.participant_b]
+    game.players[PLAYER_1].name = p_a.name
+    game.players[PLAYER_2].name = p_b.name
+    ui_state.active_bot_seats = {}
+    if p_a.is_bot:
+        ui_state.active_bot_seats[PLAYER_1] = p_a.bot_difficulty
+    if p_b.is_bot:
+        ui_state.active_bot_seats[PLAYER_2] = p_b.bot_difficulty
+
+
+def start_tournament_match_game(tournament: Bracket, match: Match, ui_state: UIState) -> Game:
+    game = match.series.new_game()
+    apply_match_identity(game, tournament, match, ui_state)
+    return game
 
 
 def update_hover(game: Game, ui_state: UIState) -> None:
@@ -128,9 +174,11 @@ def update_hover(game: Game, ui_state: UIState) -> None:
     ui_state.hover_legal = top_left in game.legal_cache.get((w, h), set())
 
 
-def _advance_or_end_series(series: Series | None, ui_state: UIState) -> None:
+def _advance_or_end_series(tournament: Bracket | None, series: Series | None, ui_state: UIState) -> None:
     if series is not None and not series.is_complete():
         ui_state.next_game_requested = True
+    elif tournament is not None:
+        ui_state.next_match_requested = True
     else:
         _new_game(ui_state)
 
@@ -187,14 +235,18 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
     return True
 
 
-def _handle_left_click(pos: tuple[int, int], game: Game, ui_state: UIState, series: Series | None) -> bool:
+def _handle_left_click(
+    pos: tuple[int, int], game: Game, ui_state: UIState, series: Series | None, tournament: Bracket | None
+) -> bool:
     if game.state == TurnState.GAME_OVER:
         if layout.GAME_OVER_NEW_GAME_BUTTON_RECT.collidepoint(pos):
-            _advance_or_end_series(series, ui_state)
+            _advance_or_end_series(tournament, series, ui_state)
         elif layout.GAME_OVER_REPLAY_BUTTON_RECT.collidepoint(pos):
             ui_state.screen = Screen.REPLAY
             ui_state.replay_step = 0
             ui_state.replay_autoplay = False
+        elif tournament is not None and layout.GAME_OVER_BRACKET_BUTTON_RECT.collidepoint(pos):
+            ui_state.screen = Screen.TOURNAMENT
         elif layout.GAME_OVER_EXIT_BUTTON_RECT.collidepoint(pos):
             return False
         return True
@@ -280,6 +332,12 @@ def _resume_game(ui_state: UIState) -> None:
     ui_state.resume_requested = True
 
 
+def _start_tournament(ui_state: UIState) -> None:
+    ui_state.screen = Screen.TOURNAMENT
+    ui_state.tournament_requested = True
+    persistence.delete_save()
+
+
 def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool:
     for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
         if rect.collidepoint(pos):
@@ -322,11 +380,27 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         if rect.collidepoint(pos):
             ui_state.selected_series_length = value
             return True
+    for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+        if rect.collidepoint(pos):
+            ui_state.tournament_size = value
+            return True
+    for i in range(ui_state.tournament_size):
+        if layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].collidepoint(pos):
+            ui_state.tournament_slot_is_bot[i] = not ui_state.tournament_slot_is_bot[i]
+            return True
+        if ui_state.tournament_slot_is_bot[i]:
+            for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+                if rect.collidepoint(pos):
+                    ui_state.tournament_slot_difficulty[i] = value
+                    return True
     if layout.SETTINGS_START_BUTTON_RECT.collidepoint(pos):
         _start_game(ui_state)
         return True
     if layout.SETTINGS_START_SERIES_BUTTON_RECT.collidepoint(pos):
         _start_series(ui_state)
+        return True
+    if layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT.collidepoint(pos):
+        _start_tournament(ui_state)
         return True
     if persistence.has_save() and layout.SETTINGS_RESUME_BUTTON_RECT.collidepoint(pos):
         _resume_game(ui_state)
@@ -365,10 +439,12 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     return True
 
 
-def _handle_keydown(event: pygame.event.Event, game: Game, ui_state: UIState, series: Series | None) -> bool:
+def _handle_keydown(
+    event: pygame.event.Event, game: Game, ui_state: UIState, series: Series | None, tournament: Bracket | None
+) -> bool:
     if game.state == TurnState.GAME_OVER:
         if event.key == pygame.K_n:
-            _advance_or_end_series(series, ui_state)
+            _advance_or_end_series(tournament, series, ui_state)
         elif event.key == pygame.K_ESCAPE:
             return False
         return True
@@ -426,22 +502,50 @@ def _handle_mousewheel(event: pygame.event.Event, game: Game, ui_state: UIState)
     ui_state.history_scroll = max(0, min(ui_state.history_scroll + event.y, max_offset))
 
 
-def handle_event(event: pygame.event.Event, game: Game, ui_state: UIState, series: Series | None = None) -> bool:
+def handle_event(
+    event: pygame.event.Event,
+    game: Game,
+    ui_state: UIState,
+    series: Series | None = None,
+    tournament: Bracket | None = None,
+) -> bool:
     if ui_state.pending_confirmation is not None:
         return _handle_confirm_event(event, game, ui_state)
     if event.type == pygame.QUIT:
         return _request_quit(game, ui_state)
     if event.type == pygame.KEYDOWN:
-        if not _handle_keydown(event, game, ui_state, series):
+        if not _handle_keydown(event, game, ui_state, series, tournament):
             return False
     if event.type == pygame.MOUSEWHEEL:
         _handle_mousewheel(event, game, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
-            if not _handle_left_click(_design_pos(event.pos), game, ui_state, series):
+            if not _handle_left_click(_design_pos(event.pos), game, ui_state, series, tournament):
                 return False
         elif event.button == 3 and game.state == TurnState.CHOOSING_PLACEMENT and not is_bots_turn(
             game, ui_state
         ):
             _rotate(ui_state)
+    return True
+
+
+def handle_tournament_event(event: pygame.event.Event, ui_state: UIState, tournament: Bracket) -> bool:
+    if event.type == pygame.QUIT:
+        return False
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+        match = tournament.current_match()
+        if not tournament.is_complete() and match is not None and match.series is not None:
+            ui_state.screen = Screen.PLAYING
+        return True
+    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        pos = _design_pos(event.pos)
+        if layout.TOURNAMENT_ACTION_BUTTON_RECT.collidepoint(pos):
+            if tournament.is_complete():
+                _new_game(ui_state)
+            else:
+                match = tournament.current_match()
+                if match.series is None:
+                    ui_state.begin_match_requested = True
+                else:
+                    ui_state.screen = Screen.PLAYING
     return True

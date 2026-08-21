@@ -8,6 +8,7 @@ from .. import persistence
 from ..constants import REPLAY_SPEED_MS
 from ..game import Game, TurnState
 from ..series import Series
+from ..tournament import Bracket
 from . import input as game_input
 from . import layout
 from .renderer import Renderer
@@ -32,7 +33,9 @@ def run() -> None:
 
     game: Game | None = None
     series: Series | None = None
+    tournament: Bracket | None = None
     series_game_recorded = False
+    game_is_series_round = True  # False while `game` is a match's standalone tiebreak Game
     auto_action_at: int | None = None
     replay_autoplay_at: int | None = None
     ui_state = UIState()
@@ -57,8 +60,11 @@ def run() -> None:
             elif ui_state.screen == Screen.REPLAY:
                 if not game_input.handle_replay_event(event, ui_state, game):
                     running = False
+            elif ui_state.screen == Screen.TOURNAMENT:
+                if not game_input.handle_tournament_event(event, ui_state, tournament):
+                    running = False
             else:
-                if not game_input.handle_event(event, game, ui_state, series):
+                if not game_input.handle_event(event, game, ui_state, series, tournament):
                     running = False
 
         if ui_state.game_requested:
@@ -73,7 +79,10 @@ def run() -> None:
                 reroll_enabled=ui_state.selected_reroll_enabled,
             )
             series = None
+            tournament = None
+            ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
             series_game_recorded = False
+            game_is_series_round = True
             auto_action_at = None
             ui_state.game_requested = False
 
@@ -90,9 +99,42 @@ def run() -> None:
                 reroll_enabled=ui_state.selected_reroll_enabled,
             )
             game = series.new_game()
+            tournament = None
+            ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
             series_game_recorded = False
+            game_is_series_round = True
             auto_action_at = None
             ui_state.series_requested = False
+
+        if ui_state.tournament_requested:
+            participants = game_input.build_tournament_participants(ui_state)
+            tournament = Bracket(
+                participants=participants,
+                series_length=ui_state.selected_series_length,
+                board_size=ui_state.selected_board_size,
+                skip_limit=ui_state.selected_skip_limit,
+                flag_conquest_enabled=ui_state.selected_flag_conquest_enabled,
+                walls_enabled=ui_state.selected_walls_enabled,
+                obstacles_enabled=ui_state.selected_obstacles_enabled,
+                wildcard_enabled=ui_state.selected_wildcard_enabled,
+                self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
+                reroll_enabled=ui_state.selected_reroll_enabled,
+            )
+            game = None
+            series = None
+            series_game_recorded = False
+            auto_action_at = None
+            ui_state.tournament_requested = False
+
+        if ui_state.begin_match_requested:
+            match = tournament.current_match()
+            series = tournament.new_series_for_current_match()
+            game = game_input.start_tournament_match_game(tournament, match, ui_state)
+            game_is_series_round = True
+            ui_state.screen = Screen.PLAYING
+            series_game_recorded = False
+            auto_action_at = None
+            ui_state.begin_match_requested = False
 
         if ui_state.resume_requested:
             loaded = persistence.load_game()
@@ -100,17 +142,50 @@ def run() -> None:
                 ui_state.screen = Screen.SETTINGS
             else:
                 game, series = loaded
+            tournament = None
+            ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
             series_game_recorded = False
+            game_is_series_round = True
             auto_action_at = None
             ui_state.resume_requested = False
 
         if ui_state.next_game_requested:
             game = series.new_game()
+            if tournament is not None:
+                game_input.apply_match_identity(game, tournament, tournament.current_match(), ui_state)
+            game_is_series_round = True
             series_game_recorded = False
             auto_action_at = None
             ui_state.next_game_requested = False
 
-        if series is not None and game is not None and game.state == TurnState.GAME_OVER and not series_game_recorded:
+        if ui_state.next_match_requested:
+            match = tournament.current_match()
+            if match.series.winner() is None and match.tiebreak_game is None:
+                match.tiebreak_game = tournament.new_tiebreak_game()
+                game = match.tiebreak_game
+                game_input.apply_match_identity(game, tournament, match, ui_state)
+                game_is_series_round = False
+            else:
+                tournament.record_match_result()
+                tournament.advance()
+                if tournament.is_complete():
+                    ui_state.screen = Screen.TOURNAMENT
+                else:
+                    match = tournament.current_match()
+                    series = tournament.new_series_for_current_match()
+                    game = game_input.start_tournament_match_game(tournament, match, ui_state)
+                    game_is_series_round = True
+            series_game_recorded = False
+            auto_action_at = None
+            ui_state.next_match_requested = False
+
+        if (
+            series is not None
+            and game is not None
+            and game_is_series_round
+            and game.state == TurnState.GAME_OVER
+            and not series_game_recorded
+        ):
             series.record_game(game)
             series_game_recorded = True
 
@@ -166,7 +241,7 @@ def run() -> None:
         if ui_state.screen == Screen.PLAYING and not game_input.is_bots_turn(game, ui_state):
             game_input.update_hover(game, ui_state)
 
-        renderer.draw(game, ui_state, series)
+        renderer.draw(game, ui_state, series, tournament)
         clock.tick(FPS)
 
     if persistence.should_save_on_exit(game, series):

@@ -227,12 +227,29 @@ series is always played out; there is no early clinch. Whoever has the
 higher cumulative score once all rounds are complete wins the series;
 equal cumulative totals is a tied series.
 
-## 12. Saving and resuming
+## 12. Tournament play
+
+Instead of a single match, a series, or a single opponent, play may instead
+be a single-elimination bracket among 4 or 8 participants, each an
+independent human or bot (any mix, including all-bot). Board size, skip
+limit, every optional-rule setting, and the series length are locked once
+for the whole tournament. Every bracket pairing is decided by a full match
+series (§11), not a single game — the winner of that series advances; a
+tied series is decided by one additional sudden-death game (not a full
+extra series), and if that single game is itself an exact tie, the
+advancing participant is chosen at random. Seeding (which participant plays
+which opening pairing) is randomized once per tournament. The bracket
+continues, round by round, until one participant has won every pairing they
+were placed in — the tournament champion.
+
+## 13. Saving and resuming
 
 A match in progress (and, if one is underway, its enclosing series) may be
 saved and resumed later exactly where it left off, with no loss of state.
+Resuming a save made mid-tournament restores only the match currently in
+progress, not the rest of the bracket.
 
-## 13. Reference: typical match settings
+## 14. Reference: typical match settings
 
 | Setting | Typical choices | Default |
 |---|---|---|
@@ -248,4 +265,5 @@ saved and resumed later exactly where it left off, with no loss of state.
 | Reroll charges | 2 per player per game (fixed) | 2 |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
+| Tournament size | 4 or 8 participants | — |
 | Dice | two six-sided | — |

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 
 from ..constants import (
@@ -13,6 +13,7 @@ from ..constants import (
     SELF_ENCLOSED_PENALTY_ENABLED,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
+    TOURNAMENT_SIZE_PRESETS,
     WALLS_ENABLED,
     WILDCARD_ENABLED,
 )
@@ -22,6 +23,7 @@ class Screen(Enum):
     SETTINGS = auto()
     PLAYING = auto()
     REPLAY = auto()
+    TOURNAMENT = auto()
 
 
 class ConfirmAction(Enum):
@@ -48,10 +50,22 @@ class UIState:
     selected_bot_enabled: bool = False
     selected_bot_difficulty: str = BOT_DIFFICULTY_PRESETS[0]
     selected_series_length: int = SERIES_LENGTH_PRESETS[0]
+    active_bot_seats: dict[int, str] = field(default_factory=dict)
     game_requested: bool = False
     resume_requested: bool = False
     series_requested: bool = False
     next_game_requested: bool = False
+
+    tournament_size: int = TOURNAMENT_SIZE_PRESETS[0]
+    tournament_slot_is_bot: list[bool] = field(
+        default_factory=lambda: [False] * max(TOURNAMENT_SIZE_PRESETS)
+    )
+    tournament_slot_difficulty: list[str] = field(
+        default_factory=lambda: [BOT_DIFFICULTY_PRESETS[0]] * max(TOURNAMENT_SIZE_PRESETS)
+    )
+    tournament_requested: bool = False
+    begin_match_requested: bool = False
+    next_match_requested: bool = False
 
     pending_confirmation: ConfirmAction | None = None
     history_scroll: int = 0

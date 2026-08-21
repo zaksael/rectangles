@@ -68,6 +68,11 @@ BOARD_SIZE_PRESETS = (19, 23, 27)
 SKIP_LIMIT_PRESETS = (2, 3, 5)
 SERIES_LENGTH_PRESETS = (3, 5)
 
+# Tournament: single-elimination bracket size, restricted to powers of two so
+# every round (including round 1) is a clean pairing - no byes/seeding logic
+# needed anywhere.
+TOURNAMENT_SIZE_PRESETS = (4, 8)
+
 # Bot opponent difficulty: Basic picks a random legal placement, Greedy
 # prefers capturing flags, Blocking prefers denying the opponent's frontier.
 BOT_DIFFICULTY_PRESETS = ("Basic", "Greedy", "Blocking")

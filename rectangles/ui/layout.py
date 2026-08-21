@@ -10,6 +10,7 @@ from ..constants import (
     REPLAY_SPEED_PRESETS,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
+    TOURNAMENT_SIZE_PRESETS,
 )
 
 CELL_PX = 44
@@ -183,12 +184,70 @@ SETTINGS_ALL_RULES_BUTTON_RECT = pygame.Rect(
     SETTINGS_HOUSE_RULES_CARD_RECT.centerx - 100, SETTINGS_HOUSE_RULES_CARD_RECT.top + 160, 200, 40
 )
 
+# Tournament card: a 4th, self-contained card below House Rules, with its own
+# "Start Tournament" button at its own bottom (not squeezed into the shared
+# Start Game/Start Series row below, which stays untouched at 2 buttons).
+# Sized for TOURNAMENT_MAX_SLOTS rows regardless of the currently selected
+# preset, so switching between 4 and 8 slots never resizes the card - unused
+# rows (beyond the selected size) simply aren't drawn/clickable.
+TOURNAMENT_MAX_SLOTS = max(TOURNAMENT_SIZE_PRESETS)
+_TOURNAMENT_SLOT_ROW_H = 40
+_TOURNAMENT_HEADER_H = 140  # card header text + "Tournament size" label + size-preset row
+_TOURNAMENT_START_BUTTON_H = 48
+SETTINGS_TOURNAMENT_CARD_RECT = pygame.Rect(
+    SETTINGS_BOARD_CARD_RECT.left,
+    SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 20,
+    SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
+    _TOURNAMENT_HEADER_H + TOURNAMENT_MAX_SLOTS * _TOURNAMENT_SLOT_ROW_H + _TOURNAMENT_START_BUTTON_H + 20,
+)
+
+SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS = _centered_button_row(
+    TOURNAMENT_SIZE_PRESETS, y=SETTINGS_TOURNAMENT_CARD_RECT.top + 90, button_w=90
+)
+
+_TOURNAMENT_SLOTS_START_Y = SETTINGS_TOURNAMENT_CARD_RECT.top + _TOURNAMENT_HEADER_H
+SETTINGS_TOURNAMENT_SLOT_LABEL_X = SETTINGS_TOURNAMENT_CARD_RECT.left + 32
+_TOURNAMENT_SLOT_TOGGLE_X = SETTINGS_TOURNAMENT_CARD_RECT.left + 160
+_TOURNAMENT_SLOT_TOGGLE_W = 100
+_TOURNAMENT_SLOT_DIFFICULTY_X = _TOURNAMENT_SLOT_TOGGLE_X + _TOURNAMENT_SLOT_TOGGLE_W + 20
+_TOURNAMENT_SLOT_DIFFICULTY_BUTTON_W = 78
+_TOURNAMENT_SLOT_DIFFICULTY_GAP = 8
+
+
+def _tournament_slot_row_y(slot: int) -> int:
+    return _TOURNAMENT_SLOTS_START_Y + slot * _TOURNAMENT_SLOT_ROW_H
+
+
+SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS = [
+    pygame.Rect(_TOURNAMENT_SLOT_TOGGLE_X, _tournament_slot_row_y(i), _TOURNAMENT_SLOT_TOGGLE_W, 32)
+    for i in range(TOURNAMENT_MAX_SLOTS)
+]
+SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS = [
+    {
+        value: pygame.Rect(
+            _TOURNAMENT_SLOT_DIFFICULTY_X + j * (_TOURNAMENT_SLOT_DIFFICULTY_BUTTON_W + _TOURNAMENT_SLOT_DIFFICULTY_GAP),
+            _tournament_slot_row_y(i),
+            _TOURNAMENT_SLOT_DIFFICULTY_BUTTON_W,
+            32,
+        )
+        for j, value in enumerate(BOT_DIFFICULTY_PRESETS)
+    }
+    for i in range(TOURNAMENT_MAX_SLOTS)
+]
+
+SETTINGS_START_TOURNAMENT_BUTTON_RECT = pygame.Rect(
+    SETTINGS_TOURNAMENT_CARD_RECT.centerx - 110,
+    SETTINGS_TOURNAMENT_CARD_RECT.bottom - _TOURNAMENT_START_BUTTON_H - 16,
+    220,
+    _TOURNAMENT_START_BUTTON_H,
+)
+
 _SETTINGS_BUTTON_W = 200
 _SETTINGS_BUTTON_H = 56
 _SETTINGS_BUTTON_GAP = 20
-# Derived from the House Rules card (the tallest/lowest of the three) rather
-# than a hardcoded Y, so the two never overlap.
-_SETTINGS_START_BUTTONS_Y = SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 12
+# Derived from the Tournament card (now the tallest/lowest of the four)
+# rather than a hardcoded Y, so nothing ever overlaps.
+_SETTINGS_START_BUTTONS_Y = SETTINGS_TOURNAMENT_CARD_RECT.bottom + 12
 _SETTINGS_BUTTONS_START_X = (
     DESIGN_WIDTH - (2 * _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP)
 ) // 2
@@ -401,6 +460,16 @@ GAME_OVER_EXIT_BUTTON_RECT = pygame.Rect(
     _GAME_OVER_BUTTON_H,
 )
 
+# Only drawn/clickable when a tournament is active - a 4th row below the
+# existing 3-button row rather than widening that row's spacing formula, so
+# non-tournament games see zero layout change.
+GAME_OVER_BRACKET_BUTTON_RECT = pygame.Rect(
+    _game_over_buttons_x,
+    _game_over_buttons_y + _GAME_OVER_BUTTON_H + _GAME_OVER_BUTTON_GAP,
+    3 * _GAME_OVER_BUTTON_W + 2 * _GAME_OVER_BUTTON_GAP,
+    _GAME_OVER_BUTTON_H,
+)
+
 _REPLAY_BUTTON_W = 110
 _REPLAY_BUTTON_H = 44
 _REPLAY_BUTTON_GAP = 12
@@ -443,3 +512,22 @@ REPLAY_SCORE_CHART_RECT = pygame.Rect(
 # Toggle for revealing each flagged turn's better-scoring candidate - sits in
 # the remaining idle gap between the chart's bottom and the nav row above it.
 REPLAY_REVEAL_BUTTON_RECT = pygame.Rect(PANEL_X, REPLAY_SCORE_CHART_RECT.bottom + 4, PANEL_CONTENT_WIDTH, 32)
+
+# Screen.TOURNAMENT: one bracket-tree screen, reused for the freshly-seeded
+# view, an on-demand mid-tournament check-in, and the completed/champion
+# view - simple text columns (one per round) rather than a drawn tree with
+# connecting lines, since the round-by-round text already fully conveys the
+# state. Column x/width is computed at draw time from the actual round count
+# (2 or 3, depending on the 4/8-slot preset), same "small function of a
+# runtime value" precedent as cell_px(board_size).
+TOURNAMENT_TITLE_Y = 56
+TOURNAMENT_COLUMNS_TOP_Y = 140
+TOURNAMENT_COLUMNS_MARGIN = 60
+TOURNAMENT_ROW_HEIGHT = 40
+TOURNAMENT_ACTION_BUTTON_RECT = pygame.Rect((DESIGN_WIDTH - 240) // 2, DESIGN_HEIGHT - 90, 240, 50)
+
+
+def tournament_column_rect(round_index: int, total_rounds: int) -> pygame.Rect:
+    width = (DESIGN_WIDTH - 2 * TOURNAMENT_COLUMNS_MARGIN) // total_rounds
+    x = TOURNAMENT_COLUMNS_MARGIN + round_index * width
+    return pygame.Rect(x, TOURNAMENT_COLUMNS_TOP_Y, width, DESIGN_HEIGHT - TOURNAMENT_COLUMNS_TOP_Y - 110)

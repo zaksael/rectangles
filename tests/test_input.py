@@ -8,15 +8,20 @@ from rectangles.constants import (
     PLAYER_2,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
+    TOURNAMENT_SIZE_PRESETS,
 )
 from rectangles.game import Game, TurnState
 from rectangles.series import Series
+from rectangles.tournament import Bracket, Participant
 from rectangles.ui import layout
 from rectangles.ui.input import (
+    apply_match_identity,
+    build_tournament_participants,
     compute_top_left,
     handle_event,
     handle_replay_event,
     handle_settings_event,
+    handle_tournament_event,
     take_bot_turn,
     update_hover,
 )
@@ -368,7 +373,7 @@ def test_take_bot_turn_continues_when_skipped():
 
 def test_take_bot_turn_places_when_choosing_placement():
     game = Game(board_size=6, rng=ScriptedRandom([2, 3, 0]))
-    ui_state = UIState()
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Basic"})
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_PLACEMENT
 
@@ -469,7 +474,7 @@ def test_take_bot_turn_never_uses_reroll_even_when_available():
     game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
     ui_state = UIState()
     game.current_player_id = PLAYER_2
-    ui_state.selected_bot_enabled = True
+    ui_state.active_bot_seats = {PLAYER_2: "Basic"}
     game.roll_dice()
     assert game.state == TurnState.SKIPPED
 
@@ -496,7 +501,7 @@ def test_take_bot_turn_resolves_choosing_wildcard():
 def test_human_roll_click_ignored_during_bots_turn():
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.current_player_id = PLAYER_2
-    ui_state = UIState(screen=Screen.PLAYING, selected_bot_enabled=True)
+    ui_state = UIState(screen=Screen.PLAYING, active_bot_seats={PLAYER_2: "Basic"})
 
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.ROLL_BUTTON_RECT.center)
     handle_event(event, game, ui_state)
@@ -581,6 +586,50 @@ def test_game_over_key_n_with_incomplete_series_requests_next_game():
     assert handle_event(event, game, ui_state, series) is True
 
     assert ui_state.next_game_requested is True
+
+
+def test_game_over_new_game_button_with_decided_series_and_tournament_requests_next_match():
+    from rectangles.tournament import Bracket, Participant
+
+    tournament = Bracket(
+        participants=[Participant(name=f"Player {i + 1}") for i in range(4)],
+        series_length=3,
+        board_size=6,
+        skip_limit=3,
+    )
+    match = tournament.current_match()
+    series = tournament.new_series_for_current_match()
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))  # decided, not tied
+    game = Game(board_size=6)
+    game.state = TurnState.GAME_OVER
+    ui_state = UIState(screen=Screen.PLAYING)
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_NEW_GAME_BUTTON_RECT.center)
+    assert handle_event(event, game, ui_state, series, tournament) is True
+
+    assert ui_state.next_match_requested is True
+    assert ui_state.screen == Screen.PLAYING  # app.py resolves the transition; no screen change here
+
+
+def test_game_over_bracket_button_click_enters_tournament_screen():
+    from rectangles.tournament import Bracket, Participant
+
+    tournament = Bracket(
+        participants=[Participant(name=f"Player {i + 1}") for i in range(4)],
+        series_length=3,
+        board_size=6,
+        skip_limit=3,
+    )
+    game = Game(board_size=6)
+    game.state = TurnState.GAME_OVER
+    ui_state = UIState(screen=Screen.PLAYING)
+
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.GAME_OVER_BRACKET_BUTTON_RECT.center)
+    assert handle_event(event, game, ui_state, None, tournament) is True
+
+    assert ui_state.screen == Screen.TOURNAMENT
 
 
 def test_game_over_exit_button_click_returns_false():
@@ -1094,3 +1143,149 @@ def test_settings_click_position_accounts_for_scroll_offset():
 
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_walls_enabled is True
+
+
+# --- Tournament -------------------------------------------------------------
+
+
+def test_settings_tournament_size_buttons_update_selection():
+    ui_state = UIState()
+    for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+        assert handle_settings_event(event, ui_state) is True
+        assert ui_state.tournament_size == value
+    assert set(layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS) == set(TOURNAMENT_SIZE_PRESETS)
+
+
+def test_settings_tournament_slot_toggle_switches_human_to_bot():
+    ui_state = UIState()
+    rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[0]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.tournament_slot_is_bot[0] is True
+
+    handle_settings_event(event, ui_state)
+    assert ui_state.tournament_slot_is_bot[0] is False
+
+
+def test_settings_tournament_slot_difficulty_only_updates_when_slot_is_bot():
+    ui_state = UIState()
+    rect = layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[0]["Greedy"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+
+    handle_settings_event(event, ui_state)
+    assert ui_state.tournament_slot_difficulty[0] == BOT_DIFFICULTY_PRESETS[0]  # ignored - slot 0 is Human
+
+    ui_state.tournament_slot_is_bot[0] = True
+    handle_settings_event(event, ui_state)
+    assert ui_state.tournament_slot_difficulty[0] == "Greedy"
+
+
+def test_settings_tournament_slot_click_ignores_rows_past_the_selected_size():
+    ui_state = UIState(tournament_size=4)
+    rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[6]  # only reachable at the 8-slot preset
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+
+    handle_settings_event(event, ui_state)
+
+    assert ui_state.tournament_slot_is_bot[6] is False
+
+
+def test_settings_start_tournament_button_click_starts_tournament(monkeypatch):
+    monkeypatch.setattr(persistence, "delete_save", lambda: None)
+    ui_state = UIState()
+
+    event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_START_TOURNAMENT_BUTTON_RECT.center
+    )
+    assert handle_settings_event(event, ui_state) is True
+
+    assert ui_state.tournament_requested is True
+    assert ui_state.screen == Screen.TOURNAMENT
+
+
+def test_build_tournament_participants_names_humans_and_bots_independently():
+    ui_state = UIState(tournament_size=4)
+    ui_state.tournament_slot_is_bot[1] = True
+    ui_state.tournament_slot_difficulty[1] = "Greedy"
+    ui_state.tournament_slot_is_bot[3] = True
+    ui_state.tournament_slot_difficulty[3] = "Blocking"
+
+    participants = build_tournament_participants(ui_state)
+
+    assert [p.name for p in participants] == ["Player 1", "Bot 1 (Greedy)", "Player 2", "Bot 2 (Blocking)"]
+    assert [p.is_bot for p in participants] == [False, True, False, True]
+
+
+def _bracket(n=4):
+    participants = [Participant(name=f"Player {i + 1}") for i in range(n)]
+    return Bracket(participants=participants, series_length=3, board_size=6, skip_limit=3)
+
+
+def test_apply_match_identity_sets_names_and_bot_seats_for_a_mixed_match():
+    participants = [
+        Participant(name="Player 1"),
+        Participant(name="Bot 1 (Greedy)", is_bot=True, bot_difficulty="Greedy"),
+    ]
+    tournament = Bracket(
+        participants=participants, series_length=3, board_size=6, skip_limit=3, rng=ScriptedRandom([0])
+    )
+    match = tournament.current_match()
+    series = tournament.new_series_for_current_match()
+    game = series.new_game()
+    ui_state = UIState()
+
+    apply_match_identity(game, tournament, match, ui_state)
+
+    a_name = game.players[PLAYER_1].name
+    b_name = game.players[PLAYER_2].name
+    assert {a_name, b_name} == {"Player 1", "Bot 1 (Greedy)"}
+    bot_seat = PLAYER_1 if a_name == "Bot 1 (Greedy)" else PLAYER_2
+    assert ui_state.active_bot_seats == {bot_seat: "Greedy"}
+
+
+def test_handle_tournament_event_begin_button_requests_first_match():
+    tournament = _bracket()
+    ui_state = UIState(screen=Screen.TOURNAMENT)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.TOURNAMENT_ACTION_BUTTON_RECT.center)
+
+    assert handle_tournament_event(event, ui_state, tournament) is True
+    assert ui_state.begin_match_requested is True
+
+
+def test_handle_tournament_event_back_button_mid_tournament_returns_to_playing():
+    tournament = _bracket()
+    match = tournament.current_match()
+    match.series = tournament.new_series_for_current_match()
+    ui_state = UIState(screen=Screen.TOURNAMENT)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.TOURNAMENT_ACTION_BUTTON_RECT.center)
+
+    assert handle_tournament_event(event, ui_state, tournament) is True
+    assert ui_state.screen == Screen.PLAYING
+
+
+def test_handle_tournament_event_new_tournament_button_when_complete():
+    tournament = _bracket(n=2)
+    match = tournament.current_match()
+    match.series = tournament.new_series_for_current_match()
+    match.winner = match.participant_a
+    tournament.advance()
+    assert tournament.is_complete()
+
+    ui_state = UIState(screen=Screen.TOURNAMENT)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.TOURNAMENT_ACTION_BUTTON_RECT.center)
+
+    assert handle_tournament_event(event, ui_state, tournament) is True
+    assert ui_state.screen == Screen.SETTINGS
+
+
+def test_is_bots_turn_generalizes_to_either_seat_via_active_bot_seats():
+    from rectangles.ui.input import is_bots_turn
+
+    game = Game(board_size=6)
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Basic"})
+    assert is_bots_turn(game, ui_state) is True
+
+    game.current_player_id = PLAYER_2
+    assert is_bots_turn(game, ui_state) is False

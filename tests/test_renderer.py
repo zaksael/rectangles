@@ -783,3 +783,81 @@ def test_draw_game_over_with_series_complete_smoke(renderer):
 def test_draw_confirm_dialog_each_action_smoke(renderer, action):
     game = Game(board_size=6)
     renderer.draw(game, UIState(screen=Screen.PLAYING, pending_confirmation=action))
+
+
+def _bracket(n=4):
+    from rectangles.tournament import Bracket, Participant
+
+    participants = [Participant(name=f"Player {i + 1}") for i in range(n)]
+    return Bracket(participants=participants, series_length=3, board_size=6, skip_limit=3)
+
+
+def test_draw_settings_screen_with_tournament_bot_slots_smoke(renderer):
+    ui_state = UIState(screen=Screen.SETTINGS, tournament_size=8)
+    ui_state.tournament_slot_is_bot[1] = True
+    renderer.draw(None, ui_state)
+
+
+def test_draw_tournament_freshly_seeded_smoke(renderer):
+    tournament = _bracket()
+    renderer.draw(None, UIState(screen=Screen.TOURNAMENT), tournament=tournament)
+
+
+def test_draw_tournament_mid_bracket_smoke(renderer):
+    tournament = _bracket()
+    match = tournament.current_match()
+    match.series = tournament.new_series_for_current_match()
+    match.winner = match.participant_a
+    tournament.advance()
+    renderer.draw(None, UIState(screen=Screen.TOURNAMENT), tournament=tournament)
+
+
+def test_draw_tournament_complete_smoke(renderer):
+    tournament = _bracket(n=4)
+    for _ in range(3):
+        match = tournament.current_match()
+        match.series = tournament.new_series_for_current_match()
+        match.winner = match.participant_a
+        tournament.advance()
+    assert tournament.is_complete()
+    renderer.draw(None, UIState(screen=Screen.TOURNAMENT), tournament=tournament)
+
+
+def test_draw_game_over_with_tournament_smoke(renderer):
+    tournament = _bracket()
+    match = tournament.current_match()
+    series = tournament.new_series_for_current_match()
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    game = Game(board_size=6)
+    game.state = TurnState.GAME_OVER
+    game.game_over_reason = GameOverReason.BOARD_FULL
+    renderer.draw(game, UIState(screen=Screen.PLAYING), series=series, tournament=tournament)
+
+
+def test_draw_panel_during_active_tiebreak_game_smoke(renderer):
+    tournament = _bracket()
+    match = tournament.current_match()
+    series = tournament.new_series_for_current_match()
+    series.record_game(_finished_game(6, 1, 1))
+    series.record_game(_finished_game(6, 1, 1))
+    series.record_game(_finished_game(6, 1, 1))  # tied series
+    tiebreak = Game(board_size=6)
+    match.tiebreak_game = tiebreak
+    renderer.draw(tiebreak, UIState(screen=Screen.PLAYING), series=series, tournament=tournament)
+
+
+def test_draw_game_over_tiebreak_smoke(renderer):
+    tournament = _bracket()
+    match = tournament.current_match()
+    series = tournament.new_series_for_current_match()
+    series.record_game(_finished_game(6, 1, 1))
+    series.record_game(_finished_game(6, 1, 1))
+    series.record_game(_finished_game(6, 1, 1))  # tied series
+    game = Game(board_size=6)
+    game.board.place(game.players[PLAYER_1], (0, 0), 3, 1)
+    game.state = TurnState.GAME_OVER
+    game.game_over_reason = GameOverReason.BOARD_FULL
+    match.tiebreak_game = game
+    renderer.draw(game, UIState(screen=Screen.PLAYING), series=series, tournament=tournament)
