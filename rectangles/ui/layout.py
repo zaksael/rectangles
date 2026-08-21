@@ -427,11 +427,7 @@ REPLAY_BUTTON_RECTS = _centered_button_row(
 # rather than growing DESIGN_HEIGHT, same idiom the caption-wrap fix used.
 REPLAY_ANALYSIS_Y = 292  # 6px below the caption's worst case: PANEL_STATUS_Y(240) + 2*23
 
-# Room for the worst case with "Show Better Option" on: missed-flag and
-# missed-denial can each wrap to 2 lines once their "- try WxH at (r,c)"
-# suggestion suffix is appended, plus one more single-line self-enclosure
-# note - 5*18=90px, measured against the real font, plus margin.
-_REPLAY_ANALYSIS_DELTA = 90
+_REPLAY_ANALYSIS_DELTA = 60  # room for up to 3 notes (3*18=54px) plus margin
 
 # Score-history chart: sits in the large idle gap the replay panel leaves
 # between the caption (ends ~264) and the nav button row above (top 808) -

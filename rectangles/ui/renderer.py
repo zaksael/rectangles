@@ -419,15 +419,11 @@ class Renderer:
         self._turn_analyses_cache = (game, len(game.history), analyses)
         return analyses
 
-    def _draw_turn_analysis(self, game: Game, step: int, ui_state: UIState) -> None:
+    def _draw_turn_analysis(self, game: Game, step: int) -> None:
         y = layout.REPLAY_ANALYSIS_Y
-        for message, candidate in self._turn_analyses(game).get(step, []):
-            if ui_state.replay_show_better_option and candidate is not None:
-                (r, c), w, h = candidate
-                message = f"{message} - try {w}x{h} at ({r},{c})"
-            for line in self._wrap_text(f"! {message}", self.font_small, layout.PANEL_CONTENT_WIDTH):
-                self._text(line, (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
-                y += self.font_small.get_linesize()
+        for message, _candidate in self._turn_analyses(game).get(step, []):
+            self._text(f"! {message}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
+            y += self.font_small.get_linesize()
 
     def _draw_analysis_suggestions(self, game: Game, step: int, ui_state: UIState) -> None:
         if not ui_state.replay_show_better_option:
@@ -915,7 +911,7 @@ class Renderer:
                 r, c = record.placed.top_left
                 caption += f" at ({r},{c})"
         self._draw_wrapped_text(caption, (x, layout.PANEL_STATUS_Y), self.font, layout.PANEL_CONTENT_WIDTH)
-        self._draw_turn_analysis(game, step, ui_state)
+        self._draw_turn_analysis(game, step)
 
         self._draw_score_chart(game, ui_state)
 

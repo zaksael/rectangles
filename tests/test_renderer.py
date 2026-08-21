@@ -498,7 +498,9 @@ def test_turn_analyses_cache_busts_for_a_different_game(renderer):
     assert second == {}
 
 
-def test_show_better_option_reveals_the_candidate_in_the_note_text(renderer, monkeypatch):
+def test_turn_analysis_note_text_is_unaffected_by_show_better_option(renderer, monkeypatch):
+    # Revealing a better option is a purely visual board outline now (see
+    # _draw_analysis_suggestions) - the note text itself never changes.
     game = Game(board_size=6, flag_conquest_enabled=True)
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
@@ -506,12 +508,8 @@ def test_show_better_option_reveals_the_candidate_in_the_note_text(renderer, mon
     drawn = []
     monkeypatch.setattr(renderer, "_text", lambda text, *a, **k: drawn.append(text))
 
-    renderer._draw_turn_analysis(game, 1, UIState(replay_show_better_option=False))
+    renderer._draw_turn_analysis(game, 1)
     assert drawn == ["! missed flag capture (+1 available)"]
-
-    drawn.clear()
-    renderer._draw_turn_analysis(game, 1, UIState(replay_show_better_option=True))
-    assert " ".join(drawn) == "! missed flag capture (+1 available) - try 4x1 at (0,0)"
 
 
 def test_draw_replay_with_show_better_option_smoke(renderer):
