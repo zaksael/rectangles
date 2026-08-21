@@ -449,8 +449,9 @@ class Renderer:
     def _draw_turn_analysis(self, game: Game, step: int) -> None:
         y = layout.REPLAY_ANALYSIS_Y
         for message, _candidate in self._turn_analyses(game).get(step, []):
-            self._text(f"! {message}", (layout.PANEL_X, y), self.font_small, ANALYSIS_WARNING_COLOR)
-            y += self.font_small.get_linesize()
+            y = self._draw_wrapped_text(
+                f"! {message}", (layout.PANEL_X, y), self.font_small, layout.PANEL_CONTENT_WIDTH, ANALYSIS_WARNING_COLOR
+            )
 
     def _draw_analysis_suggestions(self, game: Game, step: int, ui_state: UIState) -> None:
         if not ui_state.replay_show_better_option:
@@ -640,11 +641,12 @@ class Renderer:
 
     def _draw_wrapped_text(
         self, text: str, pos: tuple[int, int], font, max_width: int, color: tuple[int, int, int] = TEXT_COLOR
-    ) -> None:
+    ) -> int:
         x, y = pos
         for line in self._wrap_text(text, font, max_width):
             self._text(line, (x, y), font, color)
             y += font.get_linesize()
+        return y
 
     def _divider(self, y: int) -> None:
         pygame.draw.line(
