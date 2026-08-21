@@ -415,6 +415,39 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
     assert renderer._turn_analyses(game)[5] == [("created a 1-cell self-enclosed hole", None)]
 
 
+def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
+    # P1's first-ever move, doubles (2,2) wildcard-edited down to a 1
+    # (final roll (2,1)). Flag at (0,3): picking 4 instead (fixed die 2
+    # stays, wildcard becomes 4) reaches it via a 4x2 placement; the chosen
+    # value 1 can't reach col 3 at all. Neither player has moved yet, so
+    # denial contributes 0 uniformly and doesn't affect which value wins.
+    game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
+    game.board.flag_cells = frozenset({(0, 3)})
+    game.history = [
+        TurnRecord(
+            PLAYER_1, roll=(2, 1), placed=Rectangle((0, 0), 1, 2, PLAYER_1), wildcard_original_roll=(2, 2)
+        )
+    ]
+
+    assert renderer._turn_analyses(game)[1] == [
+        ("suboptimal wildcard pick (rolling 4 instead would score +1)", ((0, 0), 4, 2))
+    ]
+
+
+def test_turn_analysis_no_note_when_wildcard_pick_already_optimal(renderer):
+    # Same layout, but the wildcard was resolved to 4 (the best value) -
+    # nothing to flag.
+    game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
+    game.board.flag_cells = frozenset({(0, 3)})
+    game.history = [
+        TurnRecord(
+            PLAYER_1, roll=(2, 4), placed=Rectangle((0, 0), 4, 2, PLAYER_1), wildcard_original_roll=(2, 2)
+        )
+    ]
+
+    assert renderer._turn_analyses(game).get(1, []) == []
+
+
 def test_turn_analysis_does_not_flag_a_forced_enclosure(renderer):
     # Every cell is already covered except a 1-wide pocket (2,2)-(2,3)
     # leading to an edge-adjacent 2x2 gap at (2,4) and P2's own corner cell.
@@ -532,6 +565,19 @@ def test_draw_replay_turn_analysis_smoke(renderer):
     game.state = TurnState.GAME_OVER
 
     renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1))
+
+
+def test_draw_replay_suboptimal_wildcard_pick_smoke(renderer):
+    game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
+    game.board.flag_cells = frozenset({(0, 3)})
+    game.history = [
+        TurnRecord(
+            PLAYER_1, roll=(2, 1), placed=Rectangle((0, 0), 1, 2, PLAYER_1), wildcard_original_roll=(2, 2)
+        )
+    ]
+    game.state = TurnState.GAME_OVER
+
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1, replay_show_better_option=True))
 
 
 def test_draw_score_chart_with_a_flagged_turn_smoke(renderer):

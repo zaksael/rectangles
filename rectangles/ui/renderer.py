@@ -406,6 +406,33 @@ class Renderer:
             if best_score > chosen_score:
                 notes.append((f"missed denial (+{best_score - chosen_score} cells available)", best_candidate))
 
+            if record.wildcard_original_roll is not None:
+                fixed = record.wildcard_original_roll[0]
+                chosen_value = b if a == fixed else a
+
+                def best_for(value: int) -> tuple[int, tuple[tuple[int, int], int, int] | None]:
+                    cands = [
+                        (top_left, w, h)
+                        for w, h in ((fixed, value), (value, fixed))
+                        for top_left in board.legal_top_lefts(player, w, h)
+                    ]
+                    if not cands:
+                        return 0, None
+                    scored = [
+                        (bot.flag_score(c, board.flag_cells) + bot.blocking_score(c, opponent_frontier), c)
+                        for c in cands
+                    ]
+                    return max(scored, key=lambda sc: sc[0])
+
+                results = {v: best_for(v) for v in range(constants.DICE_MIN, constants.DICE_MAX + 1)}
+                chosen_score, _ = results[chosen_value]
+                best_value, (best_score, best_candidate) = max(results.items(), key=lambda vb: vb[1][0])
+                if best_score > chosen_score:
+                    notes.append((
+                        f"suboptimal wildcard pick (rolling {best_value} instead would score +{best_score - chosen_score})",
+                        best_candidate,
+                    ))
+
             before = board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
             board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
             if game.self_enclosed_penalty_enabled:
