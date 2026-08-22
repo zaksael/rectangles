@@ -163,7 +163,6 @@ class Renderer:
             self._button(
                 rect,
                 mode,
-                selected=mode == ui_state.selected_game_mode,
                 hovered=hovered(rect),
                 outline=True,
             )
