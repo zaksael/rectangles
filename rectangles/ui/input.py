@@ -348,9 +348,12 @@ def _start_selected_mode(ui_state: UIState) -> None:
 def _select_game_mode(ui_state: UIState, mode: str) -> None:
     ui_state.selected_game_mode = mode
     ui_state.screen = Screen.SETTINGS
+    ui_state.settings_scroll = 0
 
 
 def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool:
+    mode = ui_state.selected_game_mode
+    tournament_size = ui_state.tournament_size
     for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
         if rect.collidepoint(pos):
             ui_state.selected_board_size = value
@@ -359,66 +362,61 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         if rect.collidepoint(pos):
             ui_state.selected_skip_limit = value
             return True
-    if layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_flag_conquest_enabled = not ui_state.selected_flag_conquest_enabled
-        return True
-    if layout.SETTINGS_WALLS_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_walls_enabled = not ui_state.selected_walls_enabled
-        return True
-    if layout.SETTINGS_OBSTACLES_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_obstacles_enabled = not ui_state.selected_obstacles_enabled
-        return True
-    if layout.SETTINGS_WILDCARD_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_wildcard_enabled = not ui_state.selected_wildcard_enabled
-        return True
-    if layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_self_enclosed_penalty_enabled = not ui_state.selected_self_enclosed_penalty_enabled
-        return True
-    if layout.SETTINGS_REROLL_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_reroll_enabled = not ui_state.selected_reroll_enabled
-        return True
-    if layout.SETTINGS_ALL_RULES_BUTTON_RECT.collidepoint(pos):
-        ui_state.toggle_all_house_rules()
-        return True
-    if layout.SETTINGS_BOT_BUTTON_RECT.collidepoint(pos):
-        ui_state.selected_bot_enabled = not ui_state.selected_bot_enabled
-        return True
-    if ui_state.selected_bot_enabled:
-        for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
+    if mode != "Tournament":
+        for value, rect in layout.settings_opponent_button_rects(mode, tournament_size).items():
             if rect.collidepoint(pos):
-                ui_state.selected_bot_difficulty = value
+                ui_state.selected_bot_enabled = value != "Human"
+                if value != "Human":
+                    ui_state.selected_bot_difficulty = value
                 return True
-    for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
-        if rect.collidepoint(pos):
-            ui_state.selected_series_length = value
-            return True
-    if ui_state.selected_game_mode == "Tournament":
-        for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+    if mode != "Single":
+        for value, rect in layout.settings_series_length_button_rects(mode, tournament_size).items():
+            if rect.collidepoint(pos):
+                ui_state.selected_series_length = value
+                return True
+    if mode == "Tournament":
+        for value, rect in layout.settings_tournament_size_button_rects(tournament_size).items():
             if rect.collidepoint(pos):
                 ui_state.tournament_size = value
+                ui_state.settings_scroll = min(ui_state.settings_scroll, layout.settings_max_scroll(mode, value))
                 return True
-        for i in range(ui_state.tournament_size):
-            if layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].collidepoint(pos):
+        for i in range(tournament_size):
+            if layout.settings_tournament_slot_toggle_rect(tournament_size, i).collidepoint(pos):
                 ui_state.tournament_slot_is_bot[i] = not ui_state.tournament_slot_is_bot[i]
                 return True
             if ui_state.tournament_slot_is_bot[i]:
-                for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+                for value, rect in layout.settings_tournament_slot_difficulty_rects(tournament_size, i).items():
                     if rect.collidepoint(pos):
                         ui_state.tournament_slot_difficulty[i] = value
                         return True
-    if layout.settings_start_button_rect(ui_state.selected_game_mode).collidepoint(pos):
+    if layout.settings_all_rules_button_rect(mode, tournament_size).collidepoint(pos):
+        ui_state.toggle_all_house_rules()
+        return True
+    chip_rects = layout.settings_house_rule_button_rects(mode, tournament_size)
+    for label, flag_attr in (
+        ("Flags", "selected_flag_conquest_enabled"),
+        ("Walls", "selected_walls_enabled"),
+        ("Obstacles", "selected_obstacles_enabled"),
+        ("Wildcard", "selected_wildcard_enabled"),
+        ("Enclosure", "selected_self_enclosed_penalty_enabled"),
+        ("Reroll", "selected_reroll_enabled"),
+    ):
+        if chip_rects[label].collidepoint(pos):
+            setattr(ui_state, flag_attr, not getattr(ui_state, flag_attr))
+            return True
+    if layout.settings_start_button_rect(mode, tournament_size).collidepoint(pos):
         _start_selected_mode(ui_state)
         return True
-    if layout.settings_back_button_rect(ui_state.selected_game_mode).collidepoint(pos):
+    if layout.settings_back_button_rect(mode, tournament_size).collidepoint(pos):
         ui_state.screen = Screen.MODE_SELECT
         return True
-    if layout.settings_exit_button_rect(ui_state.selected_game_mode).collidepoint(pos):
+    if layout.settings_exit_button_rect(mode, tournament_size).collidepoint(pos):
         return False
     return True
 
 
 def _handle_settings_mousewheel(event: pygame.event.Event, ui_state: UIState) -> None:
-    max_scroll = layout.settings_max_scroll(ui_state.selected_game_mode)
+    max_scroll = layout.settings_max_scroll(ui_state.selected_game_mode, ui_state.tournament_size)
     ui_state.settings_scroll = max(0, min(ui_state.settings_scroll - event.y * 40, max_scroll))
 
 

@@ -803,6 +803,12 @@ def test_draw_settings_screen_with_tournament_bot_slots_smoke(renderer):
     renderer.draw(None, ui_state)
 
 
+def test_draw_settings_screen_tournament_size_4_smoke(renderer):
+    ui_state = UIState(screen=Screen.SETTINGS, selected_game_mode="Tournament", tournament_size=4)
+    ui_state.tournament_slot_is_bot[1] = True
+    renderer.draw(None, ui_state)
+
+
 def test_draw_tournament_freshly_seeded_smoke(renderer):
     tournament = _bracket()
     renderer.draw(None, UIState(screen=Screen.TOURNAMENT), tournament=tournament)

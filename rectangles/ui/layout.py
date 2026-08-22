@@ -165,124 +165,149 @@ MODE_SELECT_EXIT_BUTTON_RECT = pygame.Rect(
     _MODE_SECONDARY_BUTTON_H,
 )
 
-# Settings are grouped into three cards rather than one ever-taller vertical
-# stack: "Board Setup" and "Opponent & Match" side by side on top (same
-# height, so neither dwarfs the other), and a full-width "House Rules" card
-# below holding every optional toggle (Flag Conquest/Walls/Wildcard Roll and
-# any future ones), so new house rules grow that one card sideways/downward
-# instead of making "Board Setup" taller and lopsided again.
-SETTINGS_LEFT_COLUMN_X = DESIGN_WIDTH // 2 - 260
-SETTINGS_RIGHT_COLUMN_X = DESIGN_WIDTH // 2 + 260
+# Settings are a single-column list of stacked label+buttons rows (no card
+# backgrounds) rather than the old side-by-side card layout - rows sit
+# directly on the screen background, with every row's button group starting
+# at the same fixed X regardless of that row's label length. Only House
+# Rules keeps a small text header above its row (a grouped chip row, not a
+# single toggle), same as before.
+SETTINGS_ROWS_TOP = 140  # first row's top, below title/subtitle
+SETTINGS_ROW_H = 56
+SETTINGS_ROW_GAP = 12
+SETTINGS_HOUSE_RULES_HEADER_H = 34
+SETTINGS_HOUSE_RULES_CHIP_ROW_H = 50
+SETTINGS_TOURNAMENT_SLOT_ROW_H = 40
 
-SETTINGS_BOARD_CARD_RECT = pygame.Rect(SETTINGS_LEFT_COLUMN_X - 240, 120, 480, 330)
-SETTINGS_MATCH_CARD_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 240, 120, 480, 330)
-SETTINGS_HOUSE_RULES_CARD_RECT = pygame.Rect(
-    SETTINGS_BOARD_CARD_RECT.left,
-    SETTINGS_BOARD_CARD_RECT.bottom + 20,
-    SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
-    220,
-)
+SETTINGS_FORM_LABEL_X = DESIGN_WIDTH // 2 - 260
+SETTINGS_FORM_BUTTONS_X = DESIGN_WIDTH // 2 - 60
 
-SETTINGS_BOARD_SIZE_BUTTON_RECTS = _centered_button_row(
-    BOARD_SIZE_PRESETS, y=210, center_x=SETTINGS_LEFT_COLUMN_X
-)
-SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _centered_button_row(
-    SKIP_LIMIT_PRESETS, y=310, center_x=SETTINGS_LEFT_COLUMN_X
-)
+_ROW_BUTTON_H = 44
+_ROW_BUTTON_PAD = (SETTINGS_ROW_H - _ROW_BUTTON_H) // 2
+_TOURNAMENT_SLOT_BUTTON_H = 32
+_TOURNAMENT_SLOT_BUTTON_PAD = (SETTINGS_TOURNAMENT_SLOT_ROW_H - _TOURNAMENT_SLOT_BUTTON_H) // 2
 
-SETTINGS_BOT_BUTTON_RECT = pygame.Rect(SETTINGS_RIGHT_COLUMN_X - 80, 210, 160, 50)
-SETTINGS_SERIES_LENGTH_BUTTON_RECTS = _centered_button_row(
-    SERIES_LENGTH_PRESETS, y=310, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
-)
-SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS = _centered_button_row(
-    BOT_DIFFICULTY_PRESETS, y=395, center_x=SETTINGS_RIGHT_COLUMN_X, button_w=120
-)
 
-# Six evenly-spaced toggle columns within the House Rules card - each column
-# centered in its own sixth of the card's width, so the same margin
-# separates every button from its neighbors and from the card edges.
-SETTINGS_RULE_COLUMN_1_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 1 // 12
-SETTINGS_RULE_COLUMN_2_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 3 // 12
-SETTINGS_RULE_COLUMN_3_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 5 // 12
-SETTINGS_RULE_COLUMN_4_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 7 // 12
-SETTINGS_RULE_COLUMN_5_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 9 // 12
-SETTINGS_RULE_COLUMN_6_X = SETTINGS_HOUSE_RULES_CARD_RECT.left + SETTINGS_HOUSE_RULES_CARD_RECT.width * 11 // 12
+# The screen's row list and ordering, single source of truth for both the Y-
+# position math below and renderer.py's draw loop (mirrored via
+# settings_row_ids(), not re-derived independently, so the two can't drift
+# apart). Board Size/Skip Limit are always the first two rows in every mode,
+# so their rects stay plain module constants below rather than going through
+# this function at all. "Series Length" applies to both Series and
+# Tournament mode (a tournament match is a Series under the hood), not just
+# Series.
+def _settings_rows(mode: str, tournament_size: int) -> list[tuple[str, int]]:
+    rows = [("board_size", SETTINGS_ROW_H), ("skip_limit", SETTINGS_ROW_H)]
+    if mode != "Tournament":
+        rows.append(("opponent", SETTINGS_ROW_H))
+    if mode != "Single":
+        rows.append(("series_length", SETTINGS_ROW_H))
+    if mode == "Tournament":
+        rows.append(("tournament_size", SETTINGS_ROW_H))
+        rows += [(f"tournament_slot_{i}", SETTINGS_TOURNAMENT_SLOT_ROW_H) for i in range(tournament_size)]
+    rows.append(("house_rules", SETTINGS_HOUSE_RULES_HEADER_H + SETTINGS_HOUSE_RULES_CHIP_ROW_H))
+    return rows
 
-_RULE_TOGGLE_Y = SETTINGS_HOUSE_RULES_CARD_RECT.top + 100
-_RULE_BUTTON_W = 120
-SETTINGS_FLAG_CONQUEST_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_1_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
-)
-SETTINGS_WALLS_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_2_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
-)
-SETTINGS_OBSTACLES_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_3_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
-)
-SETTINGS_WILDCARD_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_4_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
-)
-SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_5_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
-)
-SETTINGS_REROLL_BUTTON_RECT = pygame.Rect(
-    SETTINGS_RULE_COLUMN_6_X - _RULE_BUTTON_W // 2, _RULE_TOGGLE_Y, _RULE_BUTTON_W, 50
-)
 
-SETTINGS_ALL_RULES_BUTTON_RECT = pygame.Rect(
-    SETTINGS_HOUSE_RULES_CARD_RECT.centerx - 100, SETTINGS_HOUSE_RULES_CARD_RECT.top + 160, 200, 40
-)
+def settings_row_ids(mode: str, tournament_size: int) -> list[str]:
+    return [row_id for row_id, _ in _settings_rows(mode, tournament_size)]
 
-# Tournament card: a 4th, self-contained card below House Rules - only shown
-# at all once "Tournament" is the mode chosen on the Game Mode select screen
-# (see settings_action_row_y() below), since starting is now always through
-# the one shared Start button, not a card-local one. Sized for
-# TOURNAMENT_MAX_SLOTS rows regardless of the currently selected preset, so
-# switching between 4 and 8 slots never resizes the card - unused rows
-# (beyond the selected size) simply aren't drawn/clickable.
-TOURNAMENT_MAX_SLOTS = max(TOURNAMENT_SIZE_PRESETS)
-_TOURNAMENT_SLOT_ROW_H = 40
-_TOURNAMENT_HEADER_H = 140  # card header text + "Tournament size" label + size-preset row
-SETTINGS_TOURNAMENT_CARD_RECT = pygame.Rect(
-    SETTINGS_BOARD_CARD_RECT.left,
-    SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 20,
-    SETTINGS_MATCH_CARD_RECT.right - SETTINGS_BOARD_CARD_RECT.left,
-    _TOURNAMENT_HEADER_H + TOURNAMENT_MAX_SLOTS * _TOURNAMENT_SLOT_ROW_H + 24,
+
+def settings_row_top(mode: str, tournament_size: int, row_id: str) -> int:
+    y = SETTINGS_ROWS_TOP
+    for rid, h in _settings_rows(mode, tournament_size):
+        if rid == row_id:
+            return y
+        y += h + SETTINGS_ROW_GAP
+    raise ValueError(row_id)
+
+
+def _content_bottom(mode: str, tournament_size: int) -> int:
+    y = SETTINGS_ROWS_TOP
+    for _, h in _settings_rows(mode, tournament_size):
+        y += h + SETTINGS_ROW_GAP
+    return y - SETTINGS_ROW_GAP
+
+
+def _row_buttons(
+    values: tuple, y: int, button_w: int, start_x: int = SETTINGS_FORM_BUTTONS_X, button_h: int = _ROW_BUTTON_H, gap: int = 12
+) -> dict:
+    return {v: pygame.Rect(start_x + i * (button_w + gap), y, button_w, button_h) for i, v in enumerate(values)}
+
+
+# Board Size/Skip Limit never depend on mode/tournament_size (see above), so
+# these stay plain constants exactly like before.
+SETTINGS_BOARD_SIZE_BUTTON_RECTS = _row_buttons(BOARD_SIZE_PRESETS, y=SETTINGS_ROWS_TOP + _ROW_BUTTON_PAD, button_w=90)
+SETTINGS_SKIP_LIMIT_BUTTON_RECTS = _row_buttons(
+    SKIP_LIMIT_PRESETS, y=SETTINGS_ROWS_TOP + SETTINGS_ROW_H + SETTINGS_ROW_GAP + _ROW_BUTTON_PAD, button_w=90
 )
 
-SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS = _centered_button_row(
-    TOURNAMENT_SIZE_PRESETS, y=SETTINGS_TOURNAMENT_CARD_RECT.top + 90, button_w=90
-)
 
-_TOURNAMENT_SLOTS_START_Y = SETTINGS_TOURNAMENT_CARD_RECT.top + _TOURNAMENT_HEADER_H
-SETTINGS_TOURNAMENT_SLOT_LABEL_X = SETTINGS_TOURNAMENT_CARD_RECT.left + 32
-_TOURNAMENT_SLOT_TOGGLE_X = SETTINGS_TOURNAMENT_CARD_RECT.left + 160
+# The Opponent row (Human + 3 bot difficulties, one unified 4-way choice)
+# only exists outside Tournament mode (which has its own per-slot bot config
+# instead - see the Tournament rows below).
+def settings_opponent_button_rects(mode: str, tournament_size: int) -> dict[str, pygame.Rect]:
+    y = settings_row_top(mode, tournament_size, "opponent") + _ROW_BUTTON_PAD
+    return _row_buttons(("Human",) + BOT_DIFFICULTY_PRESETS, y=y, button_w=100)
+
+
+def settings_series_length_button_rects(mode: str, tournament_size: int) -> dict[int, pygame.Rect]:
+    y = settings_row_top(mode, tournament_size, "series_length") + _ROW_BUTTON_PAD
+    return _row_buttons(SERIES_LENGTH_PRESETS, y=y, button_w=120)
+
+
+def settings_tournament_size_button_rects(tournament_size: int) -> dict[int, pygame.Rect]:
+    y = settings_row_top("Tournament", tournament_size, "tournament_size") + _ROW_BUTTON_PAD
+    return _row_buttons(TOURNAMENT_SIZE_PRESETS, y=y, button_w=90, gap=16)
+
+
+# Per-slot rows are indexed dynamically against the currently-selected
+# tournament_size (only that many rows exist in the row list at all), rather
+# than precomputed for the max preset - so switching between 4/8 slots never
+# leaves stale unused rects lying around, and the settings screen's content
+# height genuinely shrinks at the smaller preset.
 _TOURNAMENT_SLOT_TOGGLE_W = 100
-_TOURNAMENT_SLOT_DIFFICULTY_X = _TOURNAMENT_SLOT_TOGGLE_X + _TOURNAMENT_SLOT_TOGGLE_W + 20
+_TOURNAMENT_SLOT_DIFFICULTY_X = SETTINGS_FORM_BUTTONS_X + _TOURNAMENT_SLOT_TOGGLE_W + 20
 _TOURNAMENT_SLOT_DIFFICULTY_BUTTON_W = 78
 _TOURNAMENT_SLOT_DIFFICULTY_GAP = 8
 
 
-def _tournament_slot_row_y(slot: int) -> int:
-    return _TOURNAMENT_SLOTS_START_Y + slot * _TOURNAMENT_SLOT_ROW_H
+def settings_tournament_slot_toggle_rect(tournament_size: int, i: int) -> pygame.Rect:
+    y = settings_row_top("Tournament", tournament_size, f"tournament_slot_{i}") + _TOURNAMENT_SLOT_BUTTON_PAD
+    return pygame.Rect(SETTINGS_FORM_BUTTONS_X, y, _TOURNAMENT_SLOT_TOGGLE_W, _TOURNAMENT_SLOT_BUTTON_H)
 
 
-SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS = [
-    pygame.Rect(_TOURNAMENT_SLOT_TOGGLE_X, _tournament_slot_row_y(i), _TOURNAMENT_SLOT_TOGGLE_W, 32)
-    for i in range(TOURNAMENT_MAX_SLOTS)
-]
-SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS = [
-    {
+def settings_tournament_slot_difficulty_rects(tournament_size: int, i: int) -> dict[str, pygame.Rect]:
+    y = settings_row_top("Tournament", tournament_size, f"tournament_slot_{i}") + _TOURNAMENT_SLOT_BUTTON_PAD
+    return {
         value: pygame.Rect(
             _TOURNAMENT_SLOT_DIFFICULTY_X + j * (_TOURNAMENT_SLOT_DIFFICULTY_BUTTON_W + _TOURNAMENT_SLOT_DIFFICULTY_GAP),
-            _tournament_slot_row_y(i),
+            y,
             _TOURNAMENT_SLOT_DIFFICULTY_BUTTON_W,
-            32,
+            _TOURNAMENT_SLOT_BUTTON_H,
         )
         for j, value in enumerate(BOT_DIFFICULTY_PRESETS)
     }
-    for i in range(TOURNAMENT_MAX_SLOTS)
-]
+
+
+# House Rules: one row of 6 short chips (abbreviated to fit) instead of the
+# old 2x3 grid - "Turn All ON/OFF" sits beside the header, on the same row,
+# rather than its own row below the grid.
+_HOUSE_RULE_LABELS = ("Flags", "Walls", "Obstacles", "Wildcard", "Enclosure", "Reroll")
+_RULE_BUTTON_W = 110
+_RULE_BUTTON_H = 40
+
+
+def settings_house_rule_button_rects(mode: str, tournament_size: int) -> dict[str, pygame.Rect]:
+    top = settings_row_top(mode, tournament_size, "house_rules")
+    y = top + SETTINGS_HOUSE_RULES_HEADER_H + (SETTINGS_HOUSE_RULES_CHIP_ROW_H - _RULE_BUTTON_H) // 2
+    return _centered_button_row(_HOUSE_RULE_LABELS, y=y, button_w=_RULE_BUTTON_W, button_h=_RULE_BUTTON_H, gap=12)
+
+
+def settings_all_rules_button_rect(mode: str, tournament_size: int) -> pygame.Rect:
+    top = settings_row_top(mode, tournament_size, "house_rules")
+    right_edge = max(rect.right for rect in settings_house_rule_button_rects(mode, tournament_size).values())
+    return pygame.Rect(right_edge - 150, top + 4, 150, 26)
+
 
 _SETTINGS_BUTTON_W = 200
 _SETTINGS_BUTTON_H = 56
@@ -298,17 +323,8 @@ _SETTINGS_BUTTONS_START_X = (
 _SETTINGS_SECONDARY_BUTTON_H = 48
 
 
-def settings_action_row_y(mode: str) -> int:
-    # The one place mode changes the layout: with the Tournament card only
-    # present in Tournament mode, the Start-button row begins right after
-    # whichever card is actually last on screen - House Rules otherwise,
-    # the Tournament card when it's mode is selected. Everything above this
-    # point (Board Setup/Match/House Rules) is always at the same fixed
-    # position regardless of mode, so this is the only reflow this screen
-    # ever needs.
-    if mode == "Tournament":
-        return SETTINGS_TOURNAMENT_CARD_RECT.bottom + 12
-    return SETTINGS_HOUSE_RULES_CARD_RECT.bottom + 12
+def settings_action_row_y(mode: str, tournament_size: int) -> int:
+    return _content_bottom(mode, tournament_size) + 20
 
 
 # Wider than the 2-button-row width below (_SETTINGS_BUTTON_W) - alone in
@@ -318,61 +334,62 @@ def settings_action_row_y(mode: str) -> int:
 _SETTINGS_START_BUTTON_W = 260
 
 
-def settings_start_button_rect(mode: str) -> pygame.Rect:
+def settings_start_button_rect(mode: str, tournament_size: int) -> pygame.Rect:
     return pygame.Rect(
         DESIGN_WIDTH // 2 - _SETTINGS_START_BUTTON_W // 2,
-        settings_action_row_y(mode),
+        settings_action_row_y(mode, tournament_size),
         _SETTINGS_START_BUTTON_W,
         _SETTINGS_BUTTON_H,
     )
 
 
-def _settings_secondary_row_y(mode: str) -> int:
-    return settings_action_row_y(mode) + _SETTINGS_BUTTON_H + 12
+def _settings_secondary_row_y(mode: str, tournament_size: int) -> int:
+    return settings_action_row_y(mode, tournament_size) + _SETTINGS_BUTTON_H + 12
 
 
 # Exit / Back share one centered row below the Start button (mirroring that
 # row's centered layout) rather than two stacked rows - Back returns to the
 # Game Mode select screen (Resume now lives there instead, see MODE_SELECT_*
 # below), and is always drawn/clickable, same as Exit.
-def settings_exit_button_rect(mode: str) -> pygame.Rect:
+def settings_exit_button_rect(mode: str, tournament_size: int) -> pygame.Rect:
     return pygame.Rect(
-        _SETTINGS_BUTTONS_START_X, _settings_secondary_row_y(mode), _SETTINGS_BUTTON_W, _SETTINGS_SECONDARY_BUTTON_H
+        _SETTINGS_BUTTONS_START_X,
+        _settings_secondary_row_y(mode, tournament_size),
+        _SETTINGS_BUTTON_W,
+        _SETTINGS_SECONDARY_BUTTON_H,
     )
 
 
-def settings_back_button_rect(mode: str) -> pygame.Rect:
+def settings_back_button_rect(mode: str, tournament_size: int) -> pygame.Rect:
     return pygame.Rect(
         _SETTINGS_BUTTONS_START_X + _SETTINGS_BUTTON_W + _SETTINGS_BUTTON_GAP,
-        _settings_secondary_row_y(mode),
+        _settings_secondary_row_y(mode, tournament_size),
         _SETTINGS_BUTTON_W,
         _SETTINGS_SECONDARY_BUTTON_H,
     )
 
 
 # The settings screen's own full button stack, top to bottom, for the given
-# mode - independent of the real window entirely now. When it's taller than
-# DESIGN_HEIGHT, the settings screen scrolls within the canvas (see
-# settings_max_scroll() and Renderer._settings_surface) rather than growing
-# the canvas to fit, so adding another settings row never risks pushing the
-# design canvas past a sensible size.
-def settings_content_height(mode: str) -> int:
-    return settings_back_button_rect(mode).bottom + 20
+# mode/tournament_size - independent of the real window entirely now. When
+# it's taller than DESIGN_HEIGHT, the settings screen scrolls within the
+# canvas (see settings_max_scroll() and Renderer._settings_surface) rather
+# than growing the canvas to fit, so adding another settings row never risks
+# pushing the design canvas past a sensible size.
+def settings_content_height(mode: str, tournament_size: int) -> int:
+    return settings_back_button_rect(mode, tournament_size).bottom + 20
 
 
 # How far the settings screen can scroll past the fixed DESIGN_HEIGHT canvas
-# for the given mode - 0 for Single/Series (the card stack fits within
-# DESIGN_HEIGHT once the Tournament card is hidden), only Tournament mode
-# still scrolls.
-def settings_max_scroll(mode: str) -> int:
-    return max(0, settings_content_height(mode) - DESIGN_HEIGHT)
+# for the given mode/tournament_size.
+def settings_max_scroll(mode: str, tournament_size: int) -> int:
+    return max(0, settings_content_height(mode, tournament_size) - DESIGN_HEIGHT)
 
 
-# Tournament mode is always the tallest (it's the only mode with the extra
-# card) - Renderer._settings_surface is allocated once, before any mode is
-# ever chosen, so it must be sized for this worst case regardless of which
-# mode ends up selected; only the visible blit height varies per mode.
-SETTINGS_CONTENT_HEIGHT_MAX = settings_content_height("Tournament")
+# Tournament mode at the largest slot preset is always the tallest -
+# Renderer._settings_surface is allocated once, before any mode is ever
+# chosen, so it must be sized for this worst case regardless of which
+# mode/size ends up selected; only the visible blit height varies per frame.
+SETTINGS_CONTENT_HEIGHT_MAX = settings_content_height("Tournament", max(TOURNAMENT_SIZE_PRESETS))
 
 PANEL_PADDING = 24
 PANEL_X = BOARD_PX + PANEL_PADDING

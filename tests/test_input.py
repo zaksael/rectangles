@@ -929,9 +929,8 @@ def test_settings_flag_conquest_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_flag_conquest_enabled is False
 
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT.center
-    )
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Flags"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_flag_conquest_enabled is True
 
@@ -943,7 +942,8 @@ def test_settings_walls_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_walls_enabled is False
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_WALLS_BUTTON_RECT.center)
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Walls"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_walls_enabled is True
 
@@ -955,9 +955,8 @@ def test_settings_wildcard_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_wildcard_enabled is False
 
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_WILDCARD_BUTTON_RECT.center
-    )
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Wildcard"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_wildcard_enabled is True
 
@@ -969,9 +968,8 @@ def test_settings_self_enclosed_penalty_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_self_enclosed_penalty_enabled is False
 
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT.center
-    )
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Enclosure"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_self_enclosed_penalty_enabled is True
 
@@ -983,7 +981,8 @@ def test_settings_reroll_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_reroll_enabled is False
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_REROLL_BUTTON_RECT.center)
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Reroll"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_reroll_enabled is True
 
@@ -995,9 +994,8 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
     ui_state = UIState()
     assert ui_state.all_house_rules_enabled is False
 
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_ALL_RULES_BUTTON_RECT.center
-    )
+    rect = layout.settings_all_rules_button_rect("Single", ui_state.tournament_size)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_flag_conquest_enabled is True
     assert ui_state.selected_walls_enabled is True
@@ -1018,53 +1016,37 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
 def test_settings_all_rules_button_turns_all_on_from_a_mixed_state():
     ui_state = UIState(selected_flag_conquest_enabled=True, selected_walls_enabled=False)
 
-    event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_ALL_RULES_BUTTON_RECT.center
-    )
+    rect = layout.settings_all_rules_button_rect("Single", ui_state.tournament_size)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
 
     assert ui_state.all_house_rules_enabled is True
 
 
-def test_settings_bot_button_toggles_selection():
-    ui_state = UIState()
-    assert ui_state.selected_bot_enabled is False
+def test_settings_opponent_buttons_update_selection():
+    # One unified 4-way row (Human + 3 bot difficulties) replaces the old
+    # separate vs-Bot toggle and Bot-difficulty rows.
+    ui_state = UIState(selected_game_mode="Single")
+    rects = layout.settings_opponent_button_rects("Single", ui_state.tournament_size)
+    assert set(rects) == {"Human"} | set(BOT_DIFFICULTY_PRESETS)
 
-    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=layout.SETTINGS_BOT_BUTTON_RECT.center)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["Greedy"].center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_bot_enabled is True
+    assert ui_state.selected_bot_difficulty == "Greedy"
 
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rects["Human"].center)
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.selected_bot_enabled is False
-
-
-def test_settings_bot_difficulty_buttons_update_selection():
-    ui_state = UIState(selected_bot_enabled=True)
-    for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
-        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
-        assert handle_settings_event(event, ui_state) is True
-        assert ui_state.selected_bot_difficulty == value
-    assert set(layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS) == set(BOT_DIFFICULTY_PRESETS)
-
-
-def test_settings_bot_difficulty_buttons_ignored_while_bot_disabled():
-    ui_state = UIState()
-    default_value = ui_state.selected_bot_difficulty
-    for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
-        if value == default_value:
-            continue
-        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
-        assert handle_settings_event(event, ui_state) is True
-        assert ui_state.selected_bot_difficulty == default_value
 
 
 def test_settings_series_length_buttons_update_selection():
-    ui_state = UIState()
-    for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+    ui_state = UIState(selected_game_mode="Series")
+    for value, rect in layout.settings_series_length_button_rects("Series", ui_state.tournament_size).items():
         event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
         assert handle_settings_event(event, ui_state) is True
         assert ui_state.selected_series_length == value
-    assert set(layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS) == set(SERIES_LENGTH_PRESETS)
+    assert set(layout.settings_series_length_button_rects("Series", ui_state.tournament_size)) == set(SERIES_LENGTH_PRESETS)
 
 
 def test_settings_start_game_button_click_deletes_save_and_starts(monkeypatch):
@@ -1073,7 +1055,7 @@ def test_settings_start_game_button_click_deletes_save_and_starts(monkeypatch):
     ui_state = UIState(selected_game_mode="Single")
 
     event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Single").center
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Single", ui_state.tournament_size).center
     )
     assert handle_settings_event(event, ui_state) is True
 
@@ -1087,7 +1069,7 @@ def test_settings_start_series_button_click_starts_series(monkeypatch):
     ui_state = UIState(selected_game_mode="Series")
 
     event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Series").center
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Series", ui_state.tournament_size).center
     )
     assert handle_settings_event(event, ui_state) is True
 
@@ -1100,7 +1082,9 @@ def test_settings_start_tournament_button_click_starts_tournament(monkeypatch):
     ui_state = UIState(selected_game_mode="Tournament")
 
     event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_start_button_rect("Tournament").center
+        pygame.MOUSEBUTTONDOWN,
+        button=1,
+        pos=layout.settings_start_button_rect("Tournament", ui_state.tournament_size).center,
     )
     assert handle_settings_event(event, ui_state) is True
 
@@ -1111,7 +1095,7 @@ def test_settings_start_tournament_button_click_starts_tournament(monkeypatch):
 def test_settings_back_button_click_returns_to_mode_select():
     ui_state = UIState()
     event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_back_button_rect("Single").center
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_back_button_rect("Single", ui_state.tournament_size).center
     )
     assert handle_settings_event(event, ui_state) is True
     assert ui_state.screen == Screen.MODE_SELECT
@@ -1134,10 +1118,11 @@ def test_mode_select_resume_button_click_only_when_a_save_exists(monkeypatch):
 
 
 def test_settings_exit_button_click_returns_false():
+    ui_state = UIState()
     event = pygame.event.Event(
-        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_exit_button_rect("Single").center
+        pygame.MOUSEBUTTONDOWN, button=1, pos=layout.settings_exit_button_rect("Single", ui_state.tournament_size).center
     )
-    assert handle_settings_event(event, UIState()) is False
+    assert handle_settings_event(event, ui_state) is False
 
 
 def test_mode_select_exit_button_click_returns_false():
@@ -1154,6 +1139,14 @@ def test_mode_select_button_click_selects_mode_and_enters_settings():
         assert ui_state.screen == Screen.SETTINGS
 
 
+def test_mode_select_button_click_resets_stale_settings_scroll():
+    ui_state = UIState(settings_scroll=500)
+    rect = layout.MODE_SELECT_BUTTON_RECTS["Tournament"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+    handle_mode_select_event(event, ui_state)
+    assert ui_state.settings_scroll == 0
+
+
 def test_settings_mousewheel_scrolls_and_clamps(monkeypatch):
     # settings_max_scroll() is 0 at today's content height for Single/Series
     # (the whole card stack already fits within DESIGN_HEIGHT - see
@@ -1161,7 +1154,7 @@ def test_settings_mousewheel_scrolls_and_clamps(monkeypatch):
     # size, since the real window no longer affects how much design-space
     # content fits at all (see layout.compute_scale/DESIGN_HEIGHT).
     max_scroll = 200
-    monkeypatch.setattr(layout, "settings_max_scroll", lambda mode: max_scroll)
+    monkeypatch.setattr(layout, "settings_max_scroll", lambda mode, tournament_size: max_scroll)
 
     ui_state = UIState()
 
@@ -1180,10 +1173,8 @@ def test_settings_mousewheel_scrolls_and_clamps(monkeypatch):
 def test_settings_click_position_accounts_for_scroll_offset():
     ui_state = UIState(settings_scroll=50)
     # The button visually sits 50px higher on screen than its content-space rect.
-    screen_pos = (
-        layout.SETTINGS_WALLS_BUTTON_RECT.centerx,
-        layout.SETTINGS_WALLS_BUTTON_RECT.centery - 50,
-    )
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Walls"]
+    screen_pos = (rect.centerx, rect.centery - 50)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=screen_pos)
 
     assert handle_settings_event(event, ui_state) is True
@@ -1195,16 +1186,30 @@ def test_settings_click_position_accounts_for_scroll_offset():
 
 def test_settings_tournament_size_buttons_update_selection():
     ui_state = UIState(selected_game_mode="Tournament")
-    for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+    for value, rect in layout.settings_tournament_size_button_rects(ui_state.tournament_size).items():
         event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
         assert handle_settings_event(event, ui_state) is True
         assert ui_state.tournament_size == value
-    assert set(layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS) == set(TOURNAMENT_SIZE_PRESETS)
+    assert set(layout.settings_tournament_size_button_rects(ui_state.tournament_size)) == set(TOURNAMENT_SIZE_PRESETS)
+
+
+def test_settings_tournament_size_click_clamps_scroll_when_shrinking():
+    ui_state = UIState(selected_game_mode="Tournament", tournament_size=8)
+    ui_state.settings_scroll = layout.settings_max_scroll("Tournament", 8)
+    small_size = min(TOURNAMENT_SIZE_PRESETS)
+
+    rect = layout.settings_tournament_size_button_rects(8)[small_size]
+    screen_pos = (rect.centerx, rect.centery - ui_state.settings_scroll)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=screen_pos)
+    handle_settings_event(event, ui_state)
+
+    assert ui_state.tournament_size == small_size
+    assert ui_state.settings_scroll <= layout.settings_max_scroll("Tournament", small_size)
 
 
 def test_settings_tournament_slot_toggle_switches_human_to_bot():
     ui_state = UIState(selected_game_mode="Tournament")
-    rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[0]
+    rect = layout.settings_tournament_slot_toggle_rect(ui_state.tournament_size, 0)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
     assert handle_settings_event(event, ui_state) is True
@@ -1216,7 +1221,7 @@ def test_settings_tournament_slot_toggle_switches_human_to_bot():
 
 def test_settings_tournament_slot_difficulty_only_updates_when_slot_is_bot():
     ui_state = UIState(selected_game_mode="Tournament")
-    rect = layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[0]["Greedy"]
+    rect = layout.settings_tournament_slot_difficulty_rects(ui_state.tournament_size, 0)["Greedy"]
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
     handle_settings_event(event, ui_state)
@@ -1229,7 +1234,7 @@ def test_settings_tournament_slot_difficulty_only_updates_when_slot_is_bot():
 
 def test_settings_tournament_slot_click_ignores_rows_past_the_selected_size():
     ui_state = UIState(selected_game_mode="Tournament", tournament_size=4)
-    rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[6]  # only reachable at the 8-slot preset
+    rect = layout.settings_tournament_slot_toggle_rect(8, 6)  # only reachable at the 8-slot preset
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
     handle_settings_event(event, ui_state)
@@ -1239,7 +1244,7 @@ def test_settings_tournament_slot_click_ignores_rows_past_the_selected_size():
 
 def test_settings_tournament_slot_click_ignored_outside_tournament_mode():
     ui_state = UIState(selected_game_mode="Single")
-    rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[0]
+    rect = layout.settings_tournament_slot_toggle_rect(ui_state.tournament_size, 0)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
 
     handle_settings_event(event, ui_state)

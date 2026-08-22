@@ -108,17 +108,25 @@ def test_to_design_coords_round_trips_through_compute_scale():
     assert layout.to_design_coords(real_x, real_y, real_width, real_height) == (40, 60)
 
 
-def test_settings_action_row_y_only_differs_for_tournament_mode():
-    assert layout.settings_action_row_y("Single") == layout.settings_action_row_y("Series")
-    assert layout.settings_action_row_y("Single") < layout.settings_action_row_y("Tournament")
+def test_settings_action_row_y_grows_with_content_height():
+    # Series shows an extra row (Series Length) that Single doesn't, and
+    # Tournament shows more rows still (its own extra rows plus per-slot
+    # rows), so each sits lower on screen than the last.
+    assert layout.settings_action_row_y("Single", 4) < layout.settings_action_row_y("Series", 4)
+    assert layout.settings_action_row_y("Series", 4) < layout.settings_action_row_y("Tournament", 4)
 
 
-def test_settings_max_scroll_is_zero_outside_tournament_mode():
-    assert layout.settings_max_scroll("Single") == 0
-    assert layout.settings_max_scroll("Series") == 0
-    assert layout.settings_max_scroll("Tournament") > 0
+def test_settings_max_scroll_is_greatest_in_tournament_mode():
+    # Tournament mode at its largest slot preset carries every other mode's
+    # content plus its own per-slot rows, so it never scrolls less than
+    # Single/Series - and dynamic slot sizing means it's the only mode/size
+    # combination that still needs to scroll at all.
+    assert layout.settings_max_scroll("Tournament", 8) >= layout.settings_max_scroll("Single", 4)
+    assert layout.settings_max_scroll("Tournament", 8) >= layout.settings_max_scroll("Series", 4)
+    assert layout.settings_max_scroll("Tournament", 8) > 0
 
 
 def test_settings_content_height_max_covers_every_mode():
     for mode in ("Single", "Series", "Tournament"):
-        assert layout.settings_content_height(mode) <= layout.SETTINGS_CONTENT_HEIGHT_MAX
+        for tournament_size in layout.TOURNAMENT_SIZE_PRESETS:
+            assert layout.settings_content_height(mode, tournament_size) <= layout.SETTINGS_CONTENT_HEIGHT_MAX

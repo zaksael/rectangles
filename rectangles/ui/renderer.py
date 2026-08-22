@@ -106,7 +106,7 @@ class Renderer:
             self.screen = canvas
             visible = pygame.Rect(0, ui_state.settings_scroll, layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT)
             self.screen.blit(self._settings_surface, (0, 0), area=visible)
-            if ui_state.settings_scroll < layout.settings_max_scroll(ui_state.selected_game_mode):
+            if ui_state.settings_scroll < layout.settings_max_scroll(ui_state.selected_game_mode, ui_state.tournament_size):
                 # If scrolled content remains, this strip can sit over genuine
                 # (clipped) content rather than blank space below it - mask it
                 # first so the hint always reads cleanly instead of overlapping.
@@ -195,90 +195,38 @@ class Renderer:
         subtitle_surf = self.font.render(f"{mode} - choose your settings", True, MUTED_TEXT_COLOR)
         self.screen.blit(subtitle_surf, subtitle_surf.get_rect(center=(center_x, 96)))
 
-        cards = [
-            (layout.SETTINGS_BOARD_CARD_RECT, "Board Setup"),
-            (layout.SETTINGS_MATCH_CARD_RECT, "Opponent & Match"),
-            (layout.SETTINGS_HOUSE_RULES_CARD_RECT, "House Rules"),
-        ]
-        if mode == "Tournament":
-            cards.append((layout.SETTINGS_TOURNAMENT_CARD_RECT, "Tournament"))
-        for card_rect, header in cards:
-            self._draw_card(card_rect)
-            header_surf = self.font.render(header, True, TEXT_COLOR)
-            self.screen.blit(header_surf, header_surf.get_rect(center=(card_rect.centerx, card_rect.top + 26)))
+        tournament_size = ui_state.tournament_size
 
-        board_label = self.font.render("Board size", True, TEXT_COLOR)
-        self.screen.blit(board_label, board_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 180)))
+        def row_label(row_id: str, text: str, font: pygame.font.Font | None = None) -> None:
+            top = layout.settings_row_top(mode, tournament_size, row_id)
+            label_surf = (font or self.font).render(text, True, TEXT_COLOR)
+            self.screen.blit(
+                label_surf, label_surf.get_rect(midleft=(layout.SETTINGS_FORM_LABEL_X, top + layout.SETTINGS_ROW_H // 2))
+            )
+
+        row_label("board_size", "Board size")
         for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
             self._button(
                 rect, f"{value}x{value}", selected=value == ui_state.selected_board_size, hovered=hovered(rect), outline=True
             )
 
-        skip_label = self.font.render("Skip limit", True, TEXT_COLOR)
-        self.screen.blit(skip_label, skip_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 280)))
+        row_label("skip_limit", "Skip limit")
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
             self._button(
                 rect, str(value), selected=value == ui_state.selected_skip_limit, hovered=hovered(rect), outline=True
             )
 
-        toggle_label_y = layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 70
-        for label_text, column_x, rect, enabled_flag in (
-            ("Flag Conquest", layout.SETTINGS_RULE_COLUMN_1_X,
-             layout.SETTINGS_FLAG_CONQUEST_BUTTON_RECT, ui_state.selected_flag_conquest_enabled),
-            ("Walls", layout.SETTINGS_RULE_COLUMN_2_X,
-             layout.SETTINGS_WALLS_BUTTON_RECT, ui_state.selected_walls_enabled),
-            ("Obstacles", layout.SETTINGS_RULE_COLUMN_3_X,
-             layout.SETTINGS_OBSTACLES_BUTTON_RECT, ui_state.selected_obstacles_enabled),
-            ("Wildcard Roll", layout.SETTINGS_RULE_COLUMN_4_X,
-             layout.SETTINGS_WILDCARD_BUTTON_RECT, ui_state.selected_wildcard_enabled),
-            ("Enclosure Penalty", layout.SETTINGS_RULE_COLUMN_5_X,
-             layout.SETTINGS_SELF_ENCLOSED_PENALTY_BUTTON_RECT, ui_state.selected_self_enclosed_penalty_enabled),
-            ("Reroll", layout.SETTINGS_RULE_COLUMN_6_X,
-             layout.SETTINGS_REROLL_BUTTON_RECT, ui_state.selected_reroll_enabled),
-        ):
-            label_surf = self.font.render(label_text, True, TEXT_COLOR)
-            self.screen.blit(label_surf, label_surf.get_rect(center=(column_x, toggle_label_y)))
-            self._button(
-                rect, "ON" if enabled_flag else "OFF", selected=enabled_flag, hovered=hovered(rect), outline=True
-            )
-
-        self._button(
-            layout.SETTINGS_ALL_RULES_BUTTON_RECT,
-            "Turn All OFF" if ui_state.all_house_rules_enabled else "Turn All ON",
-            hovered=hovered(layout.SETTINGS_ALL_RULES_BUTTON_RECT),
-        )
-
         if mode != "Tournament":
-            bot_label = self.font.render("vs Bot (P2)", True, TEXT_COLOR)
-            self.screen.blit(bot_label, bot_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 180)))
-            self._button(
-                layout.SETTINGS_BOT_BUTTON_RECT,
-                "ON" if ui_state.selected_bot_enabled else "OFF",
-                selected=ui_state.selected_bot_enabled,
-                hovered=hovered(layout.SETTINGS_BOT_BUTTON_RECT),
-            )
-
-            difficulty_label = self.font.render(
-                "Bot difficulty",
-                True,
-                TEXT_COLOR if ui_state.selected_bot_enabled else MUTED_TEXT_COLOR,
-            )
-            self.screen.blit(
-                difficulty_label, difficulty_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 375))
-            )
-            for value, rect in layout.SETTINGS_BOT_DIFFICULTY_BUTTON_RECTS.items():
-                self._button(
-                    rect,
-                    value,
-                    enabled=ui_state.selected_bot_enabled,
-                    selected=value == ui_state.selected_bot_difficulty,
-                    hovered=ui_state.selected_bot_enabled and hovered(rect),
-                )
+            # One unified 4-way choice (Human + 3 bot difficulties) replaces
+            # the old separate vs-Bot toggle and Bot-difficulty rows.
+            row_label("opponent", "Opponent (P2)")
+            current = ui_state.selected_bot_difficulty if ui_state.selected_bot_enabled else "Human"
+            for value, rect in layout.settings_opponent_button_rects(mode, tournament_size).items():
+                self._button(rect, value, selected=value == current, hovered=hovered(rect), outline=True)
 
         if mode != "Single":
-            series_label = self.font.render("Series length", True, TEXT_COLOR)
-            self.screen.blit(series_label, series_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 280)))
-            for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
+            row_label("series_length", "Series Length")
+            for value, rect in layout.settings_series_length_button_rects(mode, tournament_size).items():
                 self._button(
                     rect,
                     f"{value} Rounds",
@@ -288,27 +236,19 @@ class Renderer:
                 )
 
         if mode == "Tournament":
-            tournament_size_label = self.font.render("Tournament size", True, TEXT_COLOR)
-            self.screen.blit(
-                tournament_size_label,
-                tournament_size_label.get_rect(
-                    center=(layout.SETTINGS_TOURNAMENT_CARD_RECT.centerx, layout.SETTINGS_TOURNAMENT_CARD_RECT.top + 66)
-                ),
-            )
-            for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
+            row_label("tournament_size", "Tournament size")
+            for value, rect in layout.settings_tournament_size_button_rects(tournament_size).items():
                 self._button(
                     rect, f"{value} Players", selected=value == ui_state.tournament_size, hovered=hovered(rect), outline=True
                 )
-            for i in range(ui_state.tournament_size):
+            for i in range(tournament_size):
                 is_bot = ui_state.tournament_slot_is_bot[i]
-                label_surf = self.font_small.render(f"Slot {i + 1}", True, TEXT_COLOR)
-                label_y = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].centery
-                self.screen.blit(label_surf, label_surf.get_rect(midleft=(layout.SETTINGS_TOURNAMENT_SLOT_LABEL_X, label_y)))
-                toggle_rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i]
+                row_label(f"tournament_slot_{i}", f"Slot {i + 1}", font=self.font_small)
+                toggle_rect = layout.settings_tournament_slot_toggle_rect(tournament_size, i)
                 self._button(
                     toggle_rect, "Bot" if is_bot else "Human", selected=is_bot, hovered=hovered(toggle_rect), outline=True
                 )
-                for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
+                for value, rect in layout.settings_tournament_slot_difficulty_rects(tournament_size, i).items():
                     self._button(
                         rect,
                         value,
@@ -318,13 +258,37 @@ class Renderer:
                         outline=True,
                     )
 
+        house_rules_top = layout.settings_row_top(mode, tournament_size, "house_rules")
+        house_rules_label = self.font.render("House Rules", True, TEXT_COLOR)
+        self.screen.blit(house_rules_label, house_rules_label.get_rect(topleft=(layout.SETTINGS_FORM_LABEL_X, house_rules_top)))
+
+        all_rules_rect = layout.settings_all_rules_button_rect(mode, tournament_size)
+        self._button(
+            all_rules_rect,
+            "Turn All OFF" if ui_state.all_house_rules_enabled else "Turn All ON",
+            hovered=hovered(all_rules_rect),
+            outline=True,
+        )
+
+        chip_rects = layout.settings_house_rule_button_rects(mode, tournament_size)
+        for label_text, enabled_flag in (
+            ("Flags", ui_state.selected_flag_conquest_enabled),
+            ("Walls", ui_state.selected_walls_enabled),
+            ("Obstacles", ui_state.selected_obstacles_enabled),
+            ("Wildcard", ui_state.selected_wildcard_enabled),
+            ("Enclosure", ui_state.selected_self_enclosed_penalty_enabled),
+            ("Reroll", ui_state.selected_reroll_enabled),
+        ):
+            rect = chip_rects[label_text]
+            self._button(rect, label_text, selected=enabled_flag, hovered=hovered(rect), outline=True)
+
         start_label = {"Single": "Start Game (Space)", "Series": "Start Series (Space)", "Tournament": "Start Tournament (Space)"}[mode]
-        start_rect = layout.settings_start_button_rect(mode)
+        start_rect = layout.settings_start_button_rect(mode, tournament_size)
         self._button(start_rect, start_label, hovered=hovered(start_rect))
 
-        exit_rect = layout.settings_exit_button_rect(mode)
+        exit_rect = layout.settings_exit_button_rect(mode, tournament_size)
         self._button(exit_rect, "Exit (Esc)", hovered=hovered(exit_rect), outline=True)
-        back_rect = layout.settings_back_button_rect(mode)
+        back_rect = layout.settings_back_button_rect(mode, tournament_size)
         self._button(back_rect, "Back", hovered=hovered(back_rect), outline=True)
 
     def _draw_grid_cells(self, game: Game) -> None:

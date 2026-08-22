@@ -112,12 +112,13 @@ rerolls — it's a human-only resource.
 
 ## Bot opponent
 
-Turn on **vs Bot (P2)** on the settings screen to play solo: Player 2 rolls,
-places a legal piece (or continues past a forced skip), and ends its turn on
-its own, with a short pause between actions. Off by default. Human input for
+Pick **Opponent (P2)** on the settings screen: **Human** (default) for local
+pass-and-play, or one of the three bot difficulties below to play solo — the
+bot rolls, places a legal piece (or continues past a forced skip), and ends
+its turn on its own, with a short pause between actions. Human input for
 Player 2's controls is ignored while the bot is taking its turn.
 
-Once the bot is on, pick its difficulty:
+The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
 - **Greedy** — prefers a placement that captures a flag (see
   [Flag Conquest](#flag-conquest)); with Flag Conquest off, or when no
@@ -193,8 +194,8 @@ and skip limit (preset buttons), optionally toggle
 [Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll) (or click
 **Turn All ON**/**Turn All OFF** to flip all six at once), and whatever else
 that mode needs: the [bot opponent](#bot-opponent) (and its difficulty
-preset) and a series length for **Single**/**Series**, or the
-**Tournament** card's seats (4 or 8, each Human or Bot) for **Tournament**
+preset) for **Single**/**Series**, a series length for **Series**/**Tournament**,
+and, for **Tournament**, a seat count (4 or 8) plus a per-seat Human/Bot row for each
 (see [Series mode](#series-mode)/[Tournament mode](#tournament-mode) above).
 Click **Start**/`Space` to begin, or **Back** to return and pick a different
 mode.
