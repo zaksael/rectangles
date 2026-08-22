@@ -1,0 +1,40 @@
+# A restrained indigo/emerald palette (Tailwind-ish) replaces the old flat
+# purple-everywhere scheme: BUTTON_COLOR is reserved for primary actions,
+# selection groups use the "outline" chip style below (neutral until
+# selected) instead of painting every choice the same loud accent.
+BG_COLOR = (246, 247, 250)
+GRID_LINE_COLOR = (222, 224, 230)
+EMPTY_CELL_COLOR = (255, 255, 255)
+PANEL_BG_COLOR = (237, 238, 243)
+TEXT_COLOR = (24, 28, 38)
+MUTED_TEXT_COLOR = (108, 116, 132)
+GHOST_LEGAL_COLOR = (80, 200, 120, 150)
+GHOST_ILLEGAL_COLOR = (220, 70, 70, 130)
+COVERABLE_CELL_COLOR = (190, 235, 200, 130)
+BUTTON_COLOR = (79, 70, 229)
+BUTTON_HOVER_COLOR = (99, 102, 241)
+BUTTON_DISABLED_COLOR = (223, 225, 231)
+BUTTON_DISABLED_TEXT_COLOR = (156, 161, 173)
+BUTTON_SELECTED_COLOR = (5, 150, 105)
+BUTTON_TEXT_COLOR = (255, 255, 255)
+# "Outline" chip style for selection groups (board size, house rules, etc.):
+# neutral until hovered/selected, so a row of choices reads calm rather than
+# as a wall of accent color.
+BUTTON_OUTLINE_BG_COLOR = (255, 255, 255)
+BUTTON_OUTLINE_BORDER_COLOR = (211, 214, 222)
+BUTTON_OUTLINE_TEXT_COLOR = (51, 56, 69)
+BUTTON_OUTLINE_HOVER_BG_COLOR = (237, 237, 253)
+OVERLAY_COLOR = (15, 15, 20, 190)
+DIVIDER_COLOR = (222, 224, 230)
+ROW_ACTIVE_BG_COLOR = (209, 250, 229)
+CARD_BG_COLOR = (255, 255, 255)
+CARD_BORDER_COLOR = (228, 229, 235)
+CARD_SHADOW_COLOR = (15, 23, 42, 35)
+FLAG_COLOR = (230, 180, 30)
+WALL_LINE_COLOR = (90, 88, 96)
+OBSTACLE_COLOR = (60, 60, 65)
+LAST_MOVE_HIGHLIGHT_COLOR = (255, 225, 40)
+STATUS_BANNER_BG_COLOR = (20, 20, 24, 215)
+LETTERBOX_COLOR = (10, 10, 12)
+ANALYSIS_WARNING_COLOR = (200, 70, 40)
+ANALYSIS_SUGGESTION_COLOR = (60, 130, 220, 140)
