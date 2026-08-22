@@ -11,25 +11,38 @@ from ..tournament import Bracket
 from . import layout
 from .state import ConfirmAction, Screen, UIState
 
-BG_COLOR = (245, 245, 245)
-GRID_LINE_COLOR = (205, 205, 205)
+# A restrained indigo/emerald palette (Tailwind-ish) replaces the old flat
+# purple-everywhere scheme: BUTTON_COLOR is reserved for primary actions,
+# selection groups use the "outline" chip style below (neutral until
+# selected) instead of painting every choice the same loud accent.
+BG_COLOR = (246, 247, 250)
+GRID_LINE_COLOR = (222, 224, 230)
 EMPTY_CELL_COLOR = (255, 255, 255)
-PANEL_BG_COLOR = (228, 228, 235)
-TEXT_COLOR = (30, 30, 30)
-MUTED_TEXT_COLOR = (110, 110, 110)
+PANEL_BG_COLOR = (237, 238, 243)
+TEXT_COLOR = (24, 28, 38)
+MUTED_TEXT_COLOR = (108, 116, 132)
 GHOST_LEGAL_COLOR = (80, 200, 120, 150)
 GHOST_ILLEGAL_COLOR = (220, 70, 70, 130)
 COVERABLE_CELL_COLOR = (190, 235, 200, 130)
-BUTTON_COLOR = (90, 100, 210)
-BUTTON_HOVER_COLOR = (110, 120, 230)
-BUTTON_DISABLED_COLOR = (190, 190, 198)
-BUTTON_SELECTED_COLOR = (70, 170, 100)
+BUTTON_COLOR = (79, 70, 229)
+BUTTON_HOVER_COLOR = (99, 102, 241)
+BUTTON_DISABLED_COLOR = (223, 225, 231)
+BUTTON_DISABLED_TEXT_COLOR = (156, 161, 173)
+BUTTON_SELECTED_COLOR = (5, 150, 105)
 BUTTON_TEXT_COLOR = (255, 255, 255)
+# "Outline" chip style for selection groups (board size, house rules, etc.):
+# neutral until hovered/selected, so a row of choices reads calm rather than
+# as a wall of accent color.
+BUTTON_OUTLINE_BG_COLOR = (255, 255, 255)
+BUTTON_OUTLINE_BORDER_COLOR = (211, 214, 222)
+BUTTON_OUTLINE_TEXT_COLOR = (51, 56, 69)
+BUTTON_OUTLINE_HOVER_BG_COLOR = (237, 237, 253)
 OVERLAY_COLOR = (15, 15, 20, 190)
-DIVIDER_COLOR = (200, 200, 208)
-ROW_ACTIVE_BG_COLOR = (205, 230, 214)
+DIVIDER_COLOR = (222, 224, 230)
+ROW_ACTIVE_BG_COLOR = (209, 250, 229)
 CARD_BG_COLOR = (255, 255, 255)
-CARD_BORDER_COLOR = (215, 215, 222)
+CARD_BORDER_COLOR = (228, 229, 235)
+CARD_SHADOW_COLOR = (15, 23, 42, 35)
 FLAG_COLOR = (230, 180, 30)
 WALL_LINE_COLOR = (90, 88, 96)
 OBSTACLE_COLOR = (60, 60, 65)
@@ -53,10 +66,15 @@ class Renderer:
         # for the tallest mode (Tournament) since this is allocated once,
         # before any mode is ever chosen - see SETTINGS_CONTENT_HEIGHT_MAX.
         self._settings_surface = pygame.Surface((layout.DESIGN_WIDTH, layout.SETTINGS_CONTENT_HEIGHT_MAX))
-        self.font = pygame.font.SysFont("arial", 20)
-        self.font_small = pygame.font.SysFont("arial", 15)
-        self.font_big = pygame.font.SysFont("arial", 30, bold=True)
-        self.font_dice = pygame.font.SysFont("arial", 28, bold=True)
+        # SysFont takes a comma-separated fallback list and picks the first
+        # installed match, falling back to pygame's default font if none
+        # resolve - safe across platforms (this project runs on macOS/Linux/
+        # Windows dev machines and CI's dummy driver alike).
+        _FONT_STACK = "segoeui,helveticaneue,helvetica,arial"
+        self.font = pygame.font.SysFont(_FONT_STACK, 19)
+        self.font_small = pygame.font.SysFont(_FONT_STACK, 15)
+        self.font_big = pygame.font.SysFont(_FONT_STACK, 29, bold=True)
+        self.font_dice = pygame.font.SysFont(_FONT_STACK, 28, bold=True)
         self._hand_cursor = False
         self._mouse_pos = (0, 0)
         self._turn_analyses_cache: (
@@ -147,6 +165,7 @@ class Renderer:
                 mode,
                 selected=mode == ui_state.selected_game_mode,
                 hovered=hovered(rect),
+                outline=True,
             )
 
         if persistence.has_save():
@@ -154,9 +173,13 @@ class Renderer:
                 layout.MODE_SELECT_RESUME_BUTTON_RECT,
                 "Resume Game (R)",
                 hovered=hovered(layout.MODE_SELECT_RESUME_BUTTON_RECT),
+                outline=True,
             )
         self._button(
-            layout.MODE_SELECT_EXIT_BUTTON_RECT, "Exit (Esc)", hovered=hovered(layout.MODE_SELECT_EXIT_BUTTON_RECT)
+            layout.MODE_SELECT_EXIT_BUTTON_RECT,
+            "Exit (Esc)",
+            hovered=hovered(layout.MODE_SELECT_EXIT_BUTTON_RECT),
+            outline=True,
         )
 
     def _draw_settings_screen(self, ui_state: UIState) -> None:
@@ -180,8 +203,7 @@ class Renderer:
         if mode == "Tournament":
             cards.append((layout.SETTINGS_TOURNAMENT_CARD_RECT, "Tournament"))
         for card_rect, header in cards:
-            pygame.draw.rect(self.screen, CARD_BG_COLOR, card_rect, border_radius=12)
-            pygame.draw.rect(self.screen, CARD_BORDER_COLOR, card_rect, width=1, border_radius=12)
+            self._draw_card(card_rect)
             header_surf = self.font.render(header, True, TEXT_COLOR)
             self.screen.blit(header_surf, header_surf.get_rect(center=(card_rect.centerx, card_rect.top + 26)))
 
@@ -189,13 +211,15 @@ class Renderer:
         self.screen.blit(board_label, board_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 180)))
         for value, rect in layout.SETTINGS_BOARD_SIZE_BUTTON_RECTS.items():
             self._button(
-                rect, f"{value}x{value}", selected=value == ui_state.selected_board_size, hovered=hovered(rect)
+                rect, f"{value}x{value}", selected=value == ui_state.selected_board_size, hovered=hovered(rect), outline=True
             )
 
         skip_label = self.font.render("Skip limit", True, TEXT_COLOR)
         self.screen.blit(skip_label, skip_label.get_rect(center=(layout.SETTINGS_LEFT_COLUMN_X, 280)))
         for value, rect in layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS.items():
-            self._button(rect, str(value), selected=value == ui_state.selected_skip_limit, hovered=hovered(rect))
+            self._button(
+                rect, str(value), selected=value == ui_state.selected_skip_limit, hovered=hovered(rect), outline=True
+            )
 
         toggle_label_y = layout.SETTINGS_HOUSE_RULES_CARD_RECT.top + 70
         for label_text, column_x, rect, enabled_flag in (
@@ -215,7 +239,7 @@ class Renderer:
             label_surf = self.font.render(label_text, True, TEXT_COLOR)
             self.screen.blit(label_surf, label_surf.get_rect(center=(column_x, toggle_label_y)))
             self._button(
-                rect, "ON" if enabled_flag else "OFF", selected=enabled_flag, hovered=hovered(rect)
+                rect, "ON" if enabled_flag else "OFF", selected=enabled_flag, hovered=hovered(rect), outline=True
             )
 
         self._button(
@@ -256,7 +280,11 @@ class Renderer:
             self.screen.blit(series_label, series_label.get_rect(center=(layout.SETTINGS_RIGHT_COLUMN_X, 280)))
             for value, rect in layout.SETTINGS_SERIES_LENGTH_BUTTON_RECTS.items():
                 self._button(
-                    rect, f"{value} Rounds", selected=value == ui_state.selected_series_length, hovered=hovered(rect)
+                    rect,
+                    f"{value} Rounds",
+                    selected=value == ui_state.selected_series_length,
+                    hovered=hovered(rect),
+                    outline=True,
                 )
 
         if mode == "Tournament":
@@ -269,7 +297,7 @@ class Renderer:
             )
             for value, rect in layout.SETTINGS_TOURNAMENT_SIZE_BUTTON_RECTS.items():
                 self._button(
-                    rect, f"{value} Players", selected=value == ui_state.tournament_size, hovered=hovered(rect)
+                    rect, f"{value} Players", selected=value == ui_state.tournament_size, hovered=hovered(rect), outline=True
                 )
             for i in range(ui_state.tournament_size):
                 is_bot = ui_state.tournament_slot_is_bot[i]
@@ -277,7 +305,9 @@ class Renderer:
                 label_y = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i].centery
                 self.screen.blit(label_surf, label_surf.get_rect(midleft=(layout.SETTINGS_TOURNAMENT_SLOT_LABEL_X, label_y)))
                 toggle_rect = layout.SETTINGS_TOURNAMENT_SLOT_TOGGLE_RECTS[i]
-                self._button(toggle_rect, "Bot" if is_bot else "Human", selected=is_bot, hovered=hovered(toggle_rect))
+                self._button(
+                    toggle_rect, "Bot" if is_bot else "Human", selected=is_bot, hovered=hovered(toggle_rect), outline=True
+                )
                 for value, rect in layout.SETTINGS_TOURNAMENT_SLOT_DIFFICULTY_RECTS[i].items():
                     self._button(
                         rect,
@@ -285,6 +315,7 @@ class Renderer:
                         enabled=is_bot,
                         selected=is_bot and value == ui_state.tournament_slot_difficulty[i],
                         hovered=is_bot and hovered(rect),
+                        outline=True,
                     )
 
         start_label = {"Single": "Start Game (Space)", "Series": "Start Series (Space)", "Tournament": "Start Tournament (Space)"}[mode]
@@ -292,9 +323,9 @@ class Renderer:
         self._button(start_rect, start_label, hovered=hovered(start_rect))
 
         exit_rect = layout.settings_exit_button_rect(mode)
-        self._button(exit_rect, "Exit (Esc)", hovered=hovered(exit_rect))
+        self._button(exit_rect, "Exit (Esc)", hovered=hovered(exit_rect), outline=True)
         back_rect = layout.settings_back_button_rect(mode)
-        self._button(back_rect, "Back", hovered=hovered(back_rect))
+        self._button(back_rect, "Back", hovered=hovered(back_rect), outline=True)
 
     def _draw_grid_cells(self, game: Game) -> None:
         for r in range(game.board.size):
@@ -673,22 +704,45 @@ class Renderer:
         enabled: bool = True,
         selected: bool = False,
         hovered: bool = False,
+        outline: bool = False,
     ) -> None:
+        """outline=True is the "chip" style for a selection group (board
+        size, house rules, opponent, ...): neutral/bordered until hovered or
+        selected, so a row of choices doesn't read as a wall of accent
+        color. outline=False (the default) is the solid-accent "primary
+        action" style (Start, Roll, Continue, ...) - unchanged from before."""
         if enabled and rect.collidepoint(self._mouse_pos):
             self._hand_cursor = True
+        border_color = None
         if not enabled:
-            color = BUTTON_DISABLED_COLOR
+            bg = BUTTON_DISABLED_COLOR
+            text_color = BUTTON_DISABLED_TEXT_COLOR
         elif selected:
-            color = BUTTON_SELECTED_COLOR
-        elif hovered:
-            color = BUTTON_HOVER_COLOR
+            bg = BUTTON_SELECTED_COLOR
+            text_color = BUTTON_TEXT_COLOR
+        elif outline:
+            bg = BUTTON_OUTLINE_HOVER_BG_COLOR if hovered else BUTTON_OUTLINE_BG_COLOR
+            text_color = BUTTON_COLOR if hovered else BUTTON_OUTLINE_TEXT_COLOR
+            border_color = BUTTON_COLOR if hovered else BUTTON_OUTLINE_BORDER_COLOR
         else:
-            color = BUTTON_COLOR
-        pygame.draw.rect(self.screen, color, rect, border_radius=6)
-        if selected and enabled:
-            pygame.draw.rect(self.screen, (255, 255, 255), rect, width=3, border_radius=6)
-        text = self.font.render(label, True, BUTTON_TEXT_COLOR)
+            bg = BUTTON_HOVER_COLOR if hovered else BUTTON_COLOR
+            text_color = BUTTON_TEXT_COLOR
+        pygame.draw.rect(self.screen, bg, rect, border_radius=8)
+        if border_color is not None:
+            pygame.draw.rect(self.screen, border_color, rect, width=1, border_radius=8)
+        text = self.font.render(label, True, text_color)
         self.screen.blit(text, text.get_rect(center=rect.center))
+
+    def _draw_card(self, rect: pygame.Rect, radius: int = 12, shadow: bool = True) -> None:
+        """A white, softly-shadowed panel - the "elevated card" look used by
+        the settings screen and the confirm dialog, replacing flat
+        border-only boxes."""
+        if shadow:
+            shadow_surf = pygame.Surface((rect.width + 8, rect.height + 8), pygame.SRCALPHA)
+            pygame.draw.rect(shadow_surf, CARD_SHADOW_COLOR, shadow_surf.get_rect(), border_radius=radius + 2)
+            self.screen.blit(shadow_surf, (rect.x - 4, rect.y - 1))
+        pygame.draw.rect(self.screen, CARD_BG_COLOR, rect, border_radius=radius)
+        pygame.draw.rect(self.screen, CARD_BORDER_COLOR, rect, width=1, border_radius=radius)
 
     def _text(self, text: str, pos: tuple[int, int], font=None, color=TEXT_COLOR) -> None:
         font = font or self.font
@@ -1201,7 +1255,7 @@ class Renderer:
         self.screen.blit(overlay, (0, 0))
 
         dialog_rect = layout.CONFIRM_DIALOG_RECT
-        pygame.draw.rect(self.screen, PANEL_BG_COLOR, dialog_rect, border_radius=8)
+        self._draw_card(dialog_rect)
 
         if ui_state.pending_confirmation == ConfirmAction.SURRENDER:
             opponent_id = (
@@ -1219,4 +1273,4 @@ class Renderer:
         self.screen.blit(message_surf, message_rect)
 
         self._button(layout.CONFIRM_YES_BUTTON_RECT, "Yes (Enter)")
-        self._button(layout.CONFIRM_NO_BUTTON_RECT, "No (Esc)")
+        self._button(layout.CONFIRM_NO_BUTTON_RECT, "No (Esc)", outline=True)

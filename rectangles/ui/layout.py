@@ -124,10 +124,25 @@ def _centered_button_row(
 # Exit below, in fixed slots - Exit doesn't reflow up when Resume is absent,
 # same "stays put in its slot either way" precedent the old Exit/Resume row
 # already established.
-_MODE_BUTTON_W = 360
-_MODE_BUTTON_H = 80
-_MODE_BUTTON_GAP = 24
-_MODE_BUTTONS_TOP = 260
+_MODE_BUTTON_W = 340
+_MODE_BUTTON_H = 56
+_MODE_BUTTON_GAP = 14
+_MODE_SECONDARY_GAP = 32
+_MODE_SECONDARY_BUTTON_H = 44
+_MODE_SECONDARY_BUTTON_GAP = 10
+
+# The whole interactive block (3 mode buttons + Resume/Exit) is centered in
+# the leftover vertical space below the header, rather than anchored near
+# the top - DESIGN_HEIGHT is sized for the in-game panel's worst case (see
+# above), so this screen has far more headroom than its own content needs;
+# centering avoids the dead space the old fixed _MODE_BUTTONS_TOP=260 left
+# at the bottom.
+_MODE_CONTENT_TOP = 150
+_mode_buttons_block_h = len(GAME_MODE_PRESETS) * _MODE_BUTTON_H + (len(GAME_MODE_PRESETS) - 1) * _MODE_BUTTON_GAP
+_mode_secondary_block_h = _MODE_SECONDARY_BUTTON_H * 2 + _MODE_SECONDARY_BUTTON_GAP
+_MODE_BUTTONS_TOP = _MODE_CONTENT_TOP + (
+    DESIGN_HEIGHT - _MODE_CONTENT_TOP - _mode_buttons_block_h - _MODE_SECONDARY_GAP - _mode_secondary_block_h
+) // 2
 
 MODE_SELECT_BUTTON_RECTS = {
     mode: pygame.Rect(
@@ -138,13 +153,16 @@ MODE_SELECT_BUTTON_RECTS = {
     )
     for i, mode in enumerate(GAME_MODE_PRESETS)
 }
-_mode_buttons_bottom = _MODE_BUTTONS_TOP + len(GAME_MODE_PRESETS) * (_MODE_BUTTON_H + _MODE_BUTTON_GAP)
+_mode_buttons_bottom = _MODE_BUTTONS_TOP + _mode_buttons_block_h
 
 MODE_SELECT_RESUME_BUTTON_RECT = pygame.Rect(
-    DESIGN_WIDTH // 2 - 100, _mode_buttons_bottom + 40, 200, 48
+    DESIGN_WIDTH // 2 - 100, _mode_buttons_bottom + _MODE_SECONDARY_GAP, 200, _MODE_SECONDARY_BUTTON_H
 )
 MODE_SELECT_EXIT_BUTTON_RECT = pygame.Rect(
-    DESIGN_WIDTH // 2 - 100, MODE_SELECT_RESUME_BUTTON_RECT.bottom + 12, 200, 48
+    DESIGN_WIDTH // 2 - 100,
+    MODE_SELECT_RESUME_BUTTON_RECT.bottom + _MODE_SECONDARY_BUTTON_GAP,
+    200,
+    _MODE_SECONDARY_BUTTON_H,
 )
 
 # Settings are grouped into three cards rather than one ever-taller vertical
