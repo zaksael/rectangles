@@ -6,6 +6,7 @@ from enum import Enum, auto
 from ..constants import (
     BOARD_SIZE,
     BOT_DIFFICULTY_PRESETS,
+    COMEBACK_NUDGE_ENABLED,
     FLAG_CONQUEST_ENABLED,
     GAME_MODE_PRESETS,
     OBSTACLES_ENABLED,
@@ -50,6 +51,7 @@ class UIState:
     selected_wildcard_enabled: bool = WILDCARD_ENABLED
     selected_self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED
     selected_reroll_enabled: bool = REROLL_ENABLED
+    selected_comeback_nudge_enabled: bool = COMEBACK_NUDGE_ENABLED
     selected_bot_enabled: bool = False
     selected_bot_difficulty: str = BOT_DIFFICULTY_PRESETS[0]
     selected_series_length: int = SERIES_LENGTH_PRESETS[0]
@@ -96,6 +98,7 @@ class UIState:
             and self.selected_wildcard_enabled
             and self.selected_self_enclosed_penalty_enabled
             and self.selected_reroll_enabled
+            and self.selected_comeback_nudge_enabled
         )
 
     def toggle_all_house_rules(self) -> None:
@@ -106,3 +109,4 @@ class UIState:
         self.selected_wildcard_enabled = value
         self.selected_self_enclosed_penalty_enabled = value
         self.selected_reroll_enabled = value
+        self.selected_comeback_nudge_enabled = value

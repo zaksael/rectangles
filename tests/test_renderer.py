@@ -134,6 +134,14 @@ def test_draw_choosing_wildcard_with_reroll_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_reroll_label_reflects_the_boosted_limit_once_comeback_nudge_granted(renderer):
+    game = Game(board_size=6, reroll_enabled=True, comeback_nudge_enabled=True)
+    assert renderer._reroll_label(game) == "Reroll (2/2)"
+
+    game.current_player.comeback_nudge_granted = True
+    assert renderer._reroll_label(game) == "Reroll (3/3)"
+
+
 def test_draw_last_move_highlight_smoke(renderer):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()

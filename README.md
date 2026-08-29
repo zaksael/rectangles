@@ -114,6 +114,18 @@ rerolls; **Greedy**/**Blocking** reroll whenever nothing on the board (or in
 [Wildcard Roll](#wildcard-roll)'s value picker) would advance their own
 strategy at all — see [Bot opponent](#bot-opponent).
 
+## Comeback
+
+An optional mode, off by default. Once the trailing player's score falls far
+enough behind — the gap crosses 8% of the board's total cells (rounded up:
+29/43/59 points on the 19×19/23×23/27×27 presets) — they're permanently
+granted one extra [Reroll](#reroll) charge for the rest of that game. It's
+its own independent charge, not an extra use of the regular Reroll budget:
+it applies even if Reroll itself is off, and once granted it's never taken
+away, even if that player later retakes the lead. The Reroll button's count
+(e.g. "Reroll (2/2)" instead of "Reroll (1/2)") is the only visible sign a
+nudge charge has kicked in.
+
 ## Bot opponent
 
 Pick **Opponent (P2)** on the settings screen: **Human** (default) for local
@@ -148,7 +160,7 @@ Basic stays fully random for both and never rerolls.
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, Obstacles, Wildcard Roll, Enclosure Penalty, and Reroll, if enabled) are locked in once for every round. Who
+Flag Conquest, Walls, Obstacles, Wildcard Roll, Enclosure Penalty, Reroll, and Comeback, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
 round's score (same rules as above) adds to each player's running series

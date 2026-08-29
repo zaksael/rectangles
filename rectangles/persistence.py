@@ -63,6 +63,7 @@ def _series_to_dict(series: Series) -> dict:
         "wildcard_enabled": series.wildcard_enabled,
         "self_enclosed_penalty_enabled": series.self_enclosed_penalty_enabled,
         "reroll_enabled": series.reroll_enabled,
+        "comeback_nudge_enabled": series.comeback_nudge_enabled,
         "scores": series.scores,
         "games_played": series.games_played,
         "rounds": [_round_to_dict(r) for r in series.rounds],
@@ -81,6 +82,7 @@ def _series_from_dict(data: dict) -> Series:
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
         reroll_enabled=data.get("reroll_enabled", False),
+        comeback_nudge_enabled=data.get("comeback_nudge_enabled", False),
     )
     series.scores = {int(player_id): score for player_id, score in data["scores"].items()}
     series.games_played = data["games_played"]
@@ -104,6 +106,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "wildcard_enabled": game.wildcard_enabled,
         "self_enclosed_penalty_enabled": game.self_enclosed_penalty_enabled,
         "reroll_enabled": game.reroll_enabled,
+        "comeback_nudge_enabled": game.comeback_nudge_enabled,
         "current_player_id": game.current_player_id,
         "state": game.state.name,
         "last_roll": list(game.last_roll) if game.last_roll is not None else None,
@@ -122,6 +125,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
                 "consecutive_skips": player.consecutive_skips,
                 "flags_captured": player.flags_captured,
                 "rerolls_used": player.rerolls_used,
+                "comeback_nudge_granted": player.comeback_nudge_granted,
                 "pieces": [_rect_to_dict(rect) for rect in player.pieces],
             }
             for player in game.players.values()
@@ -151,6 +155,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
         reroll_enabled=data.get("reroll_enabled", False),
+        comeback_nudge_enabled=data.get("comeback_nudge_enabled", False),
     )
     if data.get("flag_cells") is not None:
         game.board.flag_cells = frozenset(tuple(cell) for cell in data["flag_cells"])
@@ -167,6 +172,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         player.consecutive_skips = player_data["consecutive_skips"]
         player.flags_captured = player_data.get("flags_captured", 0)
         player.rerolls_used = player_data.get("rerolls_used", 0)
+        player.comeback_nudge_granted = player_data.get("comeback_nudge_granted", False)
         for piece_data in player_data["pieces"]:
             top_left = tuple(piece_data["top_left"])
             game.board.place(player, top_left, piece_data["width"], piece_data["height"])

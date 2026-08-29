@@ -104,6 +104,7 @@ class SettingsMixin:
             ("Wildcard", ui_state.selected_wildcard_enabled),
             ("Enclosure", ui_state.selected_self_enclosed_penalty_enabled),
             ("Reroll", ui_state.selected_reroll_enabled),
+            ("Comeback", ui_state.selected_comeback_nudge_enabled),
         ):
             rect = chip_rects[label_text]
             self._button(rect, label_text, selected=enabled_flag, hovered=hovered(rect), outline=True)

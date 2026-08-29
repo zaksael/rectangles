@@ -338,6 +338,35 @@ def test_load_game_old_format_without_reroll_key_defaults_disabled(tmp_path):
     assert loaded.players[PLAYER_1].rerolls_used == 0
 
 
+def test_round_trip_preserves_comeback_nudge_state(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=11, comeback_nudge_enabled=True)
+    game.players[PLAYER_1].comeback_nudge_granted = True
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.comeback_nudge_enabled is True
+    assert loaded.players[PLAYER_1].comeback_nudge_granted is True
+
+
+def test_load_game_old_format_without_comeback_nudge_key_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["comeback_nudge_enabled"]
+    del data["players"][PLAYER_1]["comeback_nudge_granted"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.comeback_nudge_enabled is False
+    assert loaded.players[PLAYER_1].comeback_nudge_granted is False
+
+
 def test_round_trip_preserves_series(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)

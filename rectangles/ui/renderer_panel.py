@@ -14,10 +14,11 @@ from .state import UIState
 
 class PanelMixin:
     def _reroll_label(self, game: Game, short: bool = False) -> str:
-        remaining = constants.REROLL_LIMIT - game.current_player.rerolls_used
+        limit = game.effective_reroll_limit(game.current_player)
+        remaining = limit - game.current_player.rerolls_used
         if short:
             return f"R{remaining}"
-        return f"Reroll ({remaining}/{constants.REROLL_LIMIT})"
+        return f"Reroll ({remaining}/{limit})"
 
     def _draw_score_row(
         self, x: int, y: int, player_id: int, primary: str, suffixes: list[str], color: tuple[int, int, int]

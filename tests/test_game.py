@@ -884,6 +884,65 @@ def test_reroll_from_choosing_wildcard_discards_the_pending_wildcard():
     assert game.state == TurnState.CHOOSING_PLACEMENT
 
 
+@pytest.mark.parametrize("board_size,expected", [(19, 29), (23, 43), (27, 59)])
+def test_comeback_nudge_threshold_scales_with_board_size(board_size, expected):
+    game = Game(board_size=board_size)
+    assert game.comeback_nudge_threshold == expected
+
+
+def test_comeback_nudge_grants_only_the_trailing_player_on_crossing():
+    # board_size=4 -> threshold = ceil(16 * 0.08) = 2.
+    game = Game(board_size=4, comeback_nudge_enabled=True, rng=ScriptedRandom([1, 1]))
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p2, (3, 0), w=3, h=1)  # p2 area = 3, gap not yet crossed until p1 moves
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 1, 1) is True  # p1 area = 1, gap = 2 == threshold
+
+    assert p1.comeback_nudge_granted is True
+    assert p2.comeback_nudge_granted is False
+
+
+def test_comeback_nudge_disabled_never_grants_even_across_a_large_gap():
+    game = Game(board_size=4, rng=ScriptedRandom([1, 1]))  # comeback_nudge_enabled defaults False
+    p2 = game.players[PLAYER_2]
+    game.board.place(p2, (3, 0), w=3, h=1)
+
+    game.roll_dice()
+    game.attempt_place((0, 0), 1, 1)
+
+    assert game.players[PLAYER_1].comeback_nudge_granted is False
+
+
+def test_comeback_nudge_grant_is_permanent_once_retaking_the_lead():
+    # board_size=4 -> threshold = 2. p1 was granted while trailing; now retakes
+    # a small lead (gap 1, under threshold) - stays granted, and p2 (now
+    # trailing by less than the threshold) doesn't get a spurious grant.
+    game = Game(board_size=4, comeback_nudge_enabled=True)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    p1.comeback_nudge_granted = True
+    game.board.place(p1, (0, 0), w=1, h=1)
+
+    game._maybe_grant_comeback_nudge()
+    assert p1.comeback_nudge_granted is True  # unaffected by no longer trailing
+    assert p2.comeback_nudge_granted is False  # gap (1) under threshold (2)
+
+
+def test_can_reroll_true_for_a_granted_player_even_with_reroll_disabled():
+    game = Game(board_size=6, comeback_nudge_enabled=True)
+    game.current_player.comeback_nudge_granted = True
+    assert game.reroll_enabled is False
+    assert game.can_reroll() is True
+
+
+def test_effective_reroll_limit_adds_the_nudge_charge_once_granted():
+    game = Game(board_size=6, comeback_nudge_enabled=True)
+    p1 = game.players[PLAYER_1]
+    assert game.effective_reroll_limit(p1) == REROLL_LIMIT
+    p1.comeback_nudge_granted = True
+    assert game.effective_reroll_limit(p1) == REROLL_LIMIT + 1
+
+
 def test_choose_wildcard_value_raises_when_not_choosing_wildcard():
     game = Game(rng=ScriptedRandom([4, 6]))
     game.roll_dice()

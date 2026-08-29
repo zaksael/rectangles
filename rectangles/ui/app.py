@@ -80,6 +80,7 @@ def run() -> None:
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
                 self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
                 reroll_enabled=ui_state.selected_reroll_enabled,
+                comeback_nudge_enabled=ui_state.selected_comeback_nudge_enabled,
             )
             series = None
             tournament = None
@@ -100,6 +101,7 @@ def run() -> None:
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
                 self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
                 reroll_enabled=ui_state.selected_reroll_enabled,
+                comeback_nudge_enabled=ui_state.selected_comeback_nudge_enabled,
             )
             game = series.new_game()
             tournament = None
@@ -122,6 +124,7 @@ def run() -> None:
                 wildcard_enabled=ui_state.selected_wildcard_enabled,
                 self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
                 reroll_enabled=ui_state.selected_reroll_enabled,
+                comeback_nudge_enabled=ui_state.selected_comeback_nudge_enabled,
             )
             game = None
             series = None

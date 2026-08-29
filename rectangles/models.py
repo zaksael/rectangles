@@ -44,6 +44,7 @@ class Player:
     consecutive_skips: int = 0
     flags_captured: int = 0
     rerolls_used: int = 0
+    comeback_nudge_granted: bool = False
 
     @property
     def total_area(self) -> int:

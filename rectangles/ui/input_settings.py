@@ -82,6 +82,7 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         ("Wildcard", "selected_wildcard_enabled"),
         ("Enclosure", "selected_self_enclosed_penalty_enabled"),
         ("Reroll", "selected_reroll_enabled"),
+        ("Comeback", "selected_comeback_nudge_enabled"),
     ):
         if chip_rects[label].collidepoint(pos):
             setattr(ui_state, flag_attr, not getattr(ui_state, flag_attr))

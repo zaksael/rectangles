@@ -292,7 +292,7 @@ def settings_tournament_slot_difficulty_rects(tournament_size: int, i: int) -> d
 # House Rules: one row of 6 short chips (abbreviated to fit) instead of the
 # old 2x3 grid - "Turn All ON/OFF" sits beside the header, on the same row,
 # rather than its own row below the grid.
-_HOUSE_RULE_LABELS = ("Flags", "Walls", "Obstacles", "Wildcard", "Enclosure", "Reroll")
+_HOUSE_RULE_LABELS = ("Flags", "Walls", "Obstacles", "Wildcard", "Enclosure", "Reroll", "Comeback")
 _RULE_BUTTON_W = 110
 _RULE_BUTTON_H = 40
 

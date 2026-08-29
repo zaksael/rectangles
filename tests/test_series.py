@@ -111,6 +111,14 @@ def test_new_game_uses_series_flag_conquest_settings():
     assert game.flag_bonus_points == 20
 
 
+def test_new_game_uses_series_comeback_nudge_setting():
+    series = Series(length=5, board_size=11, skip_limit=4, comeback_nudge_enabled=True)
+
+    game = series.new_game()
+
+    assert game.comeback_nudge_enabled is True
+
+
 def test_new_game_defaults_flag_conquest_disabled():
     series = Series(length=3, board_size=11, skip_limit=2)
 

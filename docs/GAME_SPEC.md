@@ -236,6 +236,18 @@ Greedy and Blocking apply the same underlying strategy to Wildcard Roll
 Basic never rerolls and always picks a wildcard value uniformly at
 random, regardless of house rules.
 
+### 6.7 Comeback
+
+When enabled: once the trailing player's score (§5) falls behind the
+leader's by at least 8% of the board's total cell count (rounded up —
+29/43/59 points on the 19×19/23×23/27×27 presets), that player is
+permanently granted one extra Reroll charge for the remainder of that
+game. This charge is independent of the Reroll house rule (§6.6) — it
+applies even when Reroll itself is off — and, once granted, is never
+revoked, even if that player later retakes the lead. It's evaluated once
+per placement and granted at most once per game per player; falling
+behind again after retaking the lead does not grant a second charge.
+
 ## 11. Series play
 
 Instead of a single game, a match may instead be a fixed-length series
@@ -283,6 +295,9 @@ progress, not the rest of the bracket.
 | Enclosure Penalty | on / off | off |
 | Reroll | on / off | off |
 | Reroll charges | 2 per player per game (fixed) | 2 |
+| Comeback | on / off | off |
+| Comeback threshold | 8% of board cells, rounded up (fixed) | 29/43/59 |
+| Comeback bonus | 1 extra reroll charge (fixed) | 1 |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
 | Tournament size | 4 or 8 participants | — |

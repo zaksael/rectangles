@@ -70,6 +70,15 @@ SELF_ENCLOSED_PENALTY_PER_CELL = 1
 REROLL_ENABLED = False
 REROLL_LIMIT = 2
 
+# Once the trailing player's total_score() gap reaches this fraction of
+# board_size**2, they're permanently granted COMEBACK_NUDGE_EXTRA_REROLLS
+# extra reroll charges for the rest of that game - an independent charge
+# pool, separate from REROLL_LIMIT, that works even with Reroll itself off.
+# See Game.comeback_nudge_threshold/effective_reroll_limit()/can_reroll().
+COMEBACK_NUDGE_ENABLED = False
+COMEBACK_NUDGE_THRESHOLD_FRACTION = 0.08
+COMEBACK_NUDGE_EXTRA_REROLLS = 1
+
 # Selectable options on the pre-game settings screen. Defaults above stay
 # valid members of both. Kept odd by convention; nothing currently requires it.
 BOARD_SIZE_PRESETS = (19, 23, 27)

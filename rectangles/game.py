@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import math
 import random
 from enum import Enum, auto
 
 from .board import Board
 from .constants import (
     BOARD_SIZE,
+    COMEBACK_NUDGE_ENABLED,
+    COMEBACK_NUDGE_EXTRA_REROLLS,
+    COMEBACK_NUDGE_THRESHOLD_FRACTION,
     DICE_MAX,
     DICE_MIN,
     FLAG_BONUS_POINTS,
@@ -74,6 +78,7 @@ class Game:
         wildcard_enabled: bool = WILDCARD_ENABLED,
         self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
         reroll_enabled: bool = REROLL_ENABLED,
+        comeback_nudge_enabled: bool = COMEBACK_NUDGE_ENABLED,
         rng: random.Random | None = None,
     ):
         self.board_size = board_size
@@ -85,6 +90,7 @@ class Game:
         self.wildcard_enabled = wildcard_enabled
         self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
         self.reroll_enabled = reroll_enabled
+        self.comeback_nudge_enabled = comeback_nudge_enabled
         self.rng = rng or random.Random()
         self.board: Board
         self.players: dict[int, Player]
@@ -308,8 +314,24 @@ class Game:
         if self.can_reroll():
             self._commit_skip()
 
+    @property
+    def comeback_nudge_threshold(self) -> int:
+        return math.ceil(self.board_size**2 * COMEBACK_NUDGE_THRESHOLD_FRACTION)
+
+    def effective_reroll_limit(self, player: Player) -> int:
+        if self.comeback_nudge_enabled and player.comeback_nudge_granted:
+            return REROLL_LIMIT + COMEBACK_NUDGE_EXTRA_REROLLS
+        return REROLL_LIMIT
+
     def can_reroll(self) -> bool:
-        return self.reroll_enabled and self.current_player.rerolls_used < REROLL_LIMIT
+        player = self.current_player
+        if self.reroll_enabled and player.rerolls_used < REROLL_LIMIT:
+            return True
+        return (
+            self.comeback_nudge_enabled
+            and player.comeback_nudge_granted
+            and player.rerolls_used < self.effective_reroll_limit(player)
+        )
 
     def reroll(self) -> None:
         if self.state not in (
@@ -371,7 +393,19 @@ class Game:
                 wildcard_original_roll=self.wildcard_original_roll,
             )
         )
+        self._maybe_grant_comeback_nudge()
         return True
+
+    def _maybe_grant_comeback_nudge(self) -> None:
+        if not self.comeback_nudge_enabled:
+            return
+        p1, p2 = self.players[PLAYER_1], self.players[PLAYER_2]
+        trailing, leading = (p1, p2) if self.total_score(p1) < self.total_score(p2) else (p2, p1)
+        if (
+            not trailing.comeback_nudge_granted
+            and self.total_score(leading) - self.total_score(trailing) >= self.comeback_nudge_threshold
+        ):
+            trailing.comeback_nudge_granted = True
 
     def end_turn(self) -> None:
         if self.state == TurnState.GAME_OVER:

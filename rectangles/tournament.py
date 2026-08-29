@@ -37,6 +37,7 @@ class Bracket:
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
     reroll_enabled: bool = False
+    comeback_nudge_enabled: bool = False
     rng: random.Random = field(default_factory=random.Random)
     rounds: list[list[Match]] = field(default_factory=list)
     current_match_index: int = 0
@@ -80,6 +81,7 @@ class Bracket:
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
             reroll_enabled=self.reroll_enabled,
+            comeback_nudge_enabled=self.comeback_nudge_enabled,
         )
         self.current_match().series = series
         return series
@@ -95,6 +97,7 @@ class Bracket:
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
             reroll_enabled=self.reroll_enabled,
+            comeback_nudge_enabled=self.comeback_nudge_enabled,
         )
 
     def _tiebreak_winner(self, game: Game) -> int:
