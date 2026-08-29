@@ -4,7 +4,7 @@ DICE_MIN = 1
 DICE_MAX = 6
 
 # A player who is skipped this many turns in a row ends the game.
-SKIP_LIMIT = 3
+SKIP_LIMIT = 5
 
 # Shared by Flag Conquest and Walls: neither will place a special cell
 # within this Chebyshev distance of either player's start corner, keeping
@@ -65,7 +65,7 @@ REROLL_LIMIT = 2
 # valid members of both. Board sizes are odd so flag conquest's center cell
 # (size // 2) is always a single unambiguous cell.
 BOARD_SIZE_PRESETS = (19, 23, 27)
-SKIP_LIMIT_PRESETS = (2, 3, 5)
+SKIP_LIMIT_PRESETS = (3, 5)
 SERIES_LENGTH_PRESETS = (3, 5)
 
 # Tournament: single-elimination bracket size, restricted to powers of two so

@@ -272,7 +272,7 @@ progress, not the rest of the bracket.
 | Setting | Typical choices | Default |
 |---|---|---|
 | Board size | 19×19, 23×23, 27×27 | 19×19 |
-| Skip limit | 2, 3, 5 | 3 |
+| Skip limit | 3, 5 | 5 |
 | Flag Conquest | on / off | off |
 | Flag bonus points | 10 (fixed) | 10 |
 | Walls | on / off | off |
