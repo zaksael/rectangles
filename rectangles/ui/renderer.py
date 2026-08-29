@@ -10,7 +10,7 @@ from .renderer_board import BoardMixin
 from .renderer_dialogs import DialogsMixin
 from .renderer_mode_select import ModeSelectMixin
 from .renderer_panel import PanelMixin
-from .renderer_replay import ReplayMixin
+from .renderer_replay import ReplayMixin, _AnalysisCandidate
 from .renderer_settings import SettingsMixin
 from .renderer_tournament import TournamentMixin
 from .state import Screen, UIState
@@ -45,9 +45,7 @@ class Renderer(BoardMixin, PanelMixin, ModeSelectMixin, SettingsMixin, ReplayMix
         self.font_dice = pygame.font.SysFont(_FONT_STACK, 28, bold=True)
         self._hand_cursor = False
         self._mouse_pos = (0, 0)
-        self._turn_analyses_cache: (
-            tuple[Game, int, dict[int, list[tuple[str, tuple[tuple[int, int], int, int] | None]]]] | None
-        ) = None
+        self._turn_analyses_cache: tuple[Game, int, dict[int, tuple[str, _AnalysisCandidate]]] | None = None
 
     def resize(self, screen: pygame.Surface) -> None:
         self.screen = screen

@@ -5,9 +5,14 @@ import pygame
 from .. import bot, constants
 from ..board import Board
 from ..game import Game
-from ..models import Player, Rectangle
+from ..models import Player, Rectangle, TurnRecord
 from . import colors, layout
 from .state import UIState
+
+# (wildcard value used, or None) + (top_left, width, height) - one candidate
+# placement a turn's analysis can compare against the move actually played.
+_AnalysisCandidate = tuple[tuple[int, int], int, int]
+_AnalysisEntry = tuple[int | None, _AnalysisCandidate]
 
 
 class ReplayMixin:
@@ -136,7 +141,131 @@ class ReplayMixin:
         )
         return total, flag_cells, denial_cells, enclosure_delta
 
-    def _turn_analyses(self, game: Game) -> dict[int, tuple[str, tuple[tuple[int, int], int, int] | None]]:
+    def _analysis_candidate_pool(
+        self, record: TurnRecord, board: Board, player: Player
+    ) -> tuple[int | None, list[_AnalysisEntry]]:
+        # Candidate pool spans every reachable (value, placement) pair this
+        # turn could have used - just the rolled orientation pair normally,
+        # or every possible wildcard value on a Wildcard Roll turn (still one
+        # pool, one comparison, one note either way).
+        a, b = record.roll
+        if record.wildcard_original_roll is not None:
+            fixed = record.wildcard_original_roll[0]
+            chosen_value: int | None = b if a == fixed else a
+            pool = [
+                (value, (top_left, w, h))
+                for value in range(constants.DICE_MIN, constants.DICE_MAX + 1)
+                for w, h in ((fixed, value), (value, fixed))
+                for top_left in board.legal_top_lefts(player, w, h)
+            ]
+        else:
+            chosen_value = None
+            pool = [
+                (None, (top_left, w, h))
+                for w, h in ((a, b), (b, a))
+                for top_left in board.legal_top_lefts(player, w, h)
+            ]
+        return chosen_value, pool
+
+    def _best_analysis_candidate(
+        self,
+        game: Game,
+        board: Board,
+        player: Player,
+        opponent: Player,
+        reachable_before: int,
+        enclosure_before: int,
+        pool: list[_AnalysisEntry],
+    ) -> tuple[float, _AnalysisEntry, int, int, int]:
+        # self_enclosed_count_if is an O(board_size^2) flood-fill; a
+        # Wildcard Roll turn's pool can run into the hundreds on a large
+        # board, and running it for every candidate made replay's first
+        # screen switch visibly laggy. A count can never go negative, so
+        # a candidate's enclosure bonus is capped at enclosure_before
+        # (fully clearing every already-enclosed cell) - its total can
+        # never exceed its cheap flag+denial value plus that ceiling.
+        # Skip the flood-fill for any candidate that ceiling can't lift
+        # past the running best; only the few genuinely competitive
+        # candidates ever pay for it. Provably exact, not a heuristic:
+        # a skipped candidate could never have won anyway.
+        # ponytail: this ceiling is player-wide (all of enclosure_before,
+        # not just the region(s) a given candidate actually touches), so
+        # it stops pruning much once a player has several existing
+        # self-enclosed cells - deep games on the largest board with
+        # both Wildcard and Enclosure Penalty on can still take ~1s
+        # (measured), down from ~3s unpruned. A tighter, region-scoped
+        # bound (or an incremental region tracker instead of a fresh
+        # flood-fill per candidate) would close the rest of the gap if
+        # that's ever felt as too slow.
+        ceiling_bonus = (
+            enclosure_before * constants.SELF_ENCLOSED_PENALTY_PER_CELL if game.self_enclosed_penalty_enabled else 0
+        )
+        # pool always contains at least the chosen move (it was legally
+        # placed under this same roll), so the first iteration always
+        # runs and sets real values below - a float("-inf") seed needs
+        # no is-None checks, unlike a None seed would.
+        best_value_axis = float("-inf")
+        for entry in pool:
+            _, candidate = entry
+            flag_cells, denial_cells = self._candidate_partial_value(
+                game, board, player, candidate, opponent, reachable_before
+            )
+            partial = flag_cells * game.flag_bonus_points + denial_cells
+            if partial + ceiling_bonus <= best_value_axis:
+                continue
+            total, flag_cells, denial_cells, enclosure_delta = self._candidate_value(
+                game, board, player, candidate, flag_cells, denial_cells, enclosure_before
+            )
+            if total > best_value_axis:
+                best_value_axis, best_flag, best_denial, best_enclosure = total, flag_cells, denial_cells, enclosure_delta
+                best_entry = entry
+        return best_value_axis, best_entry, best_flag, best_denial, best_enclosure
+
+    def _analysis_note(
+        self,
+        game: Game,
+        chosen_value: int | None,
+        chosen_total: int,
+        chosen_flag: int,
+        chosen_denial: int,
+        chosen_enclosure: int,
+        best_value_axis: float,
+        best_entry: _AnalysisEntry,
+        best_flag: int,
+        best_denial: int,
+        best_enclosure: int,
+    ) -> tuple[str, _AnalysisCandidate] | None:
+        if best_value_axis <= chosen_total:
+            return None
+        best_die, best_candidate = best_entry
+        if chosen_value is not None and best_die != chosen_value:
+            return (
+                f"suboptimal wildcard pick (rolling {best_die} instead would "
+                f"score +{best_value_axis - chosen_total})",
+                best_candidate,
+            )
+        flag_gap = (best_flag - chosen_flag) * game.flag_bonus_points if game.flag_conquest_enabled else 0
+        denial_gap = best_denial - chosen_denial
+        enclosure_gap = (
+            (chosen_enclosure - best_enclosure) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
+            if game.self_enclosed_penalty_enabled
+            else 0
+        )
+        _gap, message = max(
+            (
+                (flag_gap, f"missed flag capture (+{best_flag - chosen_flag} available)"),
+                (denial_gap, f"missed denial (+{best_denial - chosen_denial} cells available)"),
+                (
+                    enclosure_gap,
+                    f"would have avoided creating a {chosen_enclosure - best_enclosure}-cell "
+                    "self-enclosed hole",
+                ),
+            ),
+            key=lambda gm: gm[0],
+        )
+        return (message, best_candidate)
+
+    def _turn_analyses(self, game: Game) -> dict[int, tuple[str, _AnalysisCandidate]]:
         # Whole-game, one incremental O(N) walk (same shape as _score_history)
         # rather than N separate from-scratch board reconstructions - cached
         # below since this is the one case in Renderer where recompute-every-
@@ -152,13 +281,12 @@ class ReplayMixin:
                 return cached_analyses
 
         board, scratch = self._new_scratch_board(game)
-        analyses: dict[int, tuple[str, tuple[tuple[int, int], int, int] | None]] = {}
+        analyses: dict[int, tuple[str, _AnalysisCandidate]] = {}
         for step, record in enumerate(game.history, start=1):
             if record.placed is None:
                 continue  # skips are never mistakes - no legal placement existed
 
             player = scratch[record.player_id]
-            a, b = record.roll
             opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
             opponent = scratch[opponent_id]
             reachable_before = len(board.reachable_empty_cells(opponent))
@@ -166,111 +294,32 @@ class ReplayMixin:
                 board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
             )
 
-            # Candidate pool spans every reachable (value, placement) pair
-            # this turn could have used - just the rolled orientation pair
-            # normally, or every possible wildcard value on a Wildcard Roll
-            # turn (still one pool, one comparison, one note either way).
-            if record.wildcard_original_roll is not None:
-                fixed = record.wildcard_original_roll[0]
-                chosen_value: int | None = b if a == fixed else a
-                pool = [
-                    (value, (top_left, w, h))
-                    for value in range(constants.DICE_MIN, constants.DICE_MAX + 1)
-                    for w, h in ((fixed, value), (value, fixed))
-                    for top_left in board.legal_top_lefts(player, w, h)
-                ]
-            else:
-                chosen_value = None
-                pool = [
-                    (None, (top_left, w, h))
-                    for w, h in ((a, b), (b, a))
-                    for top_left in board.legal_top_lefts(player, w, h)
-                ]
-
-            chosen_entry = (chosen_value, (record.placed.top_left, record.placed.width, record.placed.height))
-
-            def value_of(entry: tuple[int | None, tuple[tuple[int, int], int, int]]) -> tuple[int, int, int, int]:
-                _, candidate = entry
-                flag_cells, denial_cells = self._candidate_partial_value(
-                    game, board, player, candidate, opponent, reachable_before
-                )
-                return self._candidate_value(
-                    game, board, player, candidate, flag_cells, denial_cells, enclosure_before
-                )
-
-            # self_enclosed_count_if is an O(board_size^2) flood-fill; a
-            # Wildcard Roll turn's pool can run into the hundreds on a large
-            # board, and running it for every candidate made replay's first
-            # screen switch visibly laggy. A count can never go negative, so
-            # a candidate's enclosure bonus is capped at enclosure_before
-            # (fully clearing every already-enclosed cell) - its total can
-            # never exceed its cheap flag+denial value plus that ceiling.
-            # Skip the flood-fill for any candidate that ceiling can't lift
-            # past the running best; only the few genuinely competitive
-            # candidates ever pay for it. Provably exact, not a heuristic:
-            # a skipped candidate could never have won anyway.
-            # ponytail: this ceiling is player-wide (all of enclosure_before,
-            # not just the region(s) a given candidate actually touches), so
-            # it stops pruning much once a player has several existing
-            # self-enclosed cells - deep games on the largest board with
-            # both Wildcard and Enclosure Penalty on can still take ~1s
-            # (measured), down from ~3s unpruned. A tighter, region-scoped
-            # bound (or an incremental region tracker instead of a fresh
-            # flood-fill per candidate) would close the rest of the gap if
-            # that's ever felt as too slow.
-            ceiling_bonus = (
-                enclosure_before * constants.SELF_ENCLOSED_PENALTY_PER_CELL if game.self_enclosed_penalty_enabled else 0
+            chosen_value, pool = self._analysis_candidate_pool(record, board, player)
+            chosen_candidate = (record.placed.top_left, record.placed.width, record.placed.height)
+            chosen_partial_flag, chosen_partial_denial = self._candidate_partial_value(
+                game, board, player, chosen_candidate, opponent, reachable_before
             )
-            # pool always contains at least the chosen move (it was legally
-            # placed under this same roll), so the first iteration always
-            # runs and sets real values below - a float("-inf") seed needs
-            # no is-None checks, unlike a None seed would.
-            best_value_axis = float("-inf")
-            for entry in pool:
-                _, candidate = entry
-                flag_cells, denial_cells = self._candidate_partial_value(
-                    game, board, player, candidate, opponent, reachable_before
-                )
-                partial = flag_cells * game.flag_bonus_points + denial_cells
-                if partial + ceiling_bonus <= best_value_axis:
-                    continue
-                total, flag_cells, denial_cells, enclosure_delta = self._candidate_value(
-                    game, board, player, candidate, flag_cells, denial_cells, enclosure_before
-                )
-                if total > best_value_axis:
-                    best_value_axis, best_flag, best_denial, best_enclosure = total, flag_cells, denial_cells, enclosure_delta
-                    best_entry = entry
-            chosen_total, chosen_flag, chosen_denial, chosen_enclosure = value_of(chosen_entry)
+            chosen_total, chosen_flag, chosen_denial, chosen_enclosure = self._candidate_value(
+                game, board, player, chosen_candidate, chosen_partial_flag, chosen_partial_denial, enclosure_before
+            )
+            best_value_axis, best_entry, best_flag, best_denial, best_enclosure = self._best_analysis_candidate(
+                game, board, player, opponent, reachable_before, enclosure_before, pool
+            )
 
-            if best_value_axis > chosen_total:
-                best_die, best_candidate = best_entry
-                if chosen_value is not None and best_die != chosen_value:
-                    note = (
-                        f"suboptimal wildcard pick (rolling {best_die} instead would "
-                        f"score +{best_value_axis - chosen_total})",
-                        best_candidate,
-                    )
-                else:
-                    flag_gap = (best_flag - chosen_flag) * game.flag_bonus_points if game.flag_conquest_enabled else 0
-                    denial_gap = best_denial - chosen_denial
-                    enclosure_gap = (
-                        (chosen_enclosure - best_enclosure) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
-                        if game.self_enclosed_penalty_enabled
-                        else 0
-                    )
-                    _gap, message = max(
-                        (
-                            (flag_gap, f"missed flag capture (+{best_flag - chosen_flag} available)"),
-                            (denial_gap, f"missed denial (+{best_denial - chosen_denial} cells available)"),
-                            (
-                                enclosure_gap,
-                                f"would have avoided creating a {chosen_enclosure - best_enclosure}-cell "
-                                "self-enclosed hole",
-                            ),
-                        ),
-                        key=lambda gm: gm[0],
-                    )
-                    note = (message, best_candidate)
+            note = self._analysis_note(
+                game,
+                chosen_value,
+                chosen_total,
+                chosen_flag,
+                chosen_denial,
+                chosen_enclosure,
+                best_value_axis,
+                best_entry,
+                best_flag,
+                best_denial,
+                best_enclosure,
+            )
+            if note is not None:
                 analyses[step] = note
 
             board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
