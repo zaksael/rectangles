@@ -38,14 +38,16 @@ def test_choose_placement_greedy_prefers_capturing_a_flag():
     assert choose_placement(game, "Greedy") == ((3, 3), 1, 1)
 
 
-def test_choose_placement_greedy_falls_back_to_random_without_flags():
-    game = Game(board_size=6, rng=ScriptedRandom([1, 1, 0]))
-    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+def test_choose_placement_greedy_falls_back_to_blocking_score_without_flags():
+    # No Flag Conquest -> flag_score ties at 0 for every candidate; Greedy
+    # should fall back to denying the opponent's frontier instead of a bare
+    # random pick.
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.place(game.players[PLAYER_2], (2, 4), 1, 1)
     game.roll_dice()
 
-    top_left, w, h = choose_placement(game, "Greedy")
-
-    assert top_left in game.legal_cache.get((w, h), set())
+    assert choose_placement(game, "Greedy") == ((2, 3), 1, 1)
 
 
 def test_choose_placement_blocking_prefers_denying_opponent_frontier():

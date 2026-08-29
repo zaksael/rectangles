@@ -79,7 +79,17 @@ def choose_placement(game: Game, difficulty: str = "Basic") -> _Candidate:
     if difficulty not in _SCORE_FNS:
         return candidates[game.rng.randint(0, len(candidates) - 1)]
 
-    return _pick_best(game, candidates, _SCORE_FNS[difficulty](game))
+    score_fn = _SCORE_FNS[difficulty](game)
+    if difficulty == "Greedy":
+        # flag_score ties at 0 for every candidate whenever no flag is
+        # reachable this turn (structurally every turn with Flag Conquest
+        # off) - area can't break that tie, every candidate in one turn
+        # already shares the same w*h, so fall back to blocking_score, the
+        # only other differentiator, instead of a bare random pick.
+        blocking_fn = _blocking_score_fn(game)
+        return _break_tie(game, [((score_fn(c), blocking_fn(c)), c) for c in candidates])
+
+    return _pick_best(game, candidates, score_fn)
 
 
 def choose_wildcard_value(game: Game, difficulty: str = "Basic") -> int:

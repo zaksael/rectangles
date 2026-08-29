@@ -124,7 +124,8 @@ The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
 - **Greedy** — prefers a placement that captures a flag (see
   [Flag Conquest](#flag-conquest)); with Flag Conquest off, or when no
-  candidate reaches a flag, it falls back to a random pick.
+  candidate reaches a flag, it falls back to denying cells in your
+  frontier, same as Blocking.
 - **Blocking** — prefers a placement that covers cells in *your* frontier,
   denying you those spots; falls back to a random pick among equally
   denying (or non-denying) candidates.
