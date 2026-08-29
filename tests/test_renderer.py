@@ -435,7 +435,7 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored 4 this turn (best possible: 14)", ((0, 0), 4, 1)
+        "scored 0 this turn (best possible: 10 — flag)", ((0, 0), 4, 1)
     )
 
 
@@ -449,7 +449,7 @@ def test_turn_analysis_flags_a_missed_trap_avoidance(renderer):
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored -6 this turn (best possible: 4)", ((0, 0), 1, 4)
+        "scored -10 this turn (best possible: 0 — trap)", ((0, 0), 1, 4)
     )
 
 
@@ -458,8 +458,11 @@ def test_turn_analysis_composes_flag_and_trap_axes(renderer):
     # and test_turn_analysis_flags_a_missed_trap_avoidance, combined: the chosen
     # 1x4 strip both misses the flag at (0, 3) AND hits the trap at (2, 0); the
     # unchosen 4x1 strip does the opposite (captures the flag, avoids the trap).
-    # Both axes contribute to the same combined total - proves the note reports
-    # the real total gap (30), not just one axis's share of it.
+    # Both axes fall in the same "points" bucket (flag_bonus_points/
+    # negative_cell_penalty_points, both real Game.total_score() weights) and
+    # combine into one number - proves the points figure isn't just one raw
+    # axis, while the dominant-axis label ("flag", the larger weighted gap)
+    # still names only the bigger contributor.
     game = Game(board_size=6, flag_conquest_enabled=True, flag_bonus_points=20)
     game.board.flag_cells = frozenset({(0, 3)})
     game.negative_cells_enabled = True
@@ -467,7 +470,7 @@ def test_turn_analysis_composes_flag_and_trap_axes(renderer):
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored -6 this turn (best possible: 24)", ((0, 0), 4, 1)
+        "scored -10 this turn (best possible: 20 — flag)", ((0, 0), 4, 1)
     )
 
 
@@ -500,7 +503,7 @@ def test_turn_analysis_flags_a_missed_denial(renderer):
     ]
 
     assert renderer._turn_analyses(game)[4] == (
-        "scored 1 this turn (best possible: 5)", ((1, 3), 1, 1)
+        "denied 1 cell this turn (best possible: 5)", ((1, 3), 1, 1)
     )
 
 
@@ -531,7 +534,7 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
     ]
 
     assert renderer._turn_analyses(game)[5] == (
-        "scored -1 this turn (best possible: 0)", ((3, 1), 1, 1)
+        "scored -1 this turn (best possible: 0 — enclosure)", ((3, 1), 1, 1)
     )
 
 
@@ -553,7 +556,7 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     ]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored 2 this turn (best possible: 22)", ((0, 0), 6, 2)
+        "scored 0 this turn (best possible: 10 — flag)", ((0, 0), 6, 2)
     )
 
 
@@ -668,7 +671,7 @@ def test_turn_analysis_note_text_is_unaffected_by_show_better_option(renderer, m
     monkeypatch.setattr(renderer, "_text", lambda text, *a, **k: drawn.append(text))
 
     renderer._draw_turn_analysis(game, 1)
-    assert drawn == ["! scored 4 this turn (best possible: 14)"]
+    assert drawn == ["! scored 0 this turn (best possible: 10 — flag)"]
 
 
 def test_draw_replay_with_show_better_option_smoke(renderer):

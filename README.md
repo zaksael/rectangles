@@ -294,7 +294,10 @@ most recent entries plus a note when there's more, so the panel always fits.
   for the turn just taken — a flag if the best other legal option that
   roll would have scored higher than what was actually played, showing
   the actual score against the best possible one (e.g. "scored 4 this
-  turn (best possible: 14)"). Toggle
+  turn (best possible: 14 — flag)") — or, when the difference is purely
+  strategic denial rather than real points, the cells denied instead
+  (e.g. "denied 1 cell this turn (best possible: 5)"), since denial has
+  no point value of its own. Toggle
   **Show Better Option** to reveal exactly which placement would have
   scored higher, outlined right on the board. Hit **Play** to watch it
   advance automatically at your chosen Slow/Normal/Fast pace — it stops

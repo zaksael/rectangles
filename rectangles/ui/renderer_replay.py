@@ -13,6 +13,12 @@ from .state import UIState
 # compare against the move actually played.
 _AnalysisCandidate = tuple[tuple[int, int], int, int]
 
+# (flag_cells, trap_cells, denial_cells, enclosure_delta) - one candidate's
+# raw per-axis values, bundled so they thread through _candidate_value/
+# _best_analysis_candidate/_analysis_note as a unit instead of four
+# same-typed ints each (easy to transpose when passed individually).
+_AxisBreakdown = tuple[int, int, int, int]
+
 
 class ReplayMixin:
     def _placed_upto(self, game: Game, step: int) -> list[Rectangle]:
@@ -127,27 +133,33 @@ class ReplayMixin:
         trap_cells: int,
         denial_cells: int,
         enclosure_before: int,
-    ) -> int:
+    ) -> tuple[int, _AxisBreakdown]:
         # One combined turn-quality value per candidate, using the same
         # point weights Game.total_score() applies - flag_bonus_points,
         # negative_cell_penalty_points, and SELF_ENCLOSED_PENALTY_PER_CELL -
         # so every candidate this turn is ranked on one scale instead of
         # separate flag/trap/denial/enclosure axes. Denial itself carries
         # weight 1 (it has no total_score() equivalent to borrow a weight
-        # from). flag_cells/trap_cells/denial_cells come in pre-computed
-        # (via _candidate_partial_value) rather than recomputed here, so a
+        # from) - this "total" is a ranking/threshold value only, never
+        # shown to the player as if it were real score (see _analysis_note).
+        # flag_cells/trap_cells/denial_cells come in pre-computed (via
+        # _candidate_partial_value) rather than recomputed here, so a
         # candidate that reaches this point never pays for
-        # reachable_count_if twice.
+        # reachable_count_if twice. Returns the raw per-axis breakdown
+        # alongside the total so _analysis_note can report real score
+        # points (flag/trap/enclosure) separately from the denial cell
+        # count, and name whichever axis actually drove the gap.
         enclosure_delta = 0
         if game.self_enclosed_penalty_enabled:
             top_left, w, h = candidate
             enclosure_delta = board.self_enclosed_count_if(player.id, top_left, w, h) - enclosure_before
-        return (
+        total = (
             flag_cells * game.flag_bonus_points
             - trap_cells * game.negative_cell_penalty_points
             + denial_cells
             - enclosure_delta * constants.SELF_ENCLOSED_PENALTY_PER_CELL
         )
+        return total, (flag_cells, trap_cells, denial_cells, enclosure_delta)
 
     def _analysis_candidate_pool(
         self, record: TurnRecord, board: Board, player: Player
@@ -182,7 +194,7 @@ class ReplayMixin:
         reachable_before: int,
         enclosure_before: int,
         pool: list[_AnalysisCandidate],
-    ) -> tuple[float, _AnalysisCandidate]:
+    ) -> tuple[float, _AnalysisCandidate, _AxisBreakdown]:
         # self_enclosed_count_if is an O(board_size^2) flood-fill; a
         # Wildcard Roll turn's pool can run into the hundreds on a large
         # board, and running it for every candidate made replay's first
@@ -222,34 +234,68 @@ class ReplayMixin:
             )
             if partial + ceiling_bonus <= best_value_axis:
                 continue
-            total = self._candidate_value(
+            total, breakdown = self._candidate_value(
                 game, board, player, candidate, flag_cells, trap_cells, denial_cells, enclosure_before
             )
             if total > best_value_axis:
                 best_value_axis = total
+                best_breakdown = breakdown
                 best_candidate = candidate
-        return best_value_axis, best_candidate
+        return best_value_axis, best_candidate, best_breakdown
 
     def _analysis_note(
         self,
+        game: Game,
         chosen_total: int,
+        chosen_breakdown: _AxisBreakdown,
         best_value_axis: float,
         best_candidate: _AnalysisCandidate,
+        best_breakdown: _AxisBreakdown,
     ) -> tuple[str, _AnalysisCandidate] | None:
-        # Reports the plain actual-vs-best score comparison rather than
-        # naming a specific axis ("missed flag capture", etc.) - which axis
-        # drove the gap wasn't judged to add value over the numbers
-        # themselves, and "Show Better Option" already shows the concrete
-        # alternative placement on the board for whoever wants the
-        # specifics. No computed delta either - the two raw values are
-        # enough to compare at a glance.
+        # Reports a plain actual-vs-best comparison, no computed delta - the
+        # two raw values are enough to compare at a glance - but never as one
+        # blended "score": denial carries no real total_score() weight (a
+        # pure cell-count heuristic, see _candidate_value), so mixing it into
+        # the same number as flag/trap/enclosure would mislabel a heuristic
+        # as real points. Whichever axis actually drove the gap (same
+        # weighted-gap comparison and tie order as before: flag > trap >
+        # denial > enclosure) picks which pair of numbers to show and names
+        # itself in a short label - "denied N cells" already names its own
+        # axis, so only the points branch needs an explicit label suffix to
+        # disambiguate flag/trap/enclosure from each other.
         if best_value_axis <= chosen_total:
             return None
-        best_total = int(best_value_axis)
-        return (
-            f"scored {chosen_total} this turn (best possible: {best_total})",
-            best_candidate,
+        chosen_flag, chosen_trap, chosen_denial, chosen_enclosure = chosen_breakdown
+        best_flag, best_trap, best_denial, best_enclosure = best_breakdown
+        flag_gap = (best_flag - chosen_flag) * game.flag_bonus_points if game.flag_conquest_enabled else 0
+        trap_gap = (
+            (chosen_trap - best_trap) * game.negative_cell_penalty_points if game.negative_cells_enabled else 0
         )
+        denial_gap = best_denial - chosen_denial
+        enclosure_gap = (
+            (chosen_enclosure - best_enclosure) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
+            if game.self_enclosed_penalty_enabled
+            else 0
+        )
+        _gap, axis = max(
+            ((flag_gap, "flag"), (trap_gap, "trap"), (denial_gap, "denial"), (enclosure_gap, "enclosure")),
+            key=lambda ga: ga[0],
+        )
+        if axis == "denial":
+            unit = "cell" if chosen_denial == 1 else "cells"
+            message = f"denied {chosen_denial} {unit} this turn (best possible: {best_denial})"
+        else:
+            def points(flag: int, trap: int, enclosure: int) -> int:
+                return (
+                    flag * game.flag_bonus_points
+                    - trap * game.negative_cell_penalty_points
+                    - enclosure * constants.SELF_ENCLOSED_PENALTY_PER_CELL
+                )
+
+            chosen_points = points(chosen_flag, chosen_trap, chosen_enclosure)
+            best_points = points(best_flag, best_trap, best_enclosure)
+            message = f"scored {chosen_points} this turn (best possible: {best_points} — {axis})"
+        return (message, best_candidate)
 
     def _turn_analyses(self, game: Game) -> dict[int, tuple[str, _AnalysisCandidate]]:
         # Whole-game, one incremental O(N) walk (same shape as _score_history)
@@ -285,7 +331,7 @@ class ReplayMixin:
             chosen_partial_flag, chosen_partial_trap, chosen_partial_denial = self._candidate_partial_value(
                 game, board, player, chosen_candidate, opponent, reachable_before
             )
-            chosen_total = self._candidate_value(
+            chosen_total, chosen_breakdown = self._candidate_value(
                 game,
                 board,
                 player,
@@ -295,11 +341,13 @@ class ReplayMixin:
                 chosen_partial_denial,
                 enclosure_before,
             )
-            best_value_axis, best_candidate = self._best_analysis_candidate(
+            best_value_axis, best_candidate, best_breakdown = self._best_analysis_candidate(
                 game, board, player, opponent, reachable_before, enclosure_before, pool
             )
 
-            note = self._analysis_note(chosen_total, best_value_axis, best_candidate)
+            note = self._analysis_note(
+                game, chosen_total, chosen_breakdown, best_value_axis, best_candidate, best_breakdown
+            )
             if note is not None:
                 analyses[step] = note
 
