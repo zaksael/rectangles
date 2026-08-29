@@ -5,7 +5,7 @@ import pytest
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from rectangles.constants import PLAYER_1, PLAYER_2
+from rectangles.constants import NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Rectangle, TurnRecord
 from rectangles.series import Series
@@ -388,6 +388,26 @@ def test_score_history_applies_self_enclosed_penalty_when_ring_completes(rendere
     assert history[PLAYER_1][5] == 4 - 1  # 4th ring cell closes it, encloses (2, 2)
 
 
+def test_score_history_applies_trap_penalty_when_triggered(renderer):
+    # Same shape as test_score_history_accumulates_scores_per_step, with a
+    # trap instead of a flag - regression coverage for the #56 bug this item
+    # fixed (_score_history previously had no traps term at all, so a
+    # Traps-enabled game's chart line silently overstated the real score).
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4]))
+    game.negative_cells_enabled = True
+    game.board.negative_cells = frozenset({(5, 5)})
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, triggers the trap at (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no trap in this footprint
+
+    history = renderer._score_history(game)
+    assert history[PLAYER_1] == [0, 36 - NEGATIVE_CELL_PENALTY_POINTS, 36 - NEGATIVE_CELL_PENALTY_POINTS]
+    assert history[PLAYER_2] == [0, 0, 16]
+
+
 def test_turn_analysis_empty_at_step_zero(renderer):
     game = Game(board_size=6)
     assert renderer._turn_analyses(game).get(0) is None
@@ -415,6 +435,49 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == ("missed flag capture (+1 available)", ((0, 0), 4, 1))
+
+
+def test_turn_analysis_flags_a_missed_trap_avoidance(renderer):
+    # Same two-orientation setup as test_turn_analysis_flags_a_missed_flag_capture,
+    # inverted: the chosen 4x1 strip along row 0 hits the trap at (0, 3); the
+    # unchosen 1x4 strip down column 0 would have avoided it entirely.
+    game = Game(board_size=6)
+    game.negative_cells_enabled = True
+    game.board.negative_cells = frozenset({(0, 3)})
+    game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
+
+    assert renderer._turn_analyses(game)[1] == (
+        "would have avoided a 1-cell trap (-10 points)", ((0, 0), 1, 4)
+    )
+
+
+def test_turn_analysis_composes_flag_and_trap_axes_by_larger_gap(renderer):
+    # Same two-orientation setup as test_turn_analysis_flags_a_missed_flag_capture
+    # and test_turn_analysis_flags_a_missed_trap_avoidance, combined: the chosen
+    # 1x4 strip both misses the flag at (0, 3) AND hits the trap at (2, 0); the
+    # unchosen 4x1 strip does the opposite (captures the flag, avoids the trap).
+    # flag_bonus_points(20) > negative_cell_penalty_points(10, default) so the
+    # flag axis's gap wins the max(), proving the now-4-way comparison picks
+    # the larger gap rather than always reporting whichever axis comes first.
+    game = Game(board_size=6, flag_conquest_enabled=True, flag_bonus_points=20)
+    game.board.flag_cells = frozenset({(0, 3)})
+    game.negative_cells_enabled = True
+    game.board.negative_cells = frozenset({(2, 0)})
+    game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
+
+    assert renderer._turn_analyses(game)[1] == ("missed flag capture (+1 available)", ((0, 0), 4, 1))
+
+
+def test_turn_analysis_ignores_leftover_negative_cells_when_disabled(renderer):
+    # Same fixture as test_turn_analysis_flags_a_missed_trap_avoidance, but
+    # negative_cells_enabled stays False - the guard in _candidate_partial_value,
+    # not just an empty negative_cells set, is what's under test here (mirrors
+    # test_game.py's test_negative_cells_enabled_false_guard_ignores_leftover_board_state).
+    game = Game(board_size=6)
+    game.board.negative_cells = frozenset({(0, 3)})
+    game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
+
+    assert renderer._turn_analyses(game).get(1) is None
 
 
 def test_turn_analysis_flags_a_missed_denial(renderer):
