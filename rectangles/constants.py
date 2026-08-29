@@ -11,6 +11,13 @@ SKIP_LIMIT = 5
 # both features clear of the opening moves.
 START_CORNER_EXCLUSION_RADIUS = 5
 
+# Minimum Chebyshev distance kept between two special cells belonging to the
+# SAME house-rule feature (e.g. one Flag Conquest pair vs. the next, or one
+# Wall pair vs. the next) - keeps them visually spread across the board
+# instead of clustering together. Does not apply across different features
+# (a flag can still land right next to a wall or an obstacle).
+MIN_SPECIAL_CELL_DISTANCE = 3
+
 # Whether flag cells are seeded on the board (see Game.reset()); capturing one
 # awards FLAG_BONUS_POINTS on top of area. FLAG_CELL_PAIRS mirrored
 # single-cell pairs are placed each game (each pair: a random cell outside

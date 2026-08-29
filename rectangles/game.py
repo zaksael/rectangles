@@ -11,6 +11,7 @@ from .constants import (
     FLAG_BONUS_POINTS,
     FLAG_CELL_PAIRS,
     FLAG_CONQUEST_ENABLED,
+    MIN_SPECIAL_CELL_DISTANCE,
     OBSTACLE_CELL_PAIRS,
     OBSTACLES_ENABLED,
     PLAYER_1,
@@ -54,6 +55,11 @@ def _near_start_corner(cell: tuple[int, int], size: int) -> bool:
     r, c = cell
     corners = ((0, 0), (size - 1, size - 1))
     return any(max(abs(r - cr), abs(c - cc)) <= START_CORNER_EXCLUSION_RADIUS for cr, cc in corners)
+
+
+def _near_any(cell: tuple[int, int], others: set[tuple[int, int]]) -> bool:
+    r, c = cell
+    return any(max(abs(r - pr), abs(c - pc)) < MIN_SPECIAL_CELL_DISTANCE for pr, pc in others)
 
 
 class Game:
@@ -132,15 +138,20 @@ class Game:
         self,
         count: int,
         occupied: set[tuple[int, int]],
-        *,
-        exclude_self_mirror: bool = False,
     ) -> frozenset[tuple[int, int]]:
         """Shared by Flag Conquest/Obstacles: `count` mirrored single-cell
-        pairs, enumerate-then-pick from candidates outside `occupied` and
-        the start-corner exclusion zone. A pair with an empty candidate pool
-        is skipped, not errored (fewer cells seeded that game)."""
+        pairs, enumerate-then-pick from candidates outside `occupied`, the
+        start-corner exclusion zone, MIN_SPECIAL_CELL_DISTANCE of any pair
+        already placed *by this call* (so a feature's own pairs spread out -
+        `occupied` itself, e.g. another feature's cells, gets no such
+        buffer), and MIN_SPECIAL_CELL_DISTANCE of the candidate's own mirror
+        (near the board's center, a cell can otherwise end up right next to
+        its own mirror partner - a degenerate un-spread-out "pair"). A pair
+        with an empty candidate pool is skipped, not errored (fewer cells
+        seeded that game)."""
         size = self.board_size
         occupied = set(occupied)
+        own_picked: set[tuple[int, int]] = set()
         result: set[tuple[int, int]] = set()
 
         for _ in range(count):
@@ -150,7 +161,8 @@ class Game:
                 for c in range(size)
                 if (r, c) not in occupied
                 and not _near_start_corner((r, c), size)
-                and (not exclude_self_mirror or (r, c) != _mirror_cell((r, c), size))
+                and not _near_any((r, c), {_mirror_cell((r, c), size)})
+                and not _near_any((r, c), own_picked)
             ]
             if not candidates:
                 continue
@@ -158,15 +170,15 @@ class Game:
             mirrored = _mirror_cell(cell, size)
             occupied.add(cell)
             occupied.add(mirrored)
+            own_picked.add(cell)
+            own_picked.add(mirrored)
             result.add(cell)
             result.add(mirrored)
 
         return frozenset(result)
 
     def _flag_cells(self) -> frozenset[tuple[int, int]]:
-        # exclude_self_mirror: the exact center of an odd board mirrors to
-        # itself - picking it would silently produce an unpaired flag.
-        return self._mirrored_cell_pairs(FLAG_CELL_PAIRS, set(), exclude_self_mirror=True)
+        return self._mirrored_cell_pairs(FLAG_CELL_PAIRS, set())
 
     def _wall_edges(
         self, flag_cells: frozenset[tuple[int, int]]
@@ -181,6 +193,7 @@ class Game:
             return [frozenset({(i, fixed), (i, fixed + 1)}) for i in range(start, start + WALL_LINE_LENGTH)]
 
         occupied: set[tuple[int, int]] = set(flag_cells)
+        own_placed: set[tuple[int, int]] = set()
         result: set[frozenset[tuple[int, int]]] = set()
 
         for _ in range(WALL_LINE_PAIRS):
@@ -190,16 +203,23 @@ class Game:
                 for start in range(size - WALL_LINE_LENGTH + 1):
                     edges = segment_edges(horizontal, fixed, start)
                     cells = set().union(*edges)
-                    if cells & {_mirror_cell(cell, size) for cell in cells}:
+                    mirrored_cells = {_mirror_cell(cell, size) for cell in cells}
+                    if any(_near_any(cell, mirrored_cells) for cell in cells):
+                        # too close to (or overlapping) its own mirror image -
+                        # near the center, that's a degenerate un-spread pair.
                         continue
                     if any(_near_start_corner(cell, size) for cell in cells) or cells & occupied:
+                        continue
+                    if any(_near_any(cell, own_placed) for cell in cells):
                         continue
                     candidates.append(edges)
             if not candidates:
                 continue
             edges = candidates[self.rng.randint(0, len(candidates) - 1)]
             mirrored_edges = [frozenset(_mirror_cell(c, size) for c in edge) for edge in edges]
-            occupied |= set().union(*edges, *mirrored_edges)
+            placed = set().union(*edges, *mirrored_edges)
+            occupied |= placed
+            own_placed |= placed
             result.update(edges)
             result.update(mirrored_edges)
 

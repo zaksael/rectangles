@@ -2,6 +2,7 @@ import pytest
 
 from rectangles.constants import (
     FLAG_CELL_PAIRS,
+    MIN_SPECIAL_CELL_DISTANCE,
     OBSTACLE_CELL_PAIRS,
     PLAYER_1,
     PLAYER_2,
@@ -352,6 +353,24 @@ def test_flag_cells_never_includes_the_self_mirroring_center_cell():
         assert len(flags) % 2 == 0  # every flag has its mirror present too
 
 
+def _chebyshev(a: tuple[int, int], b: tuple[int, int]) -> int:
+    return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
+
+
+def test_flag_and_obstacle_cells_respect_min_special_cell_distance():
+    # Every pair of distinct cells from the same feature - including a cell
+    # and its own mirror - must be at least MIN_SPECIAL_CELL_DISTANCE apart,
+    # so a feature's own cells spread across the board instead of
+    # clustering. Real (unscripted) rng across many draws: this is a
+    # property of the candidate filtering, not of one specific rng sequence.
+    for _ in range(30):
+        game = Game(board_size=19, flag_conquest_enabled=True, obstacles_enabled=True)
+        for cells in (list(game.board.flag_cells), list(game.board.obstacle_cells)):
+            for i in range(len(cells)):
+                for j in range(i + 1, len(cells)):
+                    assert _chebyshev(cells[i], cells[j]) >= MIN_SPECIAL_CELL_DISTANCE
+
+
 def test_walls_disabled_by_default():
     game = Game(board_size=11)
     assert game.board.wall_edges == frozenset()
@@ -386,6 +405,44 @@ def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
 
             # Walls never overlap flag cells when both modes are enabled.
             assert not (touched_cells & game.board.flag_cells)
+
+
+def _wall_segments(edges: frozenset) -> list[list[tuple[int, int]]]:
+    # Group individual 2-cell unit edges into contiguous segments (cells
+    # within one segment are Chebyshev-adjacent by construction) so
+    # cross-segment distance can be checked without tripping on a segment's
+    # own internal adjacency.
+    cells = list({cell for edge in edges for cell in edge})
+    parent = {cell: cell for cell in cells}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i in range(len(cells)):
+        for j in range(i + 1, len(cells)):
+            if _chebyshev(cells[i], cells[j]) <= 1:
+                parent[find(cells[i])] = find(cells[j])
+
+    groups: dict[tuple[int, int], list[tuple[int, int]]] = {}
+    for cell in cells:
+        groups.setdefault(find(cell), []).append(cell)
+    return list(groups.values())
+
+
+def test_wall_segments_respect_min_special_cell_distance():
+    # Different wall segments - including a segment and its own mirror -
+    # must stay MIN_SPECIAL_CELL_DISTANCE apart, so Walls' own segments
+    # spread across the board instead of clustering.
+    for _ in range(20):
+        game = Game(board_size=19, walls_enabled=True)
+        segments = _wall_segments(game.board.wall_edges)
+        for i in range(len(segments)):
+            for j in range(i + 1, len(segments)):
+                best = min(_chebyshev(a, b) for a in segments[i] for b in segments[j])
+                assert best >= MIN_SPECIAL_CELL_DISTANCE
 
 
 def test_obstacles_disabled_by_default():
