@@ -1,5 +1,5 @@
-from rectangles.bot import choose_placement
-from rectangles.constants import PLAYER_1, PLAYER_2
+from rectangles.bot import choose_placement, choose_wildcard_value, should_reroll
+from rectangles.constants import PLAYER_1, PLAYER_2, REROLL_LIMIT
 from rectangles.game import Game
 
 
@@ -55,3 +55,92 @@ def test_choose_placement_blocking_prefers_denying_opponent_frontier():
     game.roll_dice()
 
     assert choose_placement(game, "Blocking") == ((2, 3), 1, 1)
+
+
+def test_blocking_score_fn_computes_frontier_once_per_call_not_per_candidate():
+    # Regression test: board.frontier() is a full grid scan: computing it inside
+    # the per-candidate scoring lambda (instead of once, hoisted, per choose_*
+    # call) turns an O(size^2) cost into O(candidates * size^2).
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.place(game.players[PLAYER_2], (2, 4), 1, 1)
+    game.roll_dice()
+    assert len(game.legal_cache[(1, 1)]) > 1  # a per-candidate bug needs >1 candidate to show
+
+    calls = []
+    real_frontier = game.board.frontier
+    game.board.frontier = lambda player: (calls.append(player), real_frontier(player))[1]
+
+    choose_placement(game, "Blocking")
+
+    assert len(calls) == 1
+
+
+def test_choose_wildcard_value_greedy_prefers_a_flag_capturing_value():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.flag_cells = frozenset({(2, 5)})
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_WILDCARD"
+
+    assert choose_wildcard_value(game, "Greedy") == 3
+
+
+def test_choose_wildcard_value_blocking_prefers_a_frontier_denying_value():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([1, 1, 0, 0]))
+    game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
+    game.board.place(game.players[PLAYER_2], (0, 5), 1, 1)
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_WILDCARD"
+
+    assert choose_wildcard_value(game, "Blocking") == 4
+
+
+def test_should_reroll_true_when_best_placement_scores_zero_and_reroll_available():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_PLACEMENT"
+
+    assert should_reroll(game, "Greedy") is True
+
+
+def test_should_reroll_false_when_reroll_unavailable_even_at_zero_score():
+    game = Game(board_size=6, reroll_enabled=False, rng=ScriptedRandom([1, 1, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+    game.roll_dice()
+
+    assert should_reroll(game, "Greedy") is False
+
+
+def test_should_reroll_false_when_reroll_charges_exhausted():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+    game.players[PLAYER_1].rerolls_used = REROLL_LIMIT
+    game.roll_dice()
+
+    assert should_reroll(game, "Greedy") is False
+
+
+def test_should_reroll_false_for_basic_even_at_zero_score():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+    game.roll_dice()
+
+    assert should_reroll(game, "Basic") is False
+
+
+def test_should_reroll_true_when_skipped_and_reroll_available():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
+    game.roll_dice()
+    assert game.state.name == "SKIPPED"
+
+    assert should_reroll(game, "Greedy") is True
+
+
+def test_should_reroll_true_when_every_wildcard_value_scores_zero():
+    game = Game(board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([5, 5, 0]))
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_WILDCARD"
+
+    assert should_reroll(game, "Greedy") is True

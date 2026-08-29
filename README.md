@@ -107,8 +107,10 @@ pending and you haven't committed to it yet: while choosing where to place,
 while picking a [Wildcard Roll](#wildcard-roll) value, or when a roll would
 otherwise skip your turn. Each use costs exactly one charge, no matter which
 of those three situations you're in. The button shows your remaining count,
-e.g. "Reroll (1/2)", and disappears once you're out. The bot never uses its
-rerolls — it's a human-only resource.
+e.g. "Reroll (1/2)", and disappears once you're out. **Basic** never uses its
+rerolls; **Greedy**/**Blocking** reroll whenever nothing on the board (or in
+[Wildcard Roll](#wildcard-roll)'s value picker) would advance their own
+strategy at all — see [Bot opponent](#bot-opponent).
 
 ## Bot opponent
 
@@ -126,6 +128,14 @@ The three difficulties:
 - **Blocking** — prefers a placement that covers cells in *your* frontier,
   denying you those spots; falls back to a random pick among equally
   denying (or non-denying) candidates.
+
+Greedy and Blocking also play [Wildcard Roll](#wildcard-roll) and
+[Reroll](#reroll) with the same strategy: on a wildcard roll they pick
+whichever value scores best on their own metric (a reachable flag for
+Greedy, a deniable frontier cell for Blocking), and with Reroll on, they
+spend a charge to discard a roll that would score 0 either way — rather
+than accept a value/placement/skip that does nothing for them. Basic stays
+fully random for both and never rerolls.
 
 ## Series mode
 

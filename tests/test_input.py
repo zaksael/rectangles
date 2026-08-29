@@ -365,7 +365,7 @@ def test_take_bot_turn_rolls_when_awaiting_roll():
 
 def test_take_bot_turn_continues_when_skipped():
     game = _skipped_game()
-    ui_state = UIState()
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Basic"})
 
     take_bot_turn(game, ui_state)
 
@@ -468,10 +468,10 @@ def test_skip_button_click_in_skipped_commits_the_skip():
     assert len(game.history) == 1
 
 
-def test_take_bot_turn_never_uses_reroll_even_when_available():
-    # Bot always accepts whatever it rolls/skips - reroll charges are a
-    # human-only resource, matching how the bot already handles Wildcard
-    # Roll (always accepts a random value, never "declines").
+def test_take_bot_turn_basic_never_uses_reroll_even_when_available():
+    # Basic always accepts whatever it rolls/skips - reroll charges (like
+    # Wildcard Roll's value pick) stay dumb for Basic. Greedy/Blocking do use
+    # both now - see the should_reroll-driven tests below.
     game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6]))
     ui_state = UIState()
     game.current_player_id = PLAYER_2
@@ -486,9 +486,66 @@ def test_take_bot_turn_never_uses_reroll_even_when_available():
     assert p2.consecutive_skips == 1
 
 
+def test_take_bot_turn_greedy_rerolls_from_choosing_placement_at_zero_score():
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 2, 3]))
+    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+    game.roll_dice()
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+
+    take_bot_turn(game, ui_state)
+
+    p1 = game.players[PLAYER_1]
+    assert p1.rerolls_used == 1
+    assert len(p1.pieces) == 1  # the discarded roll was never placed
+    assert game.last_roll == (2, 3)
+
+
+def test_take_bot_turn_greedy_rerolls_from_skipped():
+    game = Game(board_size=2, reroll_enabled=True, rng=ScriptedRandom([6, 6, 1, 1]))
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
+    game.roll_dice()
+    assert game.state == TurnState.SKIPPED
+
+    take_bot_turn(game, ui_state)
+
+    p1 = game.players[PLAYER_1]
+    assert p1.rerolls_used == 1
+    assert p1.consecutive_skips == 0  # the discarded skip was never committed
+    assert game.last_roll == (1, 1)
+
+
+def test_take_bot_turn_greedy_rerolls_from_choosing_wildcard_at_zero_score():
+    game = Game(
+        board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([5, 5, 0, 2, 3])
+    )
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    take_bot_turn(game, ui_state)
+
+    assert game.players[PLAYER_1].rerolls_used == 1
+    assert game.last_roll == (2, 3)
+
+
+def test_take_bot_turn_greedy_picks_the_flag_capturing_wildcard_value():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.flag_cells = frozenset({(2, 5)})
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+
+    take_bot_turn(game, ui_state)
+
+    assert game.state == TurnState.CHOOSING_PLACEMENT
+    assert game.last_roll == (3, 2)
+
+
 def test_take_bot_turn_resolves_choosing_wildcard():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0, 6]))
-    ui_state = UIState()
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Basic"})
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
 

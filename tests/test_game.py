@@ -675,6 +675,19 @@ def test_wildcard_skips_the_picker_when_every_value_is_illegal():
     assert game.history[-1].wildcard_original_roll == (6, 6)
 
 
+def test_legal_placements_for_value_substitutes_the_wildcard_die():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([5, 5, 0]))
+    game.roll_dice()
+    assert game.state == TurnState.CHOOSING_WILDCARD
+    assert game.wildcard_index == 0  # index 0 (first die) is the one still editable
+
+    placements = game.legal_placements_for_value(3)
+
+    assert set(placements) == {(3, 5), (5, 3)}
+    assert placements[(3, 5)] == game.board.legal_top_lefts(game.current_player, 3, 5)
+    assert placements[(5, 3)] == game.board.legal_top_lefts(game.current_player, 5, 3)
+
+
 def test_wildcard_resolution_does_not_grant_a_bonus_turn():
     # Doubles no longer grant an extra turn - this was fully replaced by the
     # merged Wildcard Roll trigger, not kept alongside it.

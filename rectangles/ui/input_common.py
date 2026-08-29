@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 
 from .. import bot
-from ..constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2
+from ..constants import PLAYER_1, PLAYER_2
 from ..game import Game, TurnState
 from ..series import Series
 from ..tournament import Bracket, Match, Participant
@@ -89,19 +89,31 @@ def plain_bot_seats(ui_state: UIState) -> dict[int, str]:
 def take_bot_turn(game: Game, ui_state: UIState) -> None:
     if game.state == TurnState.AWAITING_ROLL:
         _roll_dice(game, ui_state)
-    elif game.state == TurnState.CHOOSING_WILDCARD:
-        # Bot always picks uniformly at random, independent of difficulty -
-        # Greedy/Blocking only affect placement choice, not this.
-        _choose_wildcard_value(game, ui_state, game.rng.randint(DICE_MIN, DICE_MAX))
+        return
+
+    difficulty = ui_state.active_bot_seats[game.current_player_id]
+    if game.state == TurnState.CHOOSING_WILDCARD:
+        # Basic always picks uniformly at random; Greedy/Blocking pick the
+        # value that scores best, or reroll if even the best is worthless -
+        # see bot.should_reroll/choose_wildcard_value.
+        if bot.should_reroll(game, difficulty):
+            _reroll(game, ui_state)
+        else:
+            _choose_wildcard_value(game, ui_state, bot.choose_wildcard_value(game, difficulty))
     elif game.state == TurnState.SKIPPED:
-        continue_turn(game)
+        if bot.should_reroll(game, difficulty):
+            _reroll(game, ui_state)
+        else:
+            continue_turn(game)
     elif game.state == TurnState.CHOOSING_PLACEMENT:
-        difficulty = ui_state.active_bot_seats[game.current_player_id]
-        top_left, w, h = bot.choose_placement(game, difficulty)
-        if game.attempt_place(top_left, w, h):
-            if not game.check_game_over():
-                game.end_turn()
-            ui_state.reset()
+        if bot.should_reroll(game, difficulty):
+            _reroll(game, ui_state)
+        else:
+            top_left, w, h = bot.choose_placement(game, difficulty)
+            if game.attempt_place(top_left, w, h):
+                if not game.check_game_over():
+                    game.end_turn()
+                ui_state.reset()
 
 
 def build_tournament_participants(ui_state: UIState) -> list[Participant]:
