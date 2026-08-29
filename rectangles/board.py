@@ -192,6 +192,24 @@ class Board:
                     counts[owner] = counts.get(owner, 0) + len(region)
         return counts
 
+    def self_enclosed_count_if(self, player_id: int, top_left: tuple[int, int], w: int, h: int) -> int:
+        # What-if variant of self_enclosed_cell_counts(), for scoring a
+        # hypothetical placement (replay analysis) without mutating real
+        # game state: stamps the grid directly rather than going through
+        # place() (no Rectangle/Player.pieces bookkeeping needed), computes,
+        # then reverts. Caller must pass cells that are actually empty
+        # (true for every legal candidate) so the revert-to-None is exact.
+        r, c = top_left
+        for cr in range(r, r + h):
+            for cc in range(c, c + w):
+                self._grid[cr][cc] = player_id
+        try:
+            return self.self_enclosed_cell_counts().get(player_id, 0)
+        finally:
+            for cr in range(r, r + h):
+                for cc in range(c, c + w):
+                    self._grid[cr][cc] = None
+
     def legal_top_lefts(self, player: Player, w: int, h: int) -> set[tuple[int, int]]:
         result: set[tuple[int, int]] = set()
         for r in range(self.size - h + 1):

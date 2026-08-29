@@ -84,7 +84,37 @@ class ReplayMixin:
                 history[player_id].append(score)
         return history
 
-    def _turn_analyses(self, game: Game) -> dict[int, list[tuple[str, tuple[tuple[int, int], int, int] | None]]]:
+    def _candidate_value(
+        self,
+        game: Game,
+        board: Board,
+        player: Player,
+        candidate: tuple[tuple[int, int], int, int],
+        opponent_frontier: set[tuple[int, int]],
+        enclosure_before: int,
+    ) -> tuple[int, int, int, int]:
+        # One combined turn-quality value per candidate, using the same
+        # point weights Game.total_score() applies - flag_bonus_points and
+        # SELF_ENCLOSED_PENALTY_PER_CELL - so every candidate this turn is
+        # ranked on one scale instead of separate flag/denial/enclosure
+        # axes. Denial itself carries weight 1 (it has no total_score()
+        # equivalent to borrow a weight from). Returns the raw per-axis
+        # cell counts alongside the total so a caller can name whichever
+        # axis actually drove a gap between two candidates.
+        flag_cells = bot.flag_score(candidate, board.flag_cells) if game.flag_conquest_enabled else 0
+        denial_cells = bot.blocking_score(candidate, opponent_frontier)
+        enclosure_delta = 0
+        if game.self_enclosed_penalty_enabled:
+            top_left, w, h = candidate
+            enclosure_delta = board.self_enclosed_count_if(player.id, top_left, w, h) - enclosure_before
+        total = (
+            flag_cells * game.flag_bonus_points
+            + denial_cells
+            - enclosure_delta * constants.SELF_ENCLOSED_PENALTY_PER_CELL
+        )
+        return total, flag_cells, denial_cells, enclosure_delta
+
+    def _turn_analyses(self, game: Game) -> dict[int, tuple[str, tuple[tuple[int, int], int, int] | None]]:
         # Whole-game, one incremental O(N) walk (same shape as _score_history)
         # rather than N separate from-scratch board reconstructions - cached
         # below since this is the one case in Renderer where recompute-every-
@@ -100,100 +130,151 @@ class ReplayMixin:
                 return cached_analyses
 
         board, scratch = self._new_scratch_board(game)
-        analyses: dict[int, list[tuple[str, tuple[tuple[int, int], int, int] | None]]] = {}
+        analyses: dict[int, tuple[str, tuple[tuple[int, int], int, int] | None]] = {}
         for step, record in enumerate(game.history, start=1):
             if record.placed is None:
                 continue  # skips are never mistakes - no legal placement existed
 
             player = scratch[record.player_id]
             a, b = record.roll
-            candidates = [
-                (top_left, w, h)
-                for w, h in ((a, b), (b, a))
-                for top_left in board.legal_top_lefts(player, w, h)
-            ]
-            # A turn with only one legal option (forced move) was never a
-            # choice, so it can't be flagged as a mistake - matters for
-            # self-enclosure below, which (unlike flag/denial) doesn't
-            # already fall out of the best-vs-chosen comparison.
-            had_alternative = len(set(candidates)) > 1
-            chosen = (record.placed.top_left, record.placed.width, record.placed.height)
-            notes: list[tuple[str, tuple[tuple[int, int], int, int] | None]] = []
-
-            if game.flag_conquest_enabled:
-                chosen_score = bot.flag_score(chosen, board.flag_cells)
-                best_candidate = max(candidates, key=lambda c: bot.flag_score(c, board.flag_cells))
-                best_score = bot.flag_score(best_candidate, board.flag_cells)
-                if best_score > chosen_score:
-                    notes.append((f"missed flag capture (+{best_score - chosen_score} available)", best_candidate))
-
             opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
             opponent_frontier = board.frontier(scratch[opponent_id])
-            chosen_score = bot.blocking_score(chosen, opponent_frontier)
-            best_candidate = max(candidates, key=lambda c: bot.blocking_score(c, opponent_frontier))
-            best_score = bot.blocking_score(best_candidate, opponent_frontier)
-            if best_score > chosen_score:
-                notes.append((f"missed denial (+{best_score - chosen_score} cells available)", best_candidate))
+            enclosure_before = (
+                board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
+            )
 
+            # Candidate pool spans every reachable (value, placement) pair
+            # this turn could have used - just the rolled orientation pair
+            # normally, or every possible wildcard value on a Wildcard Roll
+            # turn (still one pool, one comparison, one note either way).
             if record.wildcard_original_roll is not None:
                 fixed = record.wildcard_original_roll[0]
-                chosen_value = b if a == fixed else a
+                chosen_value: int | None = b if a == fixed else a
+                pool = [
+                    (value, (top_left, w, h))
+                    for value in range(constants.DICE_MIN, constants.DICE_MAX + 1)
+                    for w, h in ((fixed, value), (value, fixed))
+                    for top_left in board.legal_top_lefts(player, w, h)
+                ]
+            else:
+                chosen_value = None
+                pool = [
+                    (None, (top_left, w, h))
+                    for w, h in ((a, b), (b, a))
+                    for top_left in board.legal_top_lefts(player, w, h)
+                ]
 
-                def best_for(value: int) -> tuple[int, tuple[tuple[int, int], int, int] | None]:
-                    cands = [
-                        (top_left, w, h)
-                        for w, h in ((fixed, value), (value, fixed))
-                        for top_left in board.legal_top_lefts(player, w, h)
-                    ]
-                    if not cands:
-                        return 0, None
-                    scored = [
-                        (bot.flag_score(c, board.flag_cells) + bot.blocking_score(c, opponent_frontier), c)
-                        for c in cands
-                    ]
-                    return max(scored, key=lambda sc: sc[0])
+            chosen_entry = (chosen_value, (record.placed.top_left, record.placed.width, record.placed.height))
 
-                results = {v: best_for(v) for v in range(constants.DICE_MIN, constants.DICE_MAX + 1)}
-                chosen_score, _ = results[chosen_value]
-                best_value, (best_score, best_candidate) = max(results.items(), key=lambda vb: vb[1][0])
-                if best_score > chosen_score:
-                    notes.append((
-                        f"suboptimal wildcard pick (rolling {best_value} instead would score +{best_score - chosen_score})",
+            def value_of(entry: tuple[int | None, tuple[tuple[int, int], int, int]]) -> tuple[int, int, int, int]:
+                _, candidate = entry
+                return self._candidate_value(game, board, player, candidate, opponent_frontier, enclosure_before)
+
+            # self_enclosed_count_if is an O(board_size^2) flood-fill; a
+            # Wildcard Roll turn's pool can run into the hundreds on a large
+            # board, and running it for every candidate made replay's first
+            # screen switch visibly laggy. A count can never go negative, so
+            # a candidate's enclosure bonus is capped at enclosure_before
+            # (fully clearing every already-enclosed cell) - its total can
+            # never exceed its cheap flag+denial value plus that ceiling.
+            # Skip the flood-fill for any candidate that ceiling can't lift
+            # past the running best; only the few genuinely competitive
+            # candidates ever pay for it. Provably exact, not a heuristic:
+            # a skipped candidate could never have won anyway.
+            # ponytail: this ceiling is player-wide (all of enclosure_before,
+            # not just the region(s) a given candidate actually touches), so
+            # it stops pruning much once a player has several existing
+            # self-enclosed cells - deep games on the largest board with
+            # both Wildcard and Enclosure Penalty on can still take ~1s
+            # (measured), down from ~3s unpruned. A tighter, region-scoped
+            # bound (or an incremental region tracker instead of a fresh
+            # flood-fill per candidate) would close the rest of the gap if
+            # that's ever felt as too slow.
+            ceiling_bonus = (
+                enclosure_before * constants.SELF_ENCLOSED_PENALTY_PER_CELL if game.self_enclosed_penalty_enabled else 0
+            )
+            # pool always contains at least the chosen move (it was legally
+            # placed under this same roll), so the first iteration always
+            # runs and sets real values below - a float("-inf") seed needs
+            # no is-None checks, unlike a None seed would.
+            best_value_axis = float("-inf")
+            for entry in pool:
+                _, candidate = entry
+                partial = (
+                    bot.flag_score(candidate, board.flag_cells) * game.flag_bonus_points
+                    if game.flag_conquest_enabled
+                    else 0
+                ) + bot.blocking_score(candidate, opponent_frontier)
+                if partial + ceiling_bonus <= best_value_axis:
+                    continue
+                total, flag_cells, denial_cells, enclosure_delta = self._candidate_value(
+                    game, board, player, candidate, opponent_frontier, enclosure_before
+                )
+                if total > best_value_axis:
+                    best_value_axis, best_flag, best_denial, best_enclosure = total, flag_cells, denial_cells, enclosure_delta
+                    best_entry = entry
+            chosen_total, chosen_flag, chosen_denial, chosen_enclosure = value_of(chosen_entry)
+
+            if best_value_axis > chosen_total:
+                best_die, best_candidate = best_entry
+                if chosen_value is not None and best_die != chosen_value:
+                    note = (
+                        f"suboptimal wildcard pick (rolling {best_die} instead would "
+                        f"score +{best_value_axis - chosen_total})",
                         best_candidate,
-                    ))
+                    )
+                else:
+                    flag_gap = (best_flag - chosen_flag) * game.flag_bonus_points if game.flag_conquest_enabled else 0
+                    denial_gap = best_denial - chosen_denial
+                    enclosure_gap = (
+                        (chosen_enclosure - best_enclosure) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
+                        if game.self_enclosed_penalty_enabled
+                        else 0
+                    )
+                    _gap, message = max(
+                        (
+                            (flag_gap, f"missed flag capture (+{best_flag - chosen_flag} available)"),
+                            (denial_gap, f"missed denial (+{best_denial - chosen_denial} cells available)"),
+                            (
+                                enclosure_gap,
+                                f"would have avoided creating a {chosen_enclosure - best_enclosure}-cell "
+                                "self-enclosed hole",
+                            ),
+                        ),
+                        key=lambda gm: gm[0],
+                    )
+                    note = (message, best_candidate)
+                analyses[step] = note
 
-            before = board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
             board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
-            if game.self_enclosed_penalty_enabled:
-                after = board.self_enclosed_cell_counts().get(player.id, 0)
-                if after > before and had_alternative:
-                    notes.append((f"created a {after - before}-cell self-enclosed hole", None))
-
-            if notes:
-                analyses[step] = notes
 
         self._turn_analyses_cache = (game, len(game.history), analyses)
         return analyses
 
     def _draw_turn_analysis(self, game: Game, step: int) -> None:
-        y = layout.REPLAY_ANALYSIS_Y
-        for message, _candidate in self._turn_analyses(game).get(step, []):
-            y = self._draw_wrapped_text(
-                f"! {message}", (layout.PANEL_X, y), self.font_small, layout.PANEL_CONTENT_WIDTH, colors.ANALYSIS_WARNING_COLOR
+        note = self._turn_analyses(game).get(step)
+        if note is not None:
+            message, _candidate = note
+            self._draw_wrapped_text(
+                f"! {message}", (layout.PANEL_X, layout.REPLAY_ANALYSIS_Y), self.font_small,
+                layout.PANEL_CONTENT_WIDTH, colors.ANALYSIS_WARNING_COLOR,
             )
 
     def _draw_analysis_suggestions(self, game: Game, step: int, ui_state: UIState) -> None:
         if not ui_state.replay_show_better_option:
             return
-        for _message, candidate in self._turn_analyses(game).get(step, []):
-            if candidate is None:
-                continue
-            top_left, w, h = candidate
-            rect = layout.piece_rect(top_left, w, h, game.board.size)
-            overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-            overlay.fill(colors.ANALYSIS_SUGGESTION_COLOR)
-            self.screen.blit(overlay, rect.topleft)
-            pygame.draw.rect(self.screen, colors.ANALYSIS_SUGGESTION_COLOR[:3], rect, width=2)
+        note = self._turn_analyses(game).get(step)
+        if note is None:
+            return
+        _message, candidate = note
+        if candidate is None:
+            return
+        top_left, w, h = candidate
+        rect = layout.piece_rect(top_left, w, h, game.board.size)
+        overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        overlay.fill(colors.ANALYSIS_SUGGESTION_COLOR)
+        self.screen.blit(overlay, rect.topleft)
+        pygame.draw.rect(self.screen, colors.ANALYSIS_SUGGESTION_COLOR[:3], rect, width=2)
 
     def _draw_score_chart(self, game: Game, ui_state: UIState) -> None:
         x = layout.PANEL_X

@@ -366,7 +366,7 @@ def test_score_history_applies_self_enclosed_penalty_when_ring_completes(rendere
 
 def test_turn_analysis_empty_at_step_zero(renderer):
     game = Game(board_size=6)
-    assert renderer._turn_analyses(game).get(0, []) == []
+    assert renderer._turn_analyses(game).get(0) is None
 
 
 def test_turn_analysis_empty_for_a_skip(renderer):
@@ -377,7 +377,7 @@ def test_turn_analysis_empty_for_a_skip(renderer):
     game.roll_dice()
     assert game.state == TurnState.SKIPPED
 
-    assert renderer._turn_analyses(game).get(1, []) == []
+    assert renderer._turn_analyses(game).get(1) is None
 
 
 def test_turn_analysis_flags_a_missed_flag_capture(renderer):
@@ -390,7 +390,7 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
-    assert renderer._turn_analyses(game)[1] == [("missed flag capture (+1 available)", ((0, 0), 4, 1))]
+    assert renderer._turn_analyses(game)[1] == ("missed flag capture (+1 available)", ((0, 0), 4, 1))
 
 
 def test_turn_analysis_flags_a_missed_denial(renderer):
@@ -404,13 +404,15 @@ def test_turn_analysis_flags_a_missed_denial(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analyses(game)[3] == [("missed denial (+1 cells available)", ((2, 3), 1, 1))]
+    assert renderer._turn_analyses(game)[3] == ("missed denial (+1 cells available)", ((2, 3), 1, 1))
 
 
 def test_turn_analysis_flags_a_self_created_enclosure(renderer):
     # Same ring-around-(2,2) layout as
     # test_score_history_applies_self_enclosed_penalty_when_ring_completes -
-    # the final placement at (2, 3) is the one that closes the ring.
+    # the final placement at (2, 3) is the one that closes the ring. Fires
+    # because an alternative frontier cell, e.g. (3, 1), scores higher
+    # (creates no hole) than the chosen move.
     game = Game(board_size=6, self_enclosed_penalty_enabled=True)
     game.history = [
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((1, 2), 1, 1, PLAYER_1)),
@@ -420,7 +422,9 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 3), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analyses(game)[5] == [("created a 1-cell self-enclosed hole", None)]
+    assert renderer._turn_analyses(game)[5] == (
+        "would have avoided creating a 1-cell self-enclosed hole", ((3, 1), 1, 1)
+    )
 
 
 def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
@@ -429,6 +433,8 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     # stays, wildcard becomes 4) reaches it via a 4x2 placement; the chosen
     # value 1 can't reach col 3 at all. Neither player has moved yet, so
     # denial contributes 0 uniformly and doesn't affect which value wins.
+    # The gap is in weighted points now (1 flag cell * FLAG_BONUS_POINTS=10),
+    # not a raw cell count.
     game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [
@@ -437,9 +443,9 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
         )
     ]
 
-    assert renderer._turn_analyses(game)[1] == [
-        ("suboptimal wildcard pick (rolling 4 instead would score +1)", ((0, 0), 4, 2))
-    ]
+    assert renderer._turn_analyses(game)[1] == (
+        "suboptimal wildcard pick (rolling 4 instead would score +10)", ((0, 0), 4, 2)
+    )
 
 
 def test_turn_analysis_no_note_when_wildcard_pick_already_optimal(renderer):
@@ -453,7 +459,7 @@ def test_turn_analysis_no_note_when_wildcard_pick_already_optimal(renderer):
         )
     ]
 
-    assert renderer._turn_analyses(game).get(1, []) == []
+    assert renderer._turn_analyses(game).get(1) is None
 
 
 def test_turn_analysis_does_not_flag_a_forced_enclosure(renderer):
@@ -476,7 +482,7 @@ def test_turn_analysis_does_not_flag_a_forced_enclosure(renderer):
     history.append(TurnRecord(PLAYER_1, roll=(2, 2), placed=Rectangle((2, 4), 2, 2, PLAYER_1)))
     game.history = history
 
-    assert renderer._turn_analyses(game).get(len(history), []) == []
+    assert renderer._turn_analyses(game).get(len(history)) is None
 
 
 def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(renderer):
@@ -492,7 +498,7 @@ def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(ren
     game.roll_dice()
     assert game.attempt_place((3, 3), 3, 3) is True  # anchored at P2's real corner (5, 5)
 
-    assert renderer._turn_analyses(game).get(2, []) == []
+    assert renderer._turn_analyses(game).get(2) is None
 
 
 def test_turn_analyses_omits_clean_steps_from_the_dict(renderer):

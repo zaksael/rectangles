@@ -588,16 +588,15 @@ REPLAY_BUTTON_RECTS = _centered_button_row(
     gap=_REPLAY_BUTTON_GAP,
 )
 
-# Turn analysis notes: up to 4 short "missed X" lines below the
-# (possibly 2-line-wrapped) caption, in the same idle gap the score chart
-# below already lives in - shifting the chart down by _REPLAY_ANALYSIS_DELTA
+# Turn analysis: at most one "missed X" note below the (possibly
+# 2-line-wrapped) caption, in the same idle gap the score chart below
+# already lives in - shifting the chart down by _REPLAY_ANALYSIS_DELTA
 # rather than growing DESIGN_HEIGHT, same idiom the caption-wrap fix used.
 REPLAY_ANALYSIS_Y = 292  # 6px below the caption's worst case: PANEL_STATUS_Y(240) + 2*23
 
-# Room for up to 4 notes (missed flag/denial/self-enclosure always fit on one
-# line; the suboptimal-wildcard-pick note can wrap to 2), worst case
-# (1+1+1+2)*18=90px, plus margin.
-_REPLAY_ANALYSIS_DELTA = 96
+# Room for the one note, worst case 2 wrapped lines (the suboptimal-wildcard-
+# pick message is the longest template): 2*18=36px, plus margin.
+_REPLAY_ANALYSIS_DELTA = 48
 
 # Score-history chart: sits in the large idle gap the replay panel leaves
 # between the caption (ends ~264) and the nav button row above (top 808) -

@@ -264,14 +264,16 @@ most recent entries plus a note when there's more, so the panel always fits.
   score-history chart plotting both players' scores across the whole game
   (every flagged turn also marked on the chart with a dot, so a bad turn
   is visible at a glance without stepping through the whole game), and —
-  for the turn just taken — any flagged missed opportunities (a bigger
-  flag capture, more opponent denial, a self-enclosed hole the placement
-  created, or — on a Wildcard Roll turn — a better die value than the one
-  picked) versus the best other legal option that roll. Toggle **Show
-  Better Option** to reveal exactly which placement would have scored
-  higher for a flagged flag-capture/denial/wildcard note, outlined right
-  on the board. Hit **Play** to watch it advance automatically at your chosen
-  Slow/Normal/Fast pace — it stops at the last step, and any manual
+  for the turn just taken — a flagged missed opportunity, if the best
+  other legal option that roll would have scored higher than what was
+  actually played: a bigger flag capture, more opponent denial, an
+  avoided self-enclosed hole, or — on a Wildcard Roll turn — a better die
+  value than the one picked. At most one note per turn, whichever of
+  those was the actual reason the alternative scored higher. Toggle
+  **Show Better Option** to reveal exactly which placement would have
+  scored higher, outlined right on the board. Hit **Play** to watch it
+  advance automatically at your chosen Slow/Normal/Fast pace — it stops
+  at the last step, and any manual
   navigation pauses it. **Back**/`Esc` returns to the summary screen.
 - The side panel keeps a running **History** log of every placement and
   skip, most recent first; scroll the mouse wheel over it to see older
