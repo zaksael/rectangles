@@ -3,9 +3,8 @@
 This is an implementation-agnostic specification of the "Rectangles" dice
 game: everything needed to build (or referee by hand, with pen and paper) a
 correct copy of the game, independent of any particular codebase, language,
-or engine. For how *this* repository implements these rules, see
-[CLAUDE.md](../CLAUDE.md). For how to install, run, and play this specific
-implementation (controls, screens, buttons), see the [README](../README.md).
+or engine. For how to install, run, and play this specific implementation
+(controls, screens, buttons), see the [README](../README.md).
 
 ## 1. Overview
 
@@ -164,7 +163,8 @@ exactly one of the two charges, regardless of which of those situations
 prompted it. Declining to reroll a would-be skip and accepting it
 instead costs nothing extra beyond the skip itself — the skip only
 counts toward the skip streak (§7) once the player actually accepts it,
-not before. An automated opponent never uses its rerolls.
+not before. Whether an automated opponent uses its rerolls, and how,
+depends on its difficulty — see §10.
 
 ## 7. Skip limit and being boxed in
 
@@ -215,6 +215,24 @@ levels may be offered:
   currently-available cells from its opponent (i.e. cells the opponent
   could otherwise have used for at least a 1×1 piece); ties are broken
   randomly.
+
+Greedy and Blocking apply the same underlying strategy to Wildcard Roll
+(§6.4) and Reroll (§6.6), where enabled:
+
+- On a wildcard roll, each picks whichever value scores best by its own
+  metric (most flags reachable for Greedy, most opponent cells deniable
+  for Blocking). If every value ties — for Greedy, this includes every
+  turn Flag Conquest is off — Blocking picks among the tied values at
+  random, while Greedy instead prefers the value yielding the largest
+  piece.
+- With Reroll on, Blocking discards a roll whenever no candidate would
+  deny its opponent anything right now. Greedy does the same only when
+  Flag Conquest is in play and no candidate reaches a flag this turn;
+  with Flag Conquest off, no flag could ever be reached, so Greedy never
+  rerolls.
+
+Basic never rerolls and always picks a wildcard value uniformly at
+random, regardless of house rules.
 
 ## 11. Series play
 
