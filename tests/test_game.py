@@ -377,9 +377,13 @@ def test_walls_disabled_by_default():
 
 
 def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
+    # rng=ScriptedRandom([0, ...]) (always pick candidate index 0), same
+    # determinism trick as test_flag_cells_never_includes_the_self_mirroring_center_cell -
+    # an unseeded real rng makes `edges != frozenset()` below flaky: a real
+    # draw can (rarely) land on an empty candidate pool for both pairs.
     for size in (11, 19):
         for kwargs in ({}, {"flag_conquest_enabled": True}):
-            game = Game(board_size=size, walls_enabled=True, **kwargs)
+            game = Game(board_size=size, walls_enabled=True, rng=ScriptedRandom([0] * 20), **kwargs)
             edges = game.board.wall_edges
             assert edges != frozenset()
             # At most WALL_LINE_PAIRS pairs, each pair contributing two
@@ -451,9 +455,11 @@ def test_obstacles_disabled_by_default():
 
 
 def test_reset_computes_symmetric_randomized_obstacles_for_odd_board_sizes():
+    # Same flakiness fix as the walls test above - deterministic index-0
+    # picks so `cells != frozenset()` below can't hit a rare empty draw.
     for size in (11, 19):
         for kwargs in ({}, {"flag_conquest_enabled": True}, {"walls_enabled": True}):
-            game = Game(board_size=size, obstacles_enabled=True, **kwargs)
+            game = Game(board_size=size, obstacles_enabled=True, rng=ScriptedRandom([0] * 20), **kwargs)
             cells = game.board.obstacle_cells
             assert cells != frozenset()
             assert len(cells) <= 2 * OBSTACLE_CELL_PAIRS
