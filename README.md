@@ -291,12 +291,10 @@ most recent entries plus a note when there's more, so the panel always fits.
   score-history chart plotting both players' scores across the whole game
   (every flagged turn also marked on the chart with a dot, so a bad turn
   is visible at a glance without stepping through the whole game), and —
-  for the turn just taken — a flagged missed opportunity, if the best
-  other legal option that roll would have scored higher than what was
-  actually played: a bigger flag capture, an avoided trap, more opponent
-  denial, an avoided self-enclosed hole, or — on a Wildcard Roll turn — a
-  better die value than the one picked. At most one note per turn, whichever of
-  those was the actual reason the alternative scored higher. Toggle
+  for the turn just taken — a flag if the best other legal option that
+  roll would have scored higher than what was actually played, showing
+  the actual score against the best possible one (e.g. "scored 4 this
+  turn (best possible: 14)"). Toggle
   **Show Better Option** to reveal exactly which placement would have
   scored higher, outlined right on the board. Hit **Play** to watch it
   advance automatically at your chosen Slow/Normal/Fast pace — it stops

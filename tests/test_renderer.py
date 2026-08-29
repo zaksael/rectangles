@@ -434,7 +434,9 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
-    assert renderer._turn_analyses(game)[1] == ("missed flag capture (+1 available)", ((0, 0), 4, 1))
+    assert renderer._turn_analyses(game)[1] == (
+        "scored 4 this turn (best possible: 14)", ((0, 0), 4, 1)
+    )
 
 
 def test_turn_analysis_flags_a_missed_trap_avoidance(renderer):
@@ -447,25 +449,26 @@ def test_turn_analysis_flags_a_missed_trap_avoidance(renderer):
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "would have avoided a 1-cell trap (-10 points)", ((0, 0), 1, 4)
+        "scored -6 this turn (best possible: 4)", ((0, 0), 1, 4)
     )
 
 
-def test_turn_analysis_composes_flag_and_trap_axes_by_larger_gap(renderer):
+def test_turn_analysis_composes_flag_and_trap_axes(renderer):
     # Same two-orientation setup as test_turn_analysis_flags_a_missed_flag_capture
     # and test_turn_analysis_flags_a_missed_trap_avoidance, combined: the chosen
     # 1x4 strip both misses the flag at (0, 3) AND hits the trap at (2, 0); the
     # unchosen 4x1 strip does the opposite (captures the flag, avoids the trap).
-    # flag_bonus_points(20) > negative_cell_penalty_points(10, default) so the
-    # flag axis's gap wins the max(), proving the now-4-way comparison picks
-    # the larger gap rather than always reporting whichever axis comes first.
+    # Both axes contribute to the same combined total - proves the note reports
+    # the real total gap (30), not just one axis's share of it.
     game = Game(board_size=6, flag_conquest_enabled=True, flag_bonus_points=20)
     game.board.flag_cells = frozenset({(0, 3)})
     game.negative_cells_enabled = True
     game.board.negative_cells = frozenset({(2, 0)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
-    assert renderer._turn_analyses(game)[1] == ("missed flag capture (+1 available)", ((0, 0), 4, 1))
+    assert renderer._turn_analyses(game)[1] == (
+        "scored -6 this turn (best possible: 24)", ((0, 0), 4, 1)
+    )
 
 
 def test_turn_analysis_ignores_leftover_negative_cells_when_disabled(renderer):
@@ -496,7 +499,9 @@ def test_turn_analysis_flags_a_missed_denial(renderer):
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((3, 5), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analyses(game)[4] == ("missed denial (+4 cells available)", ((1, 3), 1, 1))
+    assert renderer._turn_analyses(game)[4] == (
+        "scored 1 this turn (best possible: 5)", ((1, 3), 1, 1)
+    )
 
 
 def test_turn_analysis_flags_a_self_created_enclosure(renderer):
@@ -526,7 +531,7 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
     ]
 
     assert renderer._turn_analyses(game)[5] == (
-        "would have avoided creating a 1-cell self-enclosed hole", ((3, 1), 1, 1)
+        "scored -1 this turn (best possible: 0)", ((3, 1), 1, 1)
     )
 
 
@@ -548,7 +553,7 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     ]
 
     assert renderer._turn_analyses(game)[1] == (
-        "suboptimal wildcard pick (rolling 6 instead would score +20)", ((0, 0), 6, 2)
+        "scored 2 this turn (best possible: 22)", ((0, 0), 6, 2)
     )
 
 
@@ -663,7 +668,7 @@ def test_turn_analysis_note_text_is_unaffected_by_show_better_option(renderer, m
     monkeypatch.setattr(renderer, "_text", lambda text, *a, **k: drawn.append(text))
 
     renderer._draw_turn_analysis(game, 1)
-    assert drawn == ["! missed flag capture (+1 available)"]
+    assert drawn == ["! scored 4 this turn (best possible: 14)"]
 
 
 def test_draw_replay_with_show_better_option_smoke(renderer):
