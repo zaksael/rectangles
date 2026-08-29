@@ -41,8 +41,9 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 
 An optional mode, off by default. When turned on, four flags are seeded on
 the board: two random positions each game, each mirrored through the
-board's center so neither player starts closer to one than the other.
-Whichever player's
+board's center so neither player starts closer to one than the other. Flags
+are kept clear of both starting corners and spread apart from each other,
+so they never cluster together. Whichever player's
 placed piece happens to cover a flag captures it immediately, earning a
 fixed bonus of 10 points added on top of their area. A single large piece can capture more
 than one flag at once if it covers them both. A gold ring marks whichever
@@ -53,7 +54,8 @@ unnoticed.
 
 An optional mode, off by default. When turned on, several wall lines are
 seeded on the board in mirrored pairs, each pair randomly placed and
-oriented (horizontal or vertical) and kept clear of both starting corners —
+oriented (horizontal or vertical), kept clear of both starting corners, and
+spread apart from any other wall pair so they never cluster together —
 barriers that sit *between* cells rather than cells themselves, so no board
 area is ever sacrificed; every cell stays placeable. A piece simply can't be
 built across a wall line, and a piece on one side doesn't count as touching
@@ -66,7 +68,8 @@ regardless of which corner they start from.
 
 An optional mode, off by default. When turned on, a handful of individual
 cells are seeded on the board in mirrored pairs, randomly placed and kept
-clear of both starting corners, Flag Conquest's flags, and Walls' lines.
+clear of both starting corners, Flag Conquest's flags, Walls' lines, and
+any other Obstacle pair, so they never cluster together.
 Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
 cover it, and it never counts as a legal move for either player. Shown on
 the board as a solid dark square.

@@ -87,7 +87,9 @@ fixed for the whole match (and, in series play, for every round of it).
 
 When enabled: four flag cells are marked on the board before play begins —
 two random positions each game plus each one's mirror through the board's
-center, so neither player is favored. A flag cell behaves like any other empty
+center, so neither player is favored. Flags are kept clear of both players'
+starting corners and a minimum distance apart from each other, so they
+never cluster together. A flag cell behaves like any other empty
 cell for placement purposes; whichever player's piece happens to cover it
 captures it immediately (a single large enough piece can capture more than
 one flag at once). Each captured flag permanently earns that player a fixed
@@ -98,8 +100,9 @@ one flag at once). Each captured flag permanently earns that player a fixed
 When enabled: several wall segments are marked on the board before play
 begins, in mirrored pairs — each pair placed at a random position and
 orientation (horizontal or vertical), kept clear of both players' starting
-corners, with the second segment of each pair the exact mirror image of the
-first through the board's center. A wall sits
+corners and a minimum distance from any other wall pair, with the second
+segment of each pair the exact mirror image of the first through the
+board's center. A wall sits
 *between* two adjacent cells, not on a cell itself — no board area is ever
 removed from play, every cell stays placeable. However, no piece may be
 placed straddling a wall line, and two cells on opposite sides of a wall are
@@ -110,8 +113,9 @@ past a wall is to build around one of its ends.
 
 When enabled: a small number of individual cells are marked on the board
 before play begins, in mirrored pairs — each pair placed at a random
-position, kept clear of both players' starting corners and of any Flag
-Conquest or Walls cells already in play, with the second cell of each pair
+position, kept clear of both players' starting corners, of any Flag
+Conquest or Walls cells already in play, and a minimum distance from any
+other Obstacle pair, with the second cell of each pair
 the exact mirror image of the first through the board's center. Unlike a
 wall, an obstacle cell is a piece of the board itself that is permanently
 unplaceable — no candidate placement may ever cover it (§4), for either
