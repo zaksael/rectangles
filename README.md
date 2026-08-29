@@ -130,12 +130,16 @@ The three difficulties:
   denying (or non-denying) candidates.
 
 Greedy and Blocking also play [Wildcard Roll](#wildcard-roll) and
-[Reroll](#reroll) with the same strategy: on a wildcard roll they pick
-whichever value scores best on their own metric (a reachable flag for
-Greedy, a deniable frontier cell for Blocking), and with Reroll on, they
-spend a charge to discard a roll that would score 0 either way — rather
-than accept a value/placement/skip that does nothing for them. Basic stays
-fully random for both and never rerolls.
+[Reroll](#reroll) with the same underlying strategy: on a wildcard roll they
+pick whichever value scores best on their own metric (a reachable flag for
+Greedy, a deniable frontier cell for Blocking); if every value ties at zero,
+Blocking picks randomly among them, while Greedy instead prefers whichever
+value gives the larger piece. With Reroll on, Blocking spends a charge to
+discard a roll that wouldn't deny you anything right now. Greedy does the
+same, but only when a flag actually exists on the board — with
+[Flag Conquest](#flag-conquest) off, no roll could ever reach a flag anyway,
+so Greedy accepts whatever it gets instead of burning charges for nothing.
+Basic stays fully random for both and never rerolls.
 
 ## Series mode
 

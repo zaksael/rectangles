@@ -486,11 +486,14 @@ def test_take_bot_turn_basic_never_uses_reroll_even_when_available():
     assert p2.consecutive_skips == 1
 
 
-def test_take_bot_turn_greedy_rerolls_from_choosing_placement_at_zero_score():
+def test_take_bot_turn_blocking_rerolls_from_choosing_placement_at_zero_score():
+    # Blocking, not Greedy: Greedy's flag_score is structurally 0 without
+    # Flag Conquest on (rectangles/bot.py's should_reroll guard), so it
+    # wouldn't reroll here at all - see test_bot.py's coverage of that guard.
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 2, 3]))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
-    ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Blocking"})
     assert game.state == TurnState.CHOOSING_PLACEMENT
 
     take_bot_turn(game, ui_state)
@@ -515,11 +518,12 @@ def test_take_bot_turn_greedy_rerolls_from_skipped():
     assert game.last_roll == (1, 1)
 
 
-def test_take_bot_turn_greedy_rerolls_from_choosing_wildcard_at_zero_score():
+def test_take_bot_turn_blocking_rerolls_from_choosing_wildcard_at_zero_score():
+    # Blocking, not Greedy - see the comment on the CHOOSING_PLACEMENT variant above.
     game = Game(
         board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([5, 5, 0, 2, 3])
     )
-    ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
+    ui_state = UIState(active_bot_seats={PLAYER_1: "Blocking"})
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
 

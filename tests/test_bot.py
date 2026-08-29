@@ -96,11 +96,38 @@ def test_choose_wildcard_value_blocking_prefers_a_frontier_denying_value():
     assert choose_wildcard_value(game, "Blocking") == 4
 
 
-def test_should_reroll_true_when_best_placement_scores_zero_and_reroll_available():
+def test_choose_wildcard_value_greedy_prefers_the_larger_piece_without_a_flag():
+    # No flag conquest -> flag_score ties at 0 for every legal value; unlike
+    # choose_placement (one turn = one fixed w*h), different wildcard values
+    # give different piece sizes, so Greedy should break the tie toward area.
+    game = Game(board_size=8, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
+    game.board.place(game.players[PLAYER_1], (3, 3), 1, 1)
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_WILDCARD"
+
+    assert choose_wildcard_value(game, "Greedy") == 6
+
+
+def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_flag_conquest():
+    # Blocking rerolls on a plain 0 score; Greedy doesn't - its flag_score is
+    # structurally 0 without Flag Conquest on, so 0 isn't a signal for it -
+    # see the guard test below for the flags-exist-but-unreachable case.
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
     assert game.state.name == "CHOOSING_PLACEMENT"
+
+    assert should_reroll(game, "Blocking") is True
+    assert should_reroll(game, "Greedy") is False
+
+
+def test_should_reroll_true_for_greedy_when_flags_exist_but_unreachable_this_turn():
+    game = Game(board_size=6, flag_conquest_enabled=True, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_PLACEMENT"
+    assert game.board.flag_cells  # sanity: flags do exist this game
+    assert not (game.board.flag_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
 
     assert should_reroll(game, "Greedy") is True
 
@@ -139,8 +166,9 @@ def test_should_reroll_true_when_skipped_and_reroll_available():
 
 
 def test_should_reroll_true_when_every_wildcard_value_scores_zero():
+    # Blocking, not Greedy - see the guard tests above.
     game = Game(board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([5, 5, 0]))
     game.roll_dice()
     assert game.state.name == "CHOOSING_WILDCARD"
 
-    assert should_reroll(game, "Greedy") is True
+    assert should_reroll(game, "Blocking") is True

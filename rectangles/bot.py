@@ -89,10 +89,20 @@ def choose_wildcard_value(game: Game, difficulty: str = "Basic") -> int:
         return game.rng.randint(DICE_MIN, DICE_MAX)
 
     score_fn = _SCORE_FNS[difficulty](game)
-    scored = [
-        (_best_score(_candidates_from_dims(game.legal_placements_for_value(v)), score_fn), v)
-        for v in _legal_wildcard_values(game)
-    ]
+    scored = []
+    for v in _legal_wildcard_values(game):
+        dims_to_top_lefts = game.legal_placements_for_value(v)
+        best = _best_score(_candidates_from_dims(dims_to_top_lefts), score_fn)
+        if difficulty == "Greedy":
+            # Unlike choose_placement (every candidate in one turn shares one
+            # w*h), different wildcard values give different piece sizes.
+            # Greedy's flag_score ties at 0 whenever no value reaches a flag;
+            # break that tie toward the larger piece instead of a bare
+            # random pick.
+            area = max((w * h for (w, h), top_lefts in dims_to_top_lefts.items() if top_lefts), default=0)
+            scored.append(((best, area), v))
+        else:
+            scored.append((best, v))
     return _break_tie(game, scored)
 
 
@@ -102,6 +112,12 @@ def should_reroll(game: Game, difficulty: str) -> bool:
 
     if game.state == TurnState.SKIPPED:
         return True
+
+    if difficulty == "Greedy" and not game.board.flag_cells:
+        # flag_score is structurally 0 all game without a flag on the board -
+        # a reroll can never score better, so a 0 here isn't a "bad roll"
+        # signal the way it is for Blocking's turn-to-turn frontier target.
+        return False
 
     score_fn = _SCORE_FNS[difficulty](game)
     if game.state == TurnState.CHOOSING_PLACEMENT:
