@@ -12,11 +12,13 @@ SKIP_LIMIT = 5
 START_CORNER_EXCLUSION_RADIUS = 5
 
 # Whether flag cells are seeded on the board (see Game.reset()); capturing one
-# awards FLAG_BONUS_POINTS on top of area. The center flag is always seeded;
-# the other two are a random cell (outside START_CORNER_EXCLUSION_RADIUS) plus
-# its 180-degree rotation mirror, so neither player is favored.
+# awards FLAG_BONUS_POINTS on top of area. FLAG_CELL_PAIRS mirrored
+# single-cell pairs are placed each game (each pair: a random cell outside
+# START_CORNER_EXCLUSION_RADIUS plus its 180-degree rotation mirror), same
+# shape as Obstacles - no fixed/center flag, so neither player is favored.
 FLAG_CONQUEST_ENABLED = False
 FLAG_BONUS_POINTS = 10
+FLAG_CELL_PAIRS = 2
 
 # Whether wall lines are seeded on the board (see Game.reset()). A wall is a
 # barrier between cells, not a cell itself - no cell is ever sacrificed, a
@@ -62,8 +64,7 @@ REROLL_ENABLED = False
 REROLL_LIMIT = 2
 
 # Selectable options on the pre-game settings screen. Defaults above stay
-# valid members of both. Board sizes are odd so flag conquest's center cell
-# (size // 2) is always a single unambiguous cell.
+# valid members of both. Kept odd by convention; nothing currently requires it.
 BOARD_SIZE_PRESETS = (19, 23, 27)
 SKIP_LIMIT_PRESETS = (3, 5)
 SERIES_LENGTH_PRESETS = (3, 5)

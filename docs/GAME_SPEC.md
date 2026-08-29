@@ -20,8 +20,7 @@ higher score at that point wins; equal scores is a tie.
 ## 2. Setup
 
 - The board is an N×N grid of cells. N is agreed before the match (typical
-  choices: 19, 23, or 27); N should be odd if Flag Conquest (§6.1) is in
-  play, so the board has a single, unambiguous center cell.
+  choices: 19, 23, or 27).
 - Player 1 is assigned the top-left corner as their starting corner; Player
   2 is assigned the bottom-right corner.
 - Two standard six-sided dice are used.
@@ -86,10 +85,9 @@ fixed for the whole match (and, in series play, for every round of it).
 
 ### 6.1 Flag Conquest
 
-When enabled: three flag cells are marked on the board before play begins —
-the board's exact center cell (always present) plus two more flags at a
-random position each game, mirrored through the center so neither player is
-favored. A flag cell behaves like any other empty
+When enabled: four flag cells are marked on the board before play begins —
+two random positions each game plus each one's mirror through the board's
+center, so neither player is favored. A flag cell behaves like any other empty
 cell for placement purposes; whichever player's piece happens to cover it
 captures it immediately (a single large enough piece can capture more than
 one flag at once). Each captured flag permanently earns that player a fixed

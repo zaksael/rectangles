@@ -9,6 +9,7 @@ from .constants import (
     DICE_MAX,
     DICE_MIN,
     FLAG_BONUS_POINTS,
+    FLAG_CELL_PAIRS,
     FLAG_CONQUEST_ENABLED,
     OBSTACLE_CELL_PAIRS,
     OBSTACLES_ENABLED,
@@ -127,20 +128,45 @@ class Game:
         self.surrendered_player_id = None
         self.history = []
 
-    def _flag_cells(self) -> frozenset[tuple[int, int]]:
+    def _mirrored_cell_pairs(
+        self,
+        count: int,
+        occupied: set[tuple[int, int]],
+        *,
+        exclude_self_mirror: bool = False,
+    ) -> frozenset[tuple[int, int]]:
+        """Shared by Flag Conquest/Obstacles: `count` mirrored single-cell
+        pairs, enumerate-then-pick from candidates outside `occupied` and
+        the start-corner exclusion zone. A pair with an empty candidate pool
+        is skipped, not errored (fewer cells seeded that game)."""
         size = self.board_size
-        center = (size // 2, size // 2)
+        occupied = set(occupied)
+        result: set[tuple[int, int]] = set()
 
-        candidates = [
-            (r, c)
-            for r in range(size)
-            for c in range(size)
-            if (r, c) != center and not _near_start_corner((r, c), size)
-        ]
-        if not candidates:
-            return frozenset({center})
-        cell = candidates[self.rng.randint(0, len(candidates) - 1)]
-        return frozenset({center, cell, _mirror_cell(cell, size)})
+        for _ in range(count):
+            candidates = [
+                (r, c)
+                for r in range(size)
+                for c in range(size)
+                if (r, c) not in occupied
+                and not _near_start_corner((r, c), size)
+                and (not exclude_self_mirror or (r, c) != _mirror_cell((r, c), size))
+            ]
+            if not candidates:
+                continue
+            cell = candidates[self.rng.randint(0, len(candidates) - 1)]
+            mirrored = _mirror_cell(cell, size)
+            occupied.add(cell)
+            occupied.add(mirrored)
+            result.add(cell)
+            result.add(mirrored)
+
+        return frozenset(result)
+
+    def _flag_cells(self) -> frozenset[tuple[int, int]]:
+        # exclude_self_mirror: the exact center of an odd board mirrors to
+        # itself - picking it would silently produce an unpaired flag.
+        return self._mirrored_cell_pairs(FLAG_CELL_PAIRS, set(), exclude_self_mirror=True)
 
     def _wall_edges(
         self, flag_cells: frozenset[tuple[int, int]]
@@ -184,27 +210,8 @@ class Game:
         flag_cells: frozenset[tuple[int, int]],
         wall_edges: frozenset[frozenset[tuple[int, int]]],
     ) -> frozenset[tuple[int, int]]:
-        size = self.board_size
-        occupied: set[tuple[int, int]] = set(flag_cells) | {cell for edge in wall_edges for cell in edge}
-        result: set[tuple[int, int]] = set()
-
-        for _ in range(OBSTACLE_CELL_PAIRS):
-            candidates = [
-                (r, c)
-                for r in range(size)
-                for c in range(size)
-                if (r, c) not in occupied and not _near_start_corner((r, c), size)
-            ]
-            if not candidates:
-                continue
-            cell = candidates[self.rng.randint(0, len(candidates) - 1)]
-            mirrored = _mirror_cell(cell, size)
-            occupied.add(cell)
-            occupied.add(mirrored)
-            result.add(cell)
-            result.add(mirrored)
-
-        return frozenset(result)
+        occupied = set(flag_cells) | {cell for edge in wall_edges for cell in edge}
+        return self._mirrored_cell_pairs(OBSTACLE_CELL_PAIRS, occupied)
 
     @property
     def current_player(self) -> Player:

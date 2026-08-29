@@ -31,7 +31,9 @@ def test_choose_placement_is_deterministic_via_rng_index():
 
 
 def test_choose_placement_greedy_prefers_capturing_a_flag():
-    game = Game(board_size=6, flag_conquest_enabled=True, rng=ScriptedRandom([1, 1]))
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.flag_conquest_enabled = True
+    game.board.flag_cells = frozenset({(3, 3)})
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
 
@@ -124,7 +126,9 @@ def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_flag_con
 
 
 def test_should_reroll_true_for_greedy_when_flags_exist_but_unreachable_this_turn():
-    game = Game(board_size=6, flag_conquest_enabled=True, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.flag_conquest_enabled = True
+    game.board.flag_cells = frozenset({(5, 5)})
     game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
     game.roll_dice()
     assert game.state.name == "CHOOSING_PLACEMENT"

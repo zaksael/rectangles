@@ -1,6 +1,7 @@
 import pytest
 
 from rectangles.constants import (
+    FLAG_CELL_PAIRS,
     OBSTACLE_CELL_PAIRS,
     PLAYER_1,
     PLAYER_2,
@@ -315,25 +316,40 @@ def test_reset_computes_symmetric_randomized_flags_for_odd_board_sizes():
     for size in (11, 19):
         game = Game(board_size=size, flag_conquest_enabled=True)
         flags = game.board.flag_cells
-        assert len(flags) == 3
-
-        center = (size // 2, size // 2)
-        assert center in flags
-
-        others = flags - {center}
+        assert len(flags) <= 2 * FLAG_CELL_PAIRS
 
         def mirror(cell: tuple[int, int]) -> tuple[int, int]:
             r, c = cell
             return (size - 1 - r, size - 1 - c)
 
-        a, b = others
-        assert mirror(a) == b  # neither player is favored
+        assert {mirror(c) for c in flags} == flags  # 180-degree symmetric, neither player favored
 
         corners = ((0, 0), (size - 1, size - 1))
-        for r, c in others:
+        for r, c in flags:
             assert all(
                 max(abs(r - cr), abs(c - cc)) > START_CORNER_EXCLUSION_RADIUS for cr, cc in corners
             )
+
+
+def test_flag_cells_empty_when_board_too_small_for_any_candidate():
+    # size=6: every cell is within START_CORNER_EXCLUSION_RADIUS (5) of one
+    # of the two start corners, same degenerate case Walls/Obstacles already
+    # hit on this board size - both flag pairs are skipped, not errored.
+    game = Game(board_size=6, flag_conquest_enabled=True)
+    assert game.board.flag_cells == frozenset()
+
+
+def test_flag_cells_never_includes_the_self_mirroring_center_cell():
+    # The exact center of an odd board mirrors to itself; picking it as one
+    # end of a pair would silently produce an unpaired flag. A ScriptedRandom
+    # that always picks candidate index 0 exercises whichever candidate list
+    # ordering is used - the center cell must never appear regardless.
+    for size in (11, 19):
+        game = Game(board_size=size, flag_conquest_enabled=True, rng=ScriptedRandom([0, 0]))
+        flags = game.board.flag_cells
+        center = (size // 2, size // 2)
+        assert center not in flags
+        assert len(flags) % 2 == 0  # every flag has its mirror present too
 
 
 def test_walls_disabled_by_default():
@@ -405,10 +421,12 @@ def test_reset_computes_symmetric_randomized_obstacles_for_odd_board_sizes():
 
 def test_attempt_place_captures_single_flag():
     # First move anchored at p1's start corner (0,0): a 6x6 piece (max dice
-    # value) reaches from (0,0) to (5,5), the board's center flag.
-    # Leading 0 is consumed by the random flag pick during reset(); flag
-    # positions are overridden below anyway.
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 6, 6]))
+    # value) reaches from (0,0) to (5,5).
+    # flag_conquest_enabled stays False at construction to skip random
+    # generation (and its rng consumption); flipped True with flag_cells set
+    # directly so the capture is deterministic.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.flag_conquest_enabled = True
     game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
 
@@ -420,9 +438,11 @@ def test_attempt_place_captures_single_flag():
 
 
 def test_attempt_place_captures_two_flags_in_one_placement():
-    # Leading 0 is consumed by the random flag pick during reset(); flag
-    # positions are overridden below anyway.
-    game = Game(board_size=11, flag_conquest_enabled=True, rng=ScriptedRandom([0, 5, 6, 1, 1, 6, 6]))
+    # flag_conquest_enabled stays False at construction to skip random
+    # generation (and its rng consumption); flipped True with flag_cells set
+    # directly so the captures are deterministic.
+    game = Game(board_size=11, rng=ScriptedRandom([5, 6, 1, 1, 6, 6]))
+    game.flag_conquest_enabled = True
     game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
 
