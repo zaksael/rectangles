@@ -23,6 +23,7 @@ class ReplayMixin:
         self._draw_grid_cells(game)
 
         self._draw_flags(game, upto=step)
+        self._draw_negative_cells(game, upto=step)
         self._draw_obstacles(game)
 
         for rect in self._placed_upto(game, step):
@@ -44,6 +45,7 @@ class ReplayMixin:
             flag_cells=game.board.flag_cells,
             wall_edges=game.board.wall_edges,
             obstacle_cells=game.board.obstacle_cells,
+            negative_cells=game.board.negative_cells,
         )
         scratch = {
             player_id: Player(player_id, "", game.players[player_id].start_corner) for player_id in game.players

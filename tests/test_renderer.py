@@ -91,6 +91,22 @@ def test_draw_flag_conquest_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
+def test_draw_negative_cells_smoke(renderer):
+    # negative_cells_enabled stays False at construction to skip random
+    # generation (and its rng consumption); flipped True here with
+    # negative_cells set directly for a deterministic trigger, same pattern
+    # as _with_flags above. Exercises both the T{n} suffix branch (nonzero)
+    # and its absence (the other player, still 0).
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.negative_cells_enabled = True
+    game.board.negative_cells = frozenset({(5, 5)})
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # triggers the trap at (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
 def test_draw_walls_smoke(renderer):
     game = Game(board_size=11, walls_enabled=True)
     renderer.draw(game, UIState(screen=Screen.PLAYING))

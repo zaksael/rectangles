@@ -1,7 +1,7 @@
 import json
 
 from rectangles import persistence
-from rectangles.constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2
+from rectangles.constants import FLAG_BONUS_POINTS, NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.series import Series
 
@@ -238,6 +238,53 @@ def test_load_game_old_format_without_obstacles_key_defaults_disabled(tmp_path):
     loaded, _ = result
     assert loaded.obstacles_enabled is False
     assert loaded.board.obstacle_cells == frozenset()
+
+
+def test_round_trip_preserves_negative_cells_state(tmp_path):
+    path = tmp_path / "save.json"
+    # negative_cells_enabled stays False at construction to skip random
+    # generation (and its rng consumption); flipped True with negative_cells
+    # set directly so the trigger is deterministic, same technique the flag
+    # conquest round-trip test above uses.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.negative_cells_enabled = True
+    game.board.negative_cells = frozenset({(5, 5)})
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # triggers the trap at (5, 5)
+    p1 = game.players[PLAYER_1]
+    assert p1.traps_triggered == 1
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.negative_cells_enabled is True
+    assert loaded.negative_cell_penalty_points == NEGATIVE_CELL_PENALTY_POINTS
+    assert loaded.board.negative_cells == {(5, 5)}
+    assert loaded.players[PLAYER_1].traps_triggered == 1
+    assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area - NEGATIVE_CELL_PENALTY_POINTS
+
+
+def test_load_game_old_format_without_negative_cells_key_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["negative_cells_enabled"]
+    del data["negative_cell_penalty_points"]
+    del data["negative_cells"]
+    for player_data in data["players"].values():
+        del player_data["traps_triggered"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.negative_cells_enabled is False
+    assert loaded.negative_cell_penalty_points == NEGATIVE_CELL_PENALTY_POINTS
+    assert loaded.board.negative_cells == frozenset()
+    assert loaded.players[PLAYER_1].traps_triggered == 0
+    assert loaded.players[PLAYER_2].traps_triggered == 0
 
 
 def test_round_trip_preserves_wildcard_state(tmp_path):

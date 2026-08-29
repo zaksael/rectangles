@@ -79,6 +79,7 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         ("Flags", "selected_flag_conquest_enabled"),
         ("Walls", "selected_walls_enabled"),
         ("Obstacles", "selected_obstacles_enabled"),
+        ("Traps", "selected_negative_cells_enabled"),
         ("Wildcard", "selected_wildcard_enabled"),
         ("Enclosure", "selected_self_enclosed_penalty_enabled"),
         ("Reroll", "selected_reroll_enabled"),

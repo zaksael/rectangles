@@ -119,6 +119,15 @@ def test_new_game_uses_series_comeback_nudge_setting():
     assert game.comeback_nudge_enabled is True
 
 
+def test_new_game_uses_series_negative_cells_settings():
+    series = Series(length=5, board_size=11, skip_limit=4, negative_cells_enabled=True, negative_cell_penalty_points=25)
+
+    game = series.new_game()
+
+    assert game.negative_cells_enabled is True
+    assert game.negative_cell_penalty_points == 25
+
+
 def test_new_game_defaults_flag_conquest_disabled():
     series = Series(length=3, board_size=11, skip_limit=2)
 

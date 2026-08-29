@@ -78,6 +78,8 @@ class PanelMixin:
             primary = f"{player.name}: {game.total_score(player)}"
             if player.flags_captured:
                 primary += f"  F{player.flags_captured}"
+            if player.traps_triggered:
+                primary += f"  T{player.traps_triggered}"
 
             suffixes = []
             if game.self_enclosed_penalty_enabled:

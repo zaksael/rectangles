@@ -13,11 +13,13 @@ class Board:
         flag_cells: frozenset[tuple[int, int]] = frozenset(),
         wall_edges: frozenset[frozenset[tuple[int, int]]] = frozenset(),
         obstacle_cells: frozenset[tuple[int, int]] = frozenset(),
+        negative_cells: frozenset[tuple[int, int]] = frozenset(),
     ):
         self.size = size
         self.flag_cells = flag_cells
         self.wall_edges = wall_edges
         self.obstacle_cells = obstacle_cells
+        self.negative_cells = negative_cells
         self._grid: list[list[int | None]] = [[None] * size for _ in range(size)]
         for r, c in obstacle_cells:
             self._grid[r][c] = OBSTACLE_OWNER

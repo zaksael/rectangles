@@ -3,6 +3,7 @@ import pytest
 from rectangles.constants import (
     FLAG_CELL_PAIRS,
     MIN_SPECIAL_CELL_DISTANCE,
+    NEGATIVE_CELL_PENALTY_POINTS,
     OBSTACLE_CELL_PAIRS,
     PLAYER_1,
     PLAYER_2,
@@ -532,6 +533,78 @@ def test_attempt_place_captures_two_flags_in_one_placement():
 
     assert p1.flags_captured == 2
     assert p2.flags_captured == 0
+
+
+def test_negative_cells_disabled_by_default_no_penalty():
+    game = Game(board_size=8)
+    p1 = game.players[PLAYER_1]
+    assert game.board.negative_cells == frozenset()
+
+    game.board.place(p1, (0, 0), w=2, h=2)  # area 4
+
+    assert p1.traps_triggered == 0
+    assert game.total_score(p1) == p1.total_area == 4
+
+
+def test_attempt_place_triggers_trap_and_total_score_reflects_penalty():
+    # negative_cells_enabled stays False at construction to skip random
+    # generation (and its rng consumption); flipped True with negative_cells
+    # set directly so the trigger is deterministic - same technique the flag
+    # capture tests above use.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.negative_cells_enabled = True
+    game.board.negative_cells = frozenset({(5, 5)})
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True
+
+    assert p1.traps_triggered == 1
+    assert p2.traps_triggered == 0
+    assert game.total_score(p1) == p1.total_area - NEGATIVE_CELL_PENALTY_POINTS
+
+    # Score can go negative - no floor, same as Enclosure Penalty/#44 Steal.
+    p1.traps_triggered = 100
+    assert game.total_score(p1) < 0
+
+
+def test_negative_cells_enabled_false_guard_ignores_leftover_board_state():
+    # A leftover board.negative_cells member (e.g. from a stale fixture) must
+    # never trigger a penalty while negative_cells_enabled is False - the
+    # guard in attempt_place(), not just an empty negative_cells set, is
+    # what's under test here.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.board.negative_cells = frozenset({(5, 5)})
+    p1 = game.players[PLAYER_1]
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True
+
+    assert p1.traps_triggered == 0
+    assert game.total_score(p1) == p1.total_area
+
+
+def test_negative_cells_never_overlap_flag_wall_obstacle_cells():
+    for _ in range(30):
+        game = Game(
+            board_size=19,
+            flag_conquest_enabled=True,
+            walls_enabled=True,
+            obstacles_enabled=True,
+            negative_cells_enabled=True,
+        )
+        wall_cells = {cell for edge in game.board.wall_edges for cell in edge}
+        assert not (game.board.negative_cells & game.board.flag_cells)
+        assert not (game.board.negative_cells & wall_cells)
+        assert not (game.board.negative_cells & game.board.obstacle_cells)
+
+
+def test_negative_cells_empty_when_board_too_small_for_any_candidate():
+    # Same degenerate case as test_flag_cells_empty_when_board_too_small_
+    # for_any_candidate - the candidate pool is empty, so _negative_cells()
+    # degrades to an empty result rather than erroring.
+    game = Game(board_size=6, negative_cells_enabled=True)
+    assert game.board.negative_cells == frozenset()
 
 
 def test_total_score_can_decide_a_winner_area_alone_would_not():

@@ -21,6 +21,7 @@ class BoardMixin:
         self._draw_grid_cells(game)
 
         self._draw_flags(game)
+        self._draw_negative_cells(game)
         self._draw_obstacles(game)
 
         for player in game.players.values():
@@ -92,6 +93,23 @@ class BoardMixin:
             half = px // 4
             points = [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)]
             pygame.draw.polygon(self.screen, colors.FLAG_COLOR, points)
+
+    def _draw_negative_cells(self, game: Game, upto: int | None = None) -> None:
+        # Same covered-check shape as _draw_flags - a trap is capturable
+        # like a flag (not a permanent blocker like an obstacle), so its
+        # marker disappears once a piece covers it.
+        covered = (
+            None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
+        )
+        px = layout.cell_px(game.board.size)
+        for r, c in game.board.negative_cells:
+            is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
+            if is_covered:
+                continue
+            cx, cy = layout.cell_rect(r, c, game.board.size).center
+            half = px // 4
+            pygame.draw.line(self.screen, colors.NEGATIVE_CELL_COLOR, (cx - half, cy - half), (cx + half, cy + half), width=4)
+            pygame.draw.line(self.screen, colors.NEGATIVE_CELL_COLOR, (cx - half, cy + half), (cx + half, cy - half), width=4)
 
     def _draw_obstacles(self, game: Game) -> None:
         for r, c in game.board.obstacle_cells:

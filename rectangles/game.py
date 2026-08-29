@@ -16,6 +16,9 @@ from .constants import (
     FLAG_CELL_PAIRS,
     FLAG_CONQUEST_ENABLED,
     MIN_SPECIAL_CELL_DISTANCE,
+    NEGATIVE_CELL_PAIRS,
+    NEGATIVE_CELL_PENALTY_POINTS,
+    NEGATIVE_CELLS_ENABLED,
     OBSTACLE_CELL_PAIRS,
     OBSTACLES_ENABLED,
     PLAYER_1,
@@ -75,6 +78,8 @@ class Game:
         flag_bonus_points: int = FLAG_BONUS_POINTS,
         walls_enabled: bool = WALLS_ENABLED,
         obstacles_enabled: bool = OBSTACLES_ENABLED,
+        negative_cells_enabled: bool = NEGATIVE_CELLS_ENABLED,
+        negative_cell_penalty_points: int = NEGATIVE_CELL_PENALTY_POINTS,
         wildcard_enabled: bool = WILDCARD_ENABLED,
         self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
         reroll_enabled: bool = REROLL_ENABLED,
@@ -87,6 +92,8 @@ class Game:
         self.flag_bonus_points = flag_bonus_points
         self.walls_enabled = walls_enabled
         self.obstacles_enabled = obstacles_enabled
+        self.negative_cells_enabled = negative_cells_enabled
+        self.negative_cell_penalty_points = negative_cell_penalty_points
         self.wildcard_enabled = wildcard_enabled
         self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
         self.reroll_enabled = reroll_enabled
@@ -114,11 +121,17 @@ class Game:
         obstacle_cells = (
             self._obstacle_cells(flag_cells, wall_edges) if self.obstacles_enabled else frozenset()
         )
+        negative_cells = (
+            self._negative_cells(flag_cells, wall_edges, obstacle_cells)
+            if self.negative_cells_enabled
+            else frozenset()
+        )
         self.board = Board(
             self.board_size,
             flag_cells=flag_cells,
             wall_edges=wall_edges,
             obstacle_cells=obstacle_cells,
+            negative_cells=negative_cells,
         )
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
@@ -238,6 +251,15 @@ class Game:
     ) -> frozenset[tuple[int, int]]:
         occupied = set(flag_cells) | {cell for edge in wall_edges for cell in edge}
         return self._mirrored_cell_pairs(OBSTACLE_CELL_PAIRS, occupied)
+
+    def _negative_cells(
+        self,
+        flag_cells: frozenset[tuple[int, int]],
+        wall_edges: frozenset[frozenset[tuple[int, int]]],
+        obstacle_cells: frozenset[tuple[int, int]],
+    ) -> frozenset[tuple[int, int]]:
+        occupied = set(flag_cells) | {cell for edge in wall_edges for cell in edge} | set(obstacle_cells)
+        return self._mirrored_cell_pairs(NEGATIVE_CELL_PAIRS, occupied)
 
     @property
     def current_player(self) -> Player:
@@ -384,6 +406,9 @@ class Game:
         rect = self.board.place(self.current_player, top_left, w, h)
         captured = self.board.flag_cells.intersection(rect.cells())
         self.current_player.flags_captured += len(captured)
+        if self.negative_cells_enabled:
+            triggered = self.board.negative_cells.intersection(rect.cells())
+            self.current_player.traps_triggered += len(triggered)
         self.current_player.consecutive_skips = 0
         self.history.append(
             TurnRecord(
@@ -446,6 +471,7 @@ class Game:
 
     def total_score(self, player: Player) -> int:
         score = player.total_area + player.flags_captured * self.flag_bonus_points
+        score -= player.traps_triggered * self.negative_cell_penalty_points
         if self.self_enclosed_penalty_enabled:
             penalty = self.board.self_enclosed_cell_counts().get(player.id, 0)
             score -= penalty * SELF_ENCLOSED_PENALTY_PER_CELL

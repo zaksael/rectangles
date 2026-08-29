@@ -101,6 +101,7 @@ class SettingsMixin:
             ("Flags", ui_state.selected_flag_conquest_enabled),
             ("Walls", ui_state.selected_walls_enabled),
             ("Obstacles", ui_state.selected_obstacles_enabled),
+            ("Traps", ui_state.selected_negative_cells_enabled),
             ("Wildcard", ui_state.selected_wildcard_enabled),
             ("Enclosure", ui_state.selected_self_enclosed_penalty_enabled),
             ("Reroll", ui_state.selected_reroll_enabled),

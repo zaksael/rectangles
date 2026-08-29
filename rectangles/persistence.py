@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from .constants import FLAG_BONUS_POINTS
+from .constants import FLAG_BONUS_POINTS, NEGATIVE_CELL_PENALTY_POINTS
 from .game import Game, GameOverReason, TurnState
 from .models import Player, Rectangle, TurnRecord
 from .series import RoundResult, Series
@@ -60,6 +60,8 @@ def _series_to_dict(series: Series) -> dict:
         "flag_bonus_points": series.flag_bonus_points,
         "walls_enabled": series.walls_enabled,
         "obstacles_enabled": series.obstacles_enabled,
+        "negative_cells_enabled": series.negative_cells_enabled,
+        "negative_cell_penalty_points": series.negative_cell_penalty_points,
         "wildcard_enabled": series.wildcard_enabled,
         "self_enclosed_penalty_enabled": series.self_enclosed_penalty_enabled,
         "reroll_enabled": series.reroll_enabled,
@@ -79,6 +81,8 @@ def _series_from_dict(data: dict) -> Series:
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
+        negative_cells_enabled=data.get("negative_cells_enabled", False),
+        negative_cell_penalty_points=data.get("negative_cell_penalty_points", NEGATIVE_CELL_PENALTY_POINTS),
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
         reroll_enabled=data.get("reroll_enabled", False),
@@ -103,6 +107,9 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "wall_edges": _wall_edges_to_list(game.board.wall_edges),
         "obstacles_enabled": game.obstacles_enabled,
         "obstacle_cells": [list(cell) for cell in game.board.obstacle_cells],
+        "negative_cells_enabled": game.negative_cells_enabled,
+        "negative_cell_penalty_points": game.negative_cell_penalty_points,
+        "negative_cells": [list(cell) for cell in game.board.negative_cells],
         "wildcard_enabled": game.wildcard_enabled,
         "self_enclosed_penalty_enabled": game.self_enclosed_penalty_enabled,
         "reroll_enabled": game.reroll_enabled,
@@ -124,6 +131,7 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
                 "start_corner": list(player.start_corner),
                 "consecutive_skips": player.consecutive_skips,
                 "flags_captured": player.flags_captured,
+                "traps_triggered": player.traps_triggered,
                 "rerolls_used": player.rerolls_used,
                 "comeback_nudge_granted": player.comeback_nudge_granted,
                 "pieces": [_rect_to_dict(rect) for rect in player.pieces],
@@ -152,6 +160,8 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
+        negative_cells_enabled=data.get("negative_cells_enabled", False),
+        negative_cell_penalty_points=data.get("negative_cell_penalty_points", NEGATIVE_CELL_PENALTY_POINTS),
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
         reroll_enabled=data.get("reroll_enabled", False),
@@ -163,6 +173,8 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         game.board.wall_edges = _wall_edges_from_list(data["wall_edges"])
     if data.get("obstacle_cells") is not None:
         game.board.set_obstacle_cells(frozenset(tuple(cell) for cell in data["obstacle_cells"]))
+    if data.get("negative_cells") is not None:
+        game.board.negative_cells = frozenset(tuple(cell) for cell in data["negative_cells"])
 
     for player_id_str, player_data in data["players"].items():
         player_id = int(player_id_str)
@@ -171,6 +183,7 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         player.start_corner = tuple(player_data["start_corner"])
         player.consecutive_skips = player_data["consecutive_skips"]
         player.flags_captured = player_data.get("flags_captured", 0)
+        player.traps_triggered = player_data.get("traps_triggered", 0)
         player.rerolls_used = player_data.get("rerolls_used", 0)
         player.comeback_nudge_granted = player_data.get("comeback_nudge_granted", False)
         for piece_data in player_data["pieces"]:

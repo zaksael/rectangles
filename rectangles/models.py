@@ -43,6 +43,7 @@ class Player:
     pieces: list[Rectangle] = field(default_factory=list)
     consecutive_skips: int = 0
     flags_captured: int = 0
+    traps_triggered: int = 0
     rerolls_used: int = 0
     comeback_nudge_granted: bool = False
 

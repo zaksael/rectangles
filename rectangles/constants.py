@@ -70,6 +70,15 @@ SELF_ENCLOSED_PENALTY_PER_CELL = 1
 REROLL_ENABLED = False
 REROLL_LIMIT = 2
 
+# Whether "trap" cells are seeded on the board (see Game.reset()); covering
+# one docks NEGATIVE_CELL_PENALTY_POINTS from the capturer's own score - a
+# pure one-sided penalty, unlike Flag Conquest's pure gain. NEGATIVE_CELL_PAIRS
+# mirrored single-cell pairs are placed each game, same placement shape as
+# Flag Conquest/Obstacles (no fixed/center cell, neither player favored).
+NEGATIVE_CELLS_ENABLED = False
+NEGATIVE_CELL_PENALTY_POINTS = 10
+NEGATIVE_CELL_PAIRS = 2
+
 # Once the trailing player's total_score() gap reaches this fraction of
 # board_size**2, they're permanently granted COMEBACK_NUDGE_EXTRA_REROLLS
 # extra reroll charges for the rest of that game - an independent charge

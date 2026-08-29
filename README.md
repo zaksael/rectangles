@@ -74,6 +74,19 @@ Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
 cover it, and it never counts as a legal move for either player. Shown on
 the board as a solid dark square.
 
+## Traps
+
+An optional mode, off by default. When turned on, two trap cells are seeded
+on the board as a single mirrored pair, randomly placed and kept clear of
+both starting corners and every other special cell (Flag Conquest's flags,
+Walls' lines, Obstacles), so they never overlap. Covering a trap docks the
+capturer 10 points off their own score — the mirror image of Flag Conquest's
+bonus, with no effect on the opponent. Scores aren't floored at 0, so
+triggering enough traps can push a player negative. Shown on the board as a
+red X, which disappears once a piece covers it, and the live panel shows the
+count separately from your score (e.g. "T1") so it's never silently baked
+into the total.
+
 ## Wildcard Roll
 
 An optional mode, off by default. When turned on, every roll that comes up
@@ -160,7 +173,8 @@ Basic stays fully random for both and never rerolls.
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, Obstacles, Wildcard Roll, Enclosure Penalty, Reroll, and Comeback, if enabled) are locked in once for every round. Who
+Flag Conquest, Walls, Obstacles, Traps, Wildcard Roll, Enclosure Penalty,
+Reroll, and Comeback, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
 round's score (same rules as above) adds to each player's running series
@@ -219,9 +233,10 @@ quits.
 Picking a mode leads to a settings screen tailored to it — pick a board size
 and skip limit (preset buttons), optionally toggle
 [Flag Conquest](#flag-conquest), [Walls](#walls),
-[Obstacles](#obstacles), [Wildcard Roll](#wildcard-roll),
-[Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll) (or click
-**Turn All ON**/**Turn All OFF** to flip all six at once), and whatever else
+[Obstacles](#obstacles), [Traps](#traps), [Wildcard Roll](#wildcard-roll),
+[Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll), and
+[Comeback](#comeback) (or click **Turn All ON**/**Turn All OFF** to flip all
+of them at once), and whatever else
 that mode needs: the [bot opponent](#bot-opponent) (and its difficulty
 preset) for **Single**/**Series**, a series length for **Series**/**Tournament**,
 and, for **Tournament**, a seat count (4 or 8) plus a per-seat Human/Bot row for each

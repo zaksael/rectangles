@@ -9,6 +9,7 @@ from ..constants import (
     COMEBACK_NUDGE_ENABLED,
     FLAG_CONQUEST_ENABLED,
     GAME_MODE_PRESETS,
+    NEGATIVE_CELLS_ENABLED,
     OBSTACLES_ENABLED,
     REPLAY_SPEED_PRESETS,
     REROLL_ENABLED,
@@ -48,6 +49,7 @@ class UIState:
     selected_flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED
     selected_walls_enabled: bool = WALLS_ENABLED
     selected_obstacles_enabled: bool = OBSTACLES_ENABLED
+    selected_negative_cells_enabled: bool = NEGATIVE_CELLS_ENABLED
     selected_wildcard_enabled: bool = WILDCARD_ENABLED
     selected_self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED
     selected_reroll_enabled: bool = REROLL_ENABLED
@@ -95,6 +97,7 @@ class UIState:
             self.selected_flag_conquest_enabled
             and self.selected_walls_enabled
             and self.selected_obstacles_enabled
+            and self.selected_negative_cells_enabled
             and self.selected_wildcard_enabled
             and self.selected_self_enclosed_penalty_enabled
             and self.selected_reroll_enabled
@@ -106,6 +109,7 @@ class UIState:
         self.selected_flag_conquest_enabled = value
         self.selected_walls_enabled = value
         self.selected_obstacles_enabled = value
+        self.selected_negative_cells_enabled = value
         self.selected_wildcard_enabled = value
         self.selected_self_enclosed_penalty_enabled = value
         self.selected_reroll_enabled = value

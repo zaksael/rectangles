@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2
+from .constants import FLAG_BONUS_POINTS, NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2
 from .game import Game
 
 
@@ -22,6 +22,8 @@ class Series:
     flag_bonus_points: int = FLAG_BONUS_POINTS
     walls_enabled: bool = False
     obstacles_enabled: bool = False
+    negative_cells_enabled: bool = False
+    negative_cell_penalty_points: int = NEGATIVE_CELL_PENALTY_POINTS
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
     reroll_enabled: bool = False
@@ -63,6 +65,8 @@ class Series:
             flag_bonus_points=self.flag_bonus_points,
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
+            negative_cells_enabled=self.negative_cells_enabled,
+            negative_cell_penalty_points=self.negative_cell_penalty_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
             reroll_enabled=self.reroll_enabled,
