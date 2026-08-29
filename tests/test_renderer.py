@@ -394,17 +394,22 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
 
 
 def test_turn_analysis_flags_a_missed_denial(renderer):
-    # Same layout as test_bot.py::test_choose_placement_blocking_prefers_denying_opponent_frontier
-    # ((2, 3) is the one frontier cell that denies P2), but the historical
-    # move picked (2, 1) instead.
+    # Reachable-area denial, not just immediate-frontier overlap: (1, 3) is
+    # a chokepoint - occupying it severs P2's reach to the whole 4-cell
+    # pocket {(0,4),(0,5),(1,4),(1,5)} (walled in on 3 of its 4 sides by
+    # P1's border cells (0,3)/(2,4)/(2,5)), even though (1, 3) itself isn't
+    # adjacent to any P2 cell at all - the old frontier-only metric would've
+    # missed this entirely. The historical move at (3, 5) only denies
+    # itself (1 cell), so the gap is the whole pocket (4) plus nothing else.
     game = Game(board_size=6)
     game.history = [
-        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
-        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
-        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((0, 3), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 5), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((3, 5), 1, 1, PLAYER_1)),
     ]
 
-    assert renderer._turn_analyses(game)[3] == ("missed denial (+1 cells available)", ((2, 3), 1, 1))
+    assert renderer._turn_analyses(game)[4] == ("missed denial (+4 cells available)", ((1, 3), 1, 1))
 
 
 def test_turn_analysis_flags_a_self_created_enclosure(renderer):
@@ -413,10 +418,21 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
     # the final placement at (2, 3) is the one that closes the ring. Fires
     # because an alternative frontier cell, e.g. (3, 1), scores higher
     # (creates no hole) than the chosen move.
+    #
+    # Needs a wall cutting P2 off from rows 0-3 entirely: without it,
+    # reachable-area denial credits the sealing move with denying P2 the
+    # same interior cell the enclosure penalty just charged for (it was
+    # P2-reachable right up until the seal), and at equal per-cell weights
+    # those two axes exactly cancel for any hole size - no note would ever
+    # fire. Pre-isolating the interior via a wall (not part of the ring
+    # itself) means it was never P2-reachable in the first place, so
+    # sealing it buys no extra denial credit and the enclosure penalty
+    # alone decides, same as before reachable-area denial existed.
     game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    game.board.wall_edges = frozenset({frozenset({(3, c), (4, c)}) for c in range(6)})
     game.history = [
-        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((1, 2), 1, 1, PLAYER_1)),
         TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((5, 5), 1, 1, PLAYER_2)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((1, 2), 1, 1, PLAYER_1)),
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((3, 2), 1, 1, PLAYER_1)),
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
         TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 3), 1, 1, PLAYER_1)),
@@ -429,12 +445,13 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
 
 def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     # P1's first-ever move, doubles (2,2) wildcard-edited down to a 1
-    # (final roll (2,1)). Flag at (0,3): picking 4 instead (fixed die 2
-    # stays, wildcard becomes 4) reaches it via a 4x2 placement; the chosen
-    # value 1 can't reach col 3 at all. Neither player has moved yet, so
-    # denial contributes 0 uniformly and doesn't affect which value wins.
-    # The gap is in weighted points now (1 flag cell * FLAG_BONUS_POINTS=10),
-    # not a raw cell count.
+    # (final roll (2,1)). Flag at (0,3): every value from 4 up reaches it
+    # via a <value>x2 placement (the chosen value 1 can't reach col 3 at
+    # all) - but before either player has moved, denial scales with piece
+    # area (removing a candidate's own cells shrinks the still-mutually-
+    # open board's shared pool), so the biggest legal value (6) wins
+    # outright: its 6x2 piece both reaches the flag (+10) and denies the
+    # most cells (12), well past value 4's 4x2 (+10, denies 8).
     game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [
@@ -444,18 +461,18 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     ]
 
     assert renderer._turn_analyses(game)[1] == (
-        "suboptimal wildcard pick (rolling 4 instead would score +10)", ((0, 0), 4, 2)
+        "suboptimal wildcard pick (rolling 6 instead would score +20)", ((0, 0), 6, 2)
     )
 
 
 def test_turn_analysis_no_note_when_wildcard_pick_already_optimal(renderer):
-    # Same layout, but the wildcard was resolved to 4 (the best value) -
-    # nothing to flag.
+    # Same layout, but the wildcard was resolved to 6 (the best value, see
+    # above) - nothing to flag.
     game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
     game.board.flag_cells = frozenset({(0, 3)})
     game.history = [
         TurnRecord(
-            PLAYER_1, roll=(2, 4), placed=Rectangle((0, 0), 4, 2, PLAYER_1), wildcard_original_roll=(2, 2)
+            PLAYER_1, roll=(2, 6), placed=Rectangle((0, 0), 6, 2, PLAYER_1), wildcard_original_roll=(2, 2)
         )
     ]
 
@@ -504,15 +521,18 @@ def test_turn_analysis_anchors_second_player_candidates_at_real_start_corner(ren
 def test_turn_analyses_omits_clean_steps_from_the_dict(renderer):
     # Sparse dict shape: a step with no notes has no key at all (not an
     # empty list) - lets a plain `in` check double as the marker set for
-    # the score chart.
+    # the score chart. Reuses the missed-denial chokepoint fixture: steps
+    # 1-3 (building the border around the pocket) are clean, only step 4
+    # (the actual mistake) gets a key.
     game = Game(board_size=6)
     game.history = [
-        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 2), 1, 1, PLAYER_1)),
-        TurnRecord(PLAYER_2, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_2)),
-        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 1), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((0, 3), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 5), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((3, 5), 1, 1, PLAYER_1)),
     ]
 
-    assert set(renderer._turn_analyses(game).keys()) == {3}
+    assert set(renderer._turn_analyses(game).keys()) == {4}
 
 
 def test_turn_analyses_caches_across_calls_for_the_same_game(renderer):

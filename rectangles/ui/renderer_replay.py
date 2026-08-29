@@ -84,13 +84,34 @@ class ReplayMixin:
                 history[player_id].append(score)
         return history
 
+    def _candidate_partial_value(
+        self,
+        game: Game,
+        board: Board,
+        player: Player,
+        candidate: tuple[tuple[int, int], int, int],
+        opponent: Player,
+        reachable_before: int,
+    ) -> tuple[int, int]:
+        # The two axes that are always computed for every candidate, whether
+        # or not that candidate ends up worth paying for the (possibly
+        # skipped) enclosure flood-fill. Denial is a reachable-area cutoff,
+        # not just immediate-frontier overlap - see reachable_count_if's
+        # docstring for why - and unlike frontier overlap, it has no cheap
+        # exact bound, so it's always paid, never pruned.
+        top_left, w, h = candidate
+        flag_cells = bot.flag_score(candidate, board.flag_cells) if game.flag_conquest_enabled else 0
+        denial_cells = reachable_before - board.reachable_count_if(player.id, opponent, top_left, w, h)
+        return flag_cells, denial_cells
+
     def _candidate_value(
         self,
         game: Game,
         board: Board,
         player: Player,
         candidate: tuple[tuple[int, int], int, int],
-        opponent_frontier: set[tuple[int, int]],
+        flag_cells: int,
+        denial_cells: int,
         enclosure_before: int,
     ) -> tuple[int, int, int, int]:
         # One combined turn-quality value per candidate, using the same
@@ -98,11 +119,12 @@ class ReplayMixin:
         # SELF_ENCLOSED_PENALTY_PER_CELL - so every candidate this turn is
         # ranked on one scale instead of separate flag/denial/enclosure
         # axes. Denial itself carries weight 1 (it has no total_score()
-        # equivalent to borrow a weight from). Returns the raw per-axis
-        # cell counts alongside the total so a caller can name whichever
-        # axis actually drove a gap between two candidates.
-        flag_cells = bot.flag_score(candidate, board.flag_cells) if game.flag_conquest_enabled else 0
-        denial_cells = bot.blocking_score(candidate, opponent_frontier)
+        # equivalent to borrow a weight from). flag_cells/denial_cells come
+        # in pre-computed (via _candidate_partial_value) rather than
+        # recomputed here, so a candidate that reaches this point never pays
+        # for reachable_count_if twice. Returns the raw per-axis cell counts
+        # alongside the total so a caller can name whichever axis actually
+        # drove a gap between two candidates.
         enclosure_delta = 0
         if game.self_enclosed_penalty_enabled:
             top_left, w, h = candidate
@@ -138,7 +160,8 @@ class ReplayMixin:
             player = scratch[record.player_id]
             a, b = record.roll
             opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
-            opponent_frontier = board.frontier(scratch[opponent_id])
+            opponent = scratch[opponent_id]
+            reachable_before = len(board.reachable_empty_cells(opponent))
             enclosure_before = (
                 board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
             )
@@ -168,7 +191,12 @@ class ReplayMixin:
 
             def value_of(entry: tuple[int | None, tuple[tuple[int, int], int, int]]) -> tuple[int, int, int, int]:
                 _, candidate = entry
-                return self._candidate_value(game, board, player, candidate, opponent_frontier, enclosure_before)
+                flag_cells, denial_cells = self._candidate_partial_value(
+                    game, board, player, candidate, opponent, reachable_before
+                )
+                return self._candidate_value(
+                    game, board, player, candidate, flag_cells, denial_cells, enclosure_before
+                )
 
             # self_enclosed_count_if is an O(board_size^2) flood-fill; a
             # Wildcard Roll turn's pool can run into the hundreds on a large
@@ -200,15 +228,14 @@ class ReplayMixin:
             best_value_axis = float("-inf")
             for entry in pool:
                 _, candidate = entry
-                partial = (
-                    bot.flag_score(candidate, board.flag_cells) * game.flag_bonus_points
-                    if game.flag_conquest_enabled
-                    else 0
-                ) + bot.blocking_score(candidate, opponent_frontier)
+                flag_cells, denial_cells = self._candidate_partial_value(
+                    game, board, player, candidate, opponent, reachable_before
+                )
+                partial = flag_cells * game.flag_bonus_points + denial_cells
                 if partial + ceiling_bonus <= best_value_axis:
                     continue
                 total, flag_cells, denial_cells, enclosure_delta = self._candidate_value(
-                    game, board, player, candidate, opponent_frontier, enclosure_before
+                    game, board, player, candidate, flag_cells, denial_cells, enclosure_before
                 )
                 if total > best_value_axis:
                     best_value_axis, best_flag, best_denial, best_enclosure = total, flag_cells, denial_cells, enclosure_delta

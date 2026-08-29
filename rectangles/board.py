@@ -210,6 +210,26 @@ class Board:
                 for cc in range(c, c + w):
                     self._grid[cr][cc] = None
 
+    def reachable_count_if(
+        self, occupant_id: int, opponent: Player, top_left: tuple[int, int], w: int, h: int
+    ) -> int:
+        # What-if variant of reachable_empty_cells(), for scoring a
+        # hypothetical placement without mutating real game state. Unlike
+        # self_enclosed_count_if (keyed by a bare player_id, since
+        # self_enclosed_cell_counts() returns a plain owner-id-keyed dict),
+        # reachable_empty_cells() needs the opponent's actual Player object
+        # (has_moved/start_corner), not just its id.
+        r, c = top_left
+        for cr in range(r, r + h):
+            for cc in range(c, c + w):
+                self._grid[cr][cc] = occupant_id
+        try:
+            return len(self.reachable_empty_cells(opponent))
+        finally:
+            for cr in range(r, r + h):
+                for cc in range(c, c + w):
+                    self._grid[cr][cc] = None
+
     def legal_top_lefts(self, player: Player, w: int, h: int) -> set[tuple[int, int]]:
         result: set[tuple[int, int]] = set()
         for r in range(self.size - h + 1):

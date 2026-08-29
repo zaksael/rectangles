@@ -305,3 +305,32 @@ def test_reachable_empty_cells_respects_walls():
     for r in range(3, 6):
         for c in range(6):
             assert (r, c) not in reachable  # unreachable on the far side of the wall
+
+
+def test_reachable_count_if_matches_a_real_placement_then_reverts():
+    board = Board(size=6)
+    p1, p2 = make_players(6)
+    count = board.reachable_count_if(p1.id, p2, (3, 3), 1, 1)
+    assert board.is_empty(3, 3)  # stamped-then-reverted, not left behind
+
+    board.place(p1, (3, 3), w=1, h=1)
+    assert count == len(board.reachable_empty_cells(p2))
+
+
+def test_reachable_count_if_captures_a_chokepoint_cutoff():
+    # (1, 3) is the sole empty connector into the 4-cell pocket
+    # {(0,4), (0,5), (1,4), (1,5)}, walled in on 3 of its 4 sides by p1's
+    # placed cells - occupying it should deny the whole pocket, not just
+    # itself, even though (1, 3) isn't adjacent to any p2 cell at all.
+    board = Board(size=6)
+    p1, p2 = make_players(6)
+    board.place(p1, (0, 3), w=1, h=1)
+    board.place(p1, (2, 4), w=1, h=1)
+    board.place(p1, (2, 5), w=1, h=1)
+    reachable_before = len(board.reachable_empty_cells(p2))
+
+    denial_chokepoint = reachable_before - board.reachable_count_if(p1.id, p2, (1, 3), 1, 1)
+    denial_elsewhere = reachable_before - board.reachable_count_if(p1.id, p2, (3, 5), 1, 1)
+
+    assert denial_chokepoint == 5  # itself + the whole pocket
+    assert denial_elsewhere == 1  # just itself, no cutoff
