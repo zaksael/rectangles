@@ -21,8 +21,8 @@ class BoardMixin:
     def _draw_board(self, game: Game) -> None:
         self._draw_grid_cells(game)
 
-        self._draw_flags(game)
-        self._draw_negative_cells(game)
+        self._draw_prize_cells(game)
+        self._draw_pitfall_cells(game)
         self._draw_obstacles(game)
 
         for player in game.players.values():
@@ -34,7 +34,7 @@ class BoardMixin:
                 pygame.draw.rect(self.screen, border, rect, width=3)
 
         self._draw_last_move_highlight(game)
-        self._draw_flag_capture_highlight(game)
+        self._draw_prize_capture_highlight(game)
         self._draw_walls(game)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
@@ -52,17 +52,17 @@ class BoardMixin:
         ).inflate(4, 4)
         pygame.draw.rect(self.screen, colors.LAST_MOVE_HIGHLIGHT_COLOR, rect, width=3)
 
-    def _captured_flag_cells(self, game: Game, upto: int | None = None) -> frozenset[tuple[int, int]]:
+    def _captured_prize_cells(self, game: Game, upto: int | None = None) -> frozenset[tuple[int, int]]:
         last_placed = self._last_placed_rect(game, upto)
         if last_placed is None:
             return frozenset()
-        return game.board.cells_of_kind(CellKind.FLAG).intersection(last_placed.cells())
+        return game.board.cells_of_kind(CellKind.PRIZE).intersection(last_placed.cells())
 
-    def _draw_flag_capture_highlight(self, game: Game, upto: int | None = None) -> None:
+    def _draw_prize_capture_highlight(self, game: Game, upto: int | None = None) -> None:
         px = layout.cell_px(game.board.size)
-        for r, c in self._captured_flag_cells(game, upto):
+        for r, c in self._captured_prize_cells(game, upto):
             center = layout.cell_rect(r, c, game.board.size).center
-            pygame.draw.circle(self.screen, colors.FLAG_COLOR, center, px // 2 - 5, width=4)
+            pygame.draw.circle(self.screen, colors.PRIZE_COLOR, center, px // 2 - 5, width=4)
 
     def _draw_walls(self, game: Game) -> None:
         size = game.board.size
@@ -81,36 +81,36 @@ class BoardMixin:
                 left = layout.cell_rect(r1, c1, size).left
                 pygame.draw.line(self.screen, colors.WALL_LINE_COLOR, (left, y), (left + px, y), width=4)
 
-    def _draw_flags(self, game: Game, upto: int | None = None) -> None:
+    def _draw_prize_cells(self, game: Game, upto: int | None = None) -> None:
         covered = (
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
         px = layout.cell_px(game.board.size)
-        for r, c in game.board.cells_of_kind(CellKind.FLAG):
+        for r, c in game.board.cells_of_kind(CellKind.PRIZE):
             is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
             if is_covered:
                 continue
             cx, cy = layout.cell_rect(r, c, game.board.size).center
             half = px // 4
             points = [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)]
-            pygame.draw.polygon(self.screen, colors.FLAG_COLOR, points)
+            pygame.draw.polygon(self.screen, colors.PRIZE_COLOR, points)
 
-    def _draw_negative_cells(self, game: Game, upto: int | None = None) -> None:
-        # Same covered-check shape as _draw_flags - a trap is capturable
-        # like a flag (not a permanent blocker like an obstacle), so its
+    def _draw_pitfall_cells(self, game: Game, upto: int | None = None) -> None:
+        # Same covered-check shape as _draw_prize_cells - a pitfall is capturable
+        # like a prize (not a permanent blocker like an obstacle), so its
         # marker disappears once a piece covers it.
         covered = (
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
         px = layout.cell_px(game.board.size)
-        for r, c in game.board.cells_of_kind(CellKind.TRAP):
+        for r, c in game.board.cells_of_kind(CellKind.PITFALL):
             is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
             if is_covered:
                 continue
             cx, cy = layout.cell_rect(r, c, game.board.size).center
             half = px // 4
-            pygame.draw.line(self.screen, colors.NEGATIVE_CELL_COLOR, (cx - half, cy - half), (cx + half, cy + half), width=4)
-            pygame.draw.line(self.screen, colors.NEGATIVE_CELL_COLOR, (cx - half, cy + half), (cx + half, cy - half), width=4)
+            pygame.draw.line(self.screen, colors.PITFALL_CELL_COLOR, (cx - half, cy - half), (cx + half, cy + half), width=4)
+            pygame.draw.line(self.screen, colors.PITFALL_CELL_COLOR, (cx - half, cy + half), (cx + half, cy - half), width=4)
 
     def _draw_obstacles(self, game: Game) -> None:
         for r, c in game.board.obstacle_cells:

@@ -1,7 +1,7 @@
 import json
 
 from rectangles import persistence
-from rectangles.constants import FLAG_BONUS_POINTS, NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
+from rectangles.constants import PRIZE_BONUS_POINTS, PITFALL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Cell, SpecialCell
 from rectangles.series import Series
@@ -17,15 +17,15 @@ class ScriptedRandom:
         return self._values.pop(0)
 
 
-def _finished_game(board_size, p1_area, p2_area, p1_flags=0, p2_flags=0, flag_bonus_points=FLAG_BONUS_POINTS):
-    game = Game(board_size=board_size, special_cell_points={"flag": flag_bonus_points})
+def _finished_game(board_size, p1_area, p2_area, p1_prizes=0, p2_prizes=0, prize_bonus_points=PRIZE_BONUS_POINTS):
+    game = Game(board_size=board_size, special_cell_points={"prize": prize_bonus_points})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
     if p1_area:
         game.board.place(p1, (0, 0), p1_area, 1)
     if p2_area:
         game.board.place(p2, (0, 0), p2_area, 1)
-    p1.special_captures[CellKind.FLAG] = p1_flags
-    p2.special_captures[CellKind.FLAG] = p2_flags
+    p1.special_captures[CellKind.PRIZE] = p1_prizes
+    p2.special_captures[CellKind.PRIZE] = p2_prizes
     return game
 
 
@@ -134,38 +134,38 @@ def test_round_trip_preserves_game_over_state(tmp_path):
     assert loaded.surrendered_player_id is None
 
 
-def test_round_trip_preserves_flag_conquest_state(tmp_path):
+def test_round_trip_preserves_prize_state(tmp_path):
     path = tmp_path / "save.json"
-    # flag_conquest_enabled stays False at construction to skip random
+    # prize_enabled stays False at construction to skip random
     # generation (and its rng consumption); flipped True with special_cells
     # set directly so the capture is deterministic.
-    game = Game(board_size=11, special_cell_points={"flag": 20}, rng=ScriptedRandom([6, 6]))
-    game.flag_conquest_enabled = True
+    game = Game(board_size=11, special_cell_points={"prize": 20}, rng=ScriptedRandom([6, 6]))
+    game.prize_enabled = True
     game.board.special_cells = frozenset(
-        SpecialCell(CellKind.FLAG, Cell(*cell), pair_id=i)
+        SpecialCell(CellKind.PRIZE, Cell(*cell), pair_id=i)
         for i, cell in enumerate([(0, 10), (10, 0), (5, 5)])
     )
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center flag (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the center prize (5, 5)
     p1 = game.players[PLAYER_1]
-    assert p1.special_captures.get(CellKind.FLAG, 0) == 1
+    assert p1.special_captures.get(CellKind.PRIZE, 0) == 1
 
     persistence.save_game(game, path=path)
     loaded, loaded_series = persistence.load_game(path)
 
     assert loaded_series is None
-    assert loaded.flag_conquest_enabled is True
-    assert loaded.points_for(CellKind.FLAG) == 20
-    assert loaded.board.cells_of_kind(CellKind.FLAG) == {(0, 10), (10, 0), (5, 5)}
-    assert loaded.players[PLAYER_1].special_captures.get(CellKind.FLAG, 0) == 1
+    assert loaded.prize_enabled is True
+    assert loaded.points_for(CellKind.PRIZE) == 20
+    assert loaded.board.cells_of_kind(CellKind.PRIZE) == {(0, 10), (10, 0), (5, 5)}
+    assert loaded.players[PLAYER_1].special_captures.get(CellKind.PRIZE, 0) == 1
     assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area + 20
 
 
-def test_load_game_old_format_without_flag_keys_defaults_disabled(tmp_path):
+def test_load_game_old_format_without_prize_keys_defaults_disabled(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)
     data = persistence.to_dict(game)
-    del data["flag_conquest_enabled"]
+    del data["prize_enabled"]
     del data["special_cell_points"]
     for player_data in data["players"].values():
         del player_data["special_captures"]
@@ -175,10 +175,10 @@ def test_load_game_old_format_without_flag_keys_defaults_disabled(tmp_path):
 
     assert result is not None
     loaded, _ = result
-    assert loaded.flag_conquest_enabled is False
-    assert loaded.points_for(CellKind.FLAG) == FLAG_BONUS_POINTS
-    assert loaded.players[PLAYER_1].special_captures.get(CellKind.FLAG, 0) == 0
-    assert loaded.players[PLAYER_2].special_captures.get(CellKind.FLAG, 0) == 0
+    assert loaded.prize_enabled is False
+    assert loaded.points_for(CellKind.PRIZE) == PRIZE_BONUS_POINTS
+    assert loaded.players[PLAYER_1].special_captures.get(CellKind.PRIZE, 0) == 0
+    assert loaded.players[PLAYER_2].special_captures.get(CellKind.PRIZE, 0) == 0
 
 
 def test_round_trip_preserves_walls_state(tmp_path):
@@ -244,36 +244,36 @@ def test_load_game_old_format_without_obstacles_key_defaults_disabled(tmp_path):
     assert loaded.board.obstacle_cells == frozenset()
 
 
-def test_round_trip_preserves_negative_cells_state(tmp_path):
+def test_round_trip_preserves_pitfall_cells_state(tmp_path):
     path = tmp_path / "save.json"
-    # negative_cells_enabled stays False at construction to skip random
+    # pitfall_enabled stays False at construction to skip random
     # generation (and its rng consumption); flipped True with special_cells
-    # set directly so the trigger is deterministic, same technique the flag
-    # conquest round-trip test above uses.
+    # set directly so the trigger is deterministic, same technique the prize
+    # round-trip test above uses.
     game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
-    game.negative_cells_enabled = True
-    game.board.special_cells = frozenset({SpecialCell(CellKind.TRAP, Cell(5, 5), pair_id=0)})
+    game.pitfall_enabled = True
+    game.board.special_cells = frozenset({SpecialCell(CellKind.PITFALL, Cell(5, 5), pair_id=0)})
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # triggers the trap at (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # triggers the pitfall at (5, 5)
     p1 = game.players[PLAYER_1]
-    assert p1.special_captures.get(CellKind.TRAP, 0) == 1
+    assert p1.special_captures.get(CellKind.PITFALL, 0) == 1
 
     persistence.save_game(game, path=path)
     loaded, loaded_series = persistence.load_game(path)
 
     assert loaded_series is None
-    assert loaded.negative_cells_enabled is True
-    assert loaded.points_for(CellKind.TRAP) == NEGATIVE_CELL_PENALTY_POINTS
-    assert loaded.board.cells_of_kind(CellKind.TRAP) == {(5, 5)}
-    assert loaded.players[PLAYER_1].special_captures.get(CellKind.TRAP, 0) == 1
-    assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area - NEGATIVE_CELL_PENALTY_POINTS
+    assert loaded.pitfall_enabled is True
+    assert loaded.points_for(CellKind.PITFALL) == PITFALL_PENALTY_POINTS
+    assert loaded.board.cells_of_kind(CellKind.PITFALL) == {(5, 5)}
+    assert loaded.players[PLAYER_1].special_captures.get(CellKind.PITFALL, 0) == 1
+    assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area - PITFALL_PENALTY_POINTS
 
 
-def test_load_game_old_format_without_negative_cells_key_defaults_disabled(tmp_path):
+def test_load_game_old_format_without_pitfall_cells_key_defaults_disabled(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)
     data = persistence.to_dict(game)
-    del data["negative_cells_enabled"]
+    del data["pitfall_enabled"]
     del data["special_cell_points"]
     del data["special_cells"]
     for player_data in data["players"].values():
@@ -284,11 +284,11 @@ def test_load_game_old_format_without_negative_cells_key_defaults_disabled(tmp_p
 
     assert result is not None
     loaded, _ = result
-    assert loaded.negative_cells_enabled is False
-    assert loaded.points_for(CellKind.TRAP) == NEGATIVE_CELL_PENALTY_POINTS
-    assert loaded.board.cells_of_kind(CellKind.TRAP) == frozenset()
-    assert loaded.players[PLAYER_1].special_captures.get(CellKind.TRAP, 0) == 0
-    assert loaded.players[PLAYER_2].special_captures.get(CellKind.TRAP, 0) == 0
+    assert loaded.pitfall_enabled is False
+    assert loaded.points_for(CellKind.PITFALL) == PITFALL_PENALTY_POINTS
+    assert loaded.board.cells_of_kind(CellKind.PITFALL) == frozenset()
+    assert loaded.players[PLAYER_1].special_captures.get(CellKind.PITFALL, 0) == 0
+    assert loaded.players[PLAYER_2].special_captures.get(CellKind.PITFALL, 0) == 0
 
 
 def test_round_trip_preserves_wildcard_state(tmp_path):
@@ -421,9 +421,9 @@ def test_load_game_old_format_without_comeback_nudge_key_defaults_disabled(tmp_p
 def test_round_trip_preserves_series(tmp_path):
     path = tmp_path / "save.json"
     game = Game(board_size=6, skip_limit=2)
-    series = Series(length=5, board_size=6, skip_limit=2, flag_conquest_enabled=True, special_cell_points={"flag": 20})
-    series.record_game(_finished_game(12, 8, 4, p1_flags=1, flag_bonus_points=20))
-    series.record_game(_finished_game(12, 3, 12, flag_bonus_points=20))
+    series = Series(length=5, board_size=6, skip_limit=2, prize_enabled=True, special_cell_points={"prize": 20})
+    series.record_game(_finished_game(12, 8, 4, p1_prizes=1, prize_bonus_points=20))
+    series.record_game(_finished_game(12, 3, 12, prize_bonus_points=20))
 
     persistence.save_game(game, series=series, path=path)
     loaded, loaded_series = persistence.load_game(path)
@@ -432,8 +432,8 @@ def test_round_trip_preserves_series(tmp_path):
     assert loaded_series.length == 5
     assert loaded_series.board_size == 6
     assert loaded_series.skip_limit == 2
-    assert loaded_series.flag_conquest_enabled is True
-    assert loaded_series.special_cell_points == {"flag": 20}
+    assert loaded_series.prize_enabled is True
+    assert loaded_series.special_cell_points == {"prize": 20}
     assert loaded_series.scores == {PLAYER_1: 31, PLAYER_2: 16}
     assert loaded_series.games_played == 2
     assert loaded_series.rounds == series.rounds

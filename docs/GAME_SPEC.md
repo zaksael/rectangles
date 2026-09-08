@@ -68,7 +68,7 @@ may be placed if and only if all of the following hold:
 
 - A player's base score is the total number of cells they've claimed —
   i.e. the combined area of every piece they've placed.
-- If Flag Conquest is in play, each flag a player has captured (§6.1) adds
+- If Prize is in play, each prize a player has captured (§6.1) adds
   a fixed bonus to their score on top of that area.
 - If Enclosure Penalty is in play, each empty cell currently self-enclosed
   by that player's own territory (§6.5) docks a fixed amount from their
@@ -83,17 +83,17 @@ may be placed if and only if all of the following hold:
 Each of these is chosen independently before a match begins, and stays
 fixed for the whole match (and, in series play, for every round of it).
 
-### 6.1 Flag Conquest
+### 6.1 Prize
 
-When enabled: four flag cells are marked on the board before play begins —
+When enabled: four prize cells are marked on the board before play begins —
 two random positions each game plus each one's mirror through the board's
-center, so neither player is favored. Flags are kept clear of both players'
+center, so neither player is favored. Prizes are kept clear of both players'
 starting corners and a minimum distance apart from each other, so they
-never cluster together. A flag cell behaves like any other empty
+never cluster together. A prize cell behaves like any other empty
 cell for placement purposes; whichever player's piece happens to cover it
 captures it immediately (a single large enough piece can capture more than
-one flag at once). Each captured flag permanently earns that player a fixed
-10-point bonus added to their score; flags are never lost once captured.
+one prize at once). Each captured prize permanently earns that player a fixed
+10-point bonus added to their score; prizes are never lost once captured.
 
 ### 6.2 Walls
 
@@ -113,8 +113,8 @@ past a wall is to build around one of its ends.
 
 When enabled: a small number of individual cells are marked on the board
 before play begins, in mirrored pairs — each pair placed at a random
-position, kept clear of both players' starting corners, of any Flag
-Conquest or Walls cells already in play, and a minimum distance from any
+position, kept clear of both players' starting corners, of any Prize
+or Walls cells already in play, and a minimum distance from any
 other Obstacle pair, with the second cell of each pair
 the exact mirror image of the first through the board's center. Unlike a
 wall, an obstacle cell is a piece of the board itself that is permanently
@@ -209,9 +209,9 @@ levels may be offered:
 
 - **Basic** — chooses uniformly at random among all of its legal placements
   for the current roll.
-- **Greedy** — prefers whichever legal placement captures the most flags
-  (relevant only when Flag Conquest is in play — with it off, or when no
-  candidate reaches a flag, this behaves exactly like Basic); ties are
+- **Greedy** — prefers whichever legal placement captures the most prizes
+  (relevant only when Prize is in play — with it off, or when no
+  candidate reaches a prize, this behaves exactly like Basic); ties are
   broken randomly.
 - **Blocking** — prefers whichever legal placement takes away the most
   currently-available cells from its opponent (i.e. cells the opponent
@@ -222,15 +222,15 @@ Greedy and Blocking apply the same underlying strategy to Wildcard Roll
 (§6.4) and Reroll (§6.6), where enabled:
 
 - On a wildcard roll, each picks whichever value scores best by its own
-  metric (most flags reachable for Greedy, most opponent cells deniable
+  metric (most prizes reachable for Greedy, most opponent cells deniable
   for Blocking). If every value ties — for Greedy, this includes every
-  turn Flag Conquest is off — Blocking picks among the tied values at
+  turn Prize is off — Blocking picks among the tied values at
   random, while Greedy instead prefers the value yielding the largest
   piece.
 - With Reroll on, Blocking discards a roll whenever no candidate would
   deny its opponent anything right now. Greedy does the same only when
-  Flag Conquest is in play and no candidate reaches a flag this turn;
-  with Flag Conquest off, no flag could ever be reached, so Greedy never
+  Prize is in play and no candidate reaches a prize this turn;
+  with Prize off, no prize could ever be reached, so Greedy never
   rerolls.
 
 Basic never rerolls and always picks a wildcard value uniformly at
@@ -287,8 +287,8 @@ progress, not the rest of the bracket.
 |---|---|---|
 | Board size | 19×19, 23×23, 27×27 | 19×19 |
 | Skip limit | 3, 5 | 5 |
-| Flag Conquest | on / off | off |
-| Flag bonus points | 10 (fixed) | 10 |
+| Prize | on / off | off |
+| Prize bonus points | 10 (fixed) | 10 |
 | Walls | on / off | off |
 | Obstacles | on / off | off |
 | Wildcard roll | on / off | off |

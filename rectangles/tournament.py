@@ -34,10 +34,10 @@ class Bracket:
     series_length: int
     board_size: int
     skip_limit: int
-    flag_conquest_enabled: bool = False
+    prize_enabled: bool = False
     walls_enabled: bool = False
     obstacles_enabled: bool = False
-    negative_cells_enabled: bool = False
+    pitfall_enabled: bool = False
     special_cell_points: dict[str, int] = field(default_factory=dict)
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
@@ -53,7 +53,7 @@ class Bracket:
 
     def _seed_first_round(self) -> list[Match]:
         # Fisher-Yates via self.rng.randint (not rng.shuffle - the injectable
-        # rng contract is .randint only, same reason Game's _flag_cells()/
+        # rng contract is .randint only, same reason Game's _prize_cells()/
         # _wall_edges()/_obstacle_cells() enumerate-then-pick instead of
         # random.sample/shuffle). Participant count is always a power of 2
         # (enforced by the UI's TOURNAMENT_SIZE_PRESETS), so this is the
@@ -79,10 +79,10 @@ class Bracket:
             length=self.series_length,
             board_size=self.board_size,
             skip_limit=self.skip_limit,
-            flag_conquest_enabled=self.flag_conquest_enabled,
+            prize_enabled=self.prize_enabled,
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
-            negative_cells_enabled=self.negative_cells_enabled,
+            pitfall_enabled=self.pitfall_enabled,
             special_cell_points=self.special_cell_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
@@ -96,10 +96,10 @@ class Bracket:
         return Game(
             board_size=self.board_size,
             skip_limit=self.skip_limit,
-            flag_conquest_enabled=self.flag_conquest_enabled,
+            prize_enabled=self.prize_enabled,
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
-            negative_cells_enabled=self.negative_cells_enabled,
+            pitfall_enabled=self.pitfall_enabled,
             special_cell_points=self.special_cell_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,

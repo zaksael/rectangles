@@ -35,8 +35,8 @@ def _candidate_cells(candidate: _Candidate) -> set[tuple[int, int]]:
     return set(Rectangle(top_left, w, h, 0).cells())
 
 
-def flag_score(candidate: _Candidate, flag_cells: frozenset[tuple[int, int]]) -> int:
-    return len(_candidate_cells(candidate) & flag_cells)
+def cell_overlap_score(candidate: _Candidate, prize_cells: frozenset[tuple[int, int]]) -> int:
+    return len(_candidate_cells(candidate) & prize_cells)
 
 
 def blocking_score(candidate: _Candidate, opponent_frontier: set[tuple[int, int]]) -> int:
@@ -54,7 +54,7 @@ def _blocking_score_fn(game: Game) -> Callable[[_Candidate], int]:
 # and should_reroll - a difficulty absent here (i.e. "Basic") gets no smart wildcard/
 # reroll behavior, only uniform-random placement.
 _SCORE_FNS: dict[str, Callable[[Game], Callable[[_Candidate], int]]] = {
-    "Greedy": lambda game: (lambda c: flag_score(c, game.board.cells_of_kind(CellKind.FLAG))),
+    "Greedy": lambda game: (lambda c: cell_overlap_score(c, game.board.cells_of_kind(CellKind.PRIZE))),
     "Blocking": _blocking_score_fn,
 }
 
@@ -81,8 +81,8 @@ def choose_placement(game: Game, difficulty: str = "Basic") -> _Candidate:
 
     score_fn = _SCORE_FNS[difficulty](game)
     if difficulty == "Greedy":
-        # flag_score ties at 0 for every candidate whenever no flag is
-        # reachable this turn (structurally every turn with Flag Conquest
+        # cell_overlap_score ties at 0 for every candidate whenever no prize is
+        # reachable this turn (structurally every turn with Prize
         # off) - area can't break that tie, every candidate in one turn
         # already shares the same w*h, so fall back to blocking_score, the
         # only other differentiator, instead of a bare random pick.
@@ -106,7 +106,7 @@ def choose_wildcard_value(game: Game, difficulty: str = "Basic") -> int:
         if difficulty == "Greedy":
             # Unlike choose_placement (every candidate in one turn shares one
             # w*h), different wildcard values give different piece sizes.
-            # Greedy's flag_score ties at 0 whenever no value reaches a flag;
+            # Greedy's cell_overlap_score ties at 0 whenever no value reaches a prize;
             # break that tie toward the larger piece instead of a bare
             # random pick.
             area = max((w * h for (w, h), top_lefts in dims_to_top_lefts.items() if top_lefts), default=0)
@@ -123,8 +123,8 @@ def should_reroll(game: Game, difficulty: str) -> bool:
     if game.state == TurnState.SKIPPED:
         return True
 
-    if difficulty == "Greedy" and not game.board.cells_of_kind(CellKind.FLAG):
-        # flag_score is structurally 0 all game without a flag on the board -
+    if difficulty == "Greedy" and not game.board.cells_of_kind(CellKind.PRIZE):
+        # cell_overlap_score is structurally 0 all game without a prize on the board -
         # a reroll can never score better, so a 0 here isn't a "bad roll"
         # signal the way it is for Blocking's turn-to-turn frontier target.
         return False

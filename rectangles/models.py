@@ -13,7 +13,7 @@ class Cell(NamedTuple):
 
 @dataclass(frozen=True)
 class SpecialCell:
-    """One Flag/Trap cell (see constants.CellKind). `pair_id` groups a
+    """One Prize/Pitfall cell (see constants.CellKind). `pair_id` groups a
     mirrored pair - both cells seeded together by Game._mirrored_cell_pairs
     share it, unique across kinds on one board."""
 

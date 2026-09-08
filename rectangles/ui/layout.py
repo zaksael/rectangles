@@ -292,7 +292,7 @@ def settings_tournament_slot_difficulty_rects(tournament_size: int, i: int) -> d
 # House Rules: one row of 6 short chips (abbreviated to fit) instead of the
 # old 2x3 grid - "Turn All ON/OFF" sits beside the header, on the same row,
 # rather than its own row below the grid.
-_HOUSE_RULE_LABELS = ("Flags", "Walls", "Obstacles", "Traps", "Wildcard", "Enclosure", "Reroll", "Comeback")
+_HOUSE_RULE_LABELS = ("Prize", "Walls", "Obstacles", "Pitfall", "Wildcard", "Enclosure", "Reroll", "Comeback")
 _RULE_BUTTON_W = 110
 _RULE_BUTTON_H = 40
 
@@ -405,14 +405,17 @@ PANEL_HEADER_Y = 28
 PANEL_DIVIDER_1_Y = 82
 
 PANEL_SCORE_Y = 104
-# Row height (was 34, single line) grew to fit a second, smaller "suffix"
-# line (enclosure penalty / potential area & flag / skip streak) below the
-# name+score+flags line - see DESIGN_HEIGHT above.
-PANEL_SCORE_ROW_HEIGHT = 58
+# Row height (was 34/58, one/one suffix line) grew again to fit the suffix
+# line wrapping onto a second line (_draw_score_row/_wrap_suffixes) - up to
+# 6 items (Prize/Pitfall counts, enclosure penalty, potential area & prize,
+# skip streak) can appear at once with every house rule on, more than fits
+# PANEL_CONTENT_WIDTH on one line. +8px over the exact 2-line fit for a
+# small margin above PANEL_DIVIDER_2_Y - see DESIGN_HEIGHT above.
+PANEL_SCORE_ROW_HEIGHT = 66
 PANEL_SCORE_LINE2_DY = 22
-PANEL_DIVIDER_2_Y = 216
+PANEL_DIVIDER_2_Y = 232
 
-PANEL_STATUS_Y = 240
+PANEL_STATUS_Y = 256
 PANEL_ACTION_BUTTON_Y = 324
 
 ROLL_BUTTON_RECT = pygame.Rect(PANEL_X, PANEL_ACTION_BUTTON_Y, PANEL_CONTENT_WIDTH, 56)

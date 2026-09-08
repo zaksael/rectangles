@@ -7,9 +7,9 @@ from ..constants import (
     BOARD_SIZE,
     BOT_DIFFICULTY_PRESETS,
     COMEBACK_NUDGE_ENABLED,
-    FLAG_CONQUEST_ENABLED,
+    PRIZE_ENABLED,
     GAME_MODE_PRESETS,
-    NEGATIVE_CELLS_ENABLED,
+    PITFALL_ENABLED,
     OBSTACLES_ENABLED,
     REPLAY_SPEED_PRESETS,
     REROLL_ENABLED,
@@ -46,10 +46,10 @@ class UIState:
     selected_game_mode: str = GAME_MODE_PRESETS[0]
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
-    selected_flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED
+    selected_prize_enabled: bool = PRIZE_ENABLED
     selected_walls_enabled: bool = WALLS_ENABLED
     selected_obstacles_enabled: bool = OBSTACLES_ENABLED
-    selected_negative_cells_enabled: bool = NEGATIVE_CELLS_ENABLED
+    selected_pitfall_enabled: bool = PITFALL_ENABLED
     selected_wildcard_enabled: bool = WILDCARD_ENABLED
     selected_self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED
     selected_reroll_enabled: bool = REROLL_ENABLED
@@ -94,10 +94,10 @@ class UIState:
     @property
     def all_house_rules_enabled(self) -> bool:
         return (
-            self.selected_flag_conquest_enabled
+            self.selected_prize_enabled
             and self.selected_walls_enabled
             and self.selected_obstacles_enabled
-            and self.selected_negative_cells_enabled
+            and self.selected_pitfall_enabled
             and self.selected_wildcard_enabled
             and self.selected_self_enclosed_penalty_enabled
             and self.selected_reroll_enabled
@@ -106,10 +106,10 @@ class UIState:
 
     def toggle_all_house_rules(self) -> None:
         value = not self.all_house_rules_enabled
-        self.selected_flag_conquest_enabled = value
+        self.selected_prize_enabled = value
         self.selected_walls_enabled = value
         self.selected_obstacles_enabled = value
-        self.selected_negative_cells_enabled = value
+        self.selected_pitfall_enabled = value
         self.selected_wildcard_enabled = value
         self.selected_self_enclosed_penalty_enabled = value
         self.selected_reroll_enabled = value

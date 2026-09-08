@@ -5,7 +5,7 @@ import pytest
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from rectangles.constants import NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
+from rectangles.constants import PITFALL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Cell, Rectangle, SpecialCell, TurnRecord
 from rectangles.series import Series
@@ -26,18 +26,18 @@ def _special(kind: CellKind, *cells: tuple[int, int]) -> frozenset[SpecialCell]:
     return frozenset(SpecialCell(kind, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
 
 
-def _with_flags(game, *cells):
-    # flag_conquest_enabled stays False at construction to skip random
+def _with_prizes(game, *cells):
+    # prize_enabled stays False at construction to skip random
     # generation (and its rng consumption); flipped True here with
     # special_cells set directly for a deterministic capture.
-    game.flag_conquest_enabled = True
-    game.board.special_cells |= _special(CellKind.FLAG, *cells)
+    game.prize_enabled = True
+    game.board.special_cells |= _special(CellKind.PRIZE, *cells)
     return game
 
 
-def _with_traps(game, *cells):
-    game.negative_cells_enabled = True
-    game.board.special_cells |= _special(CellKind.TRAP, *cells)
+def _with_pitfalls(game, *cells):
+    game.pitfall_enabled = True
+    game.board.special_cells |= _special(CellKind.PITFALL, *cells)
     return game
 
 
@@ -92,25 +92,25 @@ def test_draw_skipped_smoke(renderer):
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
-def test_draw_flag_conquest_smoke(renderer):
-    game = _with_flags(Game(board_size=11, rng=ScriptedRandom([6, 6])), (0, 10), (10, 0), (5, 5))
+def test_draw_prize_smoke(renderer):
+    game = _with_prizes(Game(board_size=11, rng=ScriptedRandom([6, 6])), (0, 10), (10, 0), (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # captures one flag, leaves 2 uncaptured
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures one prize, leaves 2 uncaptured
     if not game.check_game_over():
         game.end_turn()
     renderer.draw(game, UIState(screen=Screen.PLAYING))
 
 
-def test_draw_negative_cells_smoke(renderer):
-    # negative_cells_enabled stays False at construction to skip random
+def test_draw_pitfall_cells_smoke(renderer):
+    # pitfall_enabled stays False at construction to skip random
     # generation (and its rng consumption); flipped True here with
-    # negative_cells set directly for a deterministic trigger, same pattern
-    # as _with_flags above. Exercises both the T{n} suffix branch (nonzero)
+    # pitfall_cells set directly for a deterministic trigger, same pattern
+    # as _with_prizes above. Exercises both the Pitfall-count suffix branch (nonzero)
     # and its absence (the other player, still 0).
     game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
-    game = _with_traps(game, (5, 5))
+    game = _with_pitfalls(game, (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # triggers the trap at (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # triggers the pitfall at (5, 5)
     if not game.check_game_over():
         game.end_turn()
     renderer.draw(game, UIState(screen=Screen.PLAYING))
@@ -218,29 +218,29 @@ def test_last_placed_rect_ignores_a_trailing_skip(renderer):
     assert (last_placed.top_left, last_placed.width, last_placed.height) == ((0, 0), 2, 2)
 
 
-def test_captured_flag_cells_none_without_flag_conquest(renderer):
+def test_captured_prize_cells_none_without_prize(renderer):
     game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
     game.roll_dice()
     assert game.attempt_place((0, 0), 2, 3) is True
-    assert renderer._captured_flag_cells(game) == frozenset()
+    assert renderer._captured_prize_cells(game) == frozenset()
 
 
-def test_captured_flag_cells_on_the_last_placement(renderer):
-    game = _with_flags(Game(board_size=11, rng=ScriptedRandom([6, 6])), (5, 5))
+def test_captured_prize_cells_on_the_last_placement(renderer):
+    game = _with_prizes(Game(board_size=11, rng=ScriptedRandom([6, 6])), (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # captures the flag (5, 5)
-    assert renderer._captured_flag_cells(game) == frozenset({(5, 5)})
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the prize (5, 5)
+    assert renderer._captured_prize_cells(game) == frozenset({(5, 5)})
 
 
-def test_captured_flag_cells_ignores_earlier_placements(renderer):
-    game = _with_flags(Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
+def test_captured_prize_cells_ignores_earlier_placements(renderer):
+    game = _with_prizes(Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # captures the flag (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the prize (5, 5)
     if not game.check_game_over():
         game.end_turn()
     game.roll_dice()
-    assert game.attempt_place((7, 7), 4, 4) is True  # P2's start-corner anchor; no flag in this footprint
-    assert renderer._captured_flag_cells(game) == frozenset()
+    assert game.attempt_place((7, 7), 4, 4) is True  # P2's start-corner anchor; no prize in this footprint
+    assert renderer._captured_prize_cells(game) == frozenset()
 
 
 def test_last_placed_rect_upto_ignores_later_placements(renderer):
@@ -256,17 +256,17 @@ def test_last_placed_rect_upto_ignores_later_placements(renderer):
     assert (upto_first.top_left, upto_first.width, upto_first.height) == ((0, 0), 2, 2)
 
 
-def test_captured_flag_cells_upto_ignores_later_placements(renderer):
-    game = _with_flags(Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
+def test_captured_prize_cells_upto_ignores_later_placements(renderer):
+    game = _with_prizes(Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # captures the flag (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the prize (5, 5)
     if not game.check_game_over():
         game.end_turn()
     game.roll_dice()
     assert game.attempt_place((7, 7), 4, 4) is True
 
-    assert renderer._captured_flag_cells(game, upto=1) == frozenset({(5, 5)})
-    assert renderer._captured_flag_cells(game, upto=2) == frozenset()
+    assert renderer._captured_prize_cells(game, upto=1) == frozenset({(5, 5)})
+    assert renderer._captured_prize_cells(game, upto=2) == frozenset()
 
 
 def test_placed_upto_returns_rects_in_history_order(renderer):
@@ -297,7 +297,7 @@ def test_new_scratch_board_seeds_real_start_corners(renderer):
 
 
 def test_replay_stats_uses_historical_not_live_has_moved(renderer):
-    # Regression: potential_area/flag_points read `has_moved` off the *live*
+    # Regression: potential_area/prize_points read `has_moved` off the *live*
     # Player object, which is already True for Player 2 by the time both
     # players have moved - even at step 1, where Player 2 genuinely hasn't
     # placed anything yet historically. That wrongly skipped the
@@ -314,50 +314,50 @@ def test_replay_stats_uses_historical_not_live_has_moved(renderer):
     assert stats[PLAYER_2]["potential_area"] > 0
 
 
-def test_replay_stats_accumulates_area_and_flags(renderer):
-    game = _with_flags(Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
+def test_replay_stats_accumulates_area_and_prizes(renderer):
+    game = _with_prizes(Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the flag (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the prize (5, 5)
     if not game.check_game_over():
         game.end_turn()
     game.roll_dice()
-    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no flag in this footprint
+    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no prize in this footprint
 
     stats = renderer._replay_stats(game, 2)
     assert stats[PLAYER_1]["area"] == 36
-    assert stats[PLAYER_1]["flags"] == 1
+    assert stats[PLAYER_1]["prizes"] == 1
     assert stats[PLAYER_2]["area"] == 16
-    assert stats[PLAYER_2]["flags"] == 0
+    assert stats[PLAYER_2]["prizes"] == 0
 
     partial = renderer._replay_stats(game, 1)
     assert partial[PLAYER_1]["area"] == 36
-    assert partial[PLAYER_1]["flags"] == 1
+    assert partial[PLAYER_1]["prizes"] == 1
     assert partial[PLAYER_2]["area"] == 0
-    assert partial[PLAYER_2]["flags"] == 0
+    assert partial[PLAYER_2]["prizes"] == 0
 
 
-def test_replay_stats_includes_potential_area_and_flag_points(renderer):
-    game = Game(board_size=6, flag_conquest_enabled=True, special_cell_points={"flag": 5}, rng=ScriptedRandom([2, 2]))
-    game.board.special_cells = _special(CellKind.FLAG, (5, 5))
+def test_replay_stats_includes_potential_area_and_prize_points(renderer):
+    game = Game(board_size=6, prize_enabled=True, special_cell_points={"prize": 5}, rng=ScriptedRandom([2, 2]))
+    game.board.special_cells = _special(CellKind.PRIZE, (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 2, 2) is True  # 4 area, no flag captured
+    assert game.attempt_place((0, 0), 2, 2) is True  # 4 area, no prize captured
     if not game.check_game_over():
         game.end_turn()
 
     stats = renderer._replay_stats(game, 1)
     reachable = game.board.reachable_empty_cells(game.players[PLAYER_1])
     assert stats[PLAYER_1]["potential_area"] == len(reachable)
-    assert stats[PLAYER_1]["potential_flag_points"] == 5  # the one reachable, uncaptured flag
+    assert stats[PLAYER_1]["potential_prize_points"] == 5  # the one reachable, uncaptured prize
 
 
 def test_score_history_accumulates_scores_per_step(renderer):
-    game = _with_flags(Game(board_size=11, special_cell_points={"flag": 5}, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
+    game = _with_prizes(Game(board_size=11, special_cell_points={"prize": 5}, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the flag (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the prize (5, 5)
     if not game.check_game_over():
         game.end_turn()
     game.roll_dice()
-    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no flag in this footprint
+    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no prize in this footprint
 
     history = renderer._score_history(game)
     assert history[PLAYER_1] == [0, 36 + 5, 36 + 5]
@@ -397,22 +397,22 @@ def test_score_history_applies_self_enclosed_penalty_when_ring_completes(rendere
     assert history[PLAYER_1][5] == 4 - 1  # 4th ring cell closes it, encloses (2, 2)
 
 
-def test_score_history_applies_trap_penalty_when_triggered(renderer):
+def test_score_history_applies_pitfall_penalty_when_triggered(renderer):
     # Same shape as test_score_history_accumulates_scores_per_step, with a
-    # trap instead of a flag - regression coverage for the #56 bug this item
-    # fixed (_score_history previously had no traps term at all, so a
-    # Traps-enabled game's chart line silently overstated the real score).
+    # pitfall instead of a prize - regression coverage for a bug where
+    # _score_history previously had no pitfalls term at all, so a
+    # Pitfall-enabled game's chart line silently overstated the real score.
     game = Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4]))
-    game = _with_traps(game, (5, 5))
+    game = _with_pitfalls(game, (5, 5))
     game.roll_dice()
-    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, triggers the trap at (5, 5)
+    assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, triggers the pitfall at (5, 5)
     if not game.check_game_over():
         game.end_turn()
     game.roll_dice()
-    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no trap in this footprint
+    assert game.attempt_place((7, 7), 4, 4) is True  # 16 area, no pitfall in this footprint
 
     history = renderer._score_history(game)
-    assert history[PLAYER_1] == [0, 36 - NEGATIVE_CELL_PENALTY_POINTS, 36 - NEGATIVE_CELL_PENALTY_POINTS]
+    assert history[PLAYER_1] == [0, 36 - PITFALL_PENALTY_POINTS, 36 - PITFALL_PENALTY_POINTS]
     assert history[PLAYER_2] == [0, 0, 16]
 
 
@@ -432,62 +432,62 @@ def test_turn_analysis_empty_for_a_skip(renderer):
     assert renderer._turn_analyses(game).get(1) is None
 
 
-def test_turn_analysis_flags_a_missed_flag_capture(renderer):
+def test_turn_analysis_flags_a_missed_prize_capture(renderer):
     # P1's first-ever move: legal_top_lefts collapses to one top_left per
     # orientation (anchored at the start corner), so the two candidates are
     # just the (1,4)/(4,1) orientation swap. The chosen 1x4 strip down
-    # column 0 scores 0 against the flag at (0,3); the unchosen 4x1 strip
+    # column 0 scores 0 against the prize at (0,3); the unchosen 4x1 strip
     # along row 0 scores 1.
-    game = Game(board_size=6, flag_conquest_enabled=True)
-    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
+    game = Game(board_size=6, prize_enabled=True)
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored 0 this turn (best possible: 10 — flag)", ((0, 0), 4, 1)
+        "scored 0 this turn (best possible: 10 — prize)", ((0, 0), 4, 1)
     )
 
 
-def test_turn_analysis_flags_a_missed_trap_avoidance(renderer):
-    # Same two-orientation setup as test_turn_analysis_flags_a_missed_flag_capture,
-    # inverted: the chosen 4x1 strip along row 0 hits the trap at (0, 3); the
+def test_turn_analysis_flags_a_missed_pitfall_avoidance(renderer):
+    # Same two-orientation setup as test_turn_analysis_flags_a_missed_prize_capture,
+    # inverted: the chosen 4x1 strip along row 0 hits the pitfall at (0, 3); the
     # unchosen 1x4 strip down column 0 would have avoided it entirely.
     game = Game(board_size=6)
-    game.negative_cells_enabled = True
-    game.board.special_cells = _special(CellKind.TRAP, (0, 3))
+    game.pitfall_enabled = True
+    game.board.special_cells = _special(CellKind.PITFALL, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored -10 this turn (best possible: 0 — trap)", ((0, 0), 1, 4)
+        "scored -10 this turn (best possible: 0 — pitfall)", ((0, 0), 1, 4)
     )
 
 
-def test_turn_analysis_composes_flag_and_trap_axes(renderer):
-    # Same two-orientation setup as test_turn_analysis_flags_a_missed_flag_capture
-    # and test_turn_analysis_flags_a_missed_trap_avoidance, combined: the chosen
-    # 1x4 strip both misses the flag at (0, 3) AND hits the trap at (2, 0); the
-    # unchosen 4x1 strip does the opposite (captures the flag, avoids the trap).
-    # Both axes fall in the same "points" bucket (flag_bonus_points/
-    # negative_cell_penalty_points, both real Game.total_score() weights) and
+def test_turn_analysis_composes_prize_and_pitfall_axes(renderer):
+    # Same two-orientation setup as test_turn_analysis_flags_a_missed_prize_capture
+    # and test_turn_analysis_flags_a_missed_pitfall_avoidance, combined: the chosen
+    # 1x4 strip both misses the prize at (0, 3) AND hits the pitfall at (2, 0); the
+    # unchosen 4x1 strip does the opposite (captures the prize, avoids the pitfall).
+    # Both axes fall in the same "points" bucket (prize_bonus_points/
+    # pitfall_penalty_points, both real Game.total_score() weights) and
     # combine into one number - proves the points figure isn't just one raw
-    # axis, while the dominant-axis label ("flag", the larger weighted gap)
+    # axis, while the dominant-axis label ("prize", the larger weighted gap)
     # still names only the bigger contributor.
-    game = Game(board_size=6, flag_conquest_enabled=True, special_cell_points={"flag": 20})
-    game.board.special_cells = _special(CellKind.FLAG, (0, 3)) | _special(CellKind.TRAP, (2, 0))
-    game.negative_cells_enabled = True
+    game = Game(board_size=6, prize_enabled=True, special_cell_points={"prize": 20})
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 3)) | _special(CellKind.PITFALL, (2, 0))
+    game.pitfall_enabled = True
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored -10 this turn (best possible: 20 — flag)", ((0, 0), 4, 1)
+        "scored -10 this turn (best possible: 20 — prize)", ((0, 0), 4, 1)
     )
 
 
-def test_turn_analysis_ignores_leftover_negative_cells_when_disabled(renderer):
-    # Same fixture as test_turn_analysis_flags_a_missed_trap_avoidance, but
-    # negative_cells_enabled stays False - the guard in _candidate_partial_value,
-    # not just an empty negative_cells set, is what's under test here (mirrors
-    # test_game.py's test_negative_cells_enabled_false_guard_ignores_leftover_board_state).
+def test_turn_analysis_ignores_leftover_pitfall_cells_when_disabled(renderer):
+    # Same fixture as test_turn_analysis_flags_a_missed_pitfall_avoidance, but
+    # pitfall_enabled stays False - the guard in _candidate_partial_value,
+    # not just an empty pitfall_cells set, is what's under test here (mirrors
+    # test_game.py's test_pitfall_enabled_false_guard_ignores_leftover_board_state).
     game = Game(board_size=6)
-    game.board.special_cells = _special(CellKind.TRAP, (0, 3))
+    game.board.special_cells = _special(CellKind.PITFALL, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
 
     assert renderer._turn_analyses(game).get(1) is None
@@ -547,15 +547,15 @@ def test_turn_analysis_flags_a_self_created_enclosure(renderer):
 
 def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     # P1's first-ever move, doubles (2,2) wildcard-edited down to a 1
-    # (final roll (2,1)). Flag at (0,3): every value from 4 up reaches it
+    # (final roll (2,1)). Prize at (0,3): every value from 4 up reaches it
     # via a <value>x2 placement (the chosen value 1 can't reach col 3 at
     # all) - but before either player has moved, denial scales with piece
     # area (removing a candidate's own cells shrinks the still-mutually-
     # open board's shared pool), so the biggest legal value (6) wins
-    # outright: its 6x2 piece both reaches the flag (+10) and denies the
+    # outright: its 6x2 piece both reaches the prize (+10) and denies the
     # most cells (12), well past value 4's 4x2 (+10, denies 8).
-    game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
-    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
+    game = Game(board_size=6, prize_enabled=True, wildcard_enabled=True)
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 3))
     game.history = [
         TurnRecord(
             PLAYER_1, roll=(2, 1), placed=Rectangle((0, 0), 1, 2, PLAYER_1), wildcard_original_roll=(2, 2)
@@ -563,15 +563,15 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     ]
 
     assert renderer._turn_analyses(game)[1] == (
-        "scored 0 this turn (best possible: 10 — flag)", ((0, 0), 6, 2)
+        "scored 0 this turn (best possible: 10 — prize)", ((0, 0), 6, 2)
     )
 
 
 def test_turn_analysis_no_note_when_wildcard_pick_already_optimal(renderer):
     # Same layout, but the wildcard was resolved to 6 (the best value, see
     # above) - nothing to flag.
-    game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
-    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
+    game = Game(board_size=6, prize_enabled=True, wildcard_enabled=True)
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 3))
     game.history = [
         TurnRecord(
             PLAYER_1, roll=(2, 6), placed=Rectangle((0, 0), 6, 2, PLAYER_1), wildcard_original_roll=(2, 2)
@@ -670,20 +670,25 @@ def test_turn_analyses_cache_busts_for_a_different_game(renderer):
 def test_turn_analysis_note_text_is_unaffected_by_show_better_option(renderer, monkeypatch):
     # Revealing a better option is a purely visual board outline now (see
     # _draw_analysis_suggestions) - the note text itself never changes.
-    game = Game(board_size=6, flag_conquest_enabled=True)
-    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
+    game = Game(board_size=6, prize_enabled=True)
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     drawn = []
     monkeypatch.setattr(renderer, "_text", lambda text, *a, **k: drawn.append(text))
 
     renderer._draw_turn_analysis(game, 1)
-    assert drawn == ["! scored 0 this turn (best possible: 10 — flag)"]
+    # "prize" is one char longer than the old "flag" label, enough to push this
+    # message past PANEL_CONTENT_WIDTH into a 2-line wrap - _draw_wrapped_text
+    # already handles that (and REPLAY_ANALYSIS_DELTA already budgets for it,
+    # see docs/UI_REPLAY_SCREEN.md), so assert the wrapped text unchanged, not
+    # the wrap point itself.
+    assert " ".join(drawn) == "! scored 0 this turn (best possible: 10 — prize)"
 
 
 def test_draw_replay_with_show_better_option_smoke(renderer):
     game = Game(
-        board_size=6, flag_conquest_enabled=True, self_enclosed_penalty_enabled=True, rng=ScriptedRandom([2, 3])
+        board_size=6, prize_enabled=True, self_enclosed_penalty_enabled=True, rng=ScriptedRandom([2, 3])
     )
     game.roll_dice()
     assert game.attempt_place((0, 0), 2, 3) is True
@@ -694,7 +699,7 @@ def test_draw_replay_with_show_better_option_smoke(renderer):
 
 def test_draw_replay_turn_analysis_smoke(renderer):
     game = Game(
-        board_size=6, flag_conquest_enabled=True, self_enclosed_penalty_enabled=True, rng=ScriptedRandom([2, 3])
+        board_size=6, prize_enabled=True, self_enclosed_penalty_enabled=True, rng=ScriptedRandom([2, 3])
     )
     game.roll_dice()
     assert game.attempt_place((0, 0), 2, 3) is True
@@ -704,8 +709,8 @@ def test_draw_replay_turn_analysis_smoke(renderer):
 
 
 def test_draw_replay_suboptimal_wildcard_pick_smoke(renderer):
-    game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
-    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
+    game = Game(board_size=6, prize_enabled=True, wildcard_enabled=True)
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 3))
     game.history = [
         TurnRecord(
             PLAYER_1, roll=(2, 1), placed=Rectangle((0, 0), 1, 2, PLAYER_1), wildcard_original_roll=(2, 2)
@@ -792,8 +797,8 @@ def test_draw_replay_autoplay_controls_smoke(renderer, autoplay):
         )
 
 
-def test_draw_replay_flag_conquest_smoke(renderer):
-    game = _with_flags(Game(board_size=11, rng=ScriptedRandom([6, 6])), (5, 5))
+def test_draw_replay_prize_smoke(renderer):
+    game = _with_prizes(Game(board_size=11, rng=ScriptedRandom([6, 6])), (5, 5))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True
     game.state = TurnState.GAME_OVER
@@ -852,8 +857,8 @@ def test_draw_game_over_tie_smoke(renderer):
 
 
 def test_draw_panel_with_series_stats_smoke(renderer):
-    game = Game(board_size=6, flag_conquest_enabled=True)
-    series = Series(length=3, board_size=6, skip_limit=3, flag_conquest_enabled=True, special_cell_points={"flag": 10})
+    game = Game(board_size=6, prize_enabled=True)
+    series = Series(length=3, board_size=6, skip_limit=3, prize_enabled=True, special_cell_points={"prize": 10})
     series.record_game(_finished_game(6, 1, 0))
     series.record_game(_finished_game(6, 1, 0))
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
@@ -886,9 +891,9 @@ def test_panel_series_rows_truncates_to_most_recent_plus_totals(renderer):
 
 def test_draw_panel_with_a_full_five_round_series_smoke(renderer):
     # The worst case that PANEL_SERIES_MAX_ROWS/MIN_WINDOW_HEIGHT are sized for:
-    # a maxed-out history log alongside a full 5-round Flag Conquest series.
-    game = Game(board_size=6, flag_conquest_enabled=True)
-    series = Series(length=5, board_size=6, skip_limit=3, flag_conquest_enabled=True, special_cell_points={"flag": 20})
+    # a maxed-out history log alongside a full 5-round Prize series.
+    game = Game(board_size=6, prize_enabled=True)
+    series = Series(length=5, board_size=6, skip_limit=3, prize_enabled=True, special_cell_points={"prize": 20})
     for _ in range(5):
         series.record_game(_finished_game(6, 1, 0))
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)

@@ -12,8 +12,8 @@ class ScriptedRandom:
         return self._values.pop(0)
 
 
-def _flags(*cells: tuple[int, int]) -> frozenset[SpecialCell]:
-    return frozenset(SpecialCell(CellKind.FLAG, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
+def _prizes(*cells: tuple[int, int]) -> frozenset[SpecialCell]:
+    return frozenset(SpecialCell(CellKind.PRIZE, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
 
 
 def test_choose_placement_returns_a_legal_candidate():
@@ -35,18 +35,18 @@ def test_choose_placement_is_deterministic_via_rng_index():
     assert choose_placement(game) == candidates[0]
 
 
-def test_choose_placement_greedy_prefers_capturing_a_flag():
+def test_choose_placement_greedy_prefers_capturing_a_prize():
     game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
-    game.flag_conquest_enabled = True
-    game.board.special_cells = _flags((3, 3))
+    game.prize_enabled = True
+    game.board.special_cells = _prizes((3, 3))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
 
     assert choose_placement(game, "Greedy") == ((3, 3), 1, 1)
 
 
-def test_choose_placement_greedy_falls_back_to_blocking_score_without_flags():
-    # No Flag Conquest -> flag_score ties at 0 for every candidate; Greedy
+def test_choose_placement_greedy_falls_back_to_blocking_score_without_prizes():
+    # No Prize -> cell_overlap_score ties at 0 for every candidate; Greedy
     # should fall back to denying the opponent's frontier instead of a bare
     # random pick.
     game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
@@ -85,10 +85,10 @@ def test_blocking_score_fn_computes_frontier_once_per_call_not_per_candidate():
     assert len(calls) == 1
 
 
-def test_choose_wildcard_value_greedy_prefers_a_flag_capturing_value():
+def test_choose_wildcard_value_greedy_prefers_a_prize_capturing_value():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
     game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
-    game.board.special_cells = _flags((2, 5))
+    game.board.special_cells = _prizes((2, 5))
     game.roll_dice()
     assert game.state.name == "CHOOSING_WILDCARD"
 
@@ -105,8 +105,8 @@ def test_choose_wildcard_value_blocking_prefers_a_frontier_denying_value():
     assert choose_wildcard_value(game, "Blocking") == 4
 
 
-def test_choose_wildcard_value_greedy_prefers_the_larger_piece_without_a_flag():
-    # No flag conquest -> flag_score ties at 0 for every legal value; unlike
+def test_choose_wildcard_value_greedy_prefers_the_larger_piece_without_a_prize():
+    # No Prize -> cell_overlap_score ties at 0 for every legal value; unlike
     # choose_placement (one turn = one fixed w*h), different wildcard values
     # give different piece sizes, so Greedy should break the tie toward area.
     game = Game(board_size=8, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
@@ -117,10 +117,10 @@ def test_choose_wildcard_value_greedy_prefers_the_larger_piece_without_a_flag():
     assert choose_wildcard_value(game, "Greedy") == 6
 
 
-def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_flag_conquest():
-    # Blocking rerolls on a plain 0 score; Greedy doesn't - its flag_score is
-    # structurally 0 without Flag Conquest on, so 0 isn't a signal for it -
-    # see the guard test below for the flags-exist-but-unreachable case.
+def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_prize():
+    # Blocking rerolls on a plain 0 score; Greedy doesn't - its cell_overlap_score is
+    # structurally 0 without Prize on, so 0 isn't a signal for it -
+    # see the guard test below for the prizes-exist-but-unreachable case.
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
@@ -130,16 +130,16 @@ def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_flag_con
     assert should_reroll(game, "Greedy") is False
 
 
-def test_should_reroll_true_for_greedy_when_flags_exist_but_unreachable_this_turn():
+def test_should_reroll_true_for_greedy_when_prizes_exist_but_unreachable_this_turn():
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
-    game.flag_conquest_enabled = True
-    game.board.special_cells = _flags((5, 5))
+    game.prize_enabled = True
+    game.board.special_cells = _prizes((5, 5))
     game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
     game.roll_dice()
     assert game.state.name == "CHOOSING_PLACEMENT"
-    flag_cells = game.board.cells_of_kind(CellKind.FLAG)
-    assert flag_cells  # sanity: flags do exist this game
-    assert not (flag_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
+    prize_cells = game.board.cells_of_kind(CellKind.PRIZE)
+    assert prize_cells  # sanity: prizes do exist this game
+    assert not (prize_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
 
     assert should_reroll(game, "Greedy") is True
 

@@ -14,7 +14,7 @@ from .state import UIState
 # compare against the move actually played.
 _AnalysisCandidate = tuple[tuple[int, int], int, int]
 
-# (flag_cells, trap_cells, denial_cells, enclosure_delta) - one candidate's
+# (prize_cells, pitfall_cells, denial_cells, enclosure_delta) - one candidate's
 # raw per-axis values, bundled so they thread through _candidate_value/
 # _best_analysis_candidate/_analysis_note as a unit instead of four
 # same-typed ints each (easy to transpose when passed individually).
@@ -28,8 +28,8 @@ class ReplayMixin:
     def _draw_replay_board(self, game: Game, step: int) -> None:
         self._draw_grid_cells(game)
 
-        self._draw_flags(game, upto=step)
-        self._draw_negative_cells(game, upto=step)
+        self._draw_prize_cells(game, upto=step)
+        self._draw_pitfall_cells(game, upto=step)
         self._draw_obstacles(game)
 
         for rect in self._placed_upto(game, step):
@@ -40,7 +40,7 @@ class ReplayMixin:
             pygame.draw.rect(self.screen, border, piece_rect, width=3)
 
         self._draw_last_move_highlight(game, upto=step)
-        self._draw_flag_capture_highlight(game, upto=step)
+        self._draw_prize_capture_highlight(game, upto=step)
         self._draw_walls(game)
 
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
@@ -64,37 +64,37 @@ class ReplayMixin:
         return board, scratch
 
     def _replay_stats(self, game: Game, step: int) -> dict[int, dict[str, int]]:
-        stats = {player_id: {"area": 0, "flags": 0} for player_id in game.players}
+        stats = {player_id: {"area": 0, "prizes": 0} for player_id in game.players}
         for rect in self._placed_upto(game, step):
             stats[rect.owner]["area"] += rect.area
-            stats[rect.owner]["flags"] += len(game.board.cells_of_kind(CellKind.FLAG).intersection(rect.cells()))
+            stats[rect.owner]["prizes"] += len(game.board.cells_of_kind(CellKind.PRIZE).intersection(rect.cells()))
 
         board, scratch = self._board_at_step(game, step)
         for player_id, player in scratch.items():
             reachable = board.reachable_empty_cells(player)
             stats[player_id]["potential_area"] = len(reachable)
-            stats[player_id]["potential_flag_points"] = (
-                len(reachable & board.cells_of_kind(CellKind.FLAG)) * game.points_for(CellKind.FLAG)
+            stats[player_id]["potential_prize_points"] = (
+                len(reachable & board.cells_of_kind(CellKind.PRIZE)) * game.points_for(CellKind.PRIZE)
             )
         return stats
 
     def _score_history(self, game: Game) -> dict[int, list[int]]:
         board, scratch = self._new_scratch_board(game)
         area = {player_id: 0 for player_id in game.players}
-        flags = {player_id: 0 for player_id in game.players}
-        traps = {player_id: 0 for player_id in game.players}
+        prizes = {player_id: 0 for player_id in game.players}
+        pitfalls = {player_id: 0 for player_id in game.players}
         history = {player_id: [0] for player_id in game.players}
         for record in game.history:
             if record.placed is not None:
                 rect = record.placed
                 board.place(scratch[rect.owner], rect.top_left, rect.width, rect.height)
                 area[rect.owner] += rect.area
-                flags[rect.owner] += len(game.board.cells_of_kind(CellKind.FLAG).intersection(rect.cells()))
-                traps[rect.owner] += len(game.board.cells_of_kind(CellKind.TRAP).intersection(rect.cells()))
+                prizes[rect.owner] += len(game.board.cells_of_kind(CellKind.PRIZE).intersection(rect.cells()))
+                pitfalls[rect.owner] += len(game.board.cells_of_kind(CellKind.PITFALL).intersection(rect.cells()))
             penalty = board.self_enclosed_cell_counts() if game.self_enclosed_penalty_enabled else {}
             for player_id in game.players:
-                score = area[player_id] + flags[player_id] * game.points_for(CellKind.FLAG)
-                score -= traps[player_id] * game.points_for(CellKind.TRAP)
+                score = area[player_id] + prizes[player_id] * game.points_for(CellKind.PRIZE)
+                score -= pitfalls[player_id] * game.points_for(CellKind.PITFALL)
                 score -= penalty.get(player_id, 0) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
                 history[player_id].append(score)
         return history
@@ -110,18 +110,18 @@ class ReplayMixin:
     ) -> tuple[int, int, int]:
         # The axes that are always computed for every candidate, whether or
         # not that candidate ends up worth paying for the (possibly
-        # skipped) enclosure flood-fill. Flag/trap are both cheap exact cell-
-        # overlap counts (bot.flag_score is a generic counter, not flag-
-        # specific - reused as-is against board.negative_cells). Denial is a
+        # skipped) enclosure flood-fill. Prize/pitfall are both cheap exact cell-
+        # overlap counts (bot.cell_overlap_score is a generic counter, not
+        # prize-specific). Denial is a
         # reachable-area cutoff, not just immediate-frontier overlap - see
         # reachable_count_if's docstring for why - and unlike frontier
         # overlap, it has no cheap exact bound, so it's always paid, never
         # pruned.
         top_left, w, h = candidate
-        flag_cells = bot.flag_score(candidate, board.cells_of_kind(CellKind.FLAG)) if game.flag_conquest_enabled else 0
-        trap_cells = bot.flag_score(candidate, board.cells_of_kind(CellKind.TRAP)) if game.negative_cells_enabled else 0
+        prize_cells = bot.cell_overlap_score(candidate, board.cells_of_kind(CellKind.PRIZE)) if game.prize_enabled else 0
+        pitfall_cells = bot.cell_overlap_score(candidate, board.cells_of_kind(CellKind.PITFALL)) if game.pitfall_enabled else 0
         denial_cells = reachable_before - board.reachable_count_if(player.id, opponent, top_left, w, h)
-        return flag_cells, trap_cells, denial_cells
+        return prize_cells, pitfall_cells, denial_cells
 
     def _candidate_value(
         self,
@@ -129,37 +129,37 @@ class ReplayMixin:
         board: Board,
         player: Player,
         candidate: tuple[tuple[int, int], int, int],
-        flag_cells: int,
-        trap_cells: int,
+        prize_cells: int,
+        pitfall_cells: int,
         denial_cells: int,
         enclosure_before: int,
     ) -> tuple[int, _AxisBreakdown]:
         # One combined turn-quality value per candidate, using the same
-        # point weights Game.total_score() applies - game.points_for(FLAG/TRAP)
+        # point weights Game.total_score() applies - game.points_for(PRIZE/PITFALL)
         # and SELF_ENCLOSED_PENALTY_PER_CELL -
         # so every candidate this turn is ranked on one scale instead of
-        # separate flag/trap/denial/enclosure axes. Denial itself carries
+        # separate prize/pitfall/denial/enclosure axes. Denial itself carries
         # weight 1 (it has no total_score() equivalent to borrow a weight
         # from) - this "total" is a ranking/threshold value only, never
         # shown to the player as if it were real score (see _analysis_note).
-        # flag_cells/trap_cells/denial_cells come in pre-computed (via
+        # prize_cells/pitfall_cells/denial_cells come in pre-computed (via
         # _candidate_partial_value) rather than recomputed here, so a
         # candidate that reaches this point never pays for
         # reachable_count_if twice. Returns the raw per-axis breakdown
         # alongside the total so _analysis_note can report real score
-        # points (flag/trap/enclosure) separately from the denial cell
+        # points (prize/pitfall/enclosure) separately from the denial cell
         # count, and name whichever axis actually drove the gap.
         enclosure_delta = 0
         if game.self_enclosed_penalty_enabled:
             top_left, w, h = candidate
             enclosure_delta = board.self_enclosed_count_if(player.id, top_left, w, h) - enclosure_before
         total = (
-            flag_cells * game.points_for(CellKind.FLAG)
-            - trap_cells * game.points_for(CellKind.TRAP)
+            prize_cells * game.points_for(CellKind.PRIZE)
+            - pitfall_cells * game.points_for(CellKind.PITFALL)
             + denial_cells
             - enclosure_delta * constants.SELF_ENCLOSED_PENALTY_PER_CELL
         )
-        return total, (flag_cells, trap_cells, denial_cells, enclosure_delta)
+        return total, (prize_cells, pitfall_cells, denial_cells, enclosure_delta)
 
     def _analysis_candidate_pool(
         self, record: TurnRecord, board: Board, player: Player
@@ -201,7 +201,7 @@ class ReplayMixin:
         # screen switch visibly laggy. A count can never go negative, so
         # a candidate's enclosure bonus is capped at enclosure_before
         # (fully clearing every already-enclosed cell) - its total can
-        # never exceed its cheap flag+denial value plus that ceiling.
+        # never exceed its cheap prize+denial value plus that ceiling.
         # Skip the flood-fill for any candidate that ceiling can't lift
         # past the running best; only the few genuinely competitive
         # candidates ever pay for it. Provably exact, not a heuristic:
@@ -224,18 +224,18 @@ class ReplayMixin:
         # no is-None checks, unlike a None seed would.
         best_value_axis = float("-inf")
         for candidate in pool:
-            flag_cells, trap_cells, denial_cells = self._candidate_partial_value(
+            prize_cells, pitfall_cells, denial_cells = self._candidate_partial_value(
                 game, board, player, candidate, opponent, reachable_before
             )
             partial = (
-                flag_cells * game.points_for(CellKind.FLAG)
-                - trap_cells * game.points_for(CellKind.TRAP)
+                prize_cells * game.points_for(CellKind.PRIZE)
+                - pitfall_cells * game.points_for(CellKind.PITFALL)
                 + denial_cells
             )
             if partial + ceiling_bonus <= best_value_axis:
                 continue
             total, breakdown = self._candidate_value(
-                game, board, player, candidate, flag_cells, trap_cells, denial_cells, enclosure_before
+                game, board, player, candidate, prize_cells, pitfall_cells, denial_cells, enclosure_before
             )
             if total > best_value_axis:
                 best_value_axis = total
@@ -256,20 +256,20 @@ class ReplayMixin:
         # two raw values are enough to compare at a glance - but never as one
         # blended "score": denial carries no real total_score() weight (a
         # pure cell-count heuristic, see _candidate_value), so mixing it into
-        # the same number as flag/trap/enclosure would mislabel a heuristic
+        # the same number as prize/pitfall/enclosure would mislabel a heuristic
         # as real points. Whichever axis actually drove the gap (same
-        # weighted-gap comparison and tie order as before: flag > trap >
+        # weighted-gap comparison and tie order as before: prize > pitfall >
         # denial > enclosure) picks which pair of numbers to show and names
         # itself in a short label - "denied N cells" already names its own
         # axis, so only the points branch needs an explicit label suffix to
-        # disambiguate flag/trap/enclosure from each other.
+        # disambiguate prize/pitfall/enclosure from each other.
         if best_value_axis <= chosen_total:
             return None
-        chosen_flag, chosen_trap, chosen_denial, chosen_enclosure = chosen_breakdown
-        best_flag, best_trap, best_denial, best_enclosure = best_breakdown
-        flag_gap = (best_flag - chosen_flag) * game.points_for(CellKind.FLAG) if game.flag_conquest_enabled else 0
-        trap_gap = (
-            (chosen_trap - best_trap) * game.points_for(CellKind.TRAP) if game.negative_cells_enabled else 0
+        chosen_prize, chosen_pitfall, chosen_denial, chosen_enclosure = chosen_breakdown
+        best_prize, best_pitfall, best_denial, best_enclosure = best_breakdown
+        prize_gap = (best_prize - chosen_prize) * game.points_for(CellKind.PRIZE) if game.prize_enabled else 0
+        pitfall_gap = (
+            (chosen_pitfall - best_pitfall) * game.points_for(CellKind.PITFALL) if game.pitfall_enabled else 0
         )
         denial_gap = best_denial - chosen_denial
         enclosure_gap = (
@@ -278,22 +278,22 @@ class ReplayMixin:
             else 0
         )
         _gap, axis = max(
-            ((flag_gap, "flag"), (trap_gap, "trap"), (denial_gap, "denial"), (enclosure_gap, "enclosure")),
+            ((prize_gap, "prize"), (pitfall_gap, "pitfall"), (denial_gap, "denial"), (enclosure_gap, "enclosure")),
             key=lambda ga: ga[0],
         )
         if axis == "denial":
             unit = "cell" if chosen_denial == 1 else "cells"
             message = f"denied {chosen_denial} {unit} this turn (best possible: {best_denial})"
         else:
-            def points(flag: int, trap: int, enclosure: int) -> int:
+            def points(prize: int, pitfall: int, enclosure: int) -> int:
                 return (
-                    flag * game.points_for(CellKind.FLAG)
-                    - trap * game.points_for(CellKind.TRAP)
+                    prize * game.points_for(CellKind.PRIZE)
+                    - pitfall * game.points_for(CellKind.PITFALL)
                     - enclosure * constants.SELF_ENCLOSED_PENALTY_PER_CELL
                 )
 
-            chosen_points = points(chosen_flag, chosen_trap, chosen_enclosure)
-            best_points = points(best_flag, best_trap, best_enclosure)
+            chosen_points = points(chosen_prize, chosen_pitfall, chosen_enclosure)
+            best_points = points(best_prize, best_pitfall, best_enclosure)
             message = f"scored {chosen_points} this turn (best possible: {best_points} — {axis})"
         return (message, best_candidate)
 
@@ -328,7 +328,7 @@ class ReplayMixin:
 
             pool = self._analysis_candidate_pool(record, board, player)
             chosen_candidate = (record.placed.top_left, record.placed.width, record.placed.height)
-            chosen_partial_flag, chosen_partial_trap, chosen_partial_denial = self._candidate_partial_value(
+            chosen_partial_prize, chosen_partial_pitfall, chosen_partial_denial = self._candidate_partial_value(
                 game, board, player, chosen_candidate, opponent, reachable_before
             )
             chosen_total, chosen_breakdown = self._candidate_value(
@@ -336,8 +336,8 @@ class ReplayMixin:
                 board,
                 player,
                 chosen_candidate,
-                chosen_partial_flag,
-                chosen_partial_trap,
+                chosen_partial_prize,
+                chosen_partial_pitfall,
                 chosen_partial_denial,
                 enclosure_before,
             )
@@ -439,14 +439,14 @@ class ReplayMixin:
         for player in game.players.values():
             s = stats[player.id]
             primary = f"{player.name}: {s['area']}"
-            if game.flag_conquest_enabled:
-                primary += f"  F{s['flags']}"
 
             suffixes = []
+            if game.prize_enabled and s["prizes"]:
+                suffixes.append(f"Prize {s['prizes']}")
             if s["potential_area"]:
                 suffixes.append(f"+{s['potential_area']} area")
-            if game.flag_conquest_enabled and s["potential_flag_points"]:
-                suffixes.append(f"+{s['potential_flag_points']} flag")
+            if game.prize_enabled and s["potential_prize_points"]:
+                suffixes.append(f"+{s['potential_prize_points']} prize")
             self._draw_score_row(x, y, player.id, primary, suffixes, colors.TEXT_COLOR)
             y += layout.PANEL_SCORE_ROW_HEIGHT
         self._divider(layout.PANEL_DIVIDER_2_Y)

@@ -97,18 +97,18 @@ class SettingsMixin:
         )
 
         chip_rects = layout.settings_house_rule_button_rects(mode, tournament_size)
-        for label_text, enabled_flag in (
-            ("Flags", ui_state.selected_flag_conquest_enabled),
+        for label_text, is_selected in (
+            ("Prize", ui_state.selected_prize_enabled),
             ("Walls", ui_state.selected_walls_enabled),
             ("Obstacles", ui_state.selected_obstacles_enabled),
-            ("Traps", ui_state.selected_negative_cells_enabled),
+            ("Pitfall", ui_state.selected_pitfall_enabled),
             ("Wildcard", ui_state.selected_wildcard_enabled),
             ("Enclosure", ui_state.selected_self_enclosed_penalty_enabled),
             ("Reroll", ui_state.selected_reroll_enabled),
             ("Comeback", ui_state.selected_comeback_nudge_enabled),
         ):
             rect = chip_rects[label_text]
-            self._button(rect, label_text, selected=enabled_flag, hovered=hovered(rect), outline=True)
+            self._button(rect, label_text, selected=is_selected, hovered=hovered(rect), outline=True)
 
         start_label = {"Single": "Start Game (Space)", "Series": "Start Series (Space)", "Tournament": "Start Tournament (Space)"}[mode]
         start_rect = layout.settings_start_button_rect(mode, tournament_size)

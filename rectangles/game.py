@@ -12,11 +12,11 @@ from .constants import (
     COMEBACK_NUDGE_THRESHOLD_FRACTION,
     DICE_MAX,
     DICE_MIN,
-    FLAG_CELL_PAIRS,
-    FLAG_CONQUEST_ENABLED,
+    PRIZE_CELL_PAIRS,
+    PRIZE_ENABLED,
     MIN_SPECIAL_CELL_DISTANCE,
-    NEGATIVE_CELL_PAIRS,
-    NEGATIVE_CELLS_ENABLED,
+    PITFALL_CELL_PAIRS,
+    PITFALL_ENABLED,
     OBSTACLE_CELL_PAIRS,
     OBSTACLES_ENABLED,
     PLAYER_1,
@@ -75,10 +75,10 @@ class Game:
         self,
         board_size: int = BOARD_SIZE,
         skip_limit: int = SKIP_LIMIT,
-        flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
+        prize_enabled: bool = PRIZE_ENABLED,
         walls_enabled: bool = WALLS_ENABLED,
         obstacles_enabled: bool = OBSTACLES_ENABLED,
-        negative_cells_enabled: bool = NEGATIVE_CELLS_ENABLED,
+        pitfall_enabled: bool = PITFALL_ENABLED,
         special_cell_points: dict[str, int] | None = None,
         wildcard_enabled: bool = WILDCARD_ENABLED,
         self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
@@ -88,10 +88,10 @@ class Game:
     ):
         self.board_size = board_size
         self.skip_limit = skip_limit
-        self.flag_conquest_enabled = flag_conquest_enabled
+        self.prize_enabled = prize_enabled
         self.walls_enabled = walls_enabled
         self.obstacles_enabled = obstacles_enabled
-        self.negative_cells_enabled = negative_cells_enabled
+        self.pitfall_enabled = pitfall_enabled
         self.special_cell_points = dict(special_cell_points or {})
         self.wildcard_enabled = wildcard_enabled
         self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
@@ -115,19 +115,19 @@ class Game:
 
     def reset(self) -> None:
         size = self.board_size
-        flag_cells = self._flag_cells() if self.flag_conquest_enabled else frozenset()
-        wall_edges = self._wall_edges(flag_cells) if self.walls_enabled else frozenset()
+        prize_cells = self._prize_cells() if self.prize_enabled else frozenset()
+        wall_edges = self._wall_edges(prize_cells) if self.walls_enabled else frozenset()
         obstacle_cells = (
-            self._obstacle_cells(flag_cells, wall_edges) if self.obstacles_enabled else frozenset()
+            self._obstacle_cells(prize_cells, wall_edges) if self.obstacles_enabled else frozenset()
         )
-        negative_cells = (
-            self._negative_cells(flag_cells, wall_edges, obstacle_cells)
-            if self.negative_cells_enabled
+        pitfall_cells = (
+            self._pitfall_cells(prize_cells, wall_edges, obstacle_cells)
+            if self.pitfall_enabled
             else frozenset()
         )
         special_cells: set[SpecialCell] = set()
         pair_id = 0
-        for kind, cells in ((CellKind.FLAG, flag_cells), (CellKind.TRAP, negative_cells)):
+        for kind, cells in ((CellKind.PRIZE, prize_cells), (CellKind.PITFALL, pitfall_cells)):
             for r, c in cells:
                 special_cells.add(SpecialCell(kind, Cell(r, c), pair_id))
                 pair_id += 1
@@ -162,7 +162,7 @@ class Game:
         count: int,
         occupied: set[tuple[int, int]],
     ) -> frozenset[tuple[int, int]]:
-        """Shared by Flag Conquest/Obstacles: `count` mirrored single-cell
+        """Shared by Prize/Obstacles: `count` mirrored single-cell
         pairs, enumerate-then-pick from candidates outside `occupied`, the
         start-corner exclusion zone, MIN_SPECIAL_CELL_DISTANCE of any pair
         already placed *by this call* (so a feature's own pairs spread out -
@@ -200,11 +200,11 @@ class Game:
 
         return frozenset(result)
 
-    def _flag_cells(self) -> frozenset[tuple[int, int]]:
-        return self._mirrored_cell_pairs(FLAG_CELL_PAIRS, set())
+    def _prize_cells(self) -> frozenset[tuple[int, int]]:
+        return self._mirrored_cell_pairs(PRIZE_CELL_PAIRS, set())
 
     def _wall_edges(
-        self, flag_cells: frozenset[tuple[int, int]]
+        self, prize_cells: frozenset[tuple[int, int]]
     ) -> frozenset[frozenset[tuple[int, int]]]:
         size = self.board_size
 
@@ -215,7 +215,7 @@ class Game:
                 return [frozenset({(fixed, i), (fixed + 1, i)}) for i in range(start, start + WALL_LINE_LENGTH)]
             return [frozenset({(i, fixed), (i, fixed + 1)}) for i in range(start, start + WALL_LINE_LENGTH)]
 
-        occupied: set[tuple[int, int]] = set(flag_cells)
+        occupied: set[tuple[int, int]] = set(prize_cells)
         own_placed: set[tuple[int, int]] = set()
         result: set[frozenset[tuple[int, int]]] = set()
 
@@ -250,20 +250,20 @@ class Game:
 
     def _obstacle_cells(
         self,
-        flag_cells: frozenset[tuple[int, int]],
+        prize_cells: frozenset[tuple[int, int]],
         wall_edges: frozenset[frozenset[tuple[int, int]]],
     ) -> frozenset[tuple[int, int]]:
-        occupied = set(flag_cells) | {cell for edge in wall_edges for cell in edge}
+        occupied = set(prize_cells) | {cell for edge in wall_edges for cell in edge}
         return self._mirrored_cell_pairs(OBSTACLE_CELL_PAIRS, occupied)
 
-    def _negative_cells(
+    def _pitfall_cells(
         self,
-        flag_cells: frozenset[tuple[int, int]],
+        prize_cells: frozenset[tuple[int, int]],
         wall_edges: frozenset[frozenset[tuple[int, int]]],
         obstacle_cells: frozenset[tuple[int, int]],
     ) -> frozenset[tuple[int, int]]:
-        occupied = set(flag_cells) | {cell for edge in wall_edges for cell in edge} | set(obstacle_cells)
-        return self._mirrored_cell_pairs(NEGATIVE_CELL_PAIRS, occupied)
+        occupied = set(prize_cells) | {cell for edge in wall_edges for cell in edge} | set(obstacle_cells)
+        return self._mirrored_cell_pairs(PITFALL_CELL_PAIRS, occupied)
 
     @property
     def current_player(self) -> Player:
@@ -497,7 +497,7 @@ class Game:
         reachable = self.board.reachable_empty_cells(player)
         return {
             "area": len(reachable),
-            "flag_points": len(reachable & self.board.cells_of_kind(CellKind.FLAG)) * self.points_for(CellKind.FLAG),
+            "prize_points": len(reachable & self.board.cells_of_kind(CellKind.PRIZE)) * self.points_for(CellKind.PRIZE),
         }
 
     def winner(self) -> int | None:

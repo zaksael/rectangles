@@ -75,18 +75,18 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         ui_state.toggle_all_house_rules()
         return True
     chip_rects = layout.settings_house_rule_button_rects(mode, tournament_size)
-    for label, flag_attr in (
-        ("Flags", "selected_flag_conquest_enabled"),
+    for label, toggle_attr in (
+        ("Prize", "selected_prize_enabled"),
         ("Walls", "selected_walls_enabled"),
         ("Obstacles", "selected_obstacles_enabled"),
-        ("Traps", "selected_negative_cells_enabled"),
+        ("Pitfall", "selected_pitfall_enabled"),
         ("Wildcard", "selected_wildcard_enabled"),
         ("Enclosure", "selected_self_enclosed_penalty_enabled"),
         ("Reroll", "selected_reroll_enabled"),
         ("Comeback", "selected_comeback_nudge_enabled"),
     ):
         if chip_rects[label].collidepoint(pos):
-            setattr(ui_state, flag_attr, not getattr(ui_state, flag_attr))
+            setattr(ui_state, toggle_attr, not getattr(ui_state, toggle_attr))
             return True
     if layout.settings_start_button_rect(mode, tournament_size).collidepoint(pos):
         _start_selected_mode(ui_state)

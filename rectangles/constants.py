@@ -9,26 +9,26 @@ DICE_MAX = 6
 # A player who is skipped this many turns in a row ends the game.
 SKIP_LIMIT = 5
 
-# Shared by Flag Conquest and Walls: neither will place a special cell
+# Shared by Prize and Walls: neither will place a special cell
 # within this Chebyshev distance of either player's start corner, keeping
 # both features clear of the opening moves.
 START_CORNER_EXCLUSION_RADIUS = 5
 
 # Minimum Chebyshev distance kept between two special cells belonging to the
-# SAME house-rule feature (e.g. one Flag Conquest pair vs. the next, or one
+# SAME house-rule feature (e.g. one Prize pair vs. the next, or one
 # Wall pair vs. the next) - keeps them visually spread across the board
 # instead of clustering together. Does not apply across different features
-# (a flag can still land right next to a wall or an obstacle).
+# (a prize can still land right next to a wall or an obstacle).
 MIN_SPECIAL_CELL_DISTANCE = 3
 
-# Whether flag cells are seeded on the board (see Game.reset()); capturing one
-# awards FLAG_BONUS_POINTS on top of area. FLAG_CELL_PAIRS mirrored
+# Whether prize cells are seeded on the board (see Game.reset()); capturing one
+# awards PRIZE_BONUS_POINTS on top of area. PRIZE_CELL_PAIRS mirrored
 # single-cell pairs are placed each game (each pair: a random cell outside
 # START_CORNER_EXCLUSION_RADIUS plus its 180-degree rotation mirror), same
-# shape as Obstacles - no fixed/center flag, so neither player is favored.
-FLAG_CONQUEST_ENABLED = False
-FLAG_BONUS_POINTS = 10
-FLAG_CELL_PAIRS = 2
+# shape as Obstacles - no fixed/center prize, so neither player is favored.
+PRIZE_ENABLED = False
+PRIZE_BONUS_POINTS = 10
+PRIZE_CELL_PAIRS = 2
 
 # Whether wall lines are seeded on the board (see Game.reset()). A wall is a
 # barrier between cells, not a cell itself - no cell is ever sacrificed, a
@@ -37,7 +37,7 @@ FLAG_CELL_PAIRS = 2
 # position randomized and kept outside START_CORNER_EXCLUSION_RADIUS of
 # either player's start corner; every pair's second segment is its first's
 # 180-degree rotation mirror, so the obstacle is always symmetric for either
-# player, same reasoning as flag conquest's centered flag.
+# player, same reasoning as Prize's centered prize.
 WALLS_ENABLED = False
 WALL_LINE_LENGTH = 5
 WALL_LINE_PAIRS = 2
@@ -47,8 +47,8 @@ WALL_LINE_PAIRS = 2
 # cell is simply never placeable - seeded into Board._grid with the
 # OBSTACLE_OWNER sentinel at construction time. OBSTACLE_CELL_PAIRS mirrored
 # pairs are placed each game, randomized and kept outside
-# START_CORNER_EXCLUSION_RADIUS of either start corner and clear of flag
-# cells/wall cells, same placement reasoning as Flag Conquest/Walls.
+# START_CORNER_EXCLUSION_RADIUS of either start corner and clear of prize
+# cells/wall cells, same placement reasoning as Prize/Walls.
 OBSTACLES_ENABLED = False
 OBSTACLE_CELL_PAIRS = 2
 OBSTACLE_OWNER = -1
@@ -73,37 +73,36 @@ SELF_ENCLOSED_PENALTY_PER_CELL = 1
 REROLL_ENABLED = False
 REROLL_LIMIT = 2
 
-# Whether "trap" cells are seeded on the board (see Game.reset()); covering
-# one docks NEGATIVE_CELL_PENALTY_POINTS from the capturer's own score - a
-# pure one-sided penalty, unlike Flag Conquest's pure gain. NEGATIVE_CELL_PAIRS
+# Whether "pitfall" cells are seeded on the board (see Game.reset()); covering
+# one docks PITFALL_PENALTY_POINTS from the capturer's own score - a
+# pure one-sided penalty, unlike Prize's pure gain. PITFALL_CELL_PAIRS
 # mirrored single-cell pairs are placed each game, same placement shape as
-# Flag Conquest/Obstacles (no fixed/center cell, neither player favored).
-NEGATIVE_CELLS_ENABLED = False
-NEGATIVE_CELL_PENALTY_POINTS = 10
-NEGATIVE_CELL_PAIRS = 2
+# Prize/Obstacles (no fixed/center cell, neither player favored).
+PITFALL_ENABLED = False
+PITFALL_PENALTY_POINTS = 10
+PITFALL_CELL_PAIRS = 2
 
 
-# Shared special-cell model (#63): Flag Conquest and Traps used to be two
+# Shared special-cell model: Prize and Pitfall used to be two
 # copy-pasted parallel subsystems (own Board frozenset, own Game bonus/
 # penalty kwarg, own Player counter, own capture/scoring lines). CellKind +
 # CellEffect collapse that into one signed-effect table so a future third
 # kind (Contested/steal, backlog #44) is a new dict entry, not a fourth
-# copy-paste. Deliberately still "flag"/"trap" vocabulary, not #59's
-# Prize/Pitfall rename - that's a separate, later, all-at-once pass.
+# copy-paste.
 class CellKind(Enum):
-    FLAG = "flag"
-    TRAP = "trap"
+    PRIZE = "prize"
+    PITFALL = "pitfall"
 
 
 class CellEffect(NamedTuple):
     capturer_sign: int  # applied to the capturing player's own count
-    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Flag/Trap; nonzero once Contested lands)
+    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Prize/Pitfall; nonzero once Contested lands)
     points: int  # magnitude shared by both signs on one kind; overridable per-game via Game(special_cell_points=...)
 
 
 SPECIAL_CELL_KINDS: dict[CellKind, CellEffect] = {
-    CellKind.FLAG: CellEffect(+1, 0, FLAG_BONUS_POINTS),
-    CellKind.TRAP: CellEffect(-1, 0, NEGATIVE_CELL_PENALTY_POINTS),
+    CellKind.PRIZE: CellEffect(+1, 0, PRIZE_BONUS_POINTS),
+    CellKind.PITFALL: CellEffect(-1, 0, PITFALL_PENALTY_POINTS),
 }
 
 # Once the trailing player's total_score() gap reaches this fraction of
@@ -131,7 +130,7 @@ TOURNAMENT_SIZE_PRESETS = (4, 8)
 GAME_MODE_PRESETS = ("Single", "Series", "Tournament")
 
 # Bot opponent difficulty: Basic picks a random legal placement, Greedy
-# prefers capturing flags, Blocking prefers denying the opponent's frontier.
+# prefers capturing prizes, Blocking prefers denying the opponent's frontier.
 BOT_DIFFICULTY_PRESETS = ("Basic", "Greedy", "Blocking")
 
 # Replay-screen autoplay step interval, selectable via a speed picker -

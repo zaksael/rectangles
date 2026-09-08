@@ -123,17 +123,17 @@ def test_frontier_excludes_opponent_and_own_cells():
 def test_board_special_cells_default_empty():
     board = Board(size=6)
     assert board.special_cells == frozenset()
-    assert board.cells_of_kind(CellKind.FLAG) == frozenset()
+    assert board.cells_of_kind(CellKind.PRIZE) == frozenset()
 
 
 def test_board_special_cells_stored_and_placeable_like_any_empty_cell():
     special_cells = frozenset(
-        {SpecialCell(CellKind.FLAG, Cell(0, 5), pair_id=0), SpecialCell(CellKind.FLAG, Cell(5, 0), pair_id=0)}
+        {SpecialCell(CellKind.PRIZE, Cell(0, 5), pair_id=0), SpecialCell(CellKind.PRIZE, Cell(5, 0), pair_id=0)}
     )
     board = Board(size=6, special_cells=special_cells)
     p1, _ = make_players(6)
-    assert board.cells_of_kind(CellKind.FLAG) == frozenset({(0, 5), (5, 0)})
-    assert board.can_place(p1, (0, 0), w=1, h=1) is True  # flag cells impose no extra restriction
+    assert board.cells_of_kind(CellKind.PRIZE) == frozenset({(0, 5), (5, 0)})
+    assert board.can_place(p1, (0, 0), w=1, h=1) is True  # prize cells impose no extra restriction
 
 
 def test_board_wall_edges_default_empty():

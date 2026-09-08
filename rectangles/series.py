@@ -9,7 +9,7 @@ from .game import Game
 @dataclass(frozen=True)
 class RoundResult:
     area: dict[int, int]
-    flags_captured: dict[int, int]
+    prize_captured: dict[int, int]
     total: dict[int, int]
 
 
@@ -18,10 +18,10 @@ class Series:
     length: int
     board_size: int
     skip_limit: int
-    flag_conquest_enabled: bool = False
+    prize_enabled: bool = False
     walls_enabled: bool = False
     obstacles_enabled: bool = False
-    negative_cells_enabled: bool = False
+    pitfall_enabled: bool = False
     special_cell_points: dict[str, int] = field(default_factory=dict)
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
@@ -36,9 +36,9 @@ class Series:
         p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
         result = RoundResult(
             area={PLAYER_1: p1.total_area, PLAYER_2: p2.total_area},
-            flags_captured={
-                PLAYER_1: p1.special_captures.get(CellKind.FLAG, 0),
-                PLAYER_2: p2.special_captures.get(CellKind.FLAG, 0),
+            prize_captured={
+                PLAYER_1: p1.special_captures.get(CellKind.PRIZE, 0),
+                PLAYER_2: p2.special_captures.get(CellKind.PRIZE, 0),
             },
             total={PLAYER_1: game.total_score(p1), PLAYER_2: game.total_score(p2)},
         )
@@ -46,8 +46,8 @@ class Series:
         self.scores[PLAYER_1] += result.total[PLAYER_1]
         self.scores[PLAYER_2] += result.total[PLAYER_2]
 
-    def total_flags_captured(self, player_id: int) -> int:
-        return sum(r.flags_captured[player_id] for r in self.rounds)
+    def total_prize_captured(self, player_id: int) -> int:
+        return sum(r.prize_captured[player_id] for r in self.rounds)
 
     def is_complete(self) -> bool:
         return self.games_played >= self.length
@@ -63,10 +63,10 @@ class Series:
         game = Game(
             board_size=self.board_size,
             skip_limit=self.skip_limit,
-            flag_conquest_enabled=self.flag_conquest_enabled,
+            prize_enabled=self.prize_enabled,
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
-            negative_cells_enabled=self.negative_cells_enabled,
+            pitfall_enabled=self.pitfall_enabled,
             special_cell_points=self.special_cell_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,

@@ -52,7 +52,7 @@ def _special_cells_from_list(data: list) -> frozenset[SpecialCell]:
 def _round_to_dict(round_result: RoundResult) -> dict:
     return {
         "area": round_result.area,
-        "flags_captured": round_result.flags_captured,
+        "prize_captured": round_result.prize_captured,
         "total": round_result.total,
     }
 
@@ -60,7 +60,7 @@ def _round_to_dict(round_result: RoundResult) -> dict:
 def _round_from_dict(data: dict) -> RoundResult:
     return RoundResult(
         area={int(player_id): value for player_id, value in data["area"].items()},
-        flags_captured={int(player_id): value for player_id, value in data["flags_captured"].items()},
+        prize_captured={int(player_id): value for player_id, value in data["prize_captured"].items()},
         total={int(player_id): value for player_id, value in data["total"].items()},
     )
 
@@ -70,10 +70,10 @@ def _series_to_dict(series: Series) -> dict:
         "length": series.length,
         "board_size": series.board_size,
         "skip_limit": series.skip_limit,
-        "flag_conquest_enabled": series.flag_conquest_enabled,
+        "prize_enabled": series.prize_enabled,
         "walls_enabled": series.walls_enabled,
         "obstacles_enabled": series.obstacles_enabled,
-        "negative_cells_enabled": series.negative_cells_enabled,
+        "pitfall_enabled": series.pitfall_enabled,
         "special_cell_points": series.special_cell_points,
         "wildcard_enabled": series.wildcard_enabled,
         "self_enclosed_penalty_enabled": series.self_enclosed_penalty_enabled,
@@ -90,10 +90,10 @@ def _series_from_dict(data: dict) -> Series:
         length=data["length"],
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
-        flag_conquest_enabled=data.get("flag_conquest_enabled", False),
+        prize_enabled=data.get("prize_enabled", False),
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
-        negative_cells_enabled=data.get("negative_cells_enabled", False),
+        pitfall_enabled=data.get("pitfall_enabled", False),
         special_cell_points=data.get("special_cell_points", {}),
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
@@ -112,12 +112,12 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "series": _series_to_dict(series) if series is not None else None,
         "board_size": game.board_size,
         "skip_limit": game.skip_limit,
-        "flag_conquest_enabled": game.flag_conquest_enabled,
+        "prize_enabled": game.prize_enabled,
         "walls_enabled": game.walls_enabled,
         "wall_edges": _wall_edges_to_list(game.board.wall_edges),
         "obstacles_enabled": game.obstacles_enabled,
         "obstacle_cells": [list(cell) for cell in game.board.obstacle_cells],
-        "negative_cells_enabled": game.negative_cells_enabled,
+        "pitfall_enabled": game.pitfall_enabled,
         "special_cell_points": game.special_cell_points,
         "special_cells": _special_cells_to_list(game.board.special_cells),
         "wildcard_enabled": game.wildcard_enabled,
@@ -167,10 +167,10 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
     game = Game(
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
-        flag_conquest_enabled=data.get("flag_conquest_enabled", False),
+        prize_enabled=data.get("prize_enabled", False),
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
-        negative_cells_enabled=data.get("negative_cells_enabled", False),
+        pitfall_enabled=data.get("pitfall_enabled", False),
         special_cell_points=data.get("special_cell_points", {}),
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),

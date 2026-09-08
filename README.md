@@ -33,21 +33,21 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
     match, 3 by default), or
   - one player surrenders, in which case the other player wins outright
     regardless of area covered so far.
-- Otherwise, whoever has placed the most total score (area, plus any flag
-  bonus points — see [Flag Conquest](#flag-conquest) below) wins; equal
+- Otherwise, whoever has placed the most total score (area, plus any prize
+  bonus points — see [Prize](#prize) below) wins; equal
   scores is a tie.
 
-## Flag Conquest
+## Prize
 
-An optional mode, off by default. When turned on, four flags are seeded on
+An optional mode, off by default. When turned on, four prize cells are seeded on
 the board: two random positions each game, each mirrored through the
-board's center so neither player starts closer to one than the other. Flags
+board's center so neither player starts closer to one than the other. Prizes
 are kept clear of both starting corners and spread apart from each other,
 so they never cluster together. Whichever player's
-placed piece happens to cover a flag captures it immediately, earning a
+placed piece happens to cover a prize captures it immediately, earning a
 fixed bonus of 10 points added on top of their area. A single large piece can capture more
-than one flag at once if it covers them both. A gold ring marks whichever
-flag cell(s) your most recent placement captured, so a capture doesn't go
+than one prize at once if it covers them both. A gold ring marks whichever
+prize cell(s) your most recent placement captured, so a capture doesn't go
 unnoticed.
 
 ## Walls
@@ -68,23 +68,23 @@ regardless of which corner they start from.
 
 An optional mode, off by default. When turned on, a handful of individual
 cells are seeded on the board in mirrored pairs, randomly placed and kept
-clear of both starting corners, Flag Conquest's flags, Walls' lines, and
+clear of both starting corners, Prize's cells, Walls' lines, and
 any other Obstacle pair, so they never cluster together.
 Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
 cover it, and it never counts as a legal move for either player. Shown on
 the board as a solid dark square.
 
-## Traps
+## Pitfall
 
-An optional mode, off by default. When turned on, two trap cells are seeded
+An optional mode, off by default. When turned on, two pitfall cells are seeded
 on the board as a single mirrored pair, randomly placed and kept clear of
-both starting corners and every other special cell (Flag Conquest's flags,
-Walls' lines, Obstacles), so they never overlap. Covering a trap docks the
-capturer 10 points off their own score — the mirror image of Flag Conquest's
+both starting corners and every other special cell (Prize's cells,
+Walls' lines, Obstacles), so they never overlap. Covering a pitfall docks the
+capturer 10 points off their own score — the mirror image of Prize's
 bonus, with no effect on the opponent. Scores aren't floored at 0, so
-triggering enough traps can push a player negative. Shown on the board as a
+triggering enough pitfalls can push a player negative. Shown on the board as a
 red X, which disappears once a piece covers it, and the live panel shows the
-count separately from your score (e.g. "T1") so it's never silently baked
+count separately from your score (e.g. "Pitfall 1") so it's never silently baked
 into the total.
 
 ## Wildcard Roll
@@ -149,9 +149,9 @@ Player 2's controls is ignored while the bot is taking its turn.
 
 The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
-- **Greedy** — prefers a placement that captures a flag (see
-  [Flag Conquest](#flag-conquest)); with Flag Conquest off, or when no
-  candidate reaches a flag, it falls back to denying cells in your
+- **Greedy** — prefers a placement that captures a prize (see
+  [Prize](#prize)); with Prize off, or when no
+  candidate reaches a prize, it falls back to denying cells in your
   frontier, same as Blocking.
 - **Blocking** — prefers a placement that covers cells in *your* frontier,
   denying you those spots; falls back to a random pick among equally
@@ -159,13 +159,13 @@ The three difficulties:
 
 Greedy and Blocking also play [Wildcard Roll](#wildcard-roll) and
 [Reroll](#reroll) with the same underlying strategy: on a wildcard roll they
-pick whichever value scores best on their own metric (a reachable flag for
+pick whichever value scores best on their own metric (a reachable prize for
 Greedy, a deniable frontier cell for Blocking); if every value ties at zero,
 Blocking picks randomly among them, while Greedy instead prefers whichever
 value gives the larger piece. With Reroll on, Blocking spends a charge to
 discard a roll that wouldn't deny you anything right now. Greedy does the
-same, but only when a flag actually exists on the board — with
-[Flag Conquest](#flag-conquest) off, no roll could ever reach a flag anyway,
+same, but only when a prize actually exists on the board — with
+[Prize](#prize) off, no roll could ever reach a prize anyway,
 so Greedy accepts whatever it gets instead of burning charges for nothing.
 Basic stays fully random for both and never rerolls.
 
@@ -173,7 +173,7 @@ Basic stays fully random for both and never rerolls.
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Flag Conquest, Walls, Obstacles, Traps, Wildcard Roll, Enclosure Penalty,
+Prize, Walls, Obstacles, Pitfall, Wildcard Roll, Enclosure Penalty,
 Reroll, and Comeback, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
@@ -182,8 +182,8 @@ total — a landslide round counts for more than a squeaker — so the whole
 series is always played out, and the player with the higher cumulative
 score at the end wins. Equal cumulative scores after all rounds is a
 tied series. Both the in-game panel and the between-rounds screen show a
-round-by-round breakdown (each round's score, plus flag bonus points when
-Flag Conquest is on) alongside series-wide totals.
+round-by-round breakdown (each round's score, plus prize bonus points when
+Prize is on) alongside series-wide totals.
 
 ## Tournament mode
 
@@ -232,8 +232,8 @@ quits.
 
 Picking a mode leads to a settings screen tailored to it — pick a board size
 and skip limit (preset buttons), optionally toggle
-[Flag Conquest](#flag-conquest), [Walls](#walls),
-[Obstacles](#obstacles), [Traps](#traps), [Wildcard Roll](#wildcard-roll),
+[Prize](#prize), [Walls](#walls),
+[Obstacles](#obstacles), [Pitfall](#pitfall), [Wildcard Roll](#wildcard-roll),
 [Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll), and
 [Comeback](#comeback) (or click **Turn All ON**/**Turn All OFF** to flip all
 of them at once), and whatever else
@@ -287,14 +287,14 @@ most recent entries plus a note when there's more, so the panel always fits.
   and starts the next round instead, until the series itself is decided.
 - **Replay** the finished game turn-by-turn: step through the board with
   First/Prev/Next/Last (or the arrow/Home/End keys), seeing each turn's
-  roll, placement, each player's running area/flags at that point, a
+  roll, placement, each player's running area/prizes at that point, a
   score-history chart plotting both players' scores across the whole game
   (every flagged turn also marked on the chart with a dot, so a bad turn
   is visible at a glance without stepping through the whole game), and —
   for the turn just taken — a flag if the best other legal option that
   roll would have scored higher than what was actually played, showing
   the actual score against the best possible one (e.g. "scored 4 this
-  turn (best possible: 14 — flag)") — or, when the difference is purely
+  turn (best possible: 14 — prize)") — or, when the difference is purely
   strategic denial rather than real points, the cells denied instead
   (e.g. "denied 1 cell this turn (best possible: 5)"), since denial has
   no point value of its own. Toggle

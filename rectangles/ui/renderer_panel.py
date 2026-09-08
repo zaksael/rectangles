@@ -21,6 +21,20 @@ class PanelMixin:
             return f"R{remaining}"
         return f"Reroll ({remaining}/{limit})"
 
+    def _wrap_suffixes(self, suffixes: list[str], font: pygame.font.Font, max_width: int) -> list[str]:
+        # Packs whole suffix items onto a line, never splitting one mid-item
+        # (unlike _wrap_text's word-wrap, which would break "Prize 1" apart) -
+        # up to 6 items can appear at once with every house rule on, which no
+        # longer reliably fits one line (see PANEL_SCORE_ROW_HEIGHT above).
+        lines = [suffixes[0]]
+        for item in suffixes[1:]:
+            candidate = "  ".join((lines[-1], item))
+            if font.size(candidate)[0] <= max_width:
+                lines[-1] = candidate
+            else:
+                lines.append(item)
+        return lines
+
     def _draw_score_row(
         self, x: int, y: int, player_id: int, primary: str, suffixes: list[str], color: tuple[int, int, int]
     ) -> None:
@@ -28,9 +42,10 @@ class PanelMixin:
         pygame.draw.rect(self.screen, constants.PLAYER_COLORS[player_id], swatch)
         self._text(primary, (x + 26, y), self.font, color)
         if suffixes:
-            self._text(
-                "  ".join(suffixes), (x + 26, y + layout.PANEL_SCORE_LINE2_DY), self.font_small, MUTED_TEXT_COLOR
-            )
+            line_y = y + layout.PANEL_SCORE_LINE2_DY
+            for line in self._wrap_suffixes(suffixes, self.font_small, layout.PANEL_CONTENT_WIDTH):
+                self._text(line, (x + 26, line_y), self.font_small, MUTED_TEXT_COLOR)
+                line_y += self.font_small.get_linesize()
 
     def _tournament_match_number(self, tournament: Bracket) -> tuple[int, int]:
         played = sum(len(round_) for round_ in tournament.rounds[:-1]) + tournament.current_match_index + 1
@@ -77,14 +92,14 @@ class PanelMixin:
                 )
                 pygame.draw.rect(self.screen, ROW_ACTIVE_BG_COLOR, row_rect, border_radius=6)
             primary = f"{player.name}: {game.total_score(player)}"
-            flags = player.special_captures.get(CellKind.FLAG, 0)
-            if flags:
-                primary += f"  F{flags}"
-            traps = player.special_captures.get(CellKind.TRAP, 0)
-            if traps:
-                primary += f"  T{traps}"
 
             suffixes = []
+            prize = player.special_captures.get(CellKind.PRIZE, 0)
+            if prize:
+                suffixes.append(f"Prize {prize}")
+            pitfall = player.special_captures.get(CellKind.PITFALL, 0)
+            if pitfall:
+                suffixes.append(f"Pitfall {pitfall}")
             if game.self_enclosed_penalty_enabled:
                 penalty_cells = game.board.self_enclosed_cell_counts().get(player.id, 0)
                 if penalty_cells:
@@ -92,8 +107,8 @@ class PanelMixin:
             potential = game.potential_stats(player)
             if potential["area"]:
                 suffixes.append(f"+{potential['area']} area")
-            if game.flag_conquest_enabled and potential["flag_points"]:
-                suffixes.append(f"+{potential['flag_points']} flag")
+            if game.prize_enabled and potential["prize_points"]:
+                suffixes.append(f"+{potential['prize_points']} prize")
             if player.consecutive_skips:
                 suffixes.append(f"skipped {player.consecutive_skips}/{game.skip_limit}")
             self._draw_score_row(x, y, player.id, primary, suffixes, TEXT_COLOR if active else MUTED_TEXT_COLOR)
@@ -196,20 +211,20 @@ class PanelMixin:
 
     def _round_row(self, series: Series, index: int, result: RoundResult) -> list[str]:
         row = [str(index), str(result.total[constants.PLAYER_1])]
-        if series.flag_conquest_enabled:
-            row.append(str(result.flags_captured[constants.PLAYER_1]))
+        if series.prize_enabled:
+            row.append(str(result.prize_captured[constants.PLAYER_1]))
         row.append(str(result.total[constants.PLAYER_2]))
-        if series.flag_conquest_enabled:
-            row.append(str(result.flags_captured[constants.PLAYER_2]))
+        if series.prize_enabled:
+            row.append(str(result.prize_captured[constants.PLAYER_2]))
         return row
 
     def _series_totals_row(self, series: Series) -> list[str]:
         row = ["Total", str(series.scores[constants.PLAYER_1])]
-        if series.flag_conquest_enabled:
-            row.append(str(series.total_flags_captured(constants.PLAYER_1)))
+        if series.prize_enabled:
+            row.append(str(series.total_prize_captured(constants.PLAYER_1)))
         row.append(str(series.scores[constants.PLAYER_2]))
-        if series.flag_conquest_enabled:
-            row.append(str(series.total_flags_captured(constants.PLAYER_2)))
+        if series.prize_enabled:
+            row.append(str(series.total_prize_captured(constants.PLAYER_2)))
         return row
 
     def _series_table_rows(self, series: Series) -> list[list[str]]:
@@ -219,7 +234,7 @@ class PanelMixin:
         return rows
 
     def _series_table_columns(self, series: Series, *, panel: bool) -> list[tuple[str, int]]:
-        if series.flag_conquest_enabled:
+        if series.prize_enabled:
             if panel:
                 return [("Rnd", 32), ("P1", 88), ("F", 34), ("P2", 88), ("F", 34)]
             # Centered on the whole window (board + panel) like the rest of the overlay's

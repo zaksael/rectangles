@@ -489,8 +489,8 @@ def test_take_bot_turn_basic_never_uses_reroll_even_when_available():
 
 
 def test_take_bot_turn_blocking_rerolls_from_choosing_placement_at_zero_score():
-    # Blocking, not Greedy: Greedy's flag_score is structurally 0 without
-    # Flag Conquest on (rectangles/bot.py's should_reroll guard), so it
+    # Blocking, not Greedy: Greedy's cell_overlap_score is structurally 0 without
+    # Prize on (rectangles/bot.py's should_reroll guard), so it
     # wouldn't reroll here at all - see test_bot.py's coverage of that guard.
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 2, 3]))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
@@ -535,10 +535,10 @@ def test_take_bot_turn_blocking_rerolls_from_choosing_wildcard_at_zero_score():
     assert game.last_roll == (2, 3)
 
 
-def test_take_bot_turn_greedy_picks_the_flag_capturing_wildcard_value():
+def test_take_bot_turn_greedy_picks_the_prize_capturing_wildcard_value():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
     game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
-    game.board.special_cells = frozenset({SpecialCell(CellKind.FLAG, Cell(2, 5), pair_id=0)})
+    game.board.special_cells = frozenset({SpecialCell(CellKind.PRIZE, Cell(2, 5), pair_id=0)})
     ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD
@@ -988,17 +988,17 @@ def test_settings_skip_limit_buttons_update_selection():
     assert set(layout.SETTINGS_SKIP_LIMIT_BUTTON_RECTS) == set(SKIP_LIMIT_PRESETS)
 
 
-def test_settings_flag_conquest_button_toggles_selection():
+def test_settings_prize_button_toggles_selection():
     ui_state = UIState()
-    assert ui_state.selected_flag_conquest_enabled is False
+    assert ui_state.selected_prize_enabled is False
 
-    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Flags"]
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Prize"]
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_flag_conquest_enabled is True
+    assert ui_state.selected_prize_enabled is True
 
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_flag_conquest_enabled is False
+    assert ui_state.selected_prize_enabled is False
 
 
 def test_settings_walls_button_toggles_selection():
@@ -1053,17 +1053,17 @@ def test_settings_reroll_button_toggles_selection():
     assert ui_state.selected_reroll_enabled is False
 
 
-def test_settings_traps_button_toggles_selection():
+def test_settings_pitfall_button_toggles_selection():
     ui_state = UIState()
-    assert ui_state.selected_negative_cells_enabled is False
+    assert ui_state.selected_pitfall_enabled is False
 
-    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Traps"]
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Pitfall"]
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_negative_cells_enabled is True
+    assert ui_state.selected_pitfall_enabled is True
 
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_negative_cells_enabled is False
+    assert ui_state.selected_pitfall_enabled is False
 
 
 def test_settings_comeback_nudge_button_toggles_selection():
@@ -1086,20 +1086,20 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
     rect = layout.settings_all_rules_button_rect("Single", ui_state.tournament_size)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_flag_conquest_enabled is True
+    assert ui_state.selected_prize_enabled is True
     assert ui_state.selected_walls_enabled is True
     assert ui_state.selected_obstacles_enabled is True
-    assert ui_state.selected_negative_cells_enabled is True
+    assert ui_state.selected_pitfall_enabled is True
     assert ui_state.selected_wildcard_enabled is True
     assert ui_state.selected_self_enclosed_penalty_enabled is True
     assert ui_state.selected_reroll_enabled is True
     assert ui_state.selected_comeback_nudge_enabled is True
 
     assert handle_settings_event(event, ui_state) is True
-    assert ui_state.selected_flag_conquest_enabled is False
+    assert ui_state.selected_prize_enabled is False
     assert ui_state.selected_walls_enabled is False
     assert ui_state.selected_obstacles_enabled is False
-    assert ui_state.selected_negative_cells_enabled is False
+    assert ui_state.selected_pitfall_enabled is False
     assert ui_state.selected_wildcard_enabled is False
     assert ui_state.selected_self_enclosed_penalty_enabled is False
     assert ui_state.selected_reroll_enabled is False
@@ -1107,7 +1107,7 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
 
 
 def test_settings_all_rules_button_turns_all_on_from_a_mixed_state():
-    ui_state = UIState(selected_flag_conquest_enabled=True, selected_walls_enabled=False)
+    ui_state = UIState(selected_prize_enabled=True, selected_walls_enabled=False)
 
     rect = layout.settings_all_rules_button_rect("Single", ui_state.tournament_size)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
