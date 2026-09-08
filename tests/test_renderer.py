@@ -5,9 +5,9 @@ import pytest
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from rectangles.constants import NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2
+from rectangles.constants import NEGATIVE_CELL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
 from rectangles.game import Game, GameOverReason, TurnState
-from rectangles.models import Rectangle, TurnRecord
+from rectangles.models import Cell, Rectangle, SpecialCell, TurnRecord
 from rectangles.series import Series
 from rectangles.ui import layout
 from rectangles.ui.renderer import Renderer
@@ -22,12 +22,22 @@ class ScriptedRandom:
         return self._values.pop(0)
 
 
+def _special(kind: CellKind, *cells: tuple[int, int]) -> frozenset[SpecialCell]:
+    return frozenset(SpecialCell(kind, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
+
+
 def _with_flags(game, *cells):
     # flag_conquest_enabled stays False at construction to skip random
     # generation (and its rng consumption); flipped True here with
-    # flag_cells set directly for a deterministic capture.
+    # special_cells set directly for a deterministic capture.
     game.flag_conquest_enabled = True
-    game.board.flag_cells = frozenset(cells)
+    game.board.special_cells |= _special(CellKind.FLAG, *cells)
+    return game
+
+
+def _with_traps(game, *cells):
+    game.negative_cells_enabled = True
+    game.board.special_cells |= _special(CellKind.TRAP, *cells)
     return game
 
 
@@ -98,8 +108,7 @@ def test_draw_negative_cells_smoke(renderer):
     # as _with_flags above. Exercises both the T{n} suffix branch (nonzero)
     # and its absence (the other player, still 0).
     game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
-    game.negative_cells_enabled = True
-    game.board.negative_cells = frozenset({(5, 5)})
+    game = _with_traps(game, (5, 5))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # triggers the trap at (5, 5)
     if not game.check_game_over():
@@ -328,8 +337,8 @@ def test_replay_stats_accumulates_area_and_flags(renderer):
 
 
 def test_replay_stats_includes_potential_area_and_flag_points(renderer):
-    game = Game(board_size=6, flag_conquest_enabled=True, flag_bonus_points=5, rng=ScriptedRandom([2, 2]))
-    game.board.flag_cells = frozenset({(5, 5)})
+    game = Game(board_size=6, flag_conquest_enabled=True, special_cell_points={"flag": 5}, rng=ScriptedRandom([2, 2]))
+    game.board.special_cells = _special(CellKind.FLAG, (5, 5))
     game.roll_dice()
     assert game.attempt_place((0, 0), 2, 2) is True  # 4 area, no flag captured
     if not game.check_game_over():
@@ -342,7 +351,7 @@ def test_replay_stats_includes_potential_area_and_flag_points(renderer):
 
 
 def test_score_history_accumulates_scores_per_step(renderer):
-    game = _with_flags(Game(board_size=11, flag_bonus_points=5, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
+    game = _with_flags(Game(board_size=11, special_cell_points={"flag": 5}, rng=ScriptedRandom([6, 6, 4, 4])), (5, 5))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, captures the flag (5, 5)
     if not game.check_game_over():
@@ -394,8 +403,7 @@ def test_score_history_applies_trap_penalty_when_triggered(renderer):
     # fixed (_score_history previously had no traps term at all, so a
     # Traps-enabled game's chart line silently overstated the real score).
     game = Game(board_size=11, rng=ScriptedRandom([6, 6, 4, 4]))
-    game.negative_cells_enabled = True
-    game.board.negative_cells = frozenset({(5, 5)})
+    game = _with_traps(game, (5, 5))
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True  # 36 area, triggers the trap at (5, 5)
     if not game.check_game_over():
@@ -431,7 +439,7 @@ def test_turn_analysis_flags_a_missed_flag_capture(renderer):
     # column 0 scores 0 against the flag at (0,3); the unchosen 4x1 strip
     # along row 0 scores 1.
     game = Game(board_size=6, flag_conquest_enabled=True)
-    game.board.flag_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
@@ -445,7 +453,7 @@ def test_turn_analysis_flags_a_missed_trap_avoidance(renderer):
     # unchosen 1x4 strip down column 0 would have avoided it entirely.
     game = Game(board_size=6)
     game.negative_cells_enabled = True
-    game.board.negative_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.TRAP, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
@@ -463,10 +471,9 @@ def test_turn_analysis_composes_flag_and_trap_axes(renderer):
     # combine into one number - proves the points figure isn't just one raw
     # axis, while the dominant-axis label ("flag", the larger weighted gap)
     # still names only the bigger contributor.
-    game = Game(board_size=6, flag_conquest_enabled=True, flag_bonus_points=20)
-    game.board.flag_cells = frozenset({(0, 3)})
+    game = Game(board_size=6, flag_conquest_enabled=True, special_cell_points={"flag": 20})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 3)) | _special(CellKind.TRAP, (2, 0))
     game.negative_cells_enabled = True
-    game.board.negative_cells = frozenset({(2, 0)})
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     assert renderer._turn_analyses(game)[1] == (
@@ -480,7 +487,7 @@ def test_turn_analysis_ignores_leftover_negative_cells_when_disabled(renderer):
     # not just an empty negative_cells set, is what's under test here (mirrors
     # test_game.py's test_negative_cells_enabled_false_guard_ignores_leftover_board_state).
     game = Game(board_size=6)
-    game.board.negative_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.TRAP, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 4, 1, PLAYER_1))]
 
     assert renderer._turn_analyses(game).get(1) is None
@@ -548,7 +555,7 @@ def test_turn_analysis_flags_a_suboptimal_wildcard_pick(renderer):
     # outright: its 6x2 piece both reaches the flag (+10) and denies the
     # most cells (12), well past value 4's 4x2 (+10, denies 8).
     game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
-    game.board.flag_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
     game.history = [
         TurnRecord(
             PLAYER_1, roll=(2, 1), placed=Rectangle((0, 0), 1, 2, PLAYER_1), wildcard_original_roll=(2, 2)
@@ -564,7 +571,7 @@ def test_turn_analysis_no_note_when_wildcard_pick_already_optimal(renderer):
     # Same layout, but the wildcard was resolved to 6 (the best value, see
     # above) - nothing to flag.
     game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
-    game.board.flag_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
     game.history = [
         TurnRecord(
             PLAYER_1, roll=(2, 6), placed=Rectangle((0, 0), 6, 2, PLAYER_1), wildcard_original_roll=(2, 2)
@@ -664,7 +671,7 @@ def test_turn_analysis_note_text_is_unaffected_by_show_better_option(renderer, m
     # Revealing a better option is a purely visual board outline now (see
     # _draw_analysis_suggestions) - the note text itself never changes.
     game = Game(board_size=6, flag_conquest_enabled=True)
-    game.board.flag_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
     game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
 
     drawn = []
@@ -698,7 +705,7 @@ def test_draw_replay_turn_analysis_smoke(renderer):
 
 def test_draw_replay_suboptimal_wildcard_pick_smoke(renderer):
     game = Game(board_size=6, flag_conquest_enabled=True, wildcard_enabled=True)
-    game.board.flag_cells = frozenset({(0, 3)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 3))
     game.history = [
         TurnRecord(
             PLAYER_1, roll=(2, 1), placed=Rectangle((0, 0), 1, 2, PLAYER_1), wildcard_original_roll=(2, 2)
@@ -846,7 +853,7 @@ def test_draw_game_over_tie_smoke(renderer):
 
 def test_draw_panel_with_series_stats_smoke(renderer):
     game = Game(board_size=6, flag_conquest_enabled=True)
-    series = Series(length=3, board_size=6, skip_limit=3, flag_conquest_enabled=True, flag_bonus_points=10)
+    series = Series(length=3, board_size=6, skip_limit=3, flag_conquest_enabled=True, special_cell_points={"flag": 10})
     series.record_game(_finished_game(6, 1, 0))
     series.record_game(_finished_game(6, 1, 0))
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)
@@ -881,7 +888,7 @@ def test_draw_panel_with_a_full_five_round_series_smoke(renderer):
     # The worst case that PANEL_SERIES_MAX_ROWS/MIN_WINDOW_HEIGHT are sized for:
     # a maxed-out history log alongside a full 5-round Flag Conquest series.
     game = Game(board_size=6, flag_conquest_enabled=True)
-    series = Series(length=5, board_size=6, skip_limit=3, flag_conquest_enabled=True, flag_bonus_points=20)
+    series = Series(length=5, board_size=6, skip_limit=3, flag_conquest_enabled=True, special_cell_points={"flag": 20})
     for _ in range(5):
         series.record_game(_finished_game(6, 1, 0))
     renderer.draw(game, UIState(screen=Screen.PLAYING), series=series)

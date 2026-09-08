@@ -1,7 +1,8 @@
 import pytest
 
 from rectangles.board import Board
-from rectangles.models import Player
+from rectangles.constants import CellKind
+from rectangles.models import Cell, Player, SpecialCell
 
 
 def make_players(size: int) -> tuple[Player, Player]:
@@ -119,15 +120,19 @@ def test_frontier_excludes_opponent_and_own_cells():
     assert (2, 0) in frontier
 
 
-def test_board_flag_cells_default_empty():
+def test_board_special_cells_default_empty():
     board = Board(size=6)
-    assert board.flag_cells == frozenset()
+    assert board.special_cells == frozenset()
+    assert board.cells_of_kind(CellKind.FLAG) == frozenset()
 
 
-def test_board_flag_cells_stored_and_placeable_like_any_empty_cell():
-    board = Board(size=6, flag_cells=frozenset({(0, 5), (5, 0)}))
+def test_board_special_cells_stored_and_placeable_like_any_empty_cell():
+    special_cells = frozenset(
+        {SpecialCell(CellKind.FLAG, Cell(0, 5), pair_id=0), SpecialCell(CellKind.FLAG, Cell(5, 0), pair_id=0)}
+    )
+    board = Board(size=6, special_cells=special_cells)
     p1, _ = make_players(6)
-    assert board.flag_cells == frozenset({(0, 5), (5, 0)})
+    assert board.cells_of_kind(CellKind.FLAG) == frozenset({(0, 5), (5, 0)})
     assert board.can_place(p1, (0, 0), w=1, h=1) is True  # flag cells impose no extra restriction
 
 

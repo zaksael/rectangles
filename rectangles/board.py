@@ -2,27 +2,28 @@ from __future__ import annotations
 
 from collections import deque
 
-from .constants import BOARD_SIZE, OBSTACLE_OWNER
-from .models import Player, Rectangle
+from .constants import BOARD_SIZE, OBSTACLE_OWNER, CellKind
+from .models import Cell, Player, Rectangle, SpecialCell
 
 
 class Board:
     def __init__(
         self,
         size: int = BOARD_SIZE,
-        flag_cells: frozenset[tuple[int, int]] = frozenset(),
+        special_cells: frozenset[SpecialCell] = frozenset(),
         wall_edges: frozenset[frozenset[tuple[int, int]]] = frozenset(),
         obstacle_cells: frozenset[tuple[int, int]] = frozenset(),
-        negative_cells: frozenset[tuple[int, int]] = frozenset(),
     ):
         self.size = size
-        self.flag_cells = flag_cells
+        self.special_cells = special_cells
         self.wall_edges = wall_edges
         self.obstacle_cells = obstacle_cells
-        self.negative_cells = negative_cells
         self._grid: list[list[int | None]] = [[None] * size for _ in range(size)]
         for r, c in obstacle_cells:
             self._grid[r][c] = OBSTACLE_OWNER
+
+    def cells_of_kind(self, kind: CellKind) -> frozenset[Cell]:
+        return frozenset(sc.location for sc in self.special_cells if sc.kind is kind)
 
     def set_obstacle_cells(self, cells: frozenset[tuple[int, int]]) -> None:
         # Unlike flag_cells/wall_edges (pure metadata a caller can safely

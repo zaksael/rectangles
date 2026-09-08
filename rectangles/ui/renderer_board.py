@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 
 from .. import constants
+from ..constants import CellKind
 from ..game import Game, TurnState
 from ..models import Rectangle
 from . import colors, layout
@@ -55,7 +56,7 @@ class BoardMixin:
         last_placed = self._last_placed_rect(game, upto)
         if last_placed is None:
             return frozenset()
-        return game.board.flag_cells.intersection(last_placed.cells())
+        return game.board.cells_of_kind(CellKind.FLAG).intersection(last_placed.cells())
 
     def _draw_flag_capture_highlight(self, game: Game, upto: int | None = None) -> None:
         px = layout.cell_px(game.board.size)
@@ -85,7 +86,7 @@ class BoardMixin:
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
         px = layout.cell_px(game.board.size)
-        for r, c in game.board.flag_cells:
+        for r, c in game.board.cells_of_kind(CellKind.FLAG):
             is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
             if is_covered:
                 continue
@@ -102,7 +103,7 @@ class BoardMixin:
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
         px = layout.cell_px(game.board.size)
-        for r, c in game.board.negative_cells:
+        for r, c in game.board.cells_of_kind(CellKind.TRAP):
             is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
             if is_covered:
                 continue

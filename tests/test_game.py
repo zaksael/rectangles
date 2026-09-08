@@ -12,8 +12,10 @@ from rectangles.constants import (
     START_CORNER_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
     WALL_LINE_PAIRS,
+    CellKind,
 )
 from rectangles.game import Game, GameOverReason, TurnState
+from rectangles.models import Cell, SpecialCell
 
 
 class ScriptedRandom:
@@ -24,6 +26,21 @@ class ScriptedRandom:
 
     def randint(self, a, b):
         return self._values.pop(0)
+
+
+def _special(kind: CellKind, *cells: tuple[int, int]) -> frozenset[SpecialCell]:
+    """Fabricate a SpecialCell frozenset for direct board.special_cells
+    assignment - same rng-dodge technique as before (construct with the mode
+    disabled, then set board state directly), just against the new type."""
+    return frozenset(SpecialCell(kind, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
+
+
+def _flag_cells(game: Game) -> frozenset[tuple[int, int]]:
+    return game.board.cells_of_kind(CellKind.FLAG)
+
+
+def _trap_cells(game: Game) -> frozenset[tuple[int, int]]:
+    return game.board.cells_of_kind(CellKind.TRAP)
 
 
 def test_deterministic_roll_via_injected_rng():
@@ -306,18 +323,18 @@ def test_no_blocked_game_over_before_first_move():
 def test_flag_conquest_disabled_by_default_no_flags_and_score_equals_area():
     game = Game(board_size=8)
     p1 = game.players[PLAYER_1]
-    assert game.board.flag_cells == frozenset()
+    assert _flag_cells(game) == frozenset()
 
     game.board.place(p1, (0, 0), w=2, h=2)  # area 4
 
-    assert p1.flags_captured == 0
+    assert p1.special_captures.get(CellKind.FLAG, 0) == 0
     assert game.total_score(p1) == p1.total_area == 4
 
 
 def test_reset_computes_symmetric_randomized_flags_for_odd_board_sizes():
     for size in (11, 19):
         game = Game(board_size=size, flag_conquest_enabled=True)
-        flags = game.board.flag_cells
+        flags = _flag_cells(game)
         assert len(flags) <= 2 * FLAG_CELL_PAIRS
 
         def mirror(cell: tuple[int, int]) -> tuple[int, int]:
@@ -338,7 +355,7 @@ def test_flag_cells_empty_when_board_too_small_for_any_candidate():
     # of the two start corners, same degenerate case Walls/Obstacles already
     # hit on this board size - both flag pairs are skipped, not errored.
     game = Game(board_size=6, flag_conquest_enabled=True)
-    assert game.board.flag_cells == frozenset()
+    assert _flag_cells(game) == frozenset()
 
 
 def test_flag_cells_never_includes_the_self_mirroring_center_cell():
@@ -348,7 +365,7 @@ def test_flag_cells_never_includes_the_self_mirroring_center_cell():
     # ordering is used - the center cell must never appear regardless.
     for size in (11, 19):
         game = Game(board_size=size, flag_conquest_enabled=True, rng=ScriptedRandom([0, 0]))
-        flags = game.board.flag_cells
+        flags = _flag_cells(game)
         center = (size // 2, size // 2)
         assert center not in flags
         assert len(flags) % 2 == 0  # every flag has its mirror present too
@@ -366,7 +383,7 @@ def test_flag_and_obstacle_cells_respect_min_special_cell_distance():
     # property of the candidate filtering, not of one specific rng sequence.
     for _ in range(30):
         game = Game(board_size=19, flag_conquest_enabled=True, obstacles_enabled=True)
-        for cells in (list(game.board.flag_cells), list(game.board.obstacle_cells)):
+        for cells in (list(_flag_cells(game)), list(game.board.obstacle_cells)):
             for i in range(len(cells)):
                 for j in range(i + 1, len(cells)):
                     assert _chebyshev(cells[i], cells[j]) >= MIN_SPECIAL_CELL_DISTANCE
@@ -409,7 +426,7 @@ def test_reset_computes_symmetric_randomized_walls_for_odd_board_sizes():
                 )
 
             # Walls never overlap flag cells when both modes are enabled.
-            assert not (touched_cells & game.board.flag_cells)
+            assert not (touched_cells & _flag_cells(game))
 
 
 def _wall_segments(edges: frozenset) -> list[list[tuple[int, int]]]:
@@ -478,7 +495,7 @@ def test_reset_computes_symmetric_randomized_obstacles_for_odd_board_sizes():
                 )
 
             # Never overlaps flag cells or wall-touched cells when those modes are also on.
-            assert not (cells & game.board.flag_cells)
+            assert not (cells & _flag_cells(game))
             wall_cells = {cell for edge in game.board.wall_edges for cell in edge}
             assert not (cells & wall_cells)
 
@@ -491,14 +508,14 @@ def test_attempt_place_captures_single_flag():
     # directly so the capture is deterministic.
     game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
     game.flag_conquest_enabled = True
-    game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 10), (10, 0), (5, 5))
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True
 
-    assert p1.flags_captured == 1
-    assert p2.flags_captured == 0
+    assert p1.special_captures.get(CellKind.FLAG, 0) == 1
+    assert p2.special_captures.get(CellKind.FLAG, 0) == 0
 
 
 def test_attempt_place_captures_two_flags_in_one_placement():
@@ -507,21 +524,21 @@ def test_attempt_place_captures_two_flags_in_one_placement():
     # directly so the captures are deterministic.
     game = Game(board_size=11, rng=ScriptedRandom([5, 6, 1, 1, 6, 6]))
     game.flag_conquest_enabled = True
-    game.board.flag_cells = frozenset({(0, 10), (10, 0), (5, 5)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 10), (10, 0), (5, 5))
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
 
     # P1's first move: anchored at (0,0), covers rows0-5/cols0-4 - no flags,
     # but leaves column 4 owned so a later piece can be adjacent to it.
     game.roll_dice()
     assert game.attempt_place((0, 0), 5, 6) is True
-    assert p1.flags_captured == 0
+    assert p1.special_captures.get(CellKind.FLAG, 0) == 0
     assert game.check_game_over() is False
     game.end_turn()
 
     # P2's first move: a 1x1 at its own start corner, unrelated to any flag.
     game.roll_dice()
     assert game.attempt_place((10, 10), 1, 1) is True
-    assert p2.flags_captured == 0
+    assert p2.special_captures.get(CellKind.FLAG, 0) == 0
     assert game.check_game_over() is False
     game.end_turn()
 
@@ -531,18 +548,18 @@ def test_attempt_place_captures_two_flags_in_one_placement():
     game.roll_dice()
     assert game.attempt_place((0, 5), 6, 6) is True
 
-    assert p1.flags_captured == 2
-    assert p2.flags_captured == 0
+    assert p1.special_captures.get(CellKind.FLAG, 0) == 2
+    assert p2.special_captures.get(CellKind.FLAG, 0) == 0
 
 
 def test_negative_cells_disabled_by_default_no_penalty():
     game = Game(board_size=8)
     p1 = game.players[PLAYER_1]
-    assert game.board.negative_cells == frozenset()
+    assert _trap_cells(game) == frozenset()
 
     game.board.place(p1, (0, 0), w=2, h=2)  # area 4
 
-    assert p1.traps_triggered == 0
+    assert p1.special_captures.get(CellKind.TRAP, 0) == 0
     assert game.total_score(p1) == p1.total_area == 4
 
 
@@ -553,35 +570,37 @@ def test_attempt_place_triggers_trap_and_total_score_reflects_penalty():
     # capture tests above use.
     game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
     game.negative_cells_enabled = True
-    game.board.negative_cells = frozenset({(5, 5)})
+    game.board.special_cells = _special(CellKind.TRAP, (5, 5))
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True
 
-    assert p1.traps_triggered == 1
-    assert p2.traps_triggered == 0
+    assert p1.special_captures.get(CellKind.TRAP, 0) == 1
+    assert p2.special_captures.get(CellKind.TRAP, 0) == 0
     assert game.total_score(p1) == p1.total_area - NEGATIVE_CELL_PENALTY_POINTS
 
     # Score can go negative - no floor, same as Enclosure Penalty/#44 Steal.
-    p1.traps_triggered = 100
+    p1.special_captures[CellKind.TRAP] = 100
     assert game.total_score(p1) < 0
 
 
-def test_negative_cells_enabled_false_guard_ignores_leftover_board_state():
-    # A leftover board.negative_cells member (e.g. from a stale fixture) must
-    # never trigger a penalty while negative_cells_enabled is False - the
-    # guard in attempt_place(), not just an empty negative_cells set, is
-    # what's under test here.
+def test_attempt_place_capture_driven_by_special_cells_not_the_enabled_flag():
+    # Post-#63, attempt_place() has no per-kind enabled-flag guard (same as
+    # Flag Conquest always worked) - board.special_cells alone drives
+    # captures. A real game never has this mismatch (reset() only seeds a
+    # kind's cells when its toggle is on), but a fixture that pokes
+    # board.special_cells directly while negative_cells_enabled is False
+    # (as here) still captures - documenting that as intentional, not a gap.
     game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
-    game.board.negative_cells = frozenset({(5, 5)})
+    game.board.special_cells = _special(CellKind.TRAP, (5, 5))
     p1 = game.players[PLAYER_1]
 
     game.roll_dice()
     assert game.attempt_place((0, 0), 6, 6) is True
 
-    assert p1.traps_triggered == 0
-    assert game.total_score(p1) == p1.total_area
+    assert p1.special_captures.get(CellKind.TRAP, 0) == 1
+    assert game.total_score(p1) == p1.total_area - NEGATIVE_CELL_PENALTY_POINTS
 
 
 def test_negative_cells_never_overlap_flag_wall_obstacle_cells():
@@ -594,9 +613,9 @@ def test_negative_cells_never_overlap_flag_wall_obstacle_cells():
             negative_cells_enabled=True,
         )
         wall_cells = {cell for edge in game.board.wall_edges for cell in edge}
-        assert not (game.board.negative_cells & game.board.flag_cells)
-        assert not (game.board.negative_cells & wall_cells)
-        assert not (game.board.negative_cells & game.board.obstacle_cells)
+        assert not (_trap_cells(game) & _flag_cells(game))
+        assert not (_trap_cells(game) & wall_cells)
+        assert not (_trap_cells(game) & game.board.obstacle_cells)
 
 
 def test_negative_cells_empty_when_board_too_small_for_any_candidate():
@@ -604,24 +623,24 @@ def test_negative_cells_empty_when_board_too_small_for_any_candidate():
     # for_any_candidate - the candidate pool is empty, so _negative_cells()
     # degrades to an empty result rather than erroring.
     game = Game(board_size=6, negative_cells_enabled=True)
-    assert game.board.negative_cells == frozenset()
+    assert _trap_cells(game) == frozenset()
 
 
 def test_total_score_can_decide_a_winner_area_alone_would_not():
-    game = Game(board_size=8, flag_conquest_enabled=True, flag_bonus_points=5)
+    game = Game(board_size=8, flag_conquest_enabled=True, special_cell_points={"flag": 5})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
     game.board.place(p1, (0, 0), w=5, h=2)  # area 10
     game.board.place(p2, (6, 4), w=4, h=2)  # area 8
-    p2.flags_captured = 1  # total_score: 8 + 1*5 = 13
+    p2.special_captures[CellKind.FLAG] = 1  # total_score: 8 + 1*5 = 13
 
     assert p1.total_area > p2.total_area  # area alone would favor p1
     assert game.winner() == PLAYER_2  # but the flag bonus decides it
 
 
 def test_potential_stats_area_and_flag_points():
-    game = Game(board_size=4, flag_conquest_enabled=True, flag_bonus_points=7)
+    game = Game(board_size=4, flag_conquest_enabled=True, special_cell_points={"flag": 7})
     p1 = game.players[PLAYER_1]
-    game.board.flag_cells = frozenset({(0, 1), (3, 2)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 1), (3, 2))
     game.board.place(p1, (0, 0), w=1, h=1)
 
     stats = game.potential_stats(p1)
@@ -631,11 +650,11 @@ def test_potential_stats_area_and_flag_points():
 
 
 def test_potential_stats_excludes_already_captured_flags():
-    game = Game(board_size=4, flag_conquest_enabled=True, flag_bonus_points=7)
+    game = Game(board_size=4, flag_conquest_enabled=True, special_cell_points={"flag": 7})
     p1 = game.players[PLAYER_1]
-    game.board.flag_cells = frozenset({(0, 1)})
+    game.board.special_cells = _special(CellKind.FLAG, (0, 1))
     game.board.place(p1, (0, 0), w=2, h=1)  # covers (0,0) and (0,1), capturing the flag
-    p1.flags_captured = 1
+    p1.special_captures[CellKind.FLAG] = 1
 
     stats = game.potential_stats(p1)
 
@@ -643,10 +662,10 @@ def test_potential_stats_excludes_already_captured_flags():
 
 
 def test_surrender_winner_unaffected_by_flag_bonus():
-    game = Game(board_size=8, flag_conquest_enabled=True, flag_bonus_points=100)
+    game = Game(board_size=8, flag_conquest_enabled=True, special_cell_points={"flag": 100})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
     game.board.place(p1, (0, 0), w=5, h=5)
-    p1.flags_captured = 3  # would dominate on score alone
+    p1.special_captures[CellKind.FLAG] = 3  # would dominate on score alone
 
     game.surrender()  # current_player_id is PLAYER_1
 

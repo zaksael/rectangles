@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, TypeVar
 
-from .constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2
+from .constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, CellKind
 from .game import Game, TurnState
 from .models import Player, Rectangle
 
@@ -54,7 +54,7 @@ def _blocking_score_fn(game: Game) -> Callable[[_Candidate], int]:
 # and should_reroll - a difficulty absent here (i.e. "Basic") gets no smart wildcard/
 # reroll behavior, only uniform-random placement.
 _SCORE_FNS: dict[str, Callable[[Game], Callable[[_Candidate], int]]] = {
-    "Greedy": lambda game: (lambda c: flag_score(c, game.board.flag_cells)),
+    "Greedy": lambda game: (lambda c: flag_score(c, game.board.cells_of_kind(CellKind.FLAG))),
     "Blocking": _blocking_score_fn,
 }
 
@@ -123,7 +123,7 @@ def should_reroll(game: Game, difficulty: str) -> bool:
     if game.state == TurnState.SKIPPED:
         return True
 
-    if difficulty == "Greedy" and not game.board.flag_cells:
+    if difficulty == "Greedy" and not game.board.cells_of_kind(CellKind.FLAG):
         # flag_score is structurally 0 all game without a flag on the board -
         # a reroll can never score better, so a 0 here isn't a "bad roll"
         # signal the way it is for Blocking's turn-to-turn frontier target.

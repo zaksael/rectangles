@@ -28,9 +28,9 @@ def test_player_total_area_zero_with_no_pieces():
     assert player.total_area == 0
 
 
-def test_player_flags_captured_defaults_to_zero():
+def test_player_special_captures_defaults_to_empty():
     player = Player(1, "Player 1", (0, 0))
-    assert player.flags_captured == 0
+    assert player.special_captures == {}
 
 
 def test_player_has_moved_reflects_pieces():

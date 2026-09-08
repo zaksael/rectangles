@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 
 from .. import constants
+from ..constants import CellKind
 from ..game import Game, TurnState
 from ..models import TurnRecord
 from ..series import RoundResult, Series
@@ -76,10 +77,12 @@ class PanelMixin:
                 )
                 pygame.draw.rect(self.screen, ROW_ACTIVE_BG_COLOR, row_rect, border_radius=6)
             primary = f"{player.name}: {game.total_score(player)}"
-            if player.flags_captured:
-                primary += f"  F{player.flags_captured}"
-            if player.traps_triggered:
-                primary += f"  T{player.traps_triggered}"
+            flags = player.special_captures.get(CellKind.FLAG, 0)
+            if flags:
+                primary += f"  F{flags}"
+            traps = player.special_captures.get(CellKind.TRAP, 0)
+            if traps:
+                primary += f"  T{traps}"
 
             suffixes = []
             if game.self_enclosed_penalty_enabled:

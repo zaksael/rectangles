@@ -1,4 +1,4 @@
-from rectangles.constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2
+from rectangles.constants import FLAG_BONUS_POINTS, PLAYER_1, PLAYER_2, CellKind
 from rectangles.game import Game
 from rectangles.series import Series
 
@@ -8,14 +8,14 @@ BOARD_SIZE = 40  # large enough that any fabricated area below fits in one strip
 def _finished_game(
     p1_area: int, p1_flags: int, p2_area: int, p2_flags: int, flag_bonus_points: int = FLAG_BONUS_POINTS
 ) -> Game:
-    game = Game(board_size=BOARD_SIZE, flag_bonus_points=flag_bonus_points)
+    game = Game(board_size=BOARD_SIZE, special_cell_points={"flag": flag_bonus_points})
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
     if p1_area:
         game.board.place(p1, (0, 0), p1_area, 1)
     if p2_area:
         game.board.place(p2, (0, 0), p2_area, 1)
-    p1.flags_captured = p1_flags
-    p2.flags_captured = p2_flags
+    p1.special_captures[CellKind.FLAG] = p1_flags
+    p2.special_captures[CellKind.FLAG] = p2_flags
     return game
 
 
@@ -36,7 +36,7 @@ def test_record_game_accumulates_both_players_scores():
 
 
 def test_record_game_stores_area_and_flags_breakdown_per_round():
-    series = Series(length=3, board_size=6, skip_limit=2, flag_conquest_enabled=True, flag_bonus_points=10)
+    series = Series(length=3, board_size=6, skip_limit=2, flag_conquest_enabled=True, special_cell_points={"flag": 10})
 
     series.record_game(_finished_game(8, 2, 4, 0, flag_bonus_points=10))
 
@@ -49,7 +49,7 @@ def test_record_game_stores_area_and_flags_breakdown_per_round():
 
 
 def test_total_flags_captured_sums_across_rounds():
-    series = Series(length=3, board_size=6, skip_limit=2, flag_conquest_enabled=True, flag_bonus_points=10)
+    series = Series(length=3, board_size=6, skip_limit=2, flag_conquest_enabled=True, special_cell_points={"flag": 10})
 
     series.record_game(_finished_game(8, 2, 4, 0, flag_bonus_points=10))
     series.record_game(_finished_game(3, 0, 2, 1, flag_bonus_points=10))
@@ -103,12 +103,12 @@ def test_new_game_uses_series_settings():
 
 
 def test_new_game_uses_series_flag_conquest_settings():
-    series = Series(length=5, board_size=11, skip_limit=4, flag_conquest_enabled=True, flag_bonus_points=20)
+    series = Series(length=5, board_size=11, skip_limit=4, flag_conquest_enabled=True, special_cell_points={"flag": 20})
 
     game = series.new_game()
 
     assert game.flag_conquest_enabled is True
-    assert game.flag_bonus_points == 20
+    assert game.points_for(CellKind.FLAG) == 20
 
 
 def test_new_game_uses_series_comeback_nudge_setting():
@@ -120,12 +120,12 @@ def test_new_game_uses_series_comeback_nudge_setting():
 
 
 def test_new_game_uses_series_negative_cells_settings():
-    series = Series(length=5, board_size=11, skip_limit=4, negative_cells_enabled=True, negative_cell_penalty_points=25)
+    series = Series(length=5, board_size=11, skip_limit=4, negative_cells_enabled=True, special_cell_points={"trap": 25})
 
     game = series.new_game()
 
     assert game.negative_cells_enabled is True
-    assert game.negative_cell_penalty_points == 25
+    assert game.points_for(CellKind.TRAP) == 25
 
 
 def test_new_game_defaults_flag_conquest_disabled():

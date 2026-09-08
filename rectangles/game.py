@@ -12,12 +12,10 @@ from .constants import (
     COMEBACK_NUDGE_THRESHOLD_FRACTION,
     DICE_MAX,
     DICE_MIN,
-    FLAG_BONUS_POINTS,
     FLAG_CELL_PAIRS,
     FLAG_CONQUEST_ENABLED,
     MIN_SPECIAL_CELL_DISTANCE,
     NEGATIVE_CELL_PAIRS,
-    NEGATIVE_CELL_PENALTY_POINTS,
     NEGATIVE_CELLS_ENABLED,
     OBSTACLE_CELL_PAIRS,
     OBSTACLES_ENABLED,
@@ -29,13 +27,16 @@ from .constants import (
     SELF_ENCLOSED_PENALTY_ENABLED,
     SELF_ENCLOSED_PENALTY_PER_CELL,
     SKIP_LIMIT,
+    SPECIAL_CELL_KINDS,
     START_CORNER_EXCLUSION_RADIUS,
     WALL_LINE_LENGTH,
     WALL_LINE_PAIRS,
     WALLS_ENABLED,
     WILDCARD_ENABLED,
+    CellEffect,
+    CellKind,
 )
-from .models import Player, TurnRecord
+from .models import Cell, Player, SpecialCell, TurnRecord
 
 
 class TurnState(Enum):
@@ -75,11 +76,10 @@ class Game:
         board_size: int = BOARD_SIZE,
         skip_limit: int = SKIP_LIMIT,
         flag_conquest_enabled: bool = FLAG_CONQUEST_ENABLED,
-        flag_bonus_points: int = FLAG_BONUS_POINTS,
         walls_enabled: bool = WALLS_ENABLED,
         obstacles_enabled: bool = OBSTACLES_ENABLED,
         negative_cells_enabled: bool = NEGATIVE_CELLS_ENABLED,
-        negative_cell_penalty_points: int = NEGATIVE_CELL_PENALTY_POINTS,
+        special_cell_points: dict[str, int] | None = None,
         wildcard_enabled: bool = WILDCARD_ENABLED,
         self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
         reroll_enabled: bool = REROLL_ENABLED,
@@ -89,11 +89,10 @@ class Game:
         self.board_size = board_size
         self.skip_limit = skip_limit
         self.flag_conquest_enabled = flag_conquest_enabled
-        self.flag_bonus_points = flag_bonus_points
         self.walls_enabled = walls_enabled
         self.obstacles_enabled = obstacles_enabled
         self.negative_cells_enabled = negative_cells_enabled
-        self.negative_cell_penalty_points = negative_cell_penalty_points
+        self.special_cell_points = dict(special_cell_points or {})
         self.wildcard_enabled = wildcard_enabled
         self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
         self.reroll_enabled = reroll_enabled
@@ -126,12 +125,17 @@ class Game:
             if self.negative_cells_enabled
             else frozenset()
         )
+        special_cells: set[SpecialCell] = set()
+        pair_id = 0
+        for kind, cells in ((CellKind.FLAG, flag_cells), (CellKind.TRAP, negative_cells)):
+            for r, c in cells:
+                special_cells.add(SpecialCell(kind, Cell(r, c), pair_id))
+                pair_id += 1
         self.board = Board(
             self.board_size,
-            flag_cells=flag_cells,
+            special_cells=frozenset(special_cells),
             wall_edges=wall_edges,
             obstacle_cells=obstacle_cells,
-            negative_cells=negative_cells,
         )
         self.players = {
             PLAYER_1: Player(PLAYER_1, PLAYER_NAMES[PLAYER_1], (0, 0)),
@@ -404,11 +408,11 @@ class Game:
         if legal_set is None or top_left not in legal_set:
             return False
         rect = self.board.place(self.current_player, top_left, w, h)
-        captured = self.board.flag_cells.intersection(rect.cells())
-        self.current_player.flags_captured += len(captured)
-        if self.negative_cells_enabled:
-            triggered = self.board.negative_cells.intersection(rect.cells())
-            self.current_player.traps_triggered += len(triggered)
+        placed = set(rect.cells())
+        for sc in self.board.special_cells:
+            if sc.location in placed:
+                captures = self.current_player.special_captures
+                captures[sc.kind] = captures.get(sc.kind, 0) + 1
         self.current_player.consecutive_skips = 0
         self.history.append(
             TurnRecord(
@@ -469,9 +473,21 @@ class Game:
                 return True
         return False
 
+    def points_for(self, kind: CellKind) -> int:
+        base = SPECIAL_CELL_KINDS[kind]
+        return self.special_cell_points.get(kind.value, base.points)
+
+    def _other_player(self, player: Player) -> Player:
+        other_id = PLAYER_2 if player.id == PLAYER_1 else PLAYER_1
+        return self.players[other_id]
+
     def total_score(self, player: Player) -> int:
-        score = player.total_area + player.flags_captured * self.flag_bonus_points
-        score -= player.traps_triggered * self.negative_cell_penalty_points
+        other = self._other_player(player)
+        score = player.total_area
+        for kind, effect in SPECIAL_CELL_KINDS.items():
+            points = self.points_for(kind)
+            score += effect.capturer_sign * player.special_captures.get(kind, 0) * points
+            score += effect.opponent_sign * other.special_captures.get(kind, 0) * points
         if self.self_enclosed_penalty_enabled:
             penalty = self.board.self_enclosed_cell_counts().get(player.id, 0)
             score -= penalty * SELF_ENCLOSED_PENALTY_PER_CELL
@@ -481,7 +497,7 @@ class Game:
         reachable = self.board.reachable_empty_cells(player)
         return {
             "area": len(reachable),
-            "flag_points": len(reachable & self.board.flag_cells) * self.flag_bonus_points,
+            "flag_points": len(reachable & self.board.cells_of_kind(CellKind.FLAG)) * self.points_for(CellKind.FLAG),
         }
 
     def winner(self) -> int | None:

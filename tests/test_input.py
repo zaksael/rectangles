@@ -9,8 +9,10 @@ from rectangles.constants import (
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT_PRESETS,
     TOURNAMENT_SIZE_PRESETS,
+    CellKind,
 )
 from rectangles.game import Game, TurnState
+from rectangles.models import Cell, SpecialCell
 from rectangles.series import Series
 from rectangles.tournament import Bracket, Participant
 from rectangles.ui import layout
@@ -536,7 +538,7 @@ def test_take_bot_turn_blocking_rerolls_from_choosing_wildcard_at_zero_score():
 def test_take_bot_turn_greedy_picks_the_flag_capturing_wildcard_value():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
     game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
-    game.board.flag_cells = frozenset({(2, 5)})
+    game.board.special_cells = frozenset({SpecialCell(CellKind.FLAG, Cell(2, 5), pair_id=0)})
     ui_state = UIState(active_bot_seats={PLAYER_1: "Greedy"})
     game.roll_dice()
     assert game.state == TurnState.CHOOSING_WILDCARD

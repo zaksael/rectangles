@@ -4,12 +4,12 @@ import json
 import os
 from pathlib import Path
 
-from .constants import FLAG_BONUS_POINTS, NEGATIVE_CELL_PENALTY_POINTS
+from .constants import CellKind
 from .game import Game, GameOverReason, TurnState
-from .models import Player, Rectangle, TurnRecord
+from .models import Cell, Player, Rectangle, SpecialCell, TurnRecord
 from .series import RoundResult, Series
 
-SAVE_FORMAT_VERSION = 2
+SAVE_FORMAT_VERSION = 3
 SAVE_DIR = Path.home() / ".rectangles_game"
 DEFAULT_SAVE_PATH = SAVE_DIR / "save.json"
 
@@ -35,6 +35,20 @@ def _wall_edges_from_list(data: list) -> frozenset[frozenset[tuple[int, int]]]:
     return frozenset(frozenset(tuple(cell) for cell in edge) for edge in data)
 
 
+def _special_cells_to_list(special_cells: frozenset[SpecialCell]) -> list:
+    return [
+        {"kind": sc.kind.value, "row": sc.location.row, "col": sc.location.col, "pair_id": sc.pair_id}
+        for sc in special_cells
+    ]
+
+
+def _special_cells_from_list(data: list) -> frozenset[SpecialCell]:
+    return frozenset(
+        SpecialCell(kind=CellKind(d["kind"]), location=Cell(d["row"], d["col"]), pair_id=d["pair_id"])
+        for d in data
+    )
+
+
 def _round_to_dict(round_result: RoundResult) -> dict:
     return {
         "area": round_result.area,
@@ -57,11 +71,10 @@ def _series_to_dict(series: Series) -> dict:
         "board_size": series.board_size,
         "skip_limit": series.skip_limit,
         "flag_conquest_enabled": series.flag_conquest_enabled,
-        "flag_bonus_points": series.flag_bonus_points,
         "walls_enabled": series.walls_enabled,
         "obstacles_enabled": series.obstacles_enabled,
         "negative_cells_enabled": series.negative_cells_enabled,
-        "negative_cell_penalty_points": series.negative_cell_penalty_points,
+        "special_cell_points": series.special_cell_points,
         "wildcard_enabled": series.wildcard_enabled,
         "self_enclosed_penalty_enabled": series.self_enclosed_penalty_enabled,
         "reroll_enabled": series.reroll_enabled,
@@ -78,11 +91,10 @@ def _series_from_dict(data: dict) -> Series:
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
-        flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
         negative_cells_enabled=data.get("negative_cells_enabled", False),
-        negative_cell_penalty_points=data.get("negative_cell_penalty_points", NEGATIVE_CELL_PENALTY_POINTS),
+        special_cell_points=data.get("special_cell_points", {}),
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
         reroll_enabled=data.get("reroll_enabled", False),
@@ -101,15 +113,13 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
         "board_size": game.board_size,
         "skip_limit": game.skip_limit,
         "flag_conquest_enabled": game.flag_conquest_enabled,
-        "flag_bonus_points": game.flag_bonus_points,
-        "flag_cells": [list(cell) for cell in game.board.flag_cells],
         "walls_enabled": game.walls_enabled,
         "wall_edges": _wall_edges_to_list(game.board.wall_edges),
         "obstacles_enabled": game.obstacles_enabled,
         "obstacle_cells": [list(cell) for cell in game.board.obstacle_cells],
         "negative_cells_enabled": game.negative_cells_enabled,
-        "negative_cell_penalty_points": game.negative_cell_penalty_points,
-        "negative_cells": [list(cell) for cell in game.board.negative_cells],
+        "special_cell_points": game.special_cell_points,
+        "special_cells": _special_cells_to_list(game.board.special_cells),
         "wildcard_enabled": game.wildcard_enabled,
         "self_enclosed_penalty_enabled": game.self_enclosed_penalty_enabled,
         "reroll_enabled": game.reroll_enabled,
@@ -130,8 +140,9 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
                 "name": player.name,
                 "start_corner": list(player.start_corner),
                 "consecutive_skips": player.consecutive_skips,
-                "flags_captured": player.flags_captured,
-                "traps_triggered": player.traps_triggered,
+                "special_captures": {
+                    kind.value: count for kind, count in player.special_captures.items()
+                },
                 "rerolls_used": player.rerolls_used,
                 "comeback_nudge_granted": player.comeback_nudge_granted,
                 "pieces": [_rect_to_dict(rect) for rect in player.pieces],
@@ -157,24 +168,21 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
         flag_conquest_enabled=data.get("flag_conquest_enabled", False),
-        flag_bonus_points=data.get("flag_bonus_points", FLAG_BONUS_POINTS),
         walls_enabled=data.get("walls_enabled", False),
         obstacles_enabled=data.get("obstacles_enabled", False),
         negative_cells_enabled=data.get("negative_cells_enabled", False),
-        negative_cell_penalty_points=data.get("negative_cell_penalty_points", NEGATIVE_CELL_PENALTY_POINTS),
+        special_cell_points=data.get("special_cell_points", {}),
         wildcard_enabled=data.get("wildcard_enabled", False),
         self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
         reroll_enabled=data.get("reroll_enabled", False),
         comeback_nudge_enabled=data.get("comeback_nudge_enabled", False),
     )
-    if data.get("flag_cells") is not None:
-        game.board.flag_cells = frozenset(tuple(cell) for cell in data["flag_cells"])
+    if data.get("special_cells") is not None:
+        game.board.special_cells = _special_cells_from_list(data["special_cells"])
     if data.get("wall_edges") is not None:
         game.board.wall_edges = _wall_edges_from_list(data["wall_edges"])
     if data.get("obstacle_cells") is not None:
         game.board.set_obstacle_cells(frozenset(tuple(cell) for cell in data["obstacle_cells"]))
-    if data.get("negative_cells") is not None:
-        game.board.negative_cells = frozenset(tuple(cell) for cell in data["negative_cells"])
 
     for player_id_str, player_data in data["players"].items():
         player_id = int(player_id_str)
@@ -182,8 +190,9 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
         player.name = player_data["name"]
         player.start_corner = tuple(player_data["start_corner"])
         player.consecutive_skips = player_data["consecutive_skips"]
-        player.flags_captured = player_data.get("flags_captured", 0)
-        player.traps_triggered = player_data.get("traps_triggered", 0)
+        player.special_captures = {
+            CellKind(kind): count for kind, count in player_data.get("special_captures", {}).items()
+        }
         player.rerolls_used = player_data.get("rerolls_used", 0)
         player.comeback_nudge_granted = player_data.get("comeback_nudge_granted", False)
         for piece_data in player_data["pieces"]:

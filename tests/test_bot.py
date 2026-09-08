@@ -1,6 +1,7 @@
 from rectangles.bot import choose_placement, choose_wildcard_value, should_reroll
-from rectangles.constants import PLAYER_1, PLAYER_2, REROLL_LIMIT
+from rectangles.constants import PLAYER_1, PLAYER_2, REROLL_LIMIT, CellKind
 from rectangles.game import Game
+from rectangles.models import Cell, SpecialCell
 
 
 class ScriptedRandom:
@@ -9,6 +10,10 @@ class ScriptedRandom:
 
     def randint(self, a, b):
         return self._values.pop(0)
+
+
+def _flags(*cells: tuple[int, int]) -> frozenset[SpecialCell]:
+    return frozenset(SpecialCell(CellKind.FLAG, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
 
 
 def test_choose_placement_returns_a_legal_candidate():
@@ -33,7 +38,7 @@ def test_choose_placement_is_deterministic_via_rng_index():
 def test_choose_placement_greedy_prefers_capturing_a_flag():
     game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
     game.flag_conquest_enabled = True
-    game.board.flag_cells = frozenset({(3, 3)})
+    game.board.special_cells = _flags((3, 3))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
 
@@ -83,7 +88,7 @@ def test_blocking_score_fn_computes_frontier_once_per_call_not_per_candidate():
 def test_choose_wildcard_value_greedy_prefers_a_flag_capturing_value():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
     game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
-    game.board.flag_cells = frozenset({(2, 5)})
+    game.board.special_cells = _flags((2, 5))
     game.roll_dice()
     assert game.state.name == "CHOOSING_WILDCARD"
 
@@ -128,12 +133,13 @@ def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_flag_con
 def test_should_reroll_true_for_greedy_when_flags_exist_but_unreachable_this_turn():
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
     game.flag_conquest_enabled = True
-    game.board.flag_cells = frozenset({(5, 5)})
+    game.board.special_cells = _flags((5, 5))
     game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
     game.roll_dice()
     assert game.state.name == "CHOOSING_PLACEMENT"
-    assert game.board.flag_cells  # sanity: flags do exist this game
-    assert not (game.board.flag_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
+    flag_cells = game.board.cells_of_kind(CellKind.FLAG)
+    assert flag_cells  # sanity: flags do exist this game
+    assert not (flag_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
 
     assert should_reroll(game, "Greedy") is True
 

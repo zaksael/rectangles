@@ -1,3 +1,6 @@
+from enum import Enum
+from typing import NamedTuple
+
 BOARD_SIZE = 19
 
 DICE_MIN = 1
@@ -78,6 +81,30 @@ REROLL_LIMIT = 2
 NEGATIVE_CELLS_ENABLED = False
 NEGATIVE_CELL_PENALTY_POINTS = 10
 NEGATIVE_CELL_PAIRS = 2
+
+
+# Shared special-cell model (#63): Flag Conquest and Traps used to be two
+# copy-pasted parallel subsystems (own Board frozenset, own Game bonus/
+# penalty kwarg, own Player counter, own capture/scoring lines). CellKind +
+# CellEffect collapse that into one signed-effect table so a future third
+# kind (Contested/steal, backlog #44) is a new dict entry, not a fourth
+# copy-paste. Deliberately still "flag"/"trap" vocabulary, not #59's
+# Prize/Pitfall rename - that's a separate, later, all-at-once pass.
+class CellKind(Enum):
+    FLAG = "flag"
+    TRAP = "trap"
+
+
+class CellEffect(NamedTuple):
+    capturer_sign: int  # applied to the capturing player's own count
+    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Flag/Trap; nonzero once Contested lands)
+    points: int  # magnitude shared by both signs on one kind; overridable per-game via Game(special_cell_points=...)
+
+
+SPECIAL_CELL_KINDS: dict[CellKind, CellEffect] = {
+    CellKind.FLAG: CellEffect(+1, 0, FLAG_BONUS_POINTS),
+    CellKind.TRAP: CellEffect(-1, 0, NEGATIVE_CELL_PENALTY_POINTS),
+}
 
 # Once the trailing player's total_score() gap reaches this fraction of
 # board_size**2, they're permanently granted COMEBACK_NUDGE_EXTRA_REROLLS

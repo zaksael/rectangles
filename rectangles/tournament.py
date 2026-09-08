@@ -5,8 +5,6 @@ from dataclasses import dataclass, field
 
 from .constants import (
     BOT_DIFFICULTY_PRESETS,
-    FLAG_BONUS_POINTS,
-    NEGATIVE_CELL_PENALTY_POINTS,
     PLAYER_1,
     PLAYER_2,
 )
@@ -37,11 +35,10 @@ class Bracket:
     board_size: int
     skip_limit: int
     flag_conquest_enabled: bool = False
-    flag_bonus_points: int = FLAG_BONUS_POINTS
     walls_enabled: bool = False
     obstacles_enabled: bool = False
     negative_cells_enabled: bool = False
-    negative_cell_penalty_points: int = NEGATIVE_CELL_PENALTY_POINTS
+    special_cell_points: dict[str, int] = field(default_factory=dict)
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
     reroll_enabled: bool = False
@@ -83,11 +80,10 @@ class Bracket:
             board_size=self.board_size,
             skip_limit=self.skip_limit,
             flag_conquest_enabled=self.flag_conquest_enabled,
-            flag_bonus_points=self.flag_bonus_points,
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
             negative_cells_enabled=self.negative_cells_enabled,
-            negative_cell_penalty_points=self.negative_cell_penalty_points,
+            special_cell_points=self.special_cell_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
             reroll_enabled=self.reroll_enabled,
@@ -101,11 +97,10 @@ class Bracket:
             board_size=self.board_size,
             skip_limit=self.skip_limit,
             flag_conquest_enabled=self.flag_conquest_enabled,
-            flag_bonus_points=self.flag_bonus_points,
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
             negative_cells_enabled=self.negative_cells_enabled,
-            negative_cell_penalty_points=self.negative_cell_penalty_points,
+            special_cell_points=self.special_cell_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,
             reroll_enabled=self.reroll_enabled,

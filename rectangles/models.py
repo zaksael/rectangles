@@ -1,7 +1,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterator
+from typing import Iterator, NamedTuple
+
+from .constants import CellKind
+
+
+class Cell(NamedTuple):
+    row: int
+    col: int
+
+
+@dataclass(frozen=True)
+class SpecialCell:
+    """One Flag/Trap cell (see constants.CellKind). `pair_id` groups a
+    mirrored pair - both cells seeded together by Game._mirrored_cell_pairs
+    share it, unique across kinds on one board."""
+
+    kind: CellKind
+    location: Cell
+    pair_id: int
 
 
 @dataclass(frozen=True)
@@ -42,8 +60,7 @@ class Player:
     start_corner: tuple[int, int]
     pieces: list[Rectangle] = field(default_factory=list)
     consecutive_skips: int = 0
-    flags_captured: int = 0
-    traps_triggered: int = 0
+    special_captures: dict[CellKind, int] = field(default_factory=dict)
     rerolls_used: int = 0
     comeback_nudge_granted: bool = False
 
