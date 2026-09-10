@@ -43,8 +43,7 @@ class SettingsMixin:
             )
 
         if mode != "Tournament":
-            # One unified 4-way choice (Human + 3 bot difficulties) replaces
-            # the old separate vs-Bot toggle and Bot-difficulty rows.
+            # One 4-way choice: Human + 3 bot difficulties.
             row_label("opponent", "Opponent (P2)")
             current = ui_state.selected_bot_difficulty if ui_state.selected_bot_enabled else "Human"
             for value, rect in layout.settings_opponent_button_rects(mode, tournament_size).items():

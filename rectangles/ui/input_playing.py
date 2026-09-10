@@ -79,10 +79,8 @@ def _handle_left_click(
         if game.can_reroll() and layout.REROLL_WILDCARD_BUTTON_RECT.collidepoint(pos):
             _reroll(game, ui_state)
             return True
-        # Not gated on wildcard_value_is_legal(): individual values can still
-        # be illegal (that's what the grayed-out buttons show) even though
-        # roll_dice() guarantees at least one of the six is legal whenever
-        # this state is reached at all.
+        # Deliberately not gated on wildcard_value_is_legal() - the graying is
+        # cosmetic, and roll_dice() guarantees at least one value is legal here.
         for value, rect in layout.WILDCARD_VALUE_BUTTON_RECTS.items():
             if rect.collidepoint(pos):
                 _choose_wildcard_value(game, ui_state, value)

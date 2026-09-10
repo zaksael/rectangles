@@ -17,11 +17,8 @@ from .state import Screen, UIState
 FPS = 60
 AUTO_ACTION_DELAY_MS = 500
 
-# On macOS Retina displays, SDL2 otherwise gives the window a backing store
-# at 2x the requested size (for a crisp image) while mouse events keep
-# reporting the logical (1x) coordinates our layout rects are defined in -
-# without this, that mismatch shrinks every button's effective clickable
-# area down toward its center. Must be set before pygame.init().
+# Without this, macOS Retina gives a 2x backing store while mouse events stay
+# in 1x coords, shrinking every button's clickable area. Must precede pygame.init().
 os.environ.setdefault("SDL_VIDEO_HIGHDPI_DISABLED", "1")
 
 
@@ -45,10 +42,7 @@ def run() -> None:
     while running:
         for event in pygame.event.get():
             if event.type == pygame.VIDEORESIZE:
-                # The whole UI is drawn onto a fixed-size canvas and scaled to
-                # fit (see layout.compute_scale/Renderer.draw), so the real
-                # window is free to resize in both directions - only clamped
-                # to a small usability floor, not the design size.
+                # The UI is scaled to fit any window size, so just clamp to a usability floor.
                 width = max(event.w, layout.MIN_REAL_WINDOW_WIDTH)
                 height = max(event.h, layout.MIN_REAL_WINDOW_HEIGHT)
                 screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
@@ -208,22 +202,16 @@ def run() -> None:
             and ui_state.pending_confirmation is None
             and (
                 game_input.is_bots_turn(game, ui_state)
-                # Gated on can_reroll(): with a reroll charge available,
-                # SKIPPED is a real decision (Reroll vs Skip) and must wait
-                # for the player, same as CHOOSING_PLACEMENT/CHOOSING_WILDCARD
-                # never auto-advance either.
+                # With a reroll charge available, SKIPPED is a real Reroll-vs-Skip
+                # decision and must wait for the player.
                 or (game.state == TurnState.SKIPPED and not game.can_reroll())
             )
         )
         if not should_auto_act:
             auto_action_at = None
         elif auto_action_at is None:
-            # Arm rather than fire immediately: the state that makes this turn
-            # auto-actionable (e.g. a human's wildcard click resolving into an
-            # un-rerollable skip) may have just become true this very frame.
-            # Firing immediately here would skip straight to the next turn
-            # without ever letting renderer.draw() show the state that got
-            # skipped - looking to the player like their click did nothing.
+            # Arm, don't fire: the triggering state may have become true this
+            # frame, and firing now would skip it before draw() ever shows it.
             auto_action_at = pygame.time.get_ticks() + AUTO_ACTION_DELAY_MS
         elif pygame.time.get_ticks() >= auto_action_at:
             if game_input.is_bots_turn(game, ui_state):
@@ -241,13 +229,12 @@ def run() -> None:
         if not should_autoplay:
             replay_autoplay_at = None
         elif replay_autoplay_at is None:
-            # Same arm-then-fire idiom as auto_action_at above - guarantees at
-            # least one render at the current step before advancing.
+            # Arm-then-fire, as with auto_action_at above.
             replay_autoplay_at = pygame.time.get_ticks() + REPLAY_SPEED_MS[ui_state.replay_speed]
         elif pygame.time.get_ticks() >= replay_autoplay_at:
             ui_state.replay_step += 1
             if ui_state.replay_step >= len(game.history):
-                ui_state.replay_autoplay = False  # stop-and-pause at the end, no looping
+                ui_state.replay_autoplay = False
             replay_autoplay_at = None
 
         if ui_state.screen == Screen.PLAYING and not game_input.is_bots_turn(game, ui_state):

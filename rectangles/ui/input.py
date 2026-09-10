@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-# Event handling is split into one sibling input_*.py module per screen
-# (input_playing/input_settings/input_mode_select/input_replay/input_tournament),
-# with the actions/helpers shared across them in input_common.py - same
-# split as renderer.py's per-screen mixins, adapted for plain functions
-# instead of a class, since there's no shared instance state here to
-# justify mixin inheritance. This module just re-exports the public surface
+# Event handling lives in one input_*.py module per screen, with shared
+# helpers in input_common.py. This module just re-exports the surface that
 # app.py and tests import from `rectangles.ui.input`.
 from .input_common import (
     apply_match_identity,

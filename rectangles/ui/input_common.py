@@ -12,20 +12,14 @@ from .state import Screen, UIState
 
 
 def _current_window_size() -> tuple[int, int]:
-    # The real window can be resized (see ui/app.py's VIDEORESIZE handling) and
-    # freely scaled relative to the fixed design canvas (see layout.compute_scale),
-    # so translating a real mouse/click position needs the live real size, not
-    # a static default. Falls back to the design size when no display exists
-    # yet (e.g. headless tests) - equivalent to an unscaled 1:1 canvas.
+    # Live window size for coord translation; design size when headless (1:1).
     surface = pygame.display.get_surface()
     return surface.get_size() if surface is not None else (layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT)
 
 
 def _design_pos(pos: tuple[int, int]) -> tuple[int, int]:
-    # Every layout rect is defined in the fixed design canvas' coordinate
-    # space; a real mouse/click position must be mapped back into that space
-    # before any hit-testing - the one place this happens, mirroring
-    # Renderer._mouse_pos on the drawing side.
+    # Map a real mouse/click position into design-canvas space for hit-testing,
+    # mirroring Renderer._mouse_pos on the drawing side.
     return layout.to_design_coords(*pos, *_current_window_size())
 
 
@@ -81,8 +75,7 @@ def is_bots_turn(game: Game, ui_state: UIState) -> bool:
 
 
 def plain_bot_seats(ui_state: UIState) -> dict[int, str]:
-    # For a plain (non-tournament) Start Game/Series/Resume - the bot, if
-    # on, is always seated PLAYER_2, per the settings-screen toggle.
+    # Non-tournament games: the bot, if enabled, always takes PLAYER_2.
     return {PLAYER_2: ui_state.selected_bot_difficulty} if ui_state.selected_bot_enabled else {}
 
 
@@ -93,9 +86,6 @@ def take_bot_turn(game: Game, ui_state: UIState) -> None:
 
     difficulty = ui_state.active_bot_seats[game.current_player_id]
     if game.state == TurnState.CHOOSING_WILDCARD:
-        # Basic always picks uniformly at random; Greedy/Blocking pick the
-        # value that scores best, or reroll if even the best is worthless -
-        # see bot.should_reroll/choose_wildcard_value.
         if bot.should_reroll(game, difficulty):
             _reroll(game, ui_state)
         else:
@@ -132,11 +122,8 @@ def build_tournament_participants(ui_state: UIState) -> list[Participant]:
 
 
 def apply_match_identity(game: Game, tournament: Bracket, match: Match, ui_state: UIState) -> None:
-    # Post-construction override, same pattern Series.new_game() already uses
-    # for current_player_id and persistence.py's load path already uses for
-    # player.name - a fresh Game()/Series.new_game() always resets both to
-    # generic defaults, so this must be re-applied every round of a match,
-    # not just once at match start.
+    # A fresh Game()/Series.new_game() resets names and bot seats to defaults,
+    # so re-apply the match's identity every round, not just at match start.
     p_a = tournament.participants[match.participant_a]
     p_b = tournament.participants[match.participant_b]
     game.players[PLAYER_1].name = p_a.name

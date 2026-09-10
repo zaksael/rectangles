@@ -1,7 +1,5 @@
-# A restrained indigo/emerald palette (Tailwind-ish) replaces the old flat
-# purple-everywhere scheme: BUTTON_COLOR is reserved for primary actions,
-# selection groups use the "outline" chip style below (neutral until
-# selected) instead of painting every choice the same loud accent.
+# Restrained indigo/emerald palette: BUTTON_COLOR is for primary actions only;
+# selection groups use the neutral "outline" chip colors below.
 BG_COLOR = (246, 247, 250)
 GRID_LINE_COLOR = (222, 224, 230)
 EMPTY_CELL_COLOR = (255, 255, 255)
@@ -17,9 +15,7 @@ BUTTON_DISABLED_COLOR = (223, 225, 231)
 BUTTON_DISABLED_TEXT_COLOR = (156, 161, 173)
 BUTTON_SELECTED_COLOR = (5, 150, 105)
 BUTTON_TEXT_COLOR = (255, 255, 255)
-# "Outline" chip style for selection groups (board size, house rules, etc.):
-# neutral until hovered/selected, so a row of choices reads calm rather than
-# as a wall of accent color.
+# "Outline" chip style for selection groups: neutral until hovered/selected.
 BUTTON_OUTLINE_BG_COLOR = (255, 255, 255)
 BUTTON_OUTLINE_BORDER_COLOR = (211, 214, 222)
 BUTTON_OUTLINE_TEXT_COLOR = (51, 56, 69)
@@ -30,8 +26,7 @@ ROW_ACTIVE_BG_COLOR = (209, 250, 229)
 CARD_BG_COLOR = (255, 255, 255)
 CARD_BORDER_COLOR = (228, 229, 235)
 CARD_SHADOW_COLOR = (15, 23, 42, 35)
-# Prize/Pitfall/Steal glyphs form a green/amber/crimson diverging set matching
-# their +/-/+- shapes: gain / two-sided gamble / loss.
+# Prize/Pitfall/Steal: green/crimson/amber, matching their +/-/+- glyphs.
 PRIZE_COLOR = (5, 150, 105)
 WALL_LINE_COLOR = (90, 88, 96)
 OBSTACLE_COLOR = (60, 60, 65)

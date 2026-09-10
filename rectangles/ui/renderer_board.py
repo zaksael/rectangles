@@ -10,10 +10,8 @@ from . import colors, layout
 from .state import UIState
 
 
-# Prize / Pitfall / Steal share one glyph family built from a single centered
-# bar: Prize is "+", Pitfall is "-" (Prize minus its vertical bar), Steal is
-# "+-" stacked - it grants a prize to the capturer and a pitfall to the
-# opponent, so its glyph is literally the other two composed.
+# Prize/Pitfall/Steal glyphs share one centered-bar primitive: "+", "-", and
+# "+" over "-" (Steal grants a prize to the capturer, a pitfall to the opponent).
 def _bar(surface: pygame.Surface, cx: int, cy: int, w: int, h: int, color: tuple[int, int, int]) -> None:
     pygame.draw.rect(surface, color, pygame.Rect(cx - w // 2, cy - h // 2, w, h))
 
@@ -32,9 +30,9 @@ def _pitfall_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> Non
 def _steal_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
     t = max(3, half // 2)
     arm = max(3, half * 3 // 4)
-    _bar(surface, cx, cy - arm, 2 * arm, t, colors.STEAL_CELL_COLOR)  # plus (top)
+    _bar(surface, cx, cy - arm, 2 * arm, t, colors.STEAL_CELL_COLOR)
     _bar(surface, cx, cy - arm, t, 2 * arm, colors.STEAL_CELL_COLOR)
-    _bar(surface, cx, cy + arm, 2 * arm, t, colors.STEAL_CELL_COLOR)  # minus (bottom)
+    _bar(surface, cx, cy + arm, 2 * arm, t, colors.STEAL_CELL_COLOR)
 
 
 _SPECIAL_CELL_MARKERS = {
@@ -104,21 +102,19 @@ class BoardMixin:
             a, b = tuple(edge)
             (r1, c1), (r2, c2) = (a, b) if a <= b else (b, a)
             if r1 == r2:
-                # Horizontally adjacent cells (c1 < c2): vertical boundary line between them.
+                # Same row: cells are side by side, so the wall between them is vertical.
                 x = layout.cell_rect(r1, c2, size).left
                 top = layout.cell_rect(r1, c1, size).top
                 pygame.draw.line(self.screen, colors.WALL_LINE_COLOR, (x, top), (x, top + px), width=4)
             else:
-                # Vertically adjacent cells (r1 < r2): horizontal boundary line between them.
+                # Same column: wall between the two cells is horizontal.
                 y = layout.cell_rect(r2, c1, size).top
                 left = layout.cell_rect(r1, c1, size).left
                 pygame.draw.line(self.screen, colors.WALL_LINE_COLOR, (left, y), (left + px, y), width=4)
 
     def _draw_special_cells(self, game: Game, upto: int | None = None) -> None:
-        # Prize/Pitfall/Steal cells are all capturable like any empty cell (not
-        # permanent blockers like Obstacles), so each marker disappears once a
-        # piece covers it - hence the shared covered-check. Only the glyph
-        # differs per kind (see _SPECIAL_CELL_MARKERS).
+        # Prize/Pitfall/Steal cells are capturable, so a marker disappears once
+        # a piece covers it - unlike Obstacles, which are permanent.
         covered = (
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
@@ -176,9 +172,7 @@ class BoardMixin:
             return
         text_surf = self.font.render(message, True, (255, 255, 255))
         banner_rect = text_surf.get_rect().inflate(48, 28)
-        # Centered on the full board square (not just the current board_size's
-        # smaller rect), so it stays on-screen and in the same spot regardless
-        # of which board size is selected.
+        # Centered on the full board square, so its position is independent of board size.
         banner_rect.center = (layout.BOARD_PX // 2, layout.BOARD_PX // 2)
         overlay = pygame.Surface(banner_rect.size, pygame.SRCALPHA)
         overlay.fill(colors.STATUS_BANNER_BG_COLOR)

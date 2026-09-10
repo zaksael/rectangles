@@ -17,27 +17,15 @@ from .state import Screen, UIState
 
 
 class Renderer(BoardMixin, PanelMixin, ModeSelectMixin, SettingsMixin, ReplayMixin, TournamentMixin, DialogsMixin):
-    # Screen/concern-specific drawing lives in the mixins above (one per
-    # sibling renderer_*.py module - board/panel helpers shared across
-    # screens, one per actual screen, plus dialogs); this class itself is
-    # just the shared canvas/state setup, the draw() dispatcher, and the
-    # generic drawing primitives every mixin's methods call via `self.`.
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-        # Everything is drawn onto this fixed-size virtual canvas (see
-        # layout.DESIGN_WIDTH/DESIGN_HEIGHT), then draw() scales the finished
-        # canvas to fit whatever the real, freely-resizable window is.
+        # Everything is drawn onto this fixed-size canvas, then draw() scales
+        # it to fit the real, freely-resizable window.
         self._canvas = pygame.Surface((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT))
-        # The settings screen's content can be taller than the canvas (see
-        # layout.settings_content_height(mode) vs. DESIGN_HEIGHT); it's drawn
-        # onto this full-height virtual surface and scrolled into view. Sized
-        # for the tallest mode (Tournament) since this is allocated once,
-        # before any mode is ever chosen - see SETTINGS_CONTENT_HEIGHT_MAX.
+        # Full-height surface the (possibly taller-than-canvas) settings screen
+        # is drawn onto and scrolled into view. Allocated once before any mode
+        # is chosen, so sized for the tallest mode - see SETTINGS_CONTENT_HEIGHT_MAX.
         self._settings_surface = pygame.Surface((layout.DESIGN_WIDTH, layout.SETTINGS_CONTENT_HEIGHT_MAX))
-        # SysFont takes a comma-separated fallback list and picks the first
-        # installed match, falling back to pygame's default font if none
-        # resolve - safe across platforms (this project runs on macOS/Linux/
-        # Windows dev machines and CI's dummy driver alike).
         _FONT_STACK = "segoeui,helveticaneue,helvetica,arial"
         self.font = pygame.font.SysFont(_FONT_STACK, 19)
         self.font_small = pygame.font.SysFont(_FONT_STACK, 15)
@@ -73,9 +61,7 @@ class Renderer(BoardMixin, PanelMixin, ModeSelectMixin, SettingsMixin, ReplayMix
             visible = pygame.Rect(0, ui_state.settings_scroll, layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT)
             self.screen.blit(self._settings_surface, (0, 0), area=visible)
             if ui_state.settings_scroll < layout.settings_max_scroll(ui_state.selected_game_mode, ui_state.tournament_size):
-                # If scrolled content remains, this strip can sit over genuine
-                # (clipped) content rather than blank space below it - mask it
-                # first so the hint always reads cleanly instead of overlapping.
+                # Mask the strip first: it can sit over clipped content, not blank space.
                 strip = pygame.Rect(0, layout.DESIGN_HEIGHT - 26, layout.DESIGN_WIDTH, 26)
                 self.screen.fill(colors.BG_COLOR, strip)
                 hint = self.font_small.render("scroll for more ▼", True, colors.MUTED_TEXT_COLOR)
@@ -122,11 +108,9 @@ class Renderer(BoardMixin, PanelMixin, ModeSelectMixin, SettingsMixin, ReplayMix
         hovered: bool = False,
         outline: bool = False,
     ) -> None:
-        """outline=True is the "chip" style for a selection group (board
-        size, house rules, opponent, ...): neutral/bordered until hovered or
-        selected, so a row of choices doesn't read as a wall of accent
-        color. outline=False (the default) is the solid-accent "primary
-        action" style (Start, Roll, Continue, ...) - unchanged from before."""
+        """outline=True is the "chip" style for a selection group: neutral/
+        bordered until hovered or selected. outline=False (default) is the
+        solid-accent primary-action style (Start, Roll, ...)."""
         if enabled and rect.collidepoint(self._mouse_pos):
             self._hand_cursor = True
         border_color = None
@@ -150,9 +134,7 @@ class Renderer(BoardMixin, PanelMixin, ModeSelectMixin, SettingsMixin, ReplayMix
         self.screen.blit(text, text.get_rect(center=rect.center))
 
     def _draw_card(self, rect: pygame.Rect, radius: int = 12, shadow: bool = True) -> None:
-        """A white, softly-shadowed panel - the "elevated card" look used by
-        the settings screen and the confirm dialog, replacing flat
-        border-only boxes."""
+        """A white, softly-shadowed "elevated card" panel."""
         if shadow:
             shadow_surf = pygame.Surface((rect.width + 8, rect.height + 8), pygame.SRCALPHA)
             pygame.draw.rect(shadow_surf, colors.CARD_SHADOW_COLOR, shadow_surf.get_rect(), border_radius=radius + 2)

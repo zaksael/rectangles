@@ -14,10 +14,8 @@ from .state import UIState
 # compare against the move actually played.
 _AnalysisCandidate = tuple[tuple[int, int], int, int]
 
-# (prize_cells, pitfall_cells, denial_cells, enclosure_delta) - one candidate's
-# raw per-axis values, bundled so they thread through _candidate_value/
-# _best_analysis_candidate/_analysis_note as a unit instead of four
-# same-typed ints each (easy to transpose when passed individually).
+# (prize_cells, pitfall_cells, denial_cells, enclosure_delta) - a candidate's
+# raw per-axis values, bundled so four same-typed ints aren't passed loose.
 _AxisBreakdown = tuple[int, int, int, int]
 
 
@@ -107,15 +105,9 @@ class ReplayMixin:
         opponent: Player,
         reachable_before: int,
     ) -> tuple[int, int, int]:
-        # The axes that are always computed for every candidate, whether or
-        # not that candidate ends up worth paying for the (possibly
-        # skipped) enclosure flood-fill. Prize/pitfall are both cheap exact cell-
-        # overlap counts (bot.cell_overlap_score is a generic counter, not
-        # prize-specific). Denial is a
-        # reachable-area cutoff, not just immediate-frontier overlap - see
-        # reachable_count_if's docstring for why - and unlike frontier
-        # overlap, it has no cheap exact bound, so it's always paid, never
-        # pruned.
+        # The cheap axes computed for every candidate up front: prize/pitfall
+        # are exact cell-overlap counts; denial is a reachable-area cutoff (see
+        # reachable_count_if) with no cheap bound, so it's always paid.
         top_left, w, h = candidate
         prize_cells = bot.cell_overlap_score(candidate, board.cells_of_kind(CellKind.PRIZE)) if game.prize_enabled else 0
         pitfall_cells = bot.cell_overlap_score(candidate, board.cells_of_kind(CellKind.PITFALL)) if game.pitfall_enabled else 0
@@ -133,21 +125,13 @@ class ReplayMixin:
         denial_cells: int,
         enclosure_before: int,
     ) -> tuple[int, _AxisBreakdown]:
-        # One combined turn-quality value per candidate, using the same
-        # point weights Game.total_score() applies - game.points_for(PRIZE/PITFALL)
-        # and SELF_ENCLOSED_PENALTY_PER_CELL -
-        # so every candidate this turn is ranked on one scale instead of
-        # separate prize/pitfall/denial/enclosure axes. Denial itself carries
-        # weight 1 (it has no total_score() equivalent to borrow a weight
-        # from) - this "total" is a ranking/threshold value only, never
-        # shown to the player as if it were real score (see _analysis_note).
-        # prize_cells/pitfall_cells/denial_cells come in pre-computed (via
-        # _candidate_partial_value) rather than recomputed here, so a
-        # candidate that reaches this point never pays for
-        # reachable_count_if twice. Returns the raw per-axis breakdown
-        # alongside the total so _analysis_note can report real score
-        # points (prize/pitfall/enclosure) separately from the denial cell
-        # count, and name whichever axis actually drove the gap.
+        # One turn-quality value per candidate on the same weights
+        # Game.total_score() uses, so candidates rank on one scale. Denial
+        # carries weight 1 (no total_score() equivalent) - this "total" is a
+        # ranking value only, never shown as real score (see _analysis_note).
+        # The cheap axes come in pre-computed to avoid a second reachable_count_if.
+        # Returns the raw breakdown too, so _analysis_note can name the axis
+        # that drove the gap.
         enclosure_delta = 0
         if game.self_enclosed_penalty_enabled:
             top_left, w, h = candidate
@@ -163,12 +147,8 @@ class ReplayMixin:
     def _analysis_candidate_pool(
         self, record: TurnRecord, board: Board, player: Player
     ) -> list[_AnalysisCandidate]:
-        # Candidate pool spans every reachable placement this turn could
-        # have used - just the rolled orientation pair normally, or every
-        # possible wildcard value's orientations on a Wildcard Roll turn
-        # (still one pool, one comparison, one note either way). Which die
-        # value produced which candidate isn't tracked - the note reports a
-        # plain score comparison, not which specific choice caused it.
+        # Every placement this turn could have used: the rolled orientation
+        # pair, or every wildcard value's orientations on a Wildcard Roll turn.
         a, b = record.roll
         if record.wildcard_original_roll is not None:
             fixed = record.wildcard_original_roll[0]
@@ -194,17 +174,11 @@ class ReplayMixin:
         enclosure_before: int,
         pool: list[_AnalysisCandidate],
     ) -> tuple[float, _AnalysisCandidate, _AxisBreakdown]:
-        # self_enclosed_count_if is an O(board_size^2) flood-fill; a
-        # Wildcard Roll turn's pool can run into the hundreds on a large
-        # board, and running it for every candidate made replay's first
-        # screen switch visibly laggy. A count can never go negative, so
-        # a candidate's enclosure bonus is capped at enclosure_before
-        # (fully clearing every already-enclosed cell) - its total can
-        # never exceed its cheap prize+denial value plus that ceiling.
-        # Skip the flood-fill for any candidate that ceiling can't lift
-        # past the running best; only the few genuinely competitive
-        # candidates ever pay for it. Provably exact, not a heuristic:
-        # a skipped candidate could never have won anyway.
+        # self_enclosed_count_if is an O(board_size^2) flood-fill and a Wildcard
+        # pool can be hundreds of candidates. A candidate's enclosure bonus can
+        # never exceed enclosure_before, so skip the flood-fill for any whose
+        # cheap prize+denial value plus that ceiling can't beat the running best.
+        # Provably exact: a skipped candidate could never have won.
         # ponytail: this ceiling is player-wide (all of enclosure_before,
         # not just the region(s) a given candidate actually touches), so
         # it stops pruning much once a player has several existing
@@ -217,10 +191,7 @@ class ReplayMixin:
         ceiling_bonus = (
             enclosure_before * constants.SELF_ENCLOSED_PENALTY_PER_CELL if game.self_enclosed_penalty_enabled else 0
         )
-        # pool always contains at least the chosen move (it was legally
-        # placed under this same roll), so the first iteration always
-        # runs and sets real values below - a float("-inf") seed needs
-        # no is-None checks, unlike a None seed would.
+        # pool always contains the chosen move, so the loop always sets these.
         best_value_axis = float("-inf")
         for candidate in pool:
             prize_cells, pitfall_cells, denial_cells = self._candidate_partial_value(
@@ -251,17 +222,10 @@ class ReplayMixin:
         best_candidate: _AnalysisCandidate,
         best_breakdown: _AxisBreakdown,
     ) -> tuple[str, _AnalysisCandidate] | None:
-        # Reports a plain actual-vs-best comparison, no computed delta - the
-        # two raw values are enough to compare at a glance - but never as one
-        # blended "score": denial carries no real total_score() weight (a
-        # pure cell-count heuristic, see _candidate_value), so mixing it into
-        # the same number as prize/pitfall/enclosure would mislabel a heuristic
-        # as real points. Whichever axis actually drove the gap (same
-        # weighted-gap comparison and tie order as before: prize > pitfall >
-        # denial > enclosure) picks which pair of numbers to show and names
-        # itself in a short label - "denied N cells" already names its own
-        # axis, so only the points branch needs an explicit label suffix to
-        # disambiguate prize/pitfall/enclosure from each other.
+        # Reports actual-vs-best as two raw values, never one blended score:
+        # denial is a cell-count heuristic with no real point weight, so it's
+        # shown as its own "denied N cells" line. The largest weighted gap
+        # (tie order prize > pitfall > denial > enclosure) picks which line to show.
         if best_value_axis <= chosen_total:
             return None
         chosen_prize, chosen_pitfall, chosen_denial, chosen_enclosure = chosen_breakdown
@@ -297,15 +261,10 @@ class ReplayMixin:
         return (message, best_candidate)
 
     def _turn_analyses(self, game: Game) -> dict[int, tuple[str, _AnalysisCandidate]]:
-        # Whole-game, one incremental O(N) walk (same shape as _score_history)
-        # rather than N separate from-scratch board reconstructions - cached
-        # below since this is the one case in Renderer where recompute-every-
-        # frame is actually too expensive to skip a cache (unlike everywhere
-        # else here, which is cheap enough to just redo each draw() call).
-        # Cache key holds the actual game object (compared via `is`), not
-        # id(game): an int id can be reused once an earlier game is garbage
-        # collected, causing a false cache hit against an unrelated game -
-        # holding a live reference here prevents that outright.
+        # One incremental O(N) walk, cached - the one place in Renderer where
+        # recompute-every-frame is too expensive. The cache key holds the game
+        # object itself (compared via `is`), not id(game), which could be
+        # reused after GC and cause a false hit against an unrelated game.
         if self._turn_analyses_cache is not None:
             cached_game, cached_history_len, cached_analyses = self._turn_analyses_cache
             if cached_game is game and cached_history_len == len(game.history):

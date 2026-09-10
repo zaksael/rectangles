@@ -23,9 +23,7 @@ class PanelMixin:
 
     def _wrap_suffixes(self, suffixes: list[str], font: pygame.font.Font, max_width: int) -> list[str]:
         # Packs whole suffix items onto a line, never splitting one mid-item
-        # (unlike _wrap_text's word-wrap, which would break "Prize 1" apart) -
-        # up to 6 items can appear at once with every house rule on, which no
-        # longer reliably fits one line (see PANEL_SCORE_ROW_HEIGHT above).
+        # (unlike _wrap_text, which would break "Prize 1" apart).
         lines = [suffixes[0]]
         for item in suffixes[1:]:
             candidate = "  ".join((lines[-1], item))
@@ -239,9 +237,8 @@ class PanelMixin:
         if series.prize_enabled:
             if panel:
                 return [("Rnd", 32), ("P1", 88), ("F", 34), ("P2", 88), ("F", 34)]
-            # Centered on the whole window (board + panel) like the rest of the overlay's
-            # text, so this must stay narrow enough that it doesn't creep past the board's
-            # right edge into the panel's own (separately drawn) series table.
+            # The overlay table is window-centered, so keep it narrow enough not
+            # to creep past the board's right edge into the panel's own table.
             return [("Rnd", 60), ("P1", 130), ("F", 65), ("P2", 130), ("F", 65)]
         if panel:
             return [("Rnd", 40), ("P1", 126), ("P2", 126)]
@@ -279,17 +276,15 @@ class PanelMixin:
             y += row_height
 
     def _panel_series_rows(self, series: Series) -> tuple[list[list[str]], int]:
-        # Caps the panel's (compact, always-visible) table at PANEL_SERIES_MAX_ROWS
-        # lines regardless of series length, keeping the totals row and the most
-        # recent rounds, with older rounds folded behind a "+N earlier" note - the
-        # full round-by-round table is always available on the game-over overlay,
-        # which isn't bound by this same fixed-pixel panel budget.
+        # Caps the panel table at PANEL_SERIES_MAX_ROWS, keeping the totals row
+        # and most recent rounds; older rounds fold behind a "+N earlier" note.
+        # The full table is always on the game-over overlay.
         rows = self._series_table_rows(series)
-        max_data_rows = layout.PANEL_SERIES_MAX_ROWS - 1  # minus the header line
+        max_data_rows = layout.PANEL_SERIES_MAX_ROWS - 1
         if len(rows) <= max_data_rows:
             return rows, 0
         round_rows, totals_row = rows[:-1], rows[-1]
-        keep = max_data_rows - 2  # totals row + the "N earlier" note both reserved
+        keep = max_data_rows - 2  # reserve rows for the totals row and the "N earlier" note
         visible_rounds = round_rows[-keep:] if keep > 0 else []
         hidden = len(round_rows) - len(visible_rounds)
         return visible_rounds + [totals_row], hidden

@@ -17,9 +17,7 @@ def handle_replay_event(event: pygame.event.Event, ui_state: UIState, game: Game
     if event.type == pygame.QUIT:
         return False
     if event.type == pygame.KEYDOWN:
-        # Any keyboard nav counts as taking manual control - none of these
-        # keys are bound to Play/speed (click-only), so this is safe to do
-        # unconditionally before the specific key dispatch below.
+        # Any keyboard nav takes manual control and stops autoplay.
         ui_state.replay_autoplay = False
         if event.key == pygame.K_ESCAPE:
             ui_state.screen = Screen.PLAYING

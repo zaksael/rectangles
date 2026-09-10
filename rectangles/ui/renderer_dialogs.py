@@ -93,8 +93,7 @@ class DialogsMixin:
             self._button(layout.GAME_OVER_BRACKET_BUTTON_RECT, "Bracket")
 
         if series is not None and series.rounds:
-            # Pushed down an extra row when the Bracket button is also drawn
-            # below the New Game/Replay/Exit row, so the two never overlap.
+            # Pushed down a row when the Bracket button is present, so they don't overlap.
             table_top = new_game_rect.bottom + 40
             if tournament is not None:
                 table_top = layout.GAME_OVER_BRACKET_BUTTON_RECT.bottom + 24

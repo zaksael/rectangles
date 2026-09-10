@@ -116,10 +116,8 @@ def handle_settings_event(event: pygame.event.Event, ui_state: UIState) -> bool:
     if event.type == pygame.MOUSEWHEEL:
         _handle_settings_mousewheel(event, ui_state)
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        # Click positions are in real-window coordinates; map back into the
-        # design canvas first, then account for the settings content itself
-        # possibly being scrolled up within a taller virtual surface (see
-        # Renderer._settings_surface) before hit-testing.
+        # Map to design coords, then add the scroll offset (rects are in
+        # unscrolled content space) before hit-testing.
         design_x, design_y = _design_pos(event.pos)
         pos = (design_x, design_y + ui_state.settings_scroll)
         return _handle_settings_left_click(pos, ui_state)
