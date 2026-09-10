@@ -143,12 +143,10 @@ class PanelMixin:
                 self._button(layout.REROLL_WILDCARD_BUTTON_RECT, self._reroll_label(game, short=True))
         elif game.state == TurnState.CHOOSING_PLACEMENT:
             a, b = game.last_roll
+            w, h = ui_state.current_dims
             self._text(f"{a} x {b}", (x, y), self.font_dice)
             y += 36
-            w, h = ui_state.current_dims
-            self._text(f"Placing: {w} x {h}", (x, y))
-            y += 26
-            self._text("Click the board to place", (x, y), self.font_small, MUTED_TEXT_COLOR)
+            self._text(f"Placing {w}x{h} - click to place", (x, y), self.font_small, MUTED_TEXT_COLOR)
             self._button(layout.ROTATE_BUTTON_RECT, "Rotate (R)")
             if game.can_reroll():
                 self._button(layout.REROLL_PLACEMENT_BUTTON_RECT, self._reroll_label(game))
@@ -156,14 +154,12 @@ class PanelMixin:
             a, b = game.last_roll
             self._text(f"{a} x {b}", (x, y), self.font_dice)
             y += 36
-            self._text("No legal placement", (x, y), self.font, (170, 40, 40))
-            y += 24
             if game.can_reroll():
-                self._text("for this roll.", (x, y), self.font_small, MUTED_TEXT_COLOR)
+                self._text("No legal placement - reroll or skip", (x, y), self.font_small, (170, 40, 40))
                 self._button(layout.REROLL_SKIPPED_BUTTON_RECT, self._reroll_label(game))
                 self._button(layout.SKIP_BUTTON_RECT, "Skip (Space)")
             else:
-                self._text("for this roll - turn skipped.", (x, y), self.font_small, MUTED_TEXT_COLOR)
+                self._text("No legal placement - turn skipped", (x, y), self.font_small, (170, 40, 40))
                 self._button(layout.CONTINUE_BUTTON_RECT, "Continue (Space)")
         elif game.state == TurnState.GAME_OVER:
             self._text("Game over - see below", (x, y), self.font, MUTED_TEXT_COLOR)
