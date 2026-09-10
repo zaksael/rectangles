@@ -102,6 +102,7 @@ class SettingsMixin:
             ("Walls", ui_state.selected_walls_enabled),
             ("Obstacles", ui_state.selected_obstacles_enabled),
             ("Pitfall", ui_state.selected_pitfall_enabled),
+            ("Steal", ui_state.selected_steal_enabled),
             ("Wildcard", ui_state.selected_wildcard_enabled),
             ("Enclosure", ui_state.selected_self_enclosed_penalty_enabled),
             ("Reroll", ui_state.selected_reroll_enabled),

@@ -1066,6 +1066,19 @@ def test_settings_pitfall_button_toggles_selection():
     assert ui_state.selected_pitfall_enabled is False
 
 
+def test_settings_steal_button_toggles_selection():
+    ui_state = UIState()
+    assert ui_state.selected_steal_enabled is False
+
+    rect = layout.settings_house_rule_button_rects("Single", ui_state.tournament_size)["Steal"]
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center)
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_steal_enabled is True
+
+    assert handle_settings_event(event, ui_state) is True
+    assert ui_state.selected_steal_enabled is False
+
+
 def test_settings_comeback_nudge_button_toggles_selection():
     ui_state = UIState()
     assert ui_state.selected_comeback_nudge_enabled is False
@@ -1090,6 +1103,7 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
     assert ui_state.selected_walls_enabled is True
     assert ui_state.selected_obstacles_enabled is True
     assert ui_state.selected_pitfall_enabled is True
+    assert ui_state.selected_steal_enabled is True
     assert ui_state.selected_wildcard_enabled is True
     assert ui_state.selected_self_enclosed_penalty_enabled is True
     assert ui_state.selected_reroll_enabled is True
@@ -1100,6 +1114,7 @@ def test_settings_all_rules_button_turns_all_on_then_all_off():
     assert ui_state.selected_walls_enabled is False
     assert ui_state.selected_obstacles_enabled is False
     assert ui_state.selected_pitfall_enabled is False
+    assert ui_state.selected_steal_enabled is False
     assert ui_state.selected_wildcard_enabled is False
     assert ui_state.selected_self_enclosed_penalty_enabled is False
     assert ui_state.selected_reroll_enabled is False

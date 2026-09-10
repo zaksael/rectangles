@@ -82,27 +82,39 @@ PITFALL_ENABLED = False
 PITFALL_PENALTY_POINTS = 10
 PITFALL_CELL_PAIRS = 2
 
+# Whether "steal" cells are seeded on the board (see Game.reset());
+# capturing one is a zero-sum transfer - the capturer gains
+# STEAL_POINTS and the opponent loses the same amount (a two-sided
+# CellEffect, unlike Prize's/Pitfall's one-sided effects). STEAL_CELL_PAIRS
+# mirrored single-cell pairs are placed each game, same placement shape as
+# Prize/Pitfall/Obstacles.
+STEAL_ENABLED = False
+STEAL_POINTS = 10
+STEAL_CELL_PAIRS = 1
+
 
 # Shared special-cell model: Prize and Pitfall used to be two
 # copy-pasted parallel subsystems (own Board frozenset, own Game bonus/
 # penalty kwarg, own Player counter, own capture/scoring lines). CellKind +
-# CellEffect collapse that into one signed-effect table so a future third
-# kind (Contested/steal, backlog #44) is a new dict entry, not a fourth
-# copy-paste.
+# CellEffect collapse that into one signed-effect table: Steal is a third
+# entry here (nonzero opponent_sign), not a fourth copy-paste, and a
+# further kind would be another entry.
 class CellKind(Enum):
     PRIZE = "prize"
     PITFALL = "pitfall"
+    STEAL = "steal"
 
 
 class CellEffect(NamedTuple):
     capturer_sign: int  # applied to the capturing player's own count
-    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Prize/Pitfall; nonzero once Contested lands)
+    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Prize/Pitfall; nonzero once Steal lands)
     points: int  # magnitude shared by both signs on one kind; overridable per-game via Game(special_cell_points=...)
 
 
 SPECIAL_CELL_KINDS: dict[CellKind, CellEffect] = {
     CellKind.PRIZE: CellEffect(+1, 0, PRIZE_BONUS_POINTS),
     CellKind.PITFALL: CellEffect(-1, 0, PITFALL_PENALTY_POINTS),
+    CellKind.STEAL: CellEffect(+1, -1, STEAL_POINTS),
 }
 
 # Once the trailing player's total_score() gap reaches this fraction of

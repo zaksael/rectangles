@@ -2,6 +2,7 @@ import pytest
 
 from rectangles.constants import (
     PRIZE_CELL_PAIRS,
+    STEAL_POINTS,
     MIN_SPECIAL_CELL_DISTANCE,
     PITFALL_PENALTY_POINTS,
     OBSTACLE_CELL_PAIRS,
@@ -580,7 +581,7 @@ def test_attempt_place_triggers_pitfall_and_total_score_reflects_penalty():
     assert p2.special_captures.get(CellKind.PITFALL, 0) == 0
     assert game.total_score(p1) == p1.total_area - PITFALL_PENALTY_POINTS
 
-    # Score can go negative - no floor, same as Enclosure Penalty/#44 Steal.
+    # Score can go negative - no floor, same as Enclosure Penalty and Steal.
     p1.special_captures[CellKind.PITFALL] = 100
     assert game.total_score(p1) < 0
 
@@ -624,6 +625,52 @@ def test_pitfall_cells_empty_when_board_too_small_for_any_candidate():
     # degrades to an empty result rather than erroring.
     game = Game(board_size=6, pitfall_enabled=True)
     assert _pitfall_cells(game) == frozenset()
+
+
+def _steal_cells(game: Game) -> frozenset[tuple[int, int]]:
+    return game.board.cells_of_kind(CellKind.STEAL)
+
+
+def test_attempt_place_captures_steal_cell_transfers_points_both_ways():
+    # Same rng-dodge as the prize/pitfall capture tests: construct disabled,
+    # then poke board.special_cells directly.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.steal_enabled = True
+    game.board.special_cells = _special(CellKind.STEAL, (5, 5))
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True
+
+    assert p1.special_captures.get(CellKind.STEAL, 0) == 1
+    assert p2.special_captures.get(CellKind.STEAL, 0) == 0
+    # Zero-sum: capturer +N, opponent -N (the opponent's loss is derived live
+    # from the capturer's count via CellEffect.opponent_sign, not stored).
+    assert game.total_score(p1) == p1.total_area + STEAL_POINTS
+    assert game.total_score(p2) == p2.total_area - STEAL_POINTS
+    assert game.total_score(p2) < 0  # no floor
+
+
+def test_steal_cells_never_overlap_prize_wall_obstacle_pitfall_cells():
+    for _ in range(30):
+        game = Game(
+            board_size=19,
+            prize_enabled=True,
+            walls_enabled=True,
+            obstacles_enabled=True,
+            pitfall_enabled=True,
+            steal_enabled=True,
+        )
+        wall_cells = {cell for edge in game.board.wall_edges for cell in edge}
+        assert not (_steal_cells(game) & _prize_cells(game))
+        assert not (_steal_cells(game) & _pitfall_cells(game))
+        assert not (_steal_cells(game) & wall_cells)
+        assert not (_steal_cells(game) & game.board.obstacle_cells)
+
+
+def test_steal_cells_empty_when_board_too_small_for_any_candidate():
+    game = Game(board_size=6, steal_enabled=True)
+    assert _steal_cells(game) == frozenset()
 
 
 def test_total_score_can_decide_a_winner_area_alone_would_not():

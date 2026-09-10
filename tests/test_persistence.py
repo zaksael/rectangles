@@ -1,7 +1,14 @@
 import json
 
 from rectangles import persistence
-from rectangles.constants import PRIZE_BONUS_POINTS, PITFALL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
+from rectangles.constants import (
+    STEAL_POINTS,
+    PRIZE_BONUS_POINTS,
+    PITFALL_PENALTY_POINTS,
+    PLAYER_1,
+    PLAYER_2,
+    CellKind,
+)
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Cell, SpecialCell
 from rectangles.series import Series
@@ -267,6 +274,42 @@ def test_round_trip_preserves_pitfall_cells_state(tmp_path):
     assert loaded.board.cells_of_kind(CellKind.PITFALL) == {(5, 5)}
     assert loaded.players[PLAYER_1].special_captures.get(CellKind.PITFALL, 0) == 1
     assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area - PITFALL_PENALTY_POINTS
+
+
+def test_round_trip_preserves_steal_cells_state(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game.steal_enabled = True
+    game.board.special_cells = frozenset({SpecialCell(CellKind.STEAL, Cell(5, 5), pair_id=0)})
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the steal cell at (5, 5)
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    assert p1.special_captures.get(CellKind.STEAL, 0) == 1
+
+    persistence.save_game(game, path=path)
+    loaded, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is None
+    assert loaded.steal_enabled is True
+    assert loaded.board.cells_of_kind(CellKind.STEAL) == {(5, 5)}
+    assert loaded.players[PLAYER_1].special_captures.get(CellKind.STEAL, 0) == 1
+    assert loaded.total_score(loaded.players[PLAYER_1]) == p1.total_area + STEAL_POINTS
+    assert loaded.total_score(loaded.players[PLAYER_2]) == p2.total_area - STEAL_POINTS
+
+
+def test_load_game_old_format_without_steal_key_defaults_disabled(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    data = persistence.to_dict(game)
+    del data["steal_enabled"]
+    path.write_text(json.dumps(data))
+
+    result = persistence.load_game(path)
+
+    assert result is not None
+    loaded, _ = result
+    assert loaded.steal_enabled is False
+    assert loaded.board.cells_of_kind(CellKind.STEAL) == frozenset()
 
 
 def test_load_game_old_format_without_pitfall_cells_key_defaults_disabled(tmp_path):

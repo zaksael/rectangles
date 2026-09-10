@@ -128,6 +128,14 @@ def test_new_game_uses_series_pitfall_settings():
     assert game.points_for(CellKind.PITFALL) == 25
 
 
+def test_new_game_uses_series_steal_setting():
+    series = Series(length=5, board_size=11, skip_limit=4, steal_enabled=True)
+
+    game = series.new_game()
+
+    assert game.steal_enabled is True
+
+
 def test_new_game_defaults_prize_disabled():
     series = Series(length=3, board_size=11, skip_limit=2)
 

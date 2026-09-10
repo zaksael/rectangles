@@ -87,6 +87,20 @@ red X, which disappears once a piece covers it, and the live panel shows the
 count separately from your score (e.g. "Pitfall 1") so it's never silently baked
 into the total.
 
+## Steal
+
+An optional mode, off by default. When turned on, two steal cells are seeded on
+the board as a single mirrored pair, randomly placed and kept clear of both
+starting corners and every other special cell (Prize's cells, Walls' lines,
+Obstacles, Pitfall's cells), so they never overlap. Covering a steal cell is a
+zero-sum transfer: you gain 10 points *and* your opponent loses 10, a 20-point
+swing in the score gap for a single cell — higher stakes than Prize's pure
+gain or Pitfall's pure loss. Scores aren't floored at 0, so being on the wrong
+end of enough steals can push you negative. Shown on the board as a hollow
+purple diamond, which disappears once a piece covers it; the live panel shows
+the running swing on both players' rows (e.g. "Steal +10" for the capturer,
+"Steal -10" for the opponent) so it's never silently baked into the total.
+
 ## Wildcard Roll
 
 An optional mode, off by default. When turned on, every roll that comes up
@@ -173,7 +187,7 @@ Basic stays fully random for both and never rerolls.
 
 Instead of a single game, you can play a 3-round or 5-round series against
 the same opponent: board size, skip limit, and mode settings (including
-Prize, Walls, Obstacles, Pitfall, Wildcard Roll, Enclosure Penalty,
+Prize, Walls, Obstacles, Pitfall, Steal, Wildcard Roll, Enclosure Penalty,
 Reroll, and Comeback, if enabled) are locked in once for every round. Who
 goes first alternates each round (Player 1 starts round 1, Player 2 starts
 round 2, and so on), regardless of who won the previous round. Every
@@ -233,7 +247,8 @@ quits.
 Picking a mode leads to a settings screen tailored to it — pick a board size
 and skip limit (preset buttons), optionally toggle
 [Prize](#prize), [Walls](#walls),
-[Obstacles](#obstacles), [Pitfall](#pitfall), [Wildcard Roll](#wildcard-roll),
+[Obstacles](#obstacles), [Pitfall](#pitfall), [Steal](#steal),
+[Wildcard Roll](#wildcard-roll),
 [Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll), and
 [Comeback](#comeback) (or click **Turn All ON**/**Turn All OFF** to flip all
 of them at once), and whatever else

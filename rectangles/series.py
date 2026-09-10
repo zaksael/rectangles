@@ -22,6 +22,7 @@ class Series:
     walls_enabled: bool = False
     obstacles_enabled: bool = False
     pitfall_enabled: bool = False
+    steal_enabled: bool = False
     special_cell_points: dict[str, int] = field(default_factory=dict)
     wildcard_enabled: bool = False
     self_enclosed_penalty_enabled: bool = False
@@ -67,6 +68,7 @@ class Series:
             walls_enabled=self.walls_enabled,
             obstacles_enabled=self.obstacles_enabled,
             pitfall_enabled=self.pitfall_enabled,
+            steal_enabled=self.steal_enabled,
             special_cell_points=self.special_cell_points,
             wildcard_enabled=self.wildcard_enabled,
             self_enclosed_penalty_enabled=self.self_enclosed_penalty_enabled,

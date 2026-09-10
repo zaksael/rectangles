@@ -28,8 +28,7 @@ class ReplayMixin:
     def _draw_replay_board(self, game: Game, step: int) -> None:
         self._draw_grid_cells(game)
 
-        self._draw_prize_cells(game, upto=step)
-        self._draw_pitfall_cells(game, upto=step)
+        self._draw_special_cells(game, upto=step)
         self._draw_obstacles(game)
 
         for rect in self._placed_upto(game, step):

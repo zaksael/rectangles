@@ -41,6 +41,12 @@ def _with_pitfalls(game, *cells):
     return game
 
 
+def _with_steal(game, *cells):
+    game.steal_enabled = True
+    game.board.special_cells |= _special(CellKind.STEAL, *cells)
+    return game
+
+
 def _finished_game(board_size, p1_area, p2_area):
     game = Game(board_size=board_size)
     if p1_area:
@@ -114,6 +120,19 @@ def test_draw_pitfall_cells_smoke(renderer):
     if not game.check_game_over():
         game.end_turn()
     renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
+def test_draw_steal_cells_smoke(renderer):
+    # Exercises the board diamond marker plus both panel suffix branches:
+    # "Steal +N" on the capturer's row, "Steal -N" on the victim's.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6]))
+    game = _with_steal(game, (5, 5), (9, 9))  # (9,9) left uncaptured -> board marker
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True  # captures the steal cell at (5, 5)
+    if not game.check_game_over():
+        game.end_turn()
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+    renderer.draw(game, UIState(screen=Screen.REPLAY, replay_step=1))
 
 
 def test_draw_walls_smoke(renderer):

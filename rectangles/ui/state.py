@@ -7,6 +7,7 @@ from ..constants import (
     BOARD_SIZE,
     BOT_DIFFICULTY_PRESETS,
     COMEBACK_NUDGE_ENABLED,
+    STEAL_ENABLED,
     PRIZE_ENABLED,
     GAME_MODE_PRESETS,
     PITFALL_ENABLED,
@@ -50,6 +51,7 @@ class UIState:
     selected_walls_enabled: bool = WALLS_ENABLED
     selected_obstacles_enabled: bool = OBSTACLES_ENABLED
     selected_pitfall_enabled: bool = PITFALL_ENABLED
+    selected_steal_enabled: bool = STEAL_ENABLED
     selected_wildcard_enabled: bool = WILDCARD_ENABLED
     selected_self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED
     selected_reroll_enabled: bool = REROLL_ENABLED
@@ -98,6 +100,7 @@ class UIState:
             and self.selected_walls_enabled
             and self.selected_obstacles_enabled
             and self.selected_pitfall_enabled
+            and self.selected_steal_enabled
             and self.selected_wildcard_enabled
             and self.selected_self_enclosed_penalty_enabled
             and self.selected_reroll_enabled
@@ -110,6 +113,7 @@ class UIState:
         self.selected_walls_enabled = value
         self.selected_obstacles_enabled = value
         self.selected_pitfall_enabled = value
+        self.selected_steal_enabled = value
         self.selected_wildcard_enabled = value
         self.selected_self_enclosed_penalty_enabled = value
         self.selected_reroll_enabled = value

@@ -10,6 +10,8 @@ from .constants import (
     COMEBACK_NUDGE_ENABLED,
     COMEBACK_NUDGE_EXTRA_REROLLS,
     COMEBACK_NUDGE_THRESHOLD_FRACTION,
+    STEAL_CELL_PAIRS,
+    STEAL_ENABLED,
     DICE_MAX,
     DICE_MIN,
     PRIZE_CELL_PAIRS,
@@ -79,6 +81,7 @@ class Game:
         walls_enabled: bool = WALLS_ENABLED,
         obstacles_enabled: bool = OBSTACLES_ENABLED,
         pitfall_enabled: bool = PITFALL_ENABLED,
+        steal_enabled: bool = STEAL_ENABLED,
         special_cell_points: dict[str, int] | None = None,
         wildcard_enabled: bool = WILDCARD_ENABLED,
         self_enclosed_penalty_enabled: bool = SELF_ENCLOSED_PENALTY_ENABLED,
@@ -92,6 +95,7 @@ class Game:
         self.walls_enabled = walls_enabled
         self.obstacles_enabled = obstacles_enabled
         self.pitfall_enabled = pitfall_enabled
+        self.steal_enabled = steal_enabled
         self.special_cell_points = dict(special_cell_points or {})
         self.wildcard_enabled = wildcard_enabled
         self.self_enclosed_penalty_enabled = self_enclosed_penalty_enabled
@@ -125,9 +129,18 @@ class Game:
             if self.pitfall_enabled
             else frozenset()
         )
+        steal_cells = (
+            self._steal_cells(prize_cells, wall_edges, obstacle_cells, pitfall_cells)
+            if self.steal_enabled
+            else frozenset()
+        )
         special_cells: set[SpecialCell] = set()
         pair_id = 0
-        for kind, cells in ((CellKind.PRIZE, prize_cells), (CellKind.PITFALL, pitfall_cells)):
+        for kind, cells in (
+            (CellKind.PRIZE, prize_cells),
+            (CellKind.PITFALL, pitfall_cells),
+            (CellKind.STEAL, steal_cells),
+        ):
             for r, c in cells:
                 special_cells.add(SpecialCell(kind, Cell(r, c), pair_id))
                 pair_id += 1
@@ -264,6 +277,21 @@ class Game:
     ) -> frozenset[tuple[int, int]]:
         occupied = set(prize_cells) | {cell for edge in wall_edges for cell in edge} | set(obstacle_cells)
         return self._mirrored_cell_pairs(PITFALL_CELL_PAIRS, occupied)
+
+    def _steal_cells(
+        self,
+        prize_cells: frozenset[tuple[int, int]],
+        wall_edges: frozenset[frozenset[tuple[int, int]]],
+        obstacle_cells: frozenset[tuple[int, int]],
+        pitfall_cells: frozenset[tuple[int, int]],
+    ) -> frozenset[tuple[int, int]]:
+        occupied = (
+            set(prize_cells)
+            | {cell for edge in wall_edges for cell in edge}
+            | set(obstacle_cells)
+            | set(pitfall_cells)
+        )
+        return self._mirrored_cell_pairs(STEAL_CELL_PAIRS, occupied)
 
     @property
     def current_player(self) -> Player:

@@ -100,6 +100,12 @@ class PanelMixin:
             pitfall = player.special_captures.get(CellKind.PITFALL, 0)
             if pitfall:
                 suffixes.append(f"Pitfall {pitfall}")
+            steal_swing = (
+                player.special_captures.get(CellKind.STEAL, 0)
+                - game._other_player(player).special_captures.get(CellKind.STEAL, 0)
+            ) * game.points_for(CellKind.STEAL)
+            if steal_swing:
+                suffixes.append(f"Steal {steal_swing:+d}")
             if game.self_enclosed_penalty_enabled:
                 penalty_cells = game.board.self_enclosed_cell_counts().get(player.id, 0)
                 if penalty_cells:

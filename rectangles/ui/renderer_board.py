@@ -10,6 +10,28 @@ from . import colors, layout
 from .state import UIState
 
 
+def _prize_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
+    pygame.draw.polygon(surface, colors.PRIZE_COLOR, [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)])
+
+
+def _pitfall_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
+    pygame.draw.line(surface, colors.PITFALL_CELL_COLOR, (cx - half, cy - half), (cx + half, cy + half), width=4)
+    pygame.draw.line(surface, colors.PITFALL_CELL_COLOR, (cx - half, cy + half), (cx + half, cy - half), width=4)
+
+
+def _steal_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
+    pygame.draw.polygon(
+        surface, colors.STEAL_CELL_COLOR, [(cx, cy - half), (cx + half, cy), (cx, cy + half), (cx - half, cy)], width=4
+    )
+
+
+_SPECIAL_CELL_MARKERS = {
+    CellKind.PRIZE: _prize_marker,
+    CellKind.PITFALL: _pitfall_marker,
+    CellKind.STEAL: _steal_marker,
+}
+
+
 class BoardMixin:
     def _draw_grid_cells(self, game: Game) -> None:
         for r in range(game.board.size):
@@ -21,8 +43,7 @@ class BoardMixin:
     def _draw_board(self, game: Game) -> None:
         self._draw_grid_cells(game)
 
-        self._draw_prize_cells(game)
-        self._draw_pitfall_cells(game)
+        self._draw_special_cells(game)
         self._draw_obstacles(game)
 
         for player in game.players.values():
@@ -81,36 +102,22 @@ class BoardMixin:
                 left = layout.cell_rect(r1, c1, size).left
                 pygame.draw.line(self.screen, colors.WALL_LINE_COLOR, (left, y), (left + px, y), width=4)
 
-    def _draw_prize_cells(self, game: Game, upto: int | None = None) -> None:
+    def _draw_special_cells(self, game: Game, upto: int | None = None) -> None:
+        # Prize/Pitfall/Steal cells are all capturable like any empty cell (not
+        # permanent blockers like Obstacles), so each marker disappears once a
+        # piece covers it - hence the shared covered-check. Only the glyph
+        # differs per kind (see _SPECIAL_CELL_MARKERS).
         covered = (
             None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
         )
         px = layout.cell_px(game.board.size)
-        for r, c in game.board.cells_of_kind(CellKind.PRIZE):
-            is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
-            if is_covered:
-                continue
-            cx, cy = layout.cell_rect(r, c, game.board.size).center
-            half = px // 4
-            points = [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)]
-            pygame.draw.polygon(self.screen, colors.PRIZE_COLOR, points)
-
-    def _draw_pitfall_cells(self, game: Game, upto: int | None = None) -> None:
-        # Same covered-check shape as _draw_prize_cells - a pitfall is capturable
-        # like a prize (not a permanent blocker like an obstacle), so its
-        # marker disappears once a piece covers it.
-        covered = (
-            None if upto is None else {cell for rect in self._placed_upto(game, upto) for cell in rect.cells()}
-        )
-        px = layout.cell_px(game.board.size)
-        for r, c in game.board.cells_of_kind(CellKind.PITFALL):
-            is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
-            if is_covered:
-                continue
-            cx, cy = layout.cell_rect(r, c, game.board.size).center
-            half = px // 4
-            pygame.draw.line(self.screen, colors.PITFALL_CELL_COLOR, (cx - half, cy - half), (cx + half, cy + half), width=4)
-            pygame.draw.line(self.screen, colors.PITFALL_CELL_COLOR, (cx - half, cy + half), (cx + half, cy - half), width=4)
+        for kind, draw_marker in _SPECIAL_CELL_MARKERS.items():
+            for r, c in game.board.cells_of_kind(kind):
+                is_covered = (r, c) in covered if covered is not None else game.board.owner_at(r, c) is not None
+                if is_covered:
+                    continue
+                cx, cy = layout.cell_rect(r, c, game.board.size).center
+                draw_marker(self.screen, cx, cy, px // 4)
 
     def _draw_obstacles(self, game: Game) -> None:
         for r, c in game.board.obstacle_cells:

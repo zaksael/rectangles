@@ -47,6 +47,19 @@ def test_bracket_threads_comeback_nudge_setting_into_series_and_tiebreak_game():
     assert game.comeback_nudge_enabled is True
 
 
+def test_bracket_threads_steal_setting_into_series_and_tiebreak_game():
+    bracket = Bracket(
+        participants=_participants(2),
+        series_length=3,
+        board_size=11,
+        skip_limit=4,
+        steal_enabled=True,
+    )
+
+    assert bracket.new_series_for_current_match().steal_enabled is True
+    assert bracket.new_tiebreak_game().steal_enabled is True
+
+
 def test_seeding_pairs_every_participant_exactly_once():
     # No shuffling (identity permutation): randint always returns the
     # untouched index i, so order == [0, 1, 2, 3].
