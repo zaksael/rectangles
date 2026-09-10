@@ -10,19 +10,31 @@ from . import colors, layout
 from .state import UIState
 
 
+# Prize / Pitfall / Steal share one glyph family built from a single centered
+# bar: Prize is "+", Pitfall is "-" (Prize minus its vertical bar), Steal is
+# "+-" stacked - it grants a prize to the capturer and a pitfall to the
+# opponent, so its glyph is literally the other two composed.
+def _bar(surface: pygame.Surface, cx: int, cy: int, w: int, h: int, color: tuple[int, int, int]) -> None:
+    pygame.draw.rect(surface, color, pygame.Rect(cx - w // 2, cy - h // 2, w, h))
+
+
 def _prize_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
-    pygame.draw.polygon(surface, colors.PRIZE_COLOR, [(cx - half, cy - half), (cx - half, cy + half), (cx + half, cy)])
+    t = max(3, half // 2)
+    _bar(surface, cx, cy, 2 * half, t, colors.PRIZE_COLOR)
+    _bar(surface, cx, cy, t, 2 * half, colors.PRIZE_COLOR)
 
 
 def _pitfall_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
-    pygame.draw.line(surface, colors.PITFALL_CELL_COLOR, (cx - half, cy - half), (cx + half, cy + half), width=4)
-    pygame.draw.line(surface, colors.PITFALL_CELL_COLOR, (cx - half, cy + half), (cx + half, cy - half), width=4)
+    t = max(3, half // 2)
+    _bar(surface, cx, cy, 2 * half, t, colors.PITFALL_CELL_COLOR)
 
 
 def _steal_marker(surface: pygame.Surface, cx: int, cy: int, half: int) -> None:
-    pygame.draw.polygon(
-        surface, colors.STEAL_CELL_COLOR, [(cx, cy - half), (cx + half, cy), (cx, cy + half), (cx - half, cy)], width=4
-    )
+    t = max(3, half // 2)
+    arm = max(3, half * 3 // 4)
+    _bar(surface, cx, cy - arm, 2 * arm, t, colors.STEAL_CELL_COLOR)  # plus (top)
+    _bar(surface, cx, cy - arm, t, 2 * arm, colors.STEAL_CELL_COLOR)
+    _bar(surface, cx, cy + arm, 2 * arm, t, colors.STEAL_CELL_COLOR)  # minus (bottom)
 
 
 _SPECIAL_CELL_MARKERS = {
