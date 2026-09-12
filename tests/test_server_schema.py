@@ -1,5 +1,6 @@
 from rectangles.constants import PLAYER_1, CellKind
 from rectangles.game import Game, TurnState
+from rectangles.models import Cell, SpecialCell
 from server.schema import (
     ChooseWildcardMsg,
     ErrorMsg,
@@ -217,6 +218,28 @@ def test_serialize_game_comeback_nudge_enabled():
     game = Game(board_size=19, comeback_nudge_enabled=True)
     comeback_nudge = serialize_game(game)["houseRules"]["comebackNudge"]
     assert comeback_nudge == {"enabled": True}
+
+
+def test_serialize_game_player_score_total_area_and_total_score():
+    game = Game(board_size=19)
+    game.board.place(game.players[PLAYER_1], (0, 0), w=3, h=4)
+
+    score = serialize_game(game)["players"]["1"]["score"]
+
+    assert score["totalArea"] == 12
+    assert score["totalScore"] == 12  # no house-rule bonuses/penalties active
+
+
+def test_serialize_game_player_score_potential_area_and_prize_points():
+    game = Game(board_size=4, prize_enabled=True, special_cell_points={"prize": 7})
+    p1 = game.players[PLAYER_1]
+    game.board.special_cells = frozenset({SpecialCell(CellKind.PRIZE, Cell(0, 1), pair_id=0)})
+    game.board.place(p1, (0, 0), w=1, h=1)
+
+    potential = serialize_game(game)["players"]["1"]["score"]["potential"]
+
+    assert potential["area"] == 15  # every other cell on the 4x4 board is still open
+    assert potential["prize"]["points"] == 7
 
 
 def test_serialize_game_wildcard_disabled_by_default():
