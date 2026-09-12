@@ -322,6 +322,15 @@ most recent entries plus a note when there's more, so the panel always fits.
   skip, most recent first; scroll the mouse wheel over it to see older
   entries once a match runs past the visible rows.
 
+### Experimental: server-backed play
+
+Set `RECTANGLES_USE_SERVER=1` before launching to make **Single** mode play
+over a local WebSocket server instead of in-process — the server starts
+automatically in the background, so nothing else changes about how you run
+the game. Everything else (offline play, Series, Tournament) is unaffected;
+this is off by default. House rule toggles are currently ignored in this
+mode regardless of what's selected on the settings screen.
+
 ## Tests
 
 ```bash

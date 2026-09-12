@@ -5,12 +5,13 @@ import os
 import pygame
 
 from .. import persistence
-from ..constants import REPLAY_SPEED_MS
+from ..constants import PLAYER_2, REPLAY_SPEED_MS
 from ..game import Game, TurnState
 from ..series import Series
 from ..tournament import Bracket
 from . import input as game_input
 from . import layout
+from .net_adapter import ServerGameAdapter
 from .renderer import Renderer
 from .state import Screen, UIState
 
@@ -21,6 +22,36 @@ AUTO_ACTION_DELAY_MS = 500
 # in 1x coords, shrinking every button's clickable area. Must precede pygame.init().
 os.environ.setdefault("SDL_VIDEO_HIGHDPI_DISABLED", "1")
 
+# Opt-in only - today's offline single-player experience stays the
+# default. When set, Single-mode games play over the WebSocket protocol
+# against an auto-started local server instead of an in-process Game, to
+# prove the client/server boundary.
+_USE_SERVER = os.environ.get("RECTANGLES_USE_SERVER") == "1"
+
+
+def _new_game(ui_state: UIState, server_url: str | None) -> Game | ServerGameAdapter:
+    if server_url is not None:
+        query = (
+            f"?protocolVersion=1&boardSize={ui_state.selected_board_size}"
+            f"&skipLimit={ui_state.selected_skip_limit}"
+        )
+        if ui_state.selected_bot_enabled:
+            query += f"&botSeats={PLAYER_2}&botDifficulty={ui_state.selected_bot_difficulty}"
+        return ServerGameAdapter(f"{server_url}{query}")
+    return Game(
+        board_size=ui_state.selected_board_size,
+        skip_limit=ui_state.selected_skip_limit,
+        prize_enabled=ui_state.selected_prize_enabled,
+        walls_enabled=ui_state.selected_walls_enabled,
+        obstacles_enabled=ui_state.selected_obstacles_enabled,
+        pitfall_enabled=ui_state.selected_pitfall_enabled,
+        steal_enabled=ui_state.selected_steal_enabled,
+        wildcard_enabled=ui_state.selected_wildcard_enabled,
+        self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
+        reroll_enabled=ui_state.selected_reroll_enabled,
+        comeback_nudge_enabled=ui_state.selected_comeback_nudge_enabled,
+    )
+
 
 def run() -> None:
     pygame.init()
@@ -28,7 +59,7 @@ def run() -> None:
     screen = pygame.display.set_mode((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT), pygame.RESIZABLE)
     clock = pygame.time.Clock()
 
-    game: Game | None = None
+    game: Game | ServerGameAdapter | None = None
     series: Series | None = None
     tournament: Bracket | None = None
     series_game_recorded = False
@@ -37,6 +68,12 @@ def run() -> None:
     replay_autoplay_at: int | None = None
     ui_state = UIState()
     renderer = Renderer(screen)
+
+    server_url: str | None = None
+    if _USE_SERVER:
+        from server.app import run_in_background
+
+        server_url, _ = run_in_background()
 
     running = True
     while running:
@@ -64,23 +101,21 @@ def run() -> None:
                 if not game_input.handle_event(event, game, ui_state, series, tournament):
                     running = False
 
+        if isinstance(game, ServerGameAdapter) and (
+            ui_state.game_requested
+            or ui_state.series_requested
+            or ui_state.tournament_requested
+            or ui_state.resume_requested
+        ):
+            game.close()
+
         if ui_state.game_requested:
-            game = Game(
-                board_size=ui_state.selected_board_size,
-                skip_limit=ui_state.selected_skip_limit,
-                prize_enabled=ui_state.selected_prize_enabled,
-                walls_enabled=ui_state.selected_walls_enabled,
-                obstacles_enabled=ui_state.selected_obstacles_enabled,
-                pitfall_enabled=ui_state.selected_pitfall_enabled,
-                steal_enabled=ui_state.selected_steal_enabled,
-                wildcard_enabled=ui_state.selected_wildcard_enabled,
-                self_enclosed_penalty_enabled=ui_state.selected_self_enclosed_penalty_enabled,
-                reroll_enabled=ui_state.selected_reroll_enabled,
-                comeback_nudge_enabled=ui_state.selected_comeback_nudge_enabled,
-            )
+            game = _new_game(ui_state, server_url)
             series = None
             tournament = None
-            ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
+            ui_state.active_bot_seats = (
+                {} if isinstance(game, ServerGameAdapter) else game_input.plain_bot_seats(ui_state)
+            )
             series_game_recorded = False
             game_is_series_round = True
             auto_action_at = None
@@ -255,7 +290,13 @@ def run() -> None:
         renderer.draw(game, ui_state, series, tournament)
         clock.tick(FPS)
 
-    if persistence.should_save_on_exit(game, series, tournament):
+    if isinstance(game, ServerGameAdapter):
+        # A server-backed game can't be serialized by persistence.py (it
+        # reads Game-only fields the adapter never populates) - and per
+        # ROADMAP.md, save/load for networked games isn't this milestone's
+        # concern anyway.
+        game.close()
+    elif persistence.should_save_on_exit(game, series, tournament):
         persistence.save_game(game, series, tournament)
 
     pygame.quit()

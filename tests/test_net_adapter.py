@@ -1,28 +1,19 @@
-import threading
 import time
 
 import pytest
-import uvicorn
 
 from rectangles.ui.net_adapter import ServerGameAdapter
-from server.app import app
+from server.app import run_in_background
 from server.schema import PlaceMsg, RollMsg, SurrenderMsg
 
 
 @pytest.fixture
 def live_server_url():
-    config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning")
-    server = uvicorn.Server(config)
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-    while not server.started:
-        time.sleep(0.01)
-    port = server.servers[0].sockets[0].getsockname()[1]
+    url, stop = run_in_background()
     try:
-        yield f"ws://127.0.0.1:{port}/ws"
+        yield url
     finally:
-        server.should_exit = True
-        thread.join(timeout=5)
+        stop()
 
 
 @pytest.fixture
@@ -37,6 +28,26 @@ def make_adapter(live_server_url):
     yield factory
     for adapter in adapters:
         adapter.close()
+
+
+def test_check_game_over_is_a_local_no_op(make_adapter):
+    # The server already folds check_game_over()+end_turn() into its
+    # place/skip handling - see end_turn()'s own no-op for the same reason.
+    adapter = make_adapter()
+    assert adapter.check_game_over() is False
+
+
+def test_can_reroll_is_always_false(make_adapter):
+    # Reroll isn't wired server-side yet (Phase F) - no connect param
+    # exists to enable it, so a server-backed game's real answer is always
+    # False today.
+    adapter = make_adapter()
+    assert adapter.can_reroll() is False
+
+
+def test_unreachable_server_raises_instead_of_hanging():
+    with pytest.raises((ConnectionError, TimeoutError, OSError)):
+        ServerGameAdapter("ws://127.0.0.1:1/ws?protocolVersion=1")
 
 
 def test_close_stops_the_background_thread(make_adapter):

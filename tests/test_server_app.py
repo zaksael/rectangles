@@ -4,8 +4,22 @@ from starlette.websockets import WebSocketDisconnect
 
 from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, TurnState
-from server.app import ActionError, _apply_action, app
+from rectangles.ui.net_adapter import ServerGameAdapter
+from server.app import ActionError, _apply_action, app, run_in_background
 from server.schema import ErrorReason
+
+
+def test_run_in_background_serves_and_stops():
+    url, stop = run_in_background()
+    try:
+        adapter = ServerGameAdapter(f"{url}?protocolVersion=1")
+        assert adapter.board.size == 19
+        adapter.close()
+    finally:
+        stop()
+
+    with pytest.raises((ConnectionError, OSError)):
+        ServerGameAdapter(f"{url}?protocolVersion=1")
 
 
 def test_ws_accepts_and_closes():

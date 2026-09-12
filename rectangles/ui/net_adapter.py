@@ -31,6 +31,7 @@ _TURN_STATE_FROM_WIRE = {v: k for k, v in schema._TURN_STATE_NAMES.items()}
 _GAME_OVER_REASON_FROM_WIRE = {v: k for k, v in schema._GAME_OVER_REASON_NAMES.items()}
 
 _REQUEST_TIMEOUT = 10.0
+_CONNECT_TIMEOUT = 10.0
 
 
 def _player_from_wire(player_id: int, board: Board, data: dict) -> Player:
@@ -70,11 +71,16 @@ class ServerGameAdapter:
         self._ws = None
         self._pending_reply: queue.Queue | None = None
         self._connected = threading.Event()
+        self._connect_error: BaseException | None = None
 
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run_loop, daemon=False)
         self._thread.start()
-        self._connected.wait()
+        connected = self._connected.wait(timeout=_CONNECT_TIMEOUT)
+        if self._connect_error is not None:
+            raise self._connect_error
+        if not connected:
+            raise TimeoutError(f"timed out connecting to {url}")
 
     def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
@@ -82,11 +88,16 @@ class ServerGameAdapter:
         self._loop.run_forever()
 
     async def _connect_and_listen(self) -> None:
-        async with websockets.connect(self.url) as ws:
-            self._ws = ws
-            async for raw in ws:
-                self._handle_message(json.loads(raw))
-                self._connected.set()
+        try:
+            async with websockets.connect(self.url) as ws:
+                self._ws = ws
+                async for raw in ws:
+                    self._handle_message(json.loads(raw))
+                    self._connected.set()
+        except Exception as exc:
+            self._connect_error = exc
+            self._connected.set()
+            self._loop.call_soon_threadsafe(self._loop.stop)
 
     def _handle_message(self, data: dict) -> None:
         # ponytail: the received Board/players objects are built fresh and
@@ -167,6 +178,16 @@ class ServerGameAdapter:
         # internally - this stays a permanent local no-op purely so
         # ui/input_common.py's call sites don't need to change.
         pass
+
+    def check_game_over(self) -> bool:
+        # Same reasoning as end_turn(): the server already folds this into
+        # its place/skip handling and broadcasts the result.
+        return False
+
+    def can_reroll(self) -> bool:
+        # Reroll isn't wired server-side yet (no connect param for it), so
+        # a server-backed game's real answer is always False today.
+        return False
 
     def close(self) -> None:
         if not self._thread.is_alive():

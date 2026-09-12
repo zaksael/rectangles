@@ -1,0 +1,35 @@
+import pygame
+
+from rectangles.constants import PLAYER_1
+from rectangles.game import TurnState
+from rectangles.ui import layout
+from rectangles.ui.app import _new_game
+from rectangles.ui.input import handle_event
+from rectangles.ui.net_adapter import ServerGameAdapter
+from rectangles.ui.state import Screen, UIState
+from server.app import run_in_background
+
+
+def test_new_game_over_the_wire_plays_a_full_turn():
+    url, stop = run_in_background()
+    try:
+        ui_state = UIState(screen=Screen.PLAYING)
+        game = _new_game(ui_state, url)
+        try:
+            assert isinstance(game, ServerGameAdapter)
+
+            assert handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_d), game, ui_state) is True
+            assert game.state == TurnState.CHOOSING_PLACEMENT
+
+            entry = next(e for e in game.legal_cache.items() if e[1])
+            (width, height), top_lefts = entry
+            row, col = next(iter(top_lefts))
+            pos = layout.cell_rect(row, col, board_size=game.board.size).center
+
+            assert handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=pos), game, ui_state) is True
+
+            assert len(game.players[PLAYER_1].pieces) == 1
+        finally:
+            game.close()
+    finally:
+        stop()

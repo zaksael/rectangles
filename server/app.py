@@ -1,6 +1,10 @@
 import json
 import os
+import threading
+import time
+from typing import Callable
 
+import uvicorn
 from fastapi import FastAPI, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
@@ -178,7 +182,21 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         pass
 
 
-if __name__ == "__main__":
-    import uvicorn
+def run_in_background(host: str = "127.0.0.1", port: int = 0) -> tuple[str, Callable[[], None]]:
+    config = uvicorn.Config(app, host=host, port=port, log_level="warning")
+    server = uvicorn.Server(config)
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    while not server.started:
+        time.sleep(0.01)
+    actual_port = server.servers[0].sockets[0].getsockname()[1]
 
+    def stop() -> None:
+        server.should_exit = True
+        thread.join(timeout=5)
+
+    return f"ws://{host}:{actual_port}/ws", stop
+
+
+if __name__ == "__main__":
     uvicorn.run(app, host=HOST, port=PORT)
