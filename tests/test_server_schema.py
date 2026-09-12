@@ -5,6 +5,7 @@ from server.schema import (
     ErrorMsg,
     ErrorReason,
     PlaceMsg,
+    RerollMsg,
     RollMsg,
     SkipMsg,
     StateMsg,
@@ -43,10 +44,40 @@ def test_surrender_msg():
     assert SurrenderMsg.from_json(msg.to_json()) == msg
 
 
+def test_reroll_msg():
+    msg = RerollMsg(protocol_version=1)
+    assert msg.to_json() == {"protocolVersion": 1, "type": "reroll"}
+    assert RerollMsg.from_json(msg.to_json()) == msg
+
+
 def test_choose_wildcard_msg():
     msg = ChooseWildcardMsg(protocol_version=1, value=4)
     assert msg.to_json() == {"protocolVersion": 1, "type": "chooseWildcard", "value": 4}
     assert ChooseWildcardMsg.from_json(msg.to_json()) == msg
+
+
+def test_serialize_game_reroll_enabled_and_can_reroll():
+    game = Game(board_size=19, reroll_enabled=True)
+    reroll = serialize_game(game)["houseRules"]["reroll"]
+    assert reroll == {"enabled": True, "canReroll": True}
+
+
+def test_serialize_game_player_reroll_used_and_limit():
+    game = Game(board_size=19, reroll_enabled=True)
+    game.players[PLAYER_1].rerolls_used = 1
+
+    reroll = serialize_game(game)["players"]["1"]["houseRules"]["reroll"]
+
+    assert reroll == {"used": 1, "limit": 2}  # REROLL_LIMIT, comeback nudge off
+
+
+def test_serialize_game_player_reroll_limit_bumped_by_comeback_nudge():
+    game = Game(board_size=19, reroll_enabled=True, comeback_nudge_enabled=True)
+    game.players[PLAYER_1].comeback_nudge_granted = True
+
+    reroll = serialize_game(game)["players"]["1"]["houseRules"]["reroll"]
+
+    assert reroll["limit"] == 3  # REROLL_LIMIT (2) + COMEBACK_NUDGE_EXTRA_REROLLS (1)
 
 
 def test_serialize_game_wildcard_disabled_by_default():

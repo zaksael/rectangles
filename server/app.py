@@ -41,7 +41,7 @@ app = FastAPI()
 def _connect_params_valid(query_params) -> bool:
     if "protocolVersion" not in query_params:
         return False
-    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | {"wildcardEnabled"}:
+    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | {"wildcardEnabled", "rerollEnabled"}:
         return False
     for name, presets in _PRESET_PARAMS.items():
         value = query_params.get(name)
@@ -53,9 +53,10 @@ def _connect_params_valid(query_params) -> bool:
                 return False
         except ValueError:
             return False
-    wildcard_enabled = query_params.get("wildcardEnabled")
-    if wildcard_enabled is not None and wildcard_enabled not in ("true", "false"):
-        return False
+    for name in ("wildcardEnabled", "rerollEnabled"):
+        value = query_params.get(name)
+        if value is not None and value not in ("true", "false"):
+            return False
     return True
 
 
@@ -73,7 +74,13 @@ def _game_from_connect_params(query_params) -> Game:
     board_size = int(query_params.get("boardSize", BOARD_SIZE))
     skip_limit = int(query_params.get("skipLimit", SKIP_LIMIT))
     wildcard_enabled = query_params.get("wildcardEnabled") == "true"
-    return Game(board_size=board_size, skip_limit=skip_limit, wildcard_enabled=wildcard_enabled)
+    reroll_enabled = query_params.get("rerollEnabled") == "true"
+    return Game(
+        board_size=board_size,
+        skip_limit=skip_limit,
+        wildcard_enabled=wildcard_enabled,
+        reroll_enabled=reroll_enabled,
+    )
 
 
 def _bot_difficulty_from_connect_params(query_params) -> str | None:
@@ -126,6 +133,11 @@ def _apply_action(game: Game, data: dict) -> None:
             game.choose_wildcard_value(wildcard.value)
         except ValueError as exc:
             raise ActionError(ErrorReason.ILLEGAL_WILDCARD_VALUE, str(exc)) from exc
+    elif action_type == "reroll":
+        try:
+            game.reroll()
+        except ValueError as exc:
+            raise ActionError(ErrorReason.INVALID_ACTION, str(exc)) from exc
     elif action_type == "surrender":
         game.surrender()
     else:
@@ -136,7 +148,9 @@ def _bot_turn_step(game: Game, difficulty: str) -> bool:
     """Performs one atomic bot action. Returns False for a turn state this
     step doesn't (yet) handle, so the caller's loop can stop instead of
     spinning forever re-broadcasting an unchanged state."""
-    if game.state == TurnState.AWAITING_ROLL:
+    if bot.should_reroll(game, difficulty):
+        game.reroll()
+    elif game.state == TurnState.AWAITING_ROLL:
         game.roll_dice()
     elif game.state == TurnState.CHOOSING_WILDCARD:
         game.choose_wildcard_value(bot.choose_wildcard_value(game, difficulty))

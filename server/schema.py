@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
-from rectangles.constants import DICE_MAX, DICE_MIN, REROLL_LIMIT
+from rectangles.constants import DICE_MAX, DICE_MIN
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Player
 
@@ -40,7 +40,7 @@ def _serialize_player(game: Game, player: Player) -> dict:
             "potential": {"area": potential["area"], "prize": {"points": potential["prize_points"]}},
         },
         "houseRules": {
-            "reroll": {"used": player.rerolls_used, "limit": REROLL_LIMIT},
+            "reroll": {"used": player.rerolls_used, "limit": game.effective_reroll_limit(player)},
             "comebackNudge": {"granted": player.comeback_nudge_granted},
             "selfEnclosedPenalty": {"cells": 0},
             "prize": {"captured": 0},
@@ -76,7 +76,7 @@ def serialize_game(game: Game) -> dict:
                 else [],
                 "editableIndex": game.wildcard_index,
             },
-            "reroll": {"enabled": False, "canReroll": False},
+            "reroll": {"enabled": game.reroll_enabled, "canReroll": game.can_reroll()},
             "comebackNudge": {"enabled": False},
             "walls": {"enabled": False, "edges": []},
             "obstacles": {"enabled": False, "cells": []},
@@ -119,6 +119,11 @@ class RollMsg(_NoPayloadMsg):
 @dataclass(frozen=True)
 class SkipMsg(_NoPayloadMsg):
     _TYPE: ClassVar[str] = "skip"
+
+
+@dataclass(frozen=True)
+class RerollMsg(_NoPayloadMsg):
+    _TYPE: ClassVar[str] = "reroll"
 
 
 @dataclass(frozen=True)

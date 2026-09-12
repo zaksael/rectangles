@@ -5,7 +5,7 @@ from starlette.websockets import WebSocketDisconnect
 from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, TurnState
 from rectangles.ui.net_adapter import ServerGameAdapter
-from server.app import ActionError, _apply_action, app, run_in_background
+from server.app import ActionError, _apply_action, _bot_turn_step, app, run_in_background
 from server.schema import ErrorReason
 
 
@@ -39,6 +39,8 @@ def test_ws_accepts_and_closes():
         "protocolVersion=1&wildcard=1",
         "protocolVersion=1&wildcardEnabled=1",
         "protocolVersion=1&wildcardEnabled=maybe",
+        "protocolVersion=1&rerollEnabled=1",
+        "protocolVersion=1&rerollEnabled=maybe",
         "",
         "protocolVersion=2",
         "protocolVersion=1&boardSize=abc",
@@ -116,6 +118,13 @@ def test_ws_connect_honors_wildcard_enabled_param():
     with client.websocket_connect("/ws?protocolVersion=1&wildcardEnabled=true") as ws:
         game = ws.receive_json()["game"]
         assert game["houseRules"]["wildcard"]["enabled"] is True
+
+
+def test_ws_connect_honors_reroll_enabled_param():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&rerollEnabled=true") as ws:
+        game = ws.receive_json()["game"]
+        assert game["houseRules"]["reroll"]["enabled"] is True
 
 
 def test_ws_roll_broadcasts_new_state():
@@ -278,6 +287,70 @@ def test_ws_choose_wildcard_before_roll_returns_invalid_action():
         reply = ws.receive_json()
         assert reply["type"] == "error"
         assert reply["reason"] == "invalidAction"
+
+
+def test_apply_action_reroll_in_wrong_state_raises_invalid_action():
+    game = Game(board_size=19, reroll_enabled=True)
+
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(game, {"protocolVersion": 1, "type": "reroll"})
+    assert exc_info.value.reason == ErrorReason.INVALID_ACTION
+
+
+def test_apply_action_reroll_commits_charge_and_rerolls():
+    game = Game(board_size=19, reroll_enabled=True)
+    game.state = TurnState.SKIPPED
+    game.last_roll = (6, 6)
+
+    _apply_action(game, {"protocolVersion": 1, "type": "reroll"})
+
+    assert game.players[PLAYER_1].rerolls_used == 1
+    assert game.last_roll is not None
+
+
+def test_bot_turn_step_rerolls_from_skipped_instead_of_confirming():
+    game = Game(board_size=19, reroll_enabled=True)
+    game.current_player_id = PLAYER_2
+    game.state = TurnState.SKIPPED
+    game.last_roll = (6, 6)
+
+    result = _bot_turn_step(game, "Blocking")
+
+    assert result is True
+    assert game.players[PLAYER_2].rerolls_used == 1
+    assert len(game.history) == 0  # no skip was committed
+
+
+def test_bot_turn_step_rerolls_from_choosing_placement_instead_of_placing():
+    # PLAYER_1 hasn't moved, so its frontier is empty and Blocking's
+    # blocking_score is 0 for every candidate - a guaranteed "bad roll".
+    game = Game(board_size=19, reroll_enabled=True)
+    game.current_player_id = PLAYER_2
+    game.state = TurnState.CHOOSING_PLACEMENT
+    game.last_roll = (1, 1)
+    game.legal_cache = {(1, 1): {(5, 5)}}
+
+    result = _bot_turn_step(game, "Blocking")
+
+    assert result is True
+    assert game.players[PLAYER_2].rerolls_used == 1
+    assert len(game.players[PLAYER_2].pieces) == 0
+
+
+def test_bot_turn_step_rerolls_from_choosing_wildcard_instead_of_picking():
+    # PLAYER_1 hasn't moved, so Blocking's blocking_score is 0 for every
+    # legal wildcard value - a guaranteed "bad roll".
+    game = Game(board_size=19, reroll_enabled=True)
+    game.current_player_id = PLAYER_2
+    game.state = TurnState.CHOOSING_WILDCARD
+    game.last_roll = (6, 6)
+    game.wildcard_original_roll = (6, 6)
+    game.wildcard_index = 0
+
+    result = _bot_turn_step(game, "Blocking")
+
+    assert result is True
+    assert game.players[PLAYER_2].rerolls_used == 1
 
 
 def test_ws_surrender_ends_game_and_declares_winner():
