@@ -42,6 +42,7 @@ def test_ws_accepts_and_closes():
         "protocolVersion=1&rerollEnabled=1",
         "protocolVersion=1&rerollEnabled=maybe",
         "protocolVersion=1&wallsEnabled=1",
+        "protocolVersion=1&obstaclesEnabled=1",
         "",
         "protocolVersion=2",
         "protocolVersion=1&boardSize=abc",
@@ -133,6 +134,13 @@ def test_ws_connect_honors_walls_enabled_param():
     with client.websocket_connect("/ws?protocolVersion=1&wallsEnabled=true") as ws:
         game = ws.receive_json()["game"]
         assert game["houseRules"]["walls"]["enabled"] is True
+
+
+def test_ws_connect_honors_obstacles_enabled_param():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&obstaclesEnabled=true") as ws:
+        game = ws.receive_json()["game"]
+        assert game["houseRules"]["obstacles"]["enabled"] is True
 
 
 def test_ws_roll_broadcasts_new_state():

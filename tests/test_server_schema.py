@@ -96,6 +96,22 @@ def test_serialize_game_walls_disabled_by_default():
     assert walls == {"enabled": False, "edges": []}
 
 
+def test_serialize_game_obstacles_enabled_and_cells():
+    game = Game(board_size=19, obstacles_enabled=True)
+    game.board.set_obstacle_cells(frozenset({(3, 4), (9, 9)}))
+
+    obstacles = serialize_game(game)["houseRules"]["obstacles"]
+
+    assert obstacles["enabled"] is True
+    assert sorted(obstacles["cells"]) == [[3, 4], [9, 9]]
+
+
+def test_serialize_game_obstacles_disabled_by_default():
+    game = Game(board_size=19)
+    obstacles = serialize_game(game)["houseRules"]["obstacles"]
+    assert obstacles == {"enabled": False, "cells": []}
+
+
 def test_serialize_game_wildcard_disabled_by_default():
     game = Game(board_size=19)
     wildcard = serialize_game(game)["houseRules"]["wildcard"]

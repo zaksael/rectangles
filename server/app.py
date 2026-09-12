@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import threading
 import time
 from typing import Callable
@@ -35,7 +36,7 @@ _PRESET_PARAMS = {
     "botDifficulty": BOT_DIFFICULTY_PRESETS,
 }
 
-_BOOL_PARAM_NAMES = {"wildcardEnabled", "rerollEnabled", "wallsEnabled"}
+_BOOL_PARAM_NAMES = {"wildcardEnabled", "rerollEnabled", "wallsEnabled", "obstaclesEnabled"}
 
 app = FastAPI()
 
@@ -72,19 +73,18 @@ async def _broadcast_state(websocket: WebSocket, game: Game) -> None:
     await websocket.send_json(state.to_json())
 
 
+def _bool_param_to_kwarg(name: str) -> str:
+    base = name[: -len("Enabled")]
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", base).lower() + "_enabled"
+
+
 def _game_from_connect_params(query_params) -> Game:
     board_size = int(query_params.get("boardSize", BOARD_SIZE))
     skip_limit = int(query_params.get("skipLimit", SKIP_LIMIT))
-    wildcard_enabled = query_params.get("wildcardEnabled") == "true"
-    reroll_enabled = query_params.get("rerollEnabled") == "true"
-    walls_enabled = query_params.get("wallsEnabled") == "true"
-    return Game(
-        board_size=board_size,
-        skip_limit=skip_limit,
-        wildcard_enabled=wildcard_enabled,
-        reroll_enabled=reroll_enabled,
-        walls_enabled=walls_enabled,
-    )
+    bool_kwargs = {
+        _bool_param_to_kwarg(name): query_params.get(name) == "true" for name in _BOOL_PARAM_NAMES
+    }
+    return Game(board_size=board_size, skip_limit=skip_limit, **bool_kwargs)
 
 
 def _bot_difficulty_from_connect_params(query_params) -> str | None:

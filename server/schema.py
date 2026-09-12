@@ -82,7 +82,10 @@ def serialize_game(game: Game) -> dict:
                 "enabled": game.walls_enabled,
                 "edges": [[list(cell) for cell in sorted(edge)] for edge in game.board.wall_edges],
             },
-            "obstacles": {"enabled": False, "cells": []},
+            "obstacles": {
+                "enabled": game.obstacles_enabled,
+                "cells": [list(cell) for cell in sorted(game.board.obstacle_cells)],
+            },
             "prize": {"enabled": False, "cells": [], "points": 0},
             "pitfall": {"enabled": False, "cells": [], "points": 0},
             "steal": {"enabled": False, "cells": [], "points": 0},
