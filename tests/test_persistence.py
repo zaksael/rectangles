@@ -617,3 +617,84 @@ def test_should_save_on_exit_false_once_series_is_complete():
     series.record_game(_finished_game(4, 1, 0))  # all 3 rounds played
 
     assert persistence.should_save_on_exit(game, series) is False
+
+
+def _bracket(participants_n=4, **kwargs):
+    from rectangles.tournament import Bracket, Participant
+
+    return Bracket(
+        participants=[Participant(name=f"Player {i + 1}") for i in range(participants_n)],
+        series_length=3,
+        board_size=6,
+        skip_limit=2,
+        **kwargs,
+    )
+
+
+def test_should_save_on_exit_false_before_tournament_has_a_game():
+    assert persistence.should_save_on_exit(None, None, _bracket()) is False
+
+
+def test_should_save_on_exit_true_for_incomplete_tournament_even_between_series():
+    bracket = _bracket()
+    game = Game(board_size=6)
+    game.state = TurnState.GAME_OVER
+    series = Series(length=3, board_size=6, skip_limit=2)
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))
+    series.record_game(_finished_game(6, 1, 0))  # this match's series is decided
+
+    assert persistence.should_save_on_exit(game, series, bracket) is True
+
+
+def test_round_trip_preserves_mid_tournament_bracket(tmp_path):
+    path = tmp_path / "save.json"
+    bracket = _bracket(steal_enabled=True)
+    match = bracket.current_match()
+    series = bracket.new_series_for_current_match()
+    game = series.new_game()
+
+    persistence.save_game(game, series, bracket, path=path)
+    loaded = persistence.load_all(path)
+    assert loaded is not None
+    loaded_game, loaded_series, loaded_bracket = loaded
+
+    assert loaded_series.steal_enabled is True
+    assert loaded_bracket.steal_enabled is True
+    assert [p.name for p in loaded_bracket.participants] == [p.name for p in bracket.participants]
+    assert loaded_bracket.current_match_index == bracket.current_match_index
+    assert len(loaded_bracket.rounds) == len(bracket.rounds)
+    loaded_match = loaded_bracket.current_match()
+    assert loaded_match.participant_a == match.participant_a
+    assert loaded_match.participant_b == match.participant_b
+    assert loaded_match.winner is None
+    assert loaded_match.tiebreak_game is None
+    assert loaded_game.board_size == game.board_size
+
+
+def test_round_trip_preserves_tiebreak_game_inside_bracket(tmp_path):
+    path = tmp_path / "save.json"
+    bracket = _bracket()
+    match = bracket.current_match()
+    series = bracket.new_series_for_current_match()
+    series.record_game(_finished_game(bracket.board_size, 5, 5))
+    assert series.winner() is None
+    match.tiebreak_game = bracket.new_tiebreak_game()
+    match.tiebreak_game.board.place(match.tiebreak_game.players[PLAYER_1], (0, 0), 3, 1)
+
+    persistence.save_game(match.tiebreak_game, series, bracket, path=path)
+    loaded_game, loaded_series, loaded_bracket = persistence.load_all(path)
+
+    loaded_match = loaded_bracket.current_match()
+    assert loaded_match.tiebreak_game is not None
+    assert loaded_match.tiebreak_game.players[PLAYER_1].total_area == 3
+    assert loaded_match.series.winner() is None
+
+
+def test_load_game_ignores_absent_tournament_key(tmp_path):
+    path = tmp_path / "save.json"
+    game = Game(board_size=6, skip_limit=2)
+    persistence.save_game(game, path=path)  # no tournament passed - old-shape save
+
+    loaded_game, loaded_series, loaded_tournament = persistence.load_all(path)
+    assert loaded_tournament is None

@@ -8,6 +8,7 @@ from .constants import CellKind, PLAYER_1, PLAYER_2
 from .game import Game, GameOverReason, TurnState
 from .models import Cell, Player, Rectangle, SpecialCell, TurnRecord
 from .series import RoundResult, Series
+from .tournament import Bracket, Match, Participant
 
 SAVE_FORMAT_VERSION = 3
 SAVE_DIR = Path.home() / ".rectangles_game"
@@ -117,10 +118,82 @@ def _series_from_dict(data: dict) -> Series:
     return series
 
 
-def to_dict(game: Game, series: Series | None = None) -> dict:
+def _participant_to_dict(participant: Participant) -> dict:
     return {
-        "version": SAVE_FORMAT_VERSION,
-        "series": _series_to_dict(series) if series is not None else None,
+        "name": participant.name,
+        "is_bot": participant.is_bot,
+        "bot_difficulty": participant.bot_difficulty,
+    }
+
+
+def _participant_from_dict(data: dict) -> Participant:
+    return Participant(name=data["name"], is_bot=data["is_bot"], bot_difficulty=data["bot_difficulty"])
+
+
+def _match_to_dict(match: Match) -> dict:
+    return {
+        "participant_a": match.participant_a,
+        "participant_b": match.participant_b,
+        "series": _series_to_dict(match.series) if match.series is not None else None,
+        "tiebreak_game": _game_to_dict(match.tiebreak_game) if match.tiebreak_game is not None else None,
+        "winner": match.winner,
+    }
+
+
+def _match_from_dict(data: dict) -> Match:
+    return Match(
+        participant_a=data["participant_a"],
+        participant_b=data["participant_b"],
+        series=_series_from_dict(data["series"]) if data.get("series") is not None else None,
+        tiebreak_game=_game_from_dict(data["tiebreak_game"]) if data.get("tiebreak_game") is not None else None,
+        winner=data.get("winner"),
+    )
+
+
+def _bracket_to_dict(bracket: Bracket) -> dict:
+    return {
+        "participants": [_participant_to_dict(p) for p in bracket.participants],
+        "series_length": bracket.series_length,
+        "board_size": bracket.board_size,
+        "skip_limit": bracket.skip_limit,
+        "prize_enabled": bracket.prize_enabled,
+        "walls_enabled": bracket.walls_enabled,
+        "obstacles_enabled": bracket.obstacles_enabled,
+        "pitfall_enabled": bracket.pitfall_enabled,
+        "steal_enabled": bracket.steal_enabled,
+        "special_cell_points": bracket.special_cell_points,
+        "wildcard_enabled": bracket.wildcard_enabled,
+        "self_enclosed_penalty_enabled": bracket.self_enclosed_penalty_enabled,
+        "reroll_enabled": bracket.reroll_enabled,
+        "comeback_nudge_enabled": bracket.comeback_nudge_enabled,
+        "rounds": [[_match_to_dict(m) for m in round_] for round_ in bracket.rounds],
+        "current_match_index": bracket.current_match_index,
+    }
+
+
+def _bracket_from_dict(data: dict) -> Bracket:
+    return Bracket(
+        participants=[_participant_from_dict(p) for p in data["participants"]],
+        series_length=data["series_length"],
+        board_size=data["board_size"],
+        skip_limit=data["skip_limit"],
+        prize_enabled=data.get("prize_enabled", False),
+        walls_enabled=data.get("walls_enabled", False),
+        obstacles_enabled=data.get("obstacles_enabled", False),
+        pitfall_enabled=data.get("pitfall_enabled", False),
+        steal_enabled=data.get("steal_enabled", False),
+        special_cell_points=data.get("special_cell_points", {}),
+        wildcard_enabled=data.get("wildcard_enabled", False),
+        self_enclosed_penalty_enabled=data.get("self_enclosed_penalty_enabled", False),
+        reroll_enabled=data.get("reroll_enabled", False),
+        comeback_nudge_enabled=data.get("comeback_nudge_enabled", False),
+        rounds=[[_match_from_dict(m) for m in round_] for round_ in data["rounds"]],
+        current_match_index=data["current_match_index"],
+    )
+
+
+def _game_to_dict(game: Game) -> dict:
+    return {
         "board_size": game.board_size,
         "skip_limit": game.skip_limit,
         "prize_enabled": game.prize_enabled,
@@ -175,7 +248,16 @@ def to_dict(game: Game, series: Series | None = None) -> dict:
     }
 
 
-def from_dict(data: dict) -> tuple[Game, Series | None]:
+def to_dict(game: Game, series: Series | None = None, tournament: Bracket | None = None) -> dict:
+    return {
+        "version": SAVE_FORMAT_VERSION,
+        "series": _series_to_dict(series) if series is not None else None,
+        "tournament": _bracket_to_dict(tournament) if tournament is not None else None,
+        **_game_to_dict(game),
+    }
+
+
+def _game_from_dict(data: dict) -> Game:
     game = Game(
         board_size=data["board_size"],
         skip_limit=data["skip_limit"],
@@ -242,19 +324,34 @@ def from_dict(data: dict) -> tuple[Game, Series | None]:
     if game.state == TurnState.CHOOSING_PLACEMENT:
         game.legal_cache = game.legal_placements_for_roll()
 
+    return game
+
+
+def from_dict(data: dict) -> tuple[Game, Series | None]:
+    game = _game_from_dict(data)
     series_data = data.get("series")
     series = _series_from_dict(series_data) if series_data is not None else None
     return game, series
 
 
-def save_game(game: Game, series: Series | None = None, path: Path = DEFAULT_SAVE_PATH) -> None:
+def save_game(
+    game: Game,
+    series: Series | None = None,
+    tournament: Bracket | None = None,
+    path: Path = DEFAULT_SAVE_PATH,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(to_dict(game, series)))
+    tmp_path.write_text(json.dumps(to_dict(game, series, tournament)))
     os.replace(tmp_path, path)
 
 
 def load_game(path: Path = DEFAULT_SAVE_PATH) -> tuple[Game, Series | None] | None:
+    result = load_all(path)
+    return None if result is None else (result[0], result[1])
+
+
+def load_all(path: Path = DEFAULT_SAVE_PATH) -> tuple[Game, Series | None, Bracket | None] | None:
     try:
         data = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError):
@@ -262,9 +359,12 @@ def load_game(path: Path = DEFAULT_SAVE_PATH) -> tuple[Game, Series | None] | No
     if not isinstance(data, dict) or data.get("version") != SAVE_FORMAT_VERSION:
         return None
     try:
-        return from_dict(data)
+        game, series = from_dict(data)
+        tournament_data = data.get("tournament")
+        tournament = _bracket_from_dict(tournament_data) if tournament_data is not None else None
     except (KeyError, TypeError, ValueError):
         return None
+    return game, series, tournament
 
 
 def has_save(path: Path = DEFAULT_SAVE_PATH) -> bool:
@@ -279,8 +379,17 @@ def has_game_in_progress(game: Game | None) -> bool:
     return game is not None and game.state != TurnState.GAME_OVER and bool(game.history)
 
 
-def should_save_on_exit(game: Game | None, series: Series | None) -> bool:
+def should_save_on_exit(game: Game | None, series: Series | None, tournament: Bracket | None = None) -> bool:
     # A just-finished round (state == GAME_OVER) still needs saving while its
     # series isn't decided yet, otherwise quitting from the game-over screen
-    # silently drops the series tally.
-    return has_game_in_progress(game) or (series is not None and not series.is_complete())
+    # silently drops the series tally. Same reasoning extends one level up:
+    # an in-progress tournament must survive a quit even between series. All
+    # three still need an actual Game to serialize (e.g. a tournament quit
+    # before its first match is begun has no Game yet) - nothing to save then.
+    if game is None:
+        return False
+    return (
+        has_game_in_progress(game)
+        or (series is not None and not series.is_complete())
+        or (tournament is not None and not tournament.is_complete())
+    )

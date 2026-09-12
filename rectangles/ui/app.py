@@ -143,15 +143,27 @@ def run() -> None:
             ui_state.begin_match_requested = False
 
         if ui_state.resume_requested:
-            loaded = persistence.load_game()
+            loaded = persistence.load_all()
             if loaded is None:
                 ui_state.screen = Screen.MODE_SELECT
+                tournament = None
+                ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
             else:
-                game, series = loaded
-            tournament = None
-            ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
+                game, series, tournament = loaded
+                if tournament is not None:
+                    match = tournament.current_match()
+                    if match.tiebreak_game is not None:
+                        game = match.tiebreak_game
+                        series = match.series
+                        game_is_series_round = False
+                    else:
+                        match.series = series
+                        game_is_series_round = True
+                    game_input.apply_match_identity(game, tournament, match, ui_state)
+                else:
+                    game_is_series_round = True
+                    ui_state.active_bot_seats = game_input.plain_bot_seats(ui_state)
             series_game_recorded = False
-            game_is_series_round = True
             auto_action_at = None
             ui_state.resume_requested = False
 
@@ -243,7 +255,7 @@ def run() -> None:
         renderer.draw(game, ui_state, series, tournament)
         clock.tick(FPS)
 
-    if persistence.should_save_on_exit(game, series):
-        persistence.save_game(game, series)
+    if persistence.should_save_on_exit(game, series, tournament):
+        persistence.save_game(game, series, tournament)
 
     pygame.quit()
