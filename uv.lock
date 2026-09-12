@@ -504,6 +504,8 @@ dependencies = [
     { name = "fastapi" },
     { name = "pygame-ce" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "websockets", version = "16.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "websockets", version = "17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -517,6 +519,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "pygame-ce", specifier = ">=2.5.7" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.4" },
+    { name = "websockets", specifier = ">=16.1.1" },
 ]
 
 [package.metadata.requires-dev]
