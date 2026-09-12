@@ -72,11 +72,7 @@ class ServerGameAdapter:
         self._connected = threading.Event()
 
         self._loop = asyncio.new_event_loop()
-        # ponytail: daemon=True until close() (a later task) can actually
-        # stop the loop cleanly - otherwise a still-running non-daemon
-        # thread blocks process/test exit. Flip to non-daemon once close()
-        # is wired.
-        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._thread = threading.Thread(target=self._run_loop, daemon=False)
         self._thread.start()
         self._connected.wait()
 
@@ -173,4 +169,9 @@ class ServerGameAdapter:
         pass
 
     def close(self) -> None:
-        raise NotImplementedError
+        if not self._thread.is_alive():
+            return
+        if self._ws is not None:
+            asyncio.run_coroutine_threadsafe(self._ws.close(), self._loop).result()
+        self._loop.call_soon_threadsafe(self._loop.stop)
+        self._thread.join(timeout=5)

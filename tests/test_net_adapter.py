@@ -25,43 +25,58 @@ def live_server_url():
         thread.join(timeout=5)
 
 
-@pytest.mark.parametrize("call", [lambda a: a.close()])
-def test_adapter_core_loop_methods_not_yet_implemented(call, live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
-    with pytest.raises(NotImplementedError):
-        call(adapter)
+@pytest.fixture
+def make_adapter(live_server_url):
+    adapters = []
+
+    def factory(query: str = "") -> ServerGameAdapter:
+        adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1{query}")
+        adapters.append(adapter)
+        return adapter
+
+    yield factory
+    for adapter in adapters:
+        adapter.close()
 
 
-def test_adapter_end_turn_is_a_local_no_op(live_server_url):
+def test_close_stops_the_background_thread(make_adapter):
+    adapter = make_adapter()
+
+    adapter.close()
+
+    assert not adapter._thread.is_alive()
+
+
+def test_adapter_end_turn_is_a_local_no_op(make_adapter):
     # Game.end_turn() is folded into the server's place/skip handling
     # internally - the adapter keeps the method only so
     # ui/input_common.py's call sites don't change, and it never touches
     # the network.
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+    adapter = make_adapter()
     adapter.end_turn()  # must not raise
 
 
-def test_adapter_populates_board_from_initial_broadcast(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_adapter_populates_board_from_initial_broadcast(make_adapter):
+    adapter = make_adapter()
     assert adapter.board.size == 19
 
 
-def test_roll_dice_returns_last_roll_on_success(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_roll_dice_returns_last_roll_on_success(make_adapter):
+    adapter = make_adapter()
     roll = adapter.roll_dice()
     assert roll == adapter.last_roll
     assert adapter.state.name in ("CHOOSING_PLACEMENT", "SKIPPED", "CHOOSING_WILDCARD")
 
 
-def test_roll_dice_in_wrong_state_raises_value_error(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_roll_dice_in_wrong_state_raises_value_error(make_adapter):
+    adapter = make_adapter()
     adapter.roll_dice()
     with pytest.raises(ValueError):
         adapter.roll_dice()
 
 
-def test_attempt_place_returns_true_on_success(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_attempt_place_returns_true_on_success(make_adapter):
+    adapter = make_adapter()
     adapter.roll_dice()
     entry = next(e for e in adapter.legal_cache.items() if e[1])
     (width, height), top_lefts = entry
@@ -73,8 +88,8 @@ def test_attempt_place_returns_true_on_success(live_server_url):
     assert len(adapter.players[1].pieces) == 1
 
 
-def test_attempt_place_illegal_returns_false(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_attempt_place_illegal_returns_false(make_adapter):
+    adapter = make_adapter()
     adapter.roll_dice()
 
     # far corner is never anchored to a fresh player's start corner
@@ -83,14 +98,14 @@ def test_attempt_place_illegal_returns_false(live_server_url):
     assert result is False
 
 
-def test_confirm_skip_before_roll_raises_value_error(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_confirm_skip_before_roll_raises_value_error(make_adapter):
+    adapter = make_adapter()
     with pytest.raises(ValueError):
         adapter.confirm_skip()
 
 
-def test_surrender_ends_game_without_raising(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_surrender_ends_game_without_raising(make_adapter):
+    adapter = make_adapter()
 
     result = adapter.surrender()
 
@@ -98,15 +113,15 @@ def test_surrender_ends_game_without_raising(live_server_url):
     assert adapter.state.name == "GAME_OVER"
 
 
-def test_request_returns_first_reply_and_applies_state(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_request_returns_first_reply_and_applies_state(make_adapter):
+    adapter = make_adapter()
     reply = adapter._request(RollMsg(protocol_version=1))
     assert reply["type"] == "state"
     assert adapter.last_roll is not None
 
 
-def test_request_unblocks_only_once_for_chained_bot_broadcasts(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1&botSeats=2")
+def test_request_unblocks_only_once_for_chained_bot_broadcasts(make_adapter):
+    adapter = make_adapter("&botSeats=2")
     roll_reply = adapter._request(RollMsg(protocol_version=1))
     entry = next(e for e in roll_reply["game"]["turn"]["legalPlacements"] if e["topLefts"])
     top_left, width, height = entry["topLefts"][0], entry["width"], entry["height"]
@@ -128,8 +143,8 @@ def test_request_unblocks_only_once_for_chained_bot_broadcasts(live_server_url):
     assert len(adapter.players[2].pieces) == 1
 
 
-def test_surrender_routes_game_over_reason_and_player_id(live_server_url):
-    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+def test_surrender_routes_game_over_reason_and_player_id(make_adapter):
+    adapter = make_adapter()
     adapter._request(SurrenderMsg(protocol_version=1))
 
     assert adapter.state.name == "GAME_OVER"
