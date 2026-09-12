@@ -213,6 +213,12 @@ def test_serialize_game_player_self_enclosed_penalty_cells():
     assert self_enclosed == {"cells": 1}
 
 
+def test_serialize_game_comeback_nudge_enabled():
+    game = Game(board_size=19, comeback_nudge_enabled=True)
+    comeback_nudge = serialize_game(game)["houseRules"]["comebackNudge"]
+    assert comeback_nudge == {"enabled": True}
+
+
 def test_serialize_game_wildcard_disabled_by_default():
     game = Game(board_size=19)
     wildcard = serialize_game(game)["houseRules"]["wildcard"]

@@ -80,7 +80,7 @@ def serialize_game(game: Game) -> dict:
                 "editableIndex": game.wildcard_index,
             },
             "reroll": {"enabled": game.reroll_enabled, "canReroll": game.can_reroll()},
-            "comebackNudge": {"enabled": False},
+            "comebackNudge": {"enabled": game.comeback_nudge_enabled},
             "walls": {
                 "enabled": game.walls_enabled,
                 "edges": [[list(cell) for cell in sorted(edge)] for edge in game.board.wall_edges],
