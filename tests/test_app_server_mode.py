@@ -3,11 +3,56 @@ import pygame
 from rectangles.constants import PLAYER_1
 from rectangles.game import TurnState
 from rectangles.ui import layout
-from rectangles.ui.app import _new_game
+from rectangles.ui.app import _connect_query_params, _new_game
 from rectangles.ui.input import handle_event
 from rectangles.ui.net_adapter import ServerGameAdapter
 from rectangles.ui.state import Screen, UIState
 from server.app import run_in_background
+
+
+def test_connect_query_params_includes_wildcard_enabled():
+    ui_state = UIState(selected_wildcard_enabled=True)
+    assert _connect_query_params(ui_state)["wildcardEnabled"] == "true"
+
+
+def test_connect_query_params_includes_reroll_enabled():
+    ui_state = UIState(selected_reroll_enabled=True)
+    assert _connect_query_params(ui_state)["rerollEnabled"] == "true"
+
+
+def test_connect_query_params_includes_walls_enabled():
+    ui_state = UIState(selected_walls_enabled=True)
+    assert _connect_query_params(ui_state)["wallsEnabled"] == "true"
+
+
+def test_connect_query_params_includes_obstacles_enabled():
+    ui_state = UIState(selected_obstacles_enabled=True)
+    assert _connect_query_params(ui_state)["obstaclesEnabled"] == "true"
+
+
+def test_connect_query_params_includes_prize_enabled():
+    ui_state = UIState(selected_prize_enabled=True)
+    assert _connect_query_params(ui_state)["prizeEnabled"] == "true"
+
+
+def test_connect_query_params_includes_pitfall_enabled():
+    ui_state = UIState(selected_pitfall_enabled=True)
+    assert _connect_query_params(ui_state)["pitfallEnabled"] == "true"
+
+
+def test_connect_query_params_includes_steal_enabled():
+    ui_state = UIState(selected_steal_enabled=True)
+    assert _connect_query_params(ui_state)["stealEnabled"] == "true"
+
+
+def test_connect_query_params_includes_self_enclosed_penalty_enabled():
+    ui_state = UIState(selected_self_enclosed_penalty_enabled=True)
+    assert _connect_query_params(ui_state)["selfEnclosedPenaltyEnabled"] == "true"
+
+
+def test_connect_query_params_includes_comeback_nudge_enabled():
+    ui_state = UIState(selected_comeback_nudge_enabled=True)
+    assert _connect_query_params(ui_state)["comebackNudgeEnabled"] == "true"
 
 
 def test_new_game_over_the_wire_plays_a_full_turn():

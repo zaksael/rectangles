@@ -29,6 +29,27 @@ os.environ.setdefault("SDL_VIDEO_HIGHDPI_DISABLED", "1")
 _USE_SERVER = os.environ.get("RECTANGLES_USE_SERVER") == "1"
 
 
+_HOUSE_RULE_QUERY_PARAMS = (
+    ("selected_wildcard_enabled", "wildcardEnabled"),
+    ("selected_reroll_enabled", "rerollEnabled"),
+    ("selected_walls_enabled", "wallsEnabled"),
+    ("selected_obstacles_enabled", "obstaclesEnabled"),
+    ("selected_prize_enabled", "prizeEnabled"),
+    ("selected_pitfall_enabled", "pitfallEnabled"),
+    ("selected_steal_enabled", "stealEnabled"),
+    ("selected_self_enclosed_penalty_enabled", "selfEnclosedPenaltyEnabled"),
+    ("selected_comeback_nudge_enabled", "comebackNudgeEnabled"),
+)
+
+
+def _connect_query_params(ui_state: UIState) -> dict[str, str]:
+    return {
+        wire_name: "true"
+        for attr, wire_name in _HOUSE_RULE_QUERY_PARAMS
+        if getattr(ui_state, attr)
+    }
+
+
 def _new_game(ui_state: UIState, server_url: str | None) -> Game | ServerGameAdapter:
     if server_url is not None:
         query = (
@@ -37,6 +58,8 @@ def _new_game(ui_state: UIState, server_url: str | None) -> Game | ServerGameAda
         )
         if ui_state.selected_bot_enabled:
             query += f"&botSeats={PLAYER_2}&botDifficulty={ui_state.selected_bot_difficulty}"
+        for name, value in _connect_query_params(ui_state).items():
+            query += f"&{name}={value}"
         return ServerGameAdapter(f"{server_url}{query}")
     return Game(
         board_size=ui_state.selected_board_size,

@@ -328,9 +328,8 @@ Set `RECTANGLES_USE_SERVER=1` before launching to make **Single** mode play
 over a local WebSocket server instead of in-process — the server starts
 automatically in the background, so nothing else changes about how you run
 the game. Everything else (offline play, Series, Tournament) is unaffected;
-this is off by default. House rule toggles on the settings screen are
-currently ignored in this mode — the server understands them, but nothing
-yet sends your selections over when starting a server-backed game.
+this is off by default. House rule toggles on the settings screen carry over
+to server-backed games the same as offline play.
 
 ## Tests
 
