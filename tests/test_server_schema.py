@@ -1,4 +1,16 @@
-from server.schema import ErrorMsg, ErrorReason, PlaceMsg, RollMsg, SkipMsg, StateMsg, SurrenderMsg
+from rectangles.constants import PLAYER_1
+from rectangles.game import Game, TurnState
+from server.schema import (
+    ChooseWildcardMsg,
+    ErrorMsg,
+    ErrorReason,
+    PlaceMsg,
+    RollMsg,
+    SkipMsg,
+    StateMsg,
+    SurrenderMsg,
+    serialize_game,
+)
 
 
 def test_roll_msg():
@@ -29,6 +41,41 @@ def test_surrender_msg():
     msg = SurrenderMsg(protocol_version=1)
     assert msg.to_json() == {"protocolVersion": 1, "type": "surrender"}
     assert SurrenderMsg.from_json(msg.to_json()) == msg
+
+
+def test_choose_wildcard_msg():
+    msg = ChooseWildcardMsg(protocol_version=1, value=4)
+    assert msg.to_json() == {"protocolVersion": 1, "type": "chooseWildcard", "value": 4}
+    assert ChooseWildcardMsg.from_json(msg.to_json()) == msg
+
+
+def test_serialize_game_wildcard_disabled_by_default():
+    game = Game(board_size=19)
+    wildcard = serialize_game(game)["houseRules"]["wildcard"]
+    assert wildcard == {"enabled": False, "originalRoll": None, "legalValues": [], "editableIndex": None}
+
+
+def test_serialize_game_wildcard_enabled_outside_picker():
+    game = Game(board_size=19, wildcard_enabled=True)
+    wildcard = serialize_game(game)["houseRules"]["wildcard"]
+    assert wildcard == {"enabled": True, "originalRoll": None, "legalValues": [], "editableIndex": None}
+
+
+def test_serialize_game_wildcard_picker_open():
+    game = Game(board_size=19, wildcard_enabled=True)
+    game.board.place(game.players[PLAYER_1], (0, 0), w=1, h=1)
+    game.state = TurnState.CHOOSING_WILDCARD
+    game.last_roll = (6, 6)
+    game.wildcard_original_roll = (6, 6)
+    game.wildcard_index = 0
+
+    wildcard = serialize_game(game)["houseRules"]["wildcard"]
+
+    assert wildcard["enabled"] is True
+    assert wildcard["originalRoll"] == [6, 6]
+    assert wildcard["editableIndex"] == 0
+    assert wildcard["legalValues"] == [v for v in range(1, 7) if game.wildcard_value_is_legal(v)]
+    assert wildcard["legalValues"]
 
 
 def test_error_msg():

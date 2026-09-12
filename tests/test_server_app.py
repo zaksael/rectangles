@@ -37,6 +37,8 @@ def test_ws_accepts_and_closes():
         "protocolVersion=1&botSeats=1",
         "protocolVersion=1&botSeats=2&botDifficulty=Expert",
         "protocolVersion=1&wildcard=1",
+        "protocolVersion=1&wildcardEnabled=1",
+        "protocolVersion=1&wildcardEnabled=maybe",
         "",
         "protocolVersion=2",
         "protocolVersion=1&boardSize=abc",
@@ -107,6 +109,13 @@ def test_ws_connect_honors_board_size_and_skip_limit_params():
         game = ws.receive_json()["game"]
         assert game["board"]["size"] == 23
         assert game["board"]["skipLimit"] == 3
+
+
+def test_ws_connect_honors_wildcard_enabled_param():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&wildcardEnabled=true") as ws:
+        game = ws.receive_json()["game"]
+        assert game["houseRules"]["wildcard"]["enabled"] is True
 
 
 def test_ws_roll_broadcasts_new_state():
@@ -227,6 +236,48 @@ def test_apply_action_skip_commits_and_advances_turn():
     assert len(game.history) == 1
     assert game.current_player_id == PLAYER_2
     assert game.state == TurnState.AWAITING_ROLL
+
+
+def test_apply_action_choose_wildcard_in_wrong_state_raises_invalid_action():
+    game = Game(board_size=19, wildcard_enabled=True)
+
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(game, {"protocolVersion": 1, "type": "chooseWildcard", "value": 4})
+    assert exc_info.value.reason == ErrorReason.INVALID_ACTION
+
+
+def test_apply_action_choose_wildcard_illegal_value_raises_illegal_wildcard_value():
+    game = Game(board_size=19, wildcard_enabled=True)
+    game.state = TurnState.CHOOSING_WILDCARD
+    game.last_roll = (6, 6)
+    game.wildcard_index = 0
+
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(game, {"protocolVersion": 1, "type": "chooseWildcard", "value": 9})
+    assert exc_info.value.reason == ErrorReason.ILLEGAL_WILDCARD_VALUE
+
+
+def test_apply_action_choose_wildcard_success_resolves_roll():
+    game = Game(board_size=19, wildcard_enabled=True)
+    game.state = TurnState.CHOOSING_WILDCARD
+    game.last_roll = (6, 6)
+    game.wildcard_index = 0
+
+    _apply_action(game, {"protocolVersion": 1, "type": "chooseWildcard", "value": 1})
+
+    assert game.state in (TurnState.CHOOSING_PLACEMENT, TurnState.SKIPPED)
+    assert game.last_roll == (1, 6)
+
+
+def test_ws_choose_wildcard_before_roll_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&wildcardEnabled=true") as ws:
+        ws.receive_json()  # initial state
+
+        ws.send_json({"protocolVersion": 1, "type": "chooseWildcard", "value": 4})
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == "invalidAction"
 
 
 def test_ws_surrender_ends_game_and_declares_winner():

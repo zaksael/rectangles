@@ -19,7 +19,7 @@ from rectangles.constants import (
 )
 from rectangles import bot
 from rectangles.game import Game, TurnState
-from server.schema import ErrorMsg, ErrorReason, PlaceMsg, StateMsg, serialize_game
+from server.schema import ChooseWildcardMsg, ErrorMsg, ErrorReason, PlaceMsg, StateMsg, serialize_game
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("RECTANGLES_SERVER_PORT", "8765"))
@@ -41,7 +41,7 @@ app = FastAPI()
 def _connect_params_valid(query_params) -> bool:
     if "protocolVersion" not in query_params:
         return False
-    if not set(query_params.keys()) <= _PRESET_PARAMS.keys():
+    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | {"wildcardEnabled"}:
         return False
     for name, presets in _PRESET_PARAMS.items():
         value = query_params.get(name)
@@ -53,6 +53,9 @@ def _connect_params_valid(query_params) -> bool:
                 return False
         except ValueError:
             return False
+    wildcard_enabled = query_params.get("wildcardEnabled")
+    if wildcard_enabled is not None and wildcard_enabled not in ("true", "false"):
+        return False
     return True
 
 
@@ -69,7 +72,8 @@ async def _broadcast_state(websocket: WebSocket, game: Game) -> None:
 def _game_from_connect_params(query_params) -> Game:
     board_size = int(query_params.get("boardSize", BOARD_SIZE))
     skip_limit = int(query_params.get("skipLimit", SKIP_LIMIT))
-    return Game(board_size=board_size, skip_limit=skip_limit)
+    wildcard_enabled = query_params.get("wildcardEnabled") == "true"
+    return Game(board_size=board_size, skip_limit=skip_limit, wildcard_enabled=wildcard_enabled)
 
 
 def _bot_difficulty_from_connect_params(query_params) -> str | None:
@@ -111,6 +115,17 @@ def _apply_action(game: Game, data: dict) -> None:
         except ValueError as exc:
             raise ActionError(ErrorReason.INVALID_ACTION, str(exc)) from exc
         _advance_turn(game)
+    elif action_type == "chooseWildcard":
+        try:
+            wildcard = ChooseWildcardMsg.from_json(data)
+        except (KeyError, TypeError) as exc:
+            raise ActionError(ErrorReason.MALFORMED_MESSAGE, "malformed chooseWildcard message") from exc
+        if game.state != TurnState.CHOOSING_WILDCARD:
+            raise ActionError(ErrorReason.INVALID_ACTION, f"Cannot choose a wildcard value in state {game.state}")
+        try:
+            game.choose_wildcard_value(wildcard.value)
+        except ValueError as exc:
+            raise ActionError(ErrorReason.ILLEGAL_WILDCARD_VALUE, str(exc)) from exc
     elif action_type == "surrender":
         game.surrender()
     else:
@@ -119,11 +134,12 @@ def _apply_action(game: Game, data: dict) -> None:
 
 def _bot_turn_step(game: Game, difficulty: str) -> bool:
     """Performs one atomic bot action. Returns False for a turn state this
-    step doesn't (yet) handle - e.g. CHOOSING_WILDCARD, unreachable until
-    Phase F wires wildcardEnabled through - so the caller's loop can stop
-    instead of spinning forever re-broadcasting an unchanged state."""
+    step doesn't (yet) handle, so the caller's loop can stop instead of
+    spinning forever re-broadcasting an unchanged state."""
     if game.state == TurnState.AWAITING_ROLL:
         game.roll_dice()
+    elif game.state == TurnState.CHOOSING_WILDCARD:
+        game.choose_wildcard_value(bot.choose_wildcard_value(game, difficulty))
     elif game.state == TurnState.CHOOSING_PLACEMENT:
         top_left, w, h = bot.choose_placement(game, difficulty)
         game.attempt_place(top_left, w, h)

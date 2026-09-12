@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
-from rectangles.constants import REROLL_LIMIT
+from rectangles.constants import DICE_MAX, DICE_MIN, REROLL_LIMIT
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Player
 
@@ -66,7 +66,16 @@ def serialize_game(game: Game) -> dict:
             "legalPlacements": legal_placements,
         },
         "houseRules": {
-            "wildcard": {"enabled": False, "originalRoll": None, "legalValues": [], "editableIndex": None},
+            "wildcard": {
+                "enabled": game.wildcard_enabled,
+                "originalRoll": list(game.wildcard_original_roll) if game.wildcard_original_roll else None,
+                "legalValues": [
+                    v for v in range(DICE_MIN, DICE_MAX + 1) if game.wildcard_value_is_legal(v)
+                ]
+                if game.wildcard_index is not None
+                else [],
+                "editableIndex": game.wildcard_index,
+            },
             "reroll": {"enabled": False, "canReroll": False},
             "comebackNudge": {"enabled": False},
             "walls": {"enabled": False, "edges": []},
@@ -115,6 +124,19 @@ class SkipMsg(_NoPayloadMsg):
 @dataclass(frozen=True)
 class SurrenderMsg(_NoPayloadMsg):
     _TYPE: ClassVar[str] = "surrender"
+
+
+@dataclass(frozen=True)
+class ChooseWildcardMsg:
+    protocol_version: int
+    value: int
+
+    def to_json(self) -> dict:
+        return {"protocolVersion": self.protocol_version, "type": "chooseWildcard", "value": self.value}
+
+    @classmethod
+    def from_json(cls, data: dict) -> "ChooseWildcardMsg":
+        return cls(protocol_version=data["protocolVersion"], value=data["value"])
 
 
 @dataclass(frozen=True)
