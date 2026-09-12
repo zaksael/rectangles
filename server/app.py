@@ -36,7 +36,15 @@ _PRESET_PARAMS = {
     "botDifficulty": BOT_DIFFICULTY_PRESETS,
 }
 
-_BOOL_PARAM_NAMES = {"wildcardEnabled", "rerollEnabled", "wallsEnabled", "obstaclesEnabled"}
+_BOOL_PARAM_NAMES = {
+    "wildcardEnabled",
+    "rerollEnabled",
+    "wallsEnabled",
+    "obstaclesEnabled",
+    "prizeEnabled",
+}
+
+_INT_PARAM_NAMES = {"prizePoints"}
 
 app = FastAPI()
 
@@ -44,7 +52,7 @@ app = FastAPI()
 def _connect_params_valid(query_params) -> bool:
     if "protocolVersion" not in query_params:
         return False
-    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | _BOOL_PARAM_NAMES:
+    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | _BOOL_PARAM_NAMES | _INT_PARAM_NAMES:
         return False
     for name, presets in _PRESET_PARAMS.items():
         value = query_params.get(name)
@@ -59,6 +67,15 @@ def _connect_params_valid(query_params) -> bool:
     for name in _BOOL_PARAM_NAMES:
         value = query_params.get(name)
         if value is not None and value not in ("true", "false"):
+            return False
+    for name in _INT_PARAM_NAMES:
+        value = query_params.get(name)
+        if value is None:
+            continue
+        try:
+            if int(value) < 0:
+                return False
+        except ValueError:
             return False
     return True
 
@@ -84,7 +101,15 @@ def _game_from_connect_params(query_params) -> Game:
     bool_kwargs = {
         _bool_param_to_kwarg(name): query_params.get(name) == "true" for name in _BOOL_PARAM_NAMES
     }
-    return Game(board_size=board_size, skip_limit=skip_limit, **bool_kwargs)
+    special_cell_points = {}
+    if "prizePoints" in query_params:
+        special_cell_points["prize"] = int(query_params["prizePoints"])
+    return Game(
+        board_size=board_size,
+        skip_limit=skip_limit,
+        special_cell_points=special_cell_points,
+        **bool_kwargs,
+    )
 
 
 def _bot_difficulty_from_connect_params(query_params) -> str | None:

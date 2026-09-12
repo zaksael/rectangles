@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
-from rectangles.constants import DICE_MAX, DICE_MIN
+from rectangles.constants import DICE_MAX, DICE_MIN, CellKind
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Player
 
@@ -43,7 +43,7 @@ def _serialize_player(game: Game, player: Player) -> dict:
             "reroll": {"used": player.rerolls_used, "limit": game.effective_reroll_limit(player)},
             "comebackNudge": {"granted": player.comeback_nudge_granted},
             "selfEnclosedPenalty": {"cells": 0},
-            "prize": {"captured": 0},
+            "prize": {"captured": player.special_captures.get(CellKind.PRIZE, 0)},
             "pitfall": {"captured": 0},
             "steal": {"captured": 0},
         },
@@ -86,7 +86,11 @@ def serialize_game(game: Game) -> dict:
                 "enabled": game.obstacles_enabled,
                 "cells": [list(cell) for cell in sorted(game.board.obstacle_cells)],
             },
-            "prize": {"enabled": False, "cells": [], "points": 0},
+            "prize": {
+                "enabled": game.prize_enabled,
+                "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.PRIZE))],
+                "points": game.points_for(CellKind.PRIZE),
+            },
             "pitfall": {"enabled": False, "cells": [], "points": 0},
             "steal": {"enabled": False, "cells": [], "points": 0},
             "selfEnclosedPenalty": {"enabled": False},

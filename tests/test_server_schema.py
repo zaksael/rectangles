@@ -1,4 +1,4 @@
-from rectangles.constants import PLAYER_1
+from rectangles.constants import PLAYER_1, CellKind
 from rectangles.game import Game, TurnState
 from server.schema import (
     ChooseWildcardMsg,
@@ -110,6 +110,33 @@ def test_serialize_game_obstacles_disabled_by_default():
     game = Game(board_size=19)
     obstacles = serialize_game(game)["houseRules"]["obstacles"]
     assert obstacles == {"enabled": False, "cells": []}
+
+
+def test_serialize_game_prize_enabled_cells_and_points():
+    game = Game(board_size=19, prize_enabled=True, special_cell_points={"prize": 25})
+
+    prize = serialize_game(game)["houseRules"]["prize"]
+
+    assert prize["enabled"] is True
+    assert sorted(prize["cells"]) == sorted(
+        list(cell) for cell in game.board.cells_of_kind(CellKind.PRIZE)
+    )
+    assert prize["points"] == 25
+
+
+def test_serialize_game_prize_disabled_by_default():
+    game = Game(board_size=19)
+    prize = serialize_game(game)["houseRules"]["prize"]
+    assert prize == {"enabled": False, "cells": [], "points": 10}
+
+
+def test_serialize_game_player_prize_captured():
+    game = Game(board_size=19, prize_enabled=True)
+    game.players[PLAYER_1].special_captures[CellKind.PRIZE] = 2
+
+    prize = serialize_game(game)["players"]["1"]["houseRules"]["prize"]
+
+    assert prize == {"captured": 2}
 
 
 def test_serialize_game_wildcard_disabled_by_default():
