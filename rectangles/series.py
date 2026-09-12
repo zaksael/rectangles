@@ -10,6 +10,8 @@ from .game import Game
 class RoundResult:
     area: dict[int, int]
     prize_captured: dict[int, int]
+    pitfall_captured: dict[int, int]
+    steal_captured: dict[int, int]
     total: dict[int, int]
 
 
@@ -40,6 +42,14 @@ class Series:
             prize_captured={
                 PLAYER_1: p1.special_captures.get(CellKind.PRIZE, 0),
                 PLAYER_2: p2.special_captures.get(CellKind.PRIZE, 0),
+            },
+            pitfall_captured={
+                PLAYER_1: p1.special_captures.get(CellKind.PITFALL, 0),
+                PLAYER_2: p2.special_captures.get(CellKind.PITFALL, 0),
+            },
+            steal_captured={
+                PLAYER_1: p1.special_captures.get(CellKind.STEAL, 0),
+                PLAYER_2: p2.special_captures.get(CellKind.STEAL, 0),
             },
             total={PLAYER_1: game.total_score(p1), PLAYER_2: game.total_score(p2)},
         )

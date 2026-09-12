@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from .constants import CellKind
+from .constants import CellKind, PLAYER_1, PLAYER_2
 from .game import Game, GameOverReason, TurnState
 from .models import Cell, Player, Rectangle, SpecialCell, TurnRecord
 from .series import RoundResult, Series
@@ -53,14 +53,23 @@ def _round_to_dict(round_result: RoundResult) -> dict:
     return {
         "area": round_result.area,
         "prize_captured": round_result.prize_captured,
+        "pitfall_captured": round_result.pitfall_captured,
+        "steal_captured": round_result.steal_captured,
         "total": round_result.total,
     }
 
 
 def _round_from_dict(data: dict) -> RoundResult:
+    zero = {PLAYER_1: 0, PLAYER_2: 0}
     return RoundResult(
         area={int(player_id): value for player_id, value in data["area"].items()},
         prize_captured={int(player_id): value for player_id, value in data["prize_captured"].items()},
+        pitfall_captured={
+            int(player_id): value for player_id, value in data.get("pitfall_captured", zero).items()
+        },
+        steal_captured={
+            int(player_id): value for player_id, value in data.get("steal_captured", zero).items()
+        },
         total={int(player_id): value for player_id, value in data["total"].items()},
     )
 
