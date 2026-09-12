@@ -13,7 +13,8 @@ from rectangles.constants import (
     SKIP_LIMIT,
     SKIP_LIMIT_PRESETS,
 )
-from rectangles.game import Game
+from rectangles import bot
+from rectangles.game import Game, TurnState
 from server.schema import ErrorMsg, ErrorReason, PlaceMsg, StateMsg, serialize_game
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
@@ -67,6 +68,12 @@ def _game_from_connect_params(query_params) -> Game:
     return Game(board_size=board_size, skip_limit=skip_limit)
 
 
+def _bot_difficulty_from_connect_params(query_params) -> str | None:
+    if "botSeats" not in query_params:
+        return None
+    return query_params.get("botDifficulty", "Basic")
+
+
 class ActionError(Exception):
     def __init__(self, reason: ErrorReason, message: str):
         super().__init__(message)
@@ -106,6 +113,37 @@ def _apply_action(game: Game, data: dict) -> None:
         raise ActionError(ErrorReason.MALFORMED_MESSAGE, "unknown action type")
 
 
+def _bot_turn_step(game: Game, difficulty: str) -> bool:
+    """Performs one atomic bot action. Returns False for a turn state this
+    step doesn't (yet) handle - e.g. CHOOSING_WILDCARD, unreachable until
+    Phase F wires wildcardEnabled through - so the caller's loop can stop
+    instead of spinning forever re-broadcasting an unchanged state."""
+    if game.state == TurnState.AWAITING_ROLL:
+        game.roll_dice()
+    elif game.state == TurnState.CHOOSING_PLACEMENT:
+        top_left, w, h = bot.choose_placement(game, difficulty)
+        game.attempt_place(top_left, w, h)
+        _advance_turn(game)
+    elif game.state == TurnState.SKIPPED:
+        game.confirm_skip()
+        _advance_turn(game)
+    else:
+        return False
+    return True
+
+
+async def _broadcast_and_run_bots(websocket: WebSocket, game: Game, bot_difficulty: str | None) -> None:
+    await _broadcast_state(websocket, game)
+    while (
+        bot_difficulty is not None
+        and game.state != TurnState.GAME_OVER
+        and game.current_player_id == PLAYER_2
+    ):
+        if not _bot_turn_step(game, bot_difficulty):
+            break
+        await _broadcast_state(websocket, game)
+
+
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
     if not _connect_params_valid(websocket.query_params):
@@ -113,7 +151,8 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         return
     await websocket.accept()
     game = _game_from_connect_params(websocket.query_params)
-    await _broadcast_state(websocket, game)
+    bot_difficulty = _bot_difficulty_from_connect_params(websocket.query_params)
+    await _broadcast_and_run_bots(websocket, game, bot_difficulty)
     try:
         while True:
             text = await websocket.receive_text()
@@ -134,7 +173,7 @@ async def ws_endpoint(websocket: WebSocket) -> None:
             except ActionError as exc:
                 await _send_error(websocket, exc.reason, exc.message)
                 continue
-            await _broadcast_state(websocket, game)
+            await _broadcast_and_run_bots(websocket, game, bot_difficulty)
     except WebSocketDisconnect:
         pass
 

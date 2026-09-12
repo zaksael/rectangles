@@ -258,3 +258,41 @@ def test_ws_uncaught_exception_propagates_and_closes_connection(monkeypatch):
             ws.send_json({"protocolVersion": 1, "type": "roll"})
             ws.receive_json()
 
+
+def test_ws_bot_takes_its_turn_after_human_places():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&botSeats=2") as ws:
+        ws.receive_json()  # initial state
+        top_left, width, height = _roll_then_first_legal_placement(ws)
+
+        ws.send_json(
+            {"protocolVersion": 1, "type": "place", "topLeft": top_left, "width": width, "height": height}
+        )
+        after_human_place = ws.receive_json()["game"]
+        assert after_human_place["turn"]["currentPlayerId"] == 2
+        assert after_human_place["turn"]["turnState"] == "awaitingRoll"
+
+        after_bot_roll = ws.receive_json()["game"]
+        assert after_bot_roll["turn"]["currentPlayerId"] == 2
+        assert after_bot_roll["turn"]["lastRoll"] is not None
+
+        after_bot_move = ws.receive_json()["game"]
+        assert after_bot_move["turn"]["currentPlayerId"] == 1
+        assert after_bot_move["turn"]["turnState"] == "awaitingRoll"
+        assert len(after_bot_move["players"]["2"]["board"]["pieces"]) == 1
+
+
+def test_ws_without_bot_seats_player_two_stays_human():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+        top_left, width, height = _roll_then_first_legal_placement(ws)
+
+        ws.send_json(
+            {"protocolVersion": 1, "type": "place", "topLeft": top_left, "width": width, "height": height}
+        )
+        reply = ws.receive_json()["game"]
+        assert reply["turn"]["currentPlayerId"] == 2
+        assert reply["turn"]["turnState"] == "awaitingRoll"
+        assert reply["turn"]["lastRoll"] is None  # no auto-roll - player 2 is human here
+
