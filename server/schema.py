@@ -45,7 +45,7 @@ def _serialize_player(game: Game, player: Player) -> dict:
             "selfEnclosedPenalty": {"cells": 0},
             "prize": {"captured": player.special_captures.get(CellKind.PRIZE, 0)},
             "pitfall": {"captured": player.special_captures.get(CellKind.PITFALL, 0)},
-            "steal": {"captured": 0},
+            "steal": {"captured": player.special_captures.get(CellKind.STEAL, 0)},
         },
     }
 
@@ -96,7 +96,11 @@ def serialize_game(game: Game) -> dict:
                 "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.PITFALL))],
                 "points": game.points_for(CellKind.PITFALL),
             },
-            "steal": {"enabled": False, "cells": [], "points": 0},
+            "steal": {
+                "enabled": game.steal_enabled,
+                "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.STEAL))],
+                "points": game.points_for(CellKind.STEAL),
+            },
             "selfEnclosedPenalty": {"enabled": False},
         },
         "players": {

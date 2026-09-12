@@ -43,9 +43,10 @@ _BOOL_PARAM_NAMES = {
     "obstaclesEnabled",
     "prizeEnabled",
     "pitfallEnabled",
+    "stealEnabled",
 }
 
-_INT_PARAM_NAMES = {"prizePoints", "pitfallPoints"}
+_INT_PARAM_NAMES = {"prizePoints", "pitfallPoints", "stealPoints"}
 
 app = FastAPI()
 
@@ -107,6 +108,8 @@ def _game_from_connect_params(query_params) -> Game:
         special_cell_points["prize"] = int(query_params["prizePoints"])
     if "pitfallPoints" in query_params:
         special_cell_points["pitfall"] = int(query_params["pitfallPoints"])
+    if "stealPoints" in query_params:
+        special_cell_points["steal"] = int(query_params["stealPoints"])
     return Game(
         board_size=board_size,
         skip_limit=skip_limit,
