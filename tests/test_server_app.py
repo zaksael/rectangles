@@ -92,3 +92,29 @@ def test_ws_connect_honors_board_size_and_skip_limit_params():
         assert game["board"]["skipLimit"] == 3
 
 
+def test_ws_roll_broadcasts_new_state():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+
+        ws.send_json({"protocolVersion": 1, "type": "roll"})
+        reply = ws.receive_json()
+        assert reply["type"] == "state"
+        turn = reply["game"]["turn"]
+        assert turn["lastRoll"] is not None
+        assert turn["turnState"] != "awaitingRoll"
+
+
+def test_ws_roll_in_wrong_state_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+        ws.send_json({"protocolVersion": 1, "type": "roll"})
+        ws.receive_json()  # state after first roll
+
+        # rolling again before the turn resolves is not legal
+        ws.send_json({"protocolVersion": 1, "type": "roll"})
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == "invalidAction"
+

@@ -89,6 +89,16 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                 await _send_error(
                     websocket, ErrorReason.PROTOCOL_VERSION_MISMATCH, "protocol version mismatch"
                 )
+                continue
+            if data["type"] != "roll":
+                await _send_error(websocket, ErrorReason.MALFORMED_MESSAGE, "unknown action type")
+                continue
+            try:
+                game.roll_dice()
+            except ValueError as exc:
+                await _send_error(websocket, ErrorReason.INVALID_ACTION, str(exc))
+                continue
+            await _broadcast_state(websocket, game)
     except WebSocketDisconnect:
         pass
 
