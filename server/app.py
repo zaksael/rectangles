@@ -67,6 +67,43 @@ def _game_from_connect_params(query_params) -> Game:
     return Game(board_size=board_size, skip_limit=skip_limit)
 
 
+class ActionError(Exception):
+    def __init__(self, reason: ErrorReason, message: str):
+        super().__init__(message)
+        self.reason = reason
+        self.message = message
+
+
+def _advance_turn(game: Game) -> None:
+    if not game.check_game_over():
+        game.end_turn()
+
+
+def _apply_action(game: Game, data: dict) -> None:
+    action_type = data["type"]
+    if action_type == "roll":
+        try:
+            game.roll_dice()
+        except ValueError as exc:
+            raise ActionError(ErrorReason.INVALID_ACTION, str(exc)) from exc
+    elif action_type == "place":
+        try:
+            place = PlaceMsg.from_json(data)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ActionError(ErrorReason.MALFORMED_MESSAGE, "malformed place message") from exc
+        if not game.attempt_place(place.top_left, place.width, place.height):
+            raise ActionError(ErrorReason.ILLEGAL_PLACEMENT, "illegal placement")
+        _advance_turn(game)
+    elif action_type == "skip":
+        try:
+            game.confirm_skip()
+        except ValueError as exc:
+            raise ActionError(ErrorReason.INVALID_ACTION, str(exc)) from exc
+        _advance_turn(game)
+    else:
+        raise ActionError(ErrorReason.MALFORMED_MESSAGE, "unknown action type")
+
+
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
     if not _connect_params_valid(websocket.query_params):
@@ -90,25 +127,10 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     websocket, ErrorReason.PROTOCOL_VERSION_MISMATCH, "protocol version mismatch"
                 )
                 continue
-            if data["type"] == "roll":
-                try:
-                    game.roll_dice()
-                except ValueError as exc:
-                    await _send_error(websocket, ErrorReason.INVALID_ACTION, str(exc))
-                    continue
-            elif data["type"] == "place":
-                try:
-                    place = PlaceMsg.from_json(data)
-                except (KeyError, TypeError, ValueError):
-                    await _send_error(websocket, ErrorReason.MALFORMED_MESSAGE, "malformed place message")
-                    continue
-                if not game.attempt_place(place.top_left, place.width, place.height):
-                    await _send_error(websocket, ErrorReason.ILLEGAL_PLACEMENT, "illegal placement")
-                    continue
-                if not game.check_game_over():
-                    game.end_turn()
-            else:
-                await _send_error(websocket, ErrorReason.MALFORMED_MESSAGE, "unknown action type")
+            try:
+                _apply_action(game, data)
+            except ActionError as exc:
+                await _send_error(websocket, exc.reason, exc.message)
                 continue
             await _broadcast_state(websocket, game)
     except WebSocketDisconnect:

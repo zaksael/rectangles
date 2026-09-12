@@ -2,7 +2,10 @@ import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from server.app import app
+from rectangles.constants import PLAYER_1, PLAYER_2
+from rectangles.game import Game, TurnState
+from server.app import ActionError, _apply_action, app
+from server.schema import ErrorReason
 
 
 def test_ws_accepts_and_closes():
@@ -174,4 +177,40 @@ def test_ws_place_before_roll_returns_invalid_action():
         reply = ws.receive_json()
         assert reply["type"] == "error"
         assert reply["reason"] == "illegalPlacement"
+
+
+def test_ws_skip_before_roll_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+
+        ws.send_json({"protocolVersion": 1, "type": "skip"})
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == "invalidAction"
+
+
+def test_apply_action_skip_in_wrong_state_raises_invalid_action():
+    game = Game(board_size=19)
+
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(game, {"protocolVersion": 1, "type": "skip"})
+    assert exc_info.value.reason == ErrorReason.INVALID_ACTION
+
+
+def test_apply_action_skip_commits_and_advances_turn():
+    # reroll_enabled=True keeps can_reroll() true, matching the state
+    # Game._resolve_roll() leaves an un-rerollable-but-not-yet-committed
+    # skip in (see rectangles/game.py's Game.confirm_skip()).
+    game = Game(board_size=19, reroll_enabled=True)
+    game.board.place(game.players[PLAYER_1], (0, 0), w=1, h=1)  # has_moved, non-empty frontier
+    game.state = TurnState.SKIPPED
+    game.last_roll = (6, 6)
+
+    _apply_action(game, {"protocolVersion": 1, "type": "skip"})
+
+    assert game.players[PLAYER_1].consecutive_skips == 1
+    assert len(game.history) == 1
+    assert game.current_player_id == PLAYER_2
+    assert game.state == TurnState.AWAITING_ROLL
 
