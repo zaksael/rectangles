@@ -118,3 +118,60 @@ def test_ws_roll_in_wrong_state_returns_invalid_action():
         assert reply["type"] == "error"
         assert reply["reason"] == "invalidAction"
 
+
+def _roll_then_first_legal_placement(ws):
+    ws.send_json({"protocolVersion": 1, "type": "roll"})
+    turn = ws.receive_json()["game"]["turn"]
+    entry = next(e for e in turn["legalPlacements"] if e["topLefts"])
+    return entry["topLefts"][0], entry["width"], entry["height"]
+
+
+def test_ws_place_success_advances_turn():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+        top_left, width, height = _roll_then_first_legal_placement(ws)
+
+        ws.send_json(
+            {"protocolVersion": 1, "type": "place", "topLeft": top_left, "width": width, "height": height}
+        )
+        reply = ws.receive_json()
+        assert reply["type"] == "state"
+        game = reply["game"]
+        assert game["turn"]["currentPlayerId"] == 2
+        assert game["turn"]["turnState"] == "awaitingRoll"
+        pieces = game["players"]["1"]["board"]["pieces"]
+        assert len(pieces) == 1
+        assert pieces[0]["topLeft"] == top_left
+        assert pieces[0]["width"] == width
+        assert pieces[0]["height"] == height
+
+
+def test_ws_place_illegal_returns_error():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+        ws.send_json({"protocolVersion": 1, "type": "roll"})
+        ws.receive_json()  # state after roll
+
+        # far corner is never anchored to a fresh player's start corner
+        ws.send_json(
+            {"protocolVersion": 1, "type": "place", "topLeft": [18, 18], "width": 1, "height": 1}
+        )
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == "illegalPlacement"
+
+
+def test_ws_place_before_roll_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+
+        ws.send_json(
+            {"protocolVersion": 1, "type": "place", "topLeft": [0, 0], "width": 1, "height": 1}
+        )
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == "illegalPlacement"
+

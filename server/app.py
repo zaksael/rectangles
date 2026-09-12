@@ -14,7 +14,7 @@ from rectangles.constants import (
     SKIP_LIMIT_PRESETS,
 )
 from rectangles.game import Game
-from server.schema import ErrorMsg, ErrorReason, StateMsg, serialize_game
+from server.schema import ErrorMsg, ErrorReason, PlaceMsg, StateMsg, serialize_game
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("RECTANGLES_SERVER_PORT", "8765"))
@@ -90,13 +90,25 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     websocket, ErrorReason.PROTOCOL_VERSION_MISMATCH, "protocol version mismatch"
                 )
                 continue
-            if data["type"] != "roll":
+            if data["type"] == "roll":
+                try:
+                    game.roll_dice()
+                except ValueError as exc:
+                    await _send_error(websocket, ErrorReason.INVALID_ACTION, str(exc))
+                    continue
+            elif data["type"] == "place":
+                try:
+                    place = PlaceMsg.from_json(data)
+                except (KeyError, TypeError, ValueError):
+                    await _send_error(websocket, ErrorReason.MALFORMED_MESSAGE, "malformed place message")
+                    continue
+                if not game.attempt_place(place.top_left, place.width, place.height):
+                    await _send_error(websocket, ErrorReason.ILLEGAL_PLACEMENT, "illegal placement")
+                    continue
+                if not game.check_game_over():
+                    game.end_turn()
+            else:
                 await _send_error(websocket, ErrorReason.MALFORMED_MESSAGE, "unknown action type")
-                continue
-            try:
-                game.roll_dice()
-            except ValueError as exc:
-                await _send_error(websocket, ErrorReason.INVALID_ACTION, str(exc))
                 continue
             await _broadcast_state(websocket, game)
     except WebSocketDisconnect:
