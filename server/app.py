@@ -100,6 +100,8 @@ def _apply_action(game: Game, data: dict) -> None:
         except ValueError as exc:
             raise ActionError(ErrorReason.INVALID_ACTION, str(exc)) from exc
         _advance_turn(game)
+    elif action_type == "surrender":
+        game.surrender()
     else:
         raise ActionError(ErrorReason.MALFORMED_MESSAGE, "unknown action type")
 

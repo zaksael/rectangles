@@ -214,3 +214,31 @@ def test_apply_action_skip_commits_and_advances_turn():
     assert game.current_player_id == PLAYER_2
     assert game.state == TurnState.AWAITING_ROLL
 
+
+def test_ws_surrender_ends_game_and_declares_winner():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        reply = ws.receive_json()
+        assert reply["type"] == "state"
+        game = reply["game"]
+        assert game["turn"]["turnState"] == "gameOver"
+        assert game["gameOver"]["reason"] == "surrender"
+        assert game["gameOver"]["playerId"] == 1
+        assert game["gameOver"]["winner"] == 2
+
+
+def test_ws_surrender_twice_is_a_no_op():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()  # initial state
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()  # state after first surrender
+
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        reply = ws.receive_json()
+        assert reply["type"] == "state"
+        assert reply["game"]["gameOver"]["reason"] == "surrender"
+
