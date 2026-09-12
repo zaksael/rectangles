@@ -242,3 +242,19 @@ def test_ws_surrender_twice_is_a_no_op():
         assert reply["type"] == "state"
         assert reply["game"]["gameOver"]["reason"] == "surrender"
 
+
+def test_ws_uncaught_exception_propagates_and_closes_connection(monkeypatch):
+    # A genuine server-side bug (as opposed to a normal rule rejection like
+    # ValueError -> invalidAction) must not be swallowed into a generic error
+    # message - it propagates and the connection closes (M1_TASKS.md decision).
+    def boom(self):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(Game, "roll_dice", boom)
+    client = TestClient(app)
+    with pytest.raises(RuntimeError):
+        with client.websocket_connect("/ws?protocolVersion=1") as ws:
+            ws.receive_json()  # initial state
+            ws.send_json({"protocolVersion": 1, "type": "roll"})
+            ws.receive_json()
+
