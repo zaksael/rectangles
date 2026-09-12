@@ -4,7 +4,7 @@ import pytest
 
 from rectangles.ui.net_adapter import ServerGameAdapter
 from server.app import run_in_background
-from server.schema import PlaceMsg, RollMsg, SurrenderMsg
+from server.schema import PlaceMsg, RerollMsg, RollMsg, SurrenderMsg
 
 
 @pytest.fixture
@@ -38,9 +38,9 @@ def test_check_game_over_is_a_local_no_op(make_adapter):
 
 
 def test_can_reroll_is_always_false(make_adapter):
-    # Reroll isn't wired server-side yet (Phase F) - no connect param
-    # exists to enable it, so a server-backed game's real answer is always
-    # False today.
+    # Reroll/chooseWildcard aren't proxied through this adapter at all -
+    # a deliberate scope limit, not an unfinished wiring gap - so a
+    # server-backed game's real answer is always False here.
     adapter = make_adapter()
     assert adapter.can_reroll() is False
 
@@ -152,6 +152,15 @@ def test_request_unblocks_only_once_for_chained_bot_broadcasts(make_adapter):
         time.sleep(0.05)
     assert adapter.current_player_id == 1
     assert len(adapter.players[2].pieces) == 1
+
+
+def test_player_from_wire_maps_rerolls_used(make_adapter):
+    adapter = make_adapter("&rerollEnabled=true")
+    adapter.roll_dice()
+
+    adapter._request(RerollMsg(protocol_version=1))
+
+    assert adapter.players[1].rerolls_used == 1
 
 
 def test_surrender_routes_game_over_reason_and_player_id(make_adapter):

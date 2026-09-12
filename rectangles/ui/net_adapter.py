@@ -1,16 +1,12 @@
-"""Drop-in proxy for `Game`, used by ui/input.py to talk to the M1 server
-over the wire instead of calling a local Game object in-process. Method
+"""Drop-in proxy for `Game`, used by ui/input.py to talk to the server over
+the wire instead of calling a local Game object in-process. Method
 signatures mirror Game's exactly so ui/input.py's call sites don't change,
 only which object they call.
 
 A background thread owns an asyncio event loop and the websocket
 connection; every received `state` message repopulates this adapter's own
 public attributes (mirroring Game's real fields) since ui/renderer.py reads
-those attributes directly, not through methods.
-
-Action methods (roll_dice/attempt_place/confirm_skip/surrender) are still
-stubs - wiring them through `_request` with error-reason mapping is a
-separate task."""
+those attributes directly, not through methods."""
 
 from __future__ import annotations
 
@@ -185,8 +181,9 @@ class ServerGameAdapter:
         return False
 
     def can_reroll(self) -> bool:
-        # Reroll isn't wired server-side yet (no connect param for it), so
-        # a server-backed game's real answer is always False today.
+        # Reroll/chooseWildcard aren't proxied through this adapter at
+        # all - a deliberate scope limit, not an unfinished wiring gap -
+        # so a server-backed game's real answer is always False here.
         return False
 
     def close(self) -> None:
