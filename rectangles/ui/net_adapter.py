@@ -141,17 +141,30 @@ class ServerGameAdapter:
         finally:
             self._pending_reply = None
 
+    def _raise_if_error(self, reply: dict) -> None:
+        if reply["type"] == "error":
+            raise ValueError(reply["message"])
+
     def roll_dice(self) -> tuple[int, int]:
-        raise NotImplementedError
+        reply = self._request(schema.RollMsg(protocol_version=1))
+        self._raise_if_error(reply)
+        return self.last_roll
 
     def attempt_place(self, top_left: tuple[int, int], w: int, h: int) -> bool:
-        raise NotImplementedError
+        reply = self._request(schema.PlaceMsg(protocol_version=1, top_left=top_left, width=w, height=h))
+        if reply["type"] == "error" and reply["reason"] == schema.ErrorReason.ILLEGAL_PLACEMENT.value:
+            return False
+        self._raise_if_error(reply)
+        return True
 
     def confirm_skip(self) -> None:
-        raise NotImplementedError
+        reply = self._request(schema.SkipMsg(protocol_version=1))
+        self._raise_if_error(reply)
 
     def surrender(self) -> None:
-        raise NotImplementedError
+        # Game.surrender() never errors (see server/app.py's ActionError
+        # mapping); no error check needed here.
+        self._request(schema.SurrenderMsg(protocol_version=1))
 
     def end_turn(self) -> None:
         # The server folds end_turn() into its place/skip handling

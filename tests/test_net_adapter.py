@@ -25,16 +25,7 @@ def live_server_url():
         thread.join(timeout=5)
 
 
-@pytest.mark.parametrize(
-    "call",
-    [
-        lambda a: a.roll_dice(),
-        lambda a: a.attempt_place((0, 0), 1, 1),
-        lambda a: a.confirm_skip(),
-        lambda a: a.surrender(),
-        lambda a: a.close(),
-    ],
-)
+@pytest.mark.parametrize("call", [lambda a: a.close()])
 def test_adapter_core_loop_methods_not_yet_implemented(call, live_server_url):
     adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
     with pytest.raises(NotImplementedError):
@@ -53,6 +44,58 @@ def test_adapter_end_turn_is_a_local_no_op(live_server_url):
 def test_adapter_populates_board_from_initial_broadcast(live_server_url):
     adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
     assert adapter.board.size == 19
+
+
+def test_roll_dice_returns_last_roll_on_success(live_server_url):
+    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+    roll = adapter.roll_dice()
+    assert roll == adapter.last_roll
+    assert adapter.state.name in ("CHOOSING_PLACEMENT", "SKIPPED", "CHOOSING_WILDCARD")
+
+
+def test_roll_dice_in_wrong_state_raises_value_error(live_server_url):
+    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+    adapter.roll_dice()
+    with pytest.raises(ValueError):
+        adapter.roll_dice()
+
+
+def test_attempt_place_returns_true_on_success(live_server_url):
+    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+    adapter.roll_dice()
+    entry = next(e for e in adapter.legal_cache.items() if e[1])
+    (width, height), top_lefts = entry
+    top_left = next(iter(top_lefts))
+
+    result = adapter.attempt_place(top_left, width, height)
+
+    assert result is True
+    assert len(adapter.players[1].pieces) == 1
+
+
+def test_attempt_place_illegal_returns_false(live_server_url):
+    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+    adapter.roll_dice()
+
+    # far corner is never anchored to a fresh player's start corner
+    result = adapter.attempt_place((18, 18), 1, 1)
+
+    assert result is False
+
+
+def test_confirm_skip_before_roll_raises_value_error(live_server_url):
+    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+    with pytest.raises(ValueError):
+        adapter.confirm_skip()
+
+
+def test_surrender_ends_game_without_raising(live_server_url):
+    adapter = ServerGameAdapter(f"{live_server_url}?protocolVersion=1")
+
+    result = adapter.surrender()
+
+    assert result is None
+    assert adapter.state.name == "GAME_OVER"
 
 
 def test_request_returns_first_reply_and_applies_state(live_server_url):
