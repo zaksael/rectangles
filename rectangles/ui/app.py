@@ -30,8 +30,11 @@ _USE_SERVER = os.environ.get("RECTANGLES_USE_SERVER") == "1"
 
 
 _HOUSE_RULE_QUERY_PARAMS = (
-    ("selected_wildcard_enabled", "wildcardEnabled"),
-    ("selected_reroll_enabled", "rerollEnabled"),
+    # Wildcard/Reroll are deliberately excluded: they're server-implemented
+    # but not proxied through this adapter (no choose_wildcard_value()/
+    # reroll() method, no wildcard_index/wildcard_original_roll from the
+    # wire) - sending them would silently no-op Reroll and crash the
+    # wildcard picker (renderer_panel.py calls wildcard_value_is_legal()).
     ("selected_walls_enabled", "wallsEnabled"),
     ("selected_obstacles_enabled", "obstaclesEnabled"),
     ("selected_prize_enabled", "prizeEnabled"),
@@ -89,7 +92,7 @@ def run() -> None:
     game_is_series_round = True  # False while `game` is a match's standalone tiebreak Game
     auto_action_at: int | None = None
     replay_autoplay_at: int | None = None
-    ui_state = UIState()
+    ui_state = UIState(server_mode=_USE_SERVER)
     renderer = Renderer(screen)
 
     server_url: str | None = None

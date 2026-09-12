@@ -87,6 +87,8 @@ def _handle_settings_left_click(pos: tuple[int, int], ui_state: UIState) -> bool
         ("Comeback", "selected_comeback_nudge_enabled"),
     ):
         if chip_rects[label].collidepoint(pos):
+            if label in ("Wildcard", "Reroll") and ui_state.wildcard_reroll_locked:
+                return True
             setattr(ui_state, toggle_attr, not getattr(ui_state, toggle_attr))
             return True
     if layout.settings_start_button_rect(mode, tournament_size).collidepoint(pos):

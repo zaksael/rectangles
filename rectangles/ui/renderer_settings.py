@@ -108,7 +108,10 @@ class SettingsMixin:
             ("Comeback", ui_state.selected_comeback_nudge_enabled),
         ):
             rect = chip_rects[label_text]
-            self._button(rect, label_text, selected=is_selected, hovered=hovered(rect), outline=True)
+            locked = label_text in ("Wildcard", "Reroll") and ui_state.wildcard_reroll_locked
+            self._button(
+                rect, label_text, enabled=not locked, selected=is_selected, hovered=hovered(rect), outline=True
+            )
 
         start_label = {"Single": "Start Game (Space)", "Series": "Start Series (Space)", "Tournament": "Start Tournament (Space)"}[mode]
         start_rect = layout.settings_start_button_rect(mode, tournament_size)

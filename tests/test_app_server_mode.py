@@ -10,14 +10,12 @@ from rectangles.ui.state import Screen, UIState
 from server.app import run_in_background
 
 
-def test_connect_query_params_includes_wildcard_enabled():
-    ui_state = UIState(selected_wildcard_enabled=True)
-    assert _connect_query_params(ui_state)["wildcardEnabled"] == "true"
-
-
-def test_connect_query_params_includes_reroll_enabled():
-    ui_state = UIState(selected_reroll_enabled=True)
-    assert _connect_query_params(ui_state)["rerollEnabled"] == "true"
+def test_connect_query_params_excludes_wildcard_and_reroll():
+    # Not proxied through the adapter at all - see _HOUSE_RULE_QUERY_PARAMS.
+    ui_state = UIState(selected_wildcard_enabled=True, selected_reroll_enabled=True)
+    params = _connect_query_params(ui_state)
+    assert "wildcardEnabled" not in params
+    assert "rerollEnabled" not in params
 
 
 def test_connect_query_params_includes_walls_enabled():

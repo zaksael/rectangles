@@ -44,6 +44,7 @@ class UIState:
     hover_legal: bool = False
 
     screen: Screen = Screen.MODE_SELECT
+    server_mode: bool = False
     selected_game_mode: str = GAME_MODE_PRESETS[0]
     selected_board_size: int = BOARD_SIZE
     selected_skip_limit: int = SKIP_LIMIT
@@ -94,18 +95,26 @@ class UIState:
         self.replay_step = 0
 
     @property
+    def wildcard_reroll_locked(self) -> bool:
+        # Not proxied through the server adapter - see app.py's
+        # _HOUSE_RULE_QUERY_PARAMS - so these two stay off and unclickable
+        # for a server-backed Single-mode game.
+        return self.server_mode and self.selected_game_mode == "Single"
+
+    @property
     def all_house_rules_enabled(self) -> bool:
-        return (
-            self.selected_prize_enabled
-            and self.selected_walls_enabled
-            and self.selected_obstacles_enabled
-            and self.selected_pitfall_enabled
-            and self.selected_steal_enabled
-            and self.selected_wildcard_enabled
-            and self.selected_self_enclosed_penalty_enabled
-            and self.selected_reroll_enabled
-            and self.selected_comeback_nudge_enabled
-        )
+        rules = [
+            self.selected_prize_enabled,
+            self.selected_walls_enabled,
+            self.selected_obstacles_enabled,
+            self.selected_pitfall_enabled,
+            self.selected_steal_enabled,
+            self.selected_self_enclosed_penalty_enabled,
+            self.selected_comeback_nudge_enabled,
+        ]
+        if not self.wildcard_reroll_locked:
+            rules += [self.selected_wildcard_enabled, self.selected_reroll_enabled]
+        return all(rules)
 
     def toggle_all_house_rules(self) -> None:
         value = not self.all_house_rules_enabled
@@ -114,7 +123,8 @@ class UIState:
         self.selected_obstacles_enabled = value
         self.selected_pitfall_enabled = value
         self.selected_steal_enabled = value
-        self.selected_wildcard_enabled = value
         self.selected_self_enclosed_penalty_enabled = value
-        self.selected_reroll_enabled = value
         self.selected_comeback_nudge_enabled = value
+        if not self.wildcard_reroll_locked:
+            self.selected_wildcard_enabled = value
+            self.selected_reroll_enabled = value
