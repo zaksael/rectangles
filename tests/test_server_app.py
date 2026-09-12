@@ -49,6 +49,7 @@ def test_ws_accepts_and_closes():
         "protocolVersion=1&pitfallPoints=abc",
         "protocolVersion=1&stealEnabled=1",
         "protocolVersion=1&stealPoints=abc",
+        "protocolVersion=1&selfEnclosedPenaltyEnabled=1",
         "",
         "protocolVersion=2",
         "protocolVersion=1&boardSize=abc",
@@ -195,6 +196,15 @@ def test_ws_connect_honors_steal_points_param():
     ) as ws:
         game = ws.receive_json()["game"]
         assert game["houseRules"]["steal"]["points"] == 25
+
+
+def test_ws_connect_honors_self_enclosed_penalty_enabled_param():
+    client = TestClient(app)
+    with client.websocket_connect(
+        "/ws?protocolVersion=1&selfEnclosedPenaltyEnabled=true"
+    ) as ws:
+        game = ws.receive_json()["game"]
+        assert game["houseRules"]["selfEnclosedPenalty"]["enabled"] is True
 
 
 def test_ws_roll_broadcasts_new_state():

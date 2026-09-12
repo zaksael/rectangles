@@ -44,6 +44,7 @@ _BOOL_PARAM_NAMES = {
     "prizeEnabled",
     "pitfallEnabled",
     "stealEnabled",
+    "selfEnclosedPenaltyEnabled",
 }
 
 _INT_PARAM_NAMES = {"prizePoints", "pitfallPoints", "stealPoints"}

@@ -193,6 +193,26 @@ def test_serialize_game_player_steal_captured():
     assert steal == {"captured": 1}
 
 
+def test_serialize_game_self_enclosed_penalty_enabled():
+    game = Game(board_size=19, self_enclosed_penalty_enabled=True)
+    self_enclosed = serialize_game(game)["houseRules"]["selfEnclosedPenalty"]
+    assert self_enclosed == {"enabled": True}
+
+
+def test_serialize_game_player_self_enclosed_penalty_cells():
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    p1, p2 = game.players[PLAYER_1], game.players[2]
+    game.board.place(p1, (1, 2), w=1, h=1)
+    game.board.place(p1, (3, 2), w=1, h=1)
+    game.board.place(p1, (2, 1), w=1, h=1)
+    game.board.place(p1, (2, 3), w=1, h=1)
+    game.board.place(p2, (5, 5), w=1, h=1)
+
+    self_enclosed = serialize_game(game)["players"]["1"]["houseRules"]["selfEnclosedPenalty"]
+
+    assert self_enclosed == {"cells": 1}
+
+
 def test_serialize_game_wildcard_disabled_by_default():
     game = Game(board_size=19)
     wildcard = serialize_game(game)["houseRules"]["wildcard"]

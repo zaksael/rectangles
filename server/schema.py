@@ -22,7 +22,7 @@ _GAME_OVER_REASON_NAMES = {
 }
 
 
-def _serialize_player(game: Game, player: Player) -> dict:
+def _serialize_player(game: Game, player: Player, self_enclosed_counts: dict[int, int]) -> dict:
     potential = game.potential_stats(player)
     return {
         "name": player.name,
@@ -42,7 +42,7 @@ def _serialize_player(game: Game, player: Player) -> dict:
         "houseRules": {
             "reroll": {"used": player.rerolls_used, "limit": game.effective_reroll_limit(player)},
             "comebackNudge": {"granted": player.comeback_nudge_granted},
-            "selfEnclosedPenalty": {"cells": 0},
+            "selfEnclosedPenalty": {"cells": self_enclosed_counts.get(player.id, 0)},
             "prize": {"captured": player.special_captures.get(CellKind.PRIZE, 0)},
             "pitfall": {"captured": player.special_captures.get(CellKind.PITFALL, 0)},
             "steal": {"captured": player.special_captures.get(CellKind.STEAL, 0)},
@@ -57,6 +57,9 @@ def serialize_game(game: Game) -> dict:
         if cells
     ]
     winner = game.winner() if game.state == TurnState.GAME_OVER else None
+    self_enclosed_counts = (
+        game.board.self_enclosed_cell_counts() if game.self_enclosed_penalty_enabled else {}
+    )
     return {
         "board": {"size": game.board_size, "skipLimit": game.skip_limit},
         "turn": {
@@ -101,11 +104,11 @@ def serialize_game(game: Game) -> dict:
                 "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.STEAL))],
                 "points": game.points_for(CellKind.STEAL),
             },
-            "selfEnclosedPenalty": {"enabled": False},
+            "selfEnclosedPenalty": {"enabled": game.self_enclosed_penalty_enabled},
         },
         "players": {
-            "1": _serialize_player(game, game.players[1]),
-            "2": _serialize_player(game, game.players[2]),
+            "1": _serialize_player(game, game.players[1], self_enclosed_counts),
+            "2": _serialize_player(game, game.players[2], self_enclosed_counts),
         },
         "gameOver": {
             "reason": _GAME_OVER_REASON_NAMES.get(game.game_over_reason),
