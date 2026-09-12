@@ -80,6 +80,22 @@ def test_serialize_game_player_reroll_limit_bumped_by_comeback_nudge():
     assert reroll["limit"] == 3  # REROLL_LIMIT (2) + COMEBACK_NUDGE_EXTRA_REROLLS (1)
 
 
+def test_serialize_game_walls_enabled_and_edges():
+    game = Game(board_size=19, walls_enabled=True)
+    game.board.wall_edges = frozenset({frozenset({(0, 0), (1, 0)}), frozenset({(5, 5), (5, 6)})})
+
+    walls = serialize_game(game)["houseRules"]["walls"]
+
+    assert walls["enabled"] is True
+    assert sorted(map(sorted, walls["edges"])) == [[[0, 0], [1, 0]], [[5, 5], [5, 6]]]
+
+
+def test_serialize_game_walls_disabled_by_default():
+    game = Game(board_size=19)
+    walls = serialize_game(game)["houseRules"]["walls"]
+    assert walls == {"enabled": False, "edges": []}
+
+
 def test_serialize_game_wildcard_disabled_by_default():
     game = Game(board_size=19)
     wildcard = serialize_game(game)["houseRules"]["wildcard"]

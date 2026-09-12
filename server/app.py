@@ -35,13 +35,15 @@ _PRESET_PARAMS = {
     "botDifficulty": BOT_DIFFICULTY_PRESETS,
 }
 
+_BOOL_PARAM_NAMES = {"wildcardEnabled", "rerollEnabled", "wallsEnabled"}
+
 app = FastAPI()
 
 
 def _connect_params_valid(query_params) -> bool:
     if "protocolVersion" not in query_params:
         return False
-    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | {"wildcardEnabled", "rerollEnabled"}:
+    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | _BOOL_PARAM_NAMES:
         return False
     for name, presets in _PRESET_PARAMS.items():
         value = query_params.get(name)
@@ -53,7 +55,7 @@ def _connect_params_valid(query_params) -> bool:
                 return False
         except ValueError:
             return False
-    for name in ("wildcardEnabled", "rerollEnabled"):
+    for name in _BOOL_PARAM_NAMES:
         value = query_params.get(name)
         if value is not None and value not in ("true", "false"):
             return False
@@ -75,11 +77,13 @@ def _game_from_connect_params(query_params) -> Game:
     skip_limit = int(query_params.get("skipLimit", SKIP_LIMIT))
     wildcard_enabled = query_params.get("wildcardEnabled") == "true"
     reroll_enabled = query_params.get("rerollEnabled") == "true"
+    walls_enabled = query_params.get("wallsEnabled") == "true"
     return Game(
         board_size=board_size,
         skip_limit=skip_limit,
         wildcard_enabled=wildcard_enabled,
         reroll_enabled=reroll_enabled,
+        walls_enabled=walls_enabled,
     )
 
 

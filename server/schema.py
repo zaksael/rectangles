@@ -78,7 +78,10 @@ def serialize_game(game: Game) -> dict:
             },
             "reroll": {"enabled": game.reroll_enabled, "canReroll": game.can_reroll()},
             "comebackNudge": {"enabled": False},
-            "walls": {"enabled": False, "edges": []},
+            "walls": {
+                "enabled": game.walls_enabled,
+                "edges": [[list(cell) for cell in sorted(edge)] for edge in game.board.wall_edges],
+            },
             "obstacles": {"enabled": False, "cells": []},
             "prize": {"enabled": False, "cells": [], "points": 0},
             "pitfall": {"enabled": False, "cells": [], "points": 0},
