@@ -330,8 +330,9 @@ automatically in the background, so nothing else changes about how you run
 the game. Everything else (offline play, Series, Tournament) is unaffected;
 this is off by default. House rule toggles on the settings screen carry over
 to server-backed games the same as offline play, including the board
-geometry they seed (walls, obstacles, prize/pitfall/steal cells) — except
-Wildcard and Reroll, which are grayed out and forced off in this mode.
+geometry they seed (walls, obstacles, prize/pitfall/steal cells) and the
+side panel's score/potential/points display — except Wildcard and Reroll,
+which are grayed out and forced off in this mode.
 
 ## Tests
 

@@ -1,4 +1,9 @@
+import os
+
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
 import pygame
+import pytest
 
 from rectangles.constants import PLAYER_1
 from rectangles.game import TurnState
@@ -6,8 +11,23 @@ from rectangles.ui import layout
 from rectangles.ui.app import _connect_query_params, _new_game
 from rectangles.ui.input import handle_event
 from rectangles.ui.net_adapter import ServerGameAdapter
+from rectangles.ui.renderer import Renderer
 from rectangles.ui.state import Screen, UIState
 from server.app import run_in_background
+
+
+@pytest.fixture
+def wire_renderer_game():
+    pygame.init()
+    screen = pygame.display.set_mode((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT))
+    renderer = Renderer(screen)
+    url, stop = run_in_background()
+    game = _new_game(UIState(screen=Screen.PLAYING), url)
+    try:
+        yield renderer, game
+    finally:
+        game.close()
+        stop()
 
 
 def test_connect_query_params_excludes_wildcard_and_reroll():
@@ -76,3 +96,15 @@ def test_new_game_over_the_wire_plays_a_full_turn():
             game.close()
     finally:
         stop()
+
+
+def test_draw_game_over_over_the_wire_smoke(wire_renderer_game):
+    renderer, game = wire_renderer_game
+    game.surrender()
+    assert game.state == TurnState.GAME_OVER
+    renderer.draw(game, UIState(screen=Screen.PLAYING))
+
+
+def test_draw_panel_over_the_wire_smoke(wire_renderer_game):
+    renderer, game = wire_renderer_game
+    renderer.draw(game, UIState(screen=Screen.PLAYING))

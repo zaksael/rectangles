@@ -66,6 +66,9 @@ def _player_from_wire(player_id: int, board: Board, data: dict) -> Player:
     return player
 
 
+_POINTS_KINDS = (CellKind.PRIZE, CellKind.PITFALL, CellKind.STEAL)
+
+
 class ServerGameAdapter:
     def __init__(self, url: str) -> None:
         self.url = url
@@ -82,6 +85,16 @@ class ServerGameAdapter:
         self.blocked_player_id = None
         self.surrendered_player_id = None
         self.history = None
+        self.skip_limit = None
+        self.prize_enabled = None
+        self.pitfall_enabled = None
+        self.steal_enabled = None
+        self.self_enclosed_penalty_enabled = None
+        self._points = {}
+        self._total_score = {}
+        self._potential = {}
+        self._reroll_limit = {}
+        self._winner = None
 
         self._ws = None
         self._pending_reply: queue.Queue | None = None
@@ -133,6 +146,27 @@ class ServerGameAdapter:
         }
         self.board = board
 
+        house_rules = data["houseRules"]
+        self.skip_limit = data["board"]["skipLimit"]
+        self.prize_enabled = house_rules["prize"]["enabled"]
+        self.pitfall_enabled = house_rules["pitfall"]["enabled"]
+        self.steal_enabled = house_rules["steal"]["enabled"]
+        self.self_enclosed_penalty_enabled = house_rules["selfEnclosedPenalty"]["enabled"]
+        self._points = {kind: house_rules[kind.value]["points"] for kind in _POINTS_KINDS}
+        self._total_score = {
+            int(pid): p["score"]["totalScore"] for pid, p in data["players"].items()
+        }
+        self._potential = {
+            int(pid): {
+                "area": p["score"]["potential"]["area"],
+                "prize_points": p["score"]["potential"]["prize"]["points"],
+            }
+            for pid, p in data["players"].items()
+        }
+        self._reroll_limit = {
+            int(pid): p["houseRules"]["reroll"]["limit"] for pid, p in data["players"].items()
+        }
+
         self.current_player_id = data["turn"]["currentPlayerId"]
         self.state = _TURN_STATE_FROM_WIRE[data["turn"]["turnState"]]
         self.last_roll = tuple(data["turn"]["lastRoll"]) if data["turn"]["lastRoll"] is not None else None
@@ -149,6 +183,7 @@ class ServerGameAdapter:
         self.skipped_out_player_id = player_id if reason is GameOverReason.SKIP_LIMIT else None
         self.blocked_player_id = player_id if reason is GameOverReason.PLAYER_BLOCKED else None
         self.surrendered_player_id = player_id if reason is GameOverReason.SURRENDER else None
+        self._winner = data["gameOver"]["winner"]
 
         self.history = []
 
@@ -198,6 +233,29 @@ class ServerGameAdapter:
         # Same reasoning as end_turn(): the server already folds this into
         # its place/skip handling and broadcasts the result.
         return False
+
+    @property
+    def current_player(self) -> Player:
+        return self.players[self.current_player_id]
+
+    def _other_player(self, player: Player) -> Player:
+        other_id = next(pid for pid in self.players if pid != player.id)
+        return self.players[other_id]
+
+    def total_score(self, player: Player) -> int:
+        return self._total_score[player.id]
+
+    def potential_stats(self, player: Player) -> dict:
+        return self._potential[player.id]
+
+    def points_for(self, kind: CellKind) -> int:
+        return self._points[kind]
+
+    def effective_reroll_limit(self, player: Player) -> int:
+        return self._reroll_limit[player.id]
+
+    def winner(self) -> int | None:
+        return self._winner
 
     def can_reroll(self) -> bool:
         # Reroll/chooseWildcard aren't proxied through this adapter at
