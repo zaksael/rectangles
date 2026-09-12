@@ -2,6 +2,7 @@ import time
 
 import pytest
 
+from rectangles.constants import CellKind
 from rectangles.ui.net_adapter import ServerGameAdapter
 from server.app import run_in_background
 from server.schema import PlaceMsg, RerollMsg, RollMsg, SurrenderMsg
@@ -152,6 +153,21 @@ def test_request_unblocks_only_once_for_chained_bot_broadcasts(make_adapter):
         time.sleep(0.05)
     assert adapter.current_player_id == 1
     assert len(adapter.players[2].pieces) == 1
+
+
+def test_apply_state_mirrors_board_geometry_from_wire(make_adapter):
+    adapter = make_adapter(
+        "&wallsEnabled=true&obstaclesEnabled=true&prizeEnabled=true"
+        "&pitfallEnabled=true&stealEnabled=true"
+    )
+    reply = adapter._request(RollMsg(protocol_version=1))
+    house_rules = reply["game"]["houseRules"]
+
+    assert {frozenset(map(tuple, edge)) for edge in house_rules["walls"]["edges"]} == adapter.board.wall_edges
+    assert {tuple(c) for c in house_rules["obstacles"]["cells"]} == adapter.board.obstacle_cells
+    for kind in (CellKind.PRIZE, CellKind.PITFALL, CellKind.STEAL):
+        wire_cells = {tuple(c) for c in house_rules[kind.value]["cells"]}
+        assert wire_cells == adapter.board.cells_of_kind(kind)
 
 
 def test_player_from_wire_maps_rerolls_used(make_adapter):

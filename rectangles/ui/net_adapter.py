@@ -20,7 +20,7 @@ import websockets
 from rectangles.board import Board
 from rectangles.constants import CellKind
 from rectangles.game import GameOverReason
-from rectangles.models import Player
+from rectangles.models import Cell, Player, SpecialCell
 from server import schema
 
 _TURN_STATE_FROM_WIRE = {v: k for k, v in schema._TURN_STATE_NAMES.items()}
@@ -28,6 +28,25 @@ _GAME_OVER_REASON_FROM_WIRE = {v: k for k, v in schema._GAME_OVER_REASON_NAMES.i
 
 _REQUEST_TIMEOUT = 10.0
 _CONNECT_TIMEOUT = 10.0
+
+
+def _board_from_wire(data: dict) -> Board:
+    house_rules = data["houseRules"]
+    special_cells = frozenset(
+        SpecialCell(kind, Cell(*cell), pair_id=i)
+        for kind in (CellKind.PRIZE, CellKind.PITFALL, CellKind.STEAL)
+        for i, cell in enumerate(house_rules[kind.value]["cells"])
+    )
+    wall_edges = frozenset(
+        frozenset(Cell(*cell) for cell in edge) for edge in house_rules["walls"]["edges"]
+    )
+    obstacle_cells = frozenset(Cell(*cell) for cell in house_rules["obstacles"]["cells"])
+    return Board(
+        size=data["board"]["size"],
+        special_cells=special_cells,
+        wall_edges=wall_edges,
+        obstacle_cells=obstacle_cells,
+    )
 
 
 def _player_from_wire(player_id: int, board: Board, data: dict) -> Player:
@@ -107,7 +126,7 @@ class ServerGameAdapter:
             pending.put(data)
 
     def _apply_state(self, data: dict) -> None:
-        board = Board(size=data["board"]["size"])
+        board = _board_from_wire(data)
         self.players = {
             int(player_id): _player_from_wire(int(player_id), board, player_data)
             for player_id, player_data in data["players"].items()
