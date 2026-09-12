@@ -139,6 +139,33 @@ def test_serialize_game_player_prize_captured():
     assert prize == {"captured": 2}
 
 
+def test_serialize_game_pitfall_enabled_cells_and_points():
+    game = Game(board_size=19, pitfall_enabled=True, special_cell_points={"pitfall": 25})
+
+    pitfall = serialize_game(game)["houseRules"]["pitfall"]
+
+    assert pitfall["enabled"] is True
+    assert sorted(pitfall["cells"]) == sorted(
+        list(cell) for cell in game.board.cells_of_kind(CellKind.PITFALL)
+    )
+    assert pitfall["points"] == 25
+
+
+def test_serialize_game_pitfall_disabled_by_default():
+    game = Game(board_size=19)
+    pitfall = serialize_game(game)["houseRules"]["pitfall"]
+    assert pitfall == {"enabled": False, "cells": [], "points": 10}
+
+
+def test_serialize_game_player_pitfall_captured():
+    game = Game(board_size=19, pitfall_enabled=True)
+    game.players[PLAYER_1].special_captures[CellKind.PITFALL] = 3
+
+    pitfall = serialize_game(game)["players"]["1"]["houseRules"]["pitfall"]
+
+    assert pitfall == {"captured": 3}
+
+
 def test_serialize_game_wildcard_disabled_by_default():
     game = Game(board_size=19)
     wildcard = serialize_game(game)["houseRules"]["wildcard"]

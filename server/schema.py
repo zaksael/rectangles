@@ -44,7 +44,7 @@ def _serialize_player(game: Game, player: Player) -> dict:
             "comebackNudge": {"granted": player.comeback_nudge_granted},
             "selfEnclosedPenalty": {"cells": 0},
             "prize": {"captured": player.special_captures.get(CellKind.PRIZE, 0)},
-            "pitfall": {"captured": 0},
+            "pitfall": {"captured": player.special_captures.get(CellKind.PITFALL, 0)},
             "steal": {"captured": 0},
         },
     }
@@ -91,7 +91,11 @@ def serialize_game(game: Game) -> dict:
                 "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.PRIZE))],
                 "points": game.points_for(CellKind.PRIZE),
             },
-            "pitfall": {"enabled": False, "cells": [], "points": 0},
+            "pitfall": {
+                "enabled": game.pitfall_enabled,
+                "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.PITFALL))],
+                "points": game.points_for(CellKind.PITFALL),
+            },
             "steal": {"enabled": False, "cells": [], "points": 0},
             "selfEnclosedPenalty": {"enabled": False},
         },
