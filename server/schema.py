@@ -2,6 +2,91 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
+from rectangles.constants import REROLL_LIMIT
+from rectangles.game import Game, GameOverReason, TurnState
+from rectangles.models import Player
+
+_TURN_STATE_NAMES = {
+    TurnState.AWAITING_ROLL: "awaitingRoll",
+    TurnState.CHOOSING_WILDCARD: "choosingWildcard",
+    TurnState.CHOOSING_PLACEMENT: "choosingPlacement",
+    TurnState.SKIPPED: "skipped",
+    TurnState.GAME_OVER: "gameOver",
+}
+
+_GAME_OVER_REASON_NAMES = {
+    GameOverReason.BOARD_FULL: "boardFull",
+    GameOverReason.SKIP_LIMIT: "skipLimit",
+    GameOverReason.PLAYER_BLOCKED: "playerBlocked",
+    GameOverReason.SURRENDER: "surrender",
+}
+
+
+def _serialize_player(game: Game, player: Player) -> dict:
+    potential = game.potential_stats(player)
+    return {
+        "name": player.name,
+        "board": {
+            "startCorner": list(player.start_corner),
+            "pieces": [
+                {"topLeft": list(p.top_left), "width": p.width, "height": p.height, "owner": p.owner}
+                for p in player.pieces
+            ],
+            "consecutiveSkips": player.consecutive_skips,
+        },
+        "score": {
+            "totalArea": player.total_area,
+            "totalScore": game.total_score(player),
+            "potential": {"area": potential["area"], "prize": {"points": potential["prize_points"]}},
+        },
+        "houseRules": {
+            "reroll": {"used": player.rerolls_used, "limit": REROLL_LIMIT},
+            "comebackNudge": {"granted": player.comeback_nudge_granted},
+            "selfEnclosedPenalty": {"cells": 0},
+            "prize": {"captured": 0},
+            "pitfall": {"captured": 0},
+            "steal": {"captured": 0},
+        },
+    }
+
+
+def serialize_game(game: Game) -> dict:
+    legal_placements = [
+        {"width": w, "height": h, "topLefts": [list(cell) for cell in cells]}
+        for (w, h), cells in game.legal_cache.items()
+        if cells
+    ]
+    winner = game.winner() if game.state == TurnState.GAME_OVER else None
+    return {
+        "board": {"size": game.board_size, "skipLimit": game.skip_limit},
+        "turn": {
+            "currentPlayerId": game.current_player_id,
+            "turnState": _TURN_STATE_NAMES[game.state],
+            "lastRoll": list(game.last_roll) if game.last_roll is not None else None,
+            "legalPlacements": legal_placements,
+        },
+        "houseRules": {
+            "wildcard": {"enabled": False, "originalRoll": None, "legalValues": [], "editableIndex": None},
+            "reroll": {"enabled": False, "canReroll": False},
+            "comebackNudge": {"enabled": False},
+            "walls": {"enabled": False, "edges": []},
+            "obstacles": {"enabled": False, "cells": []},
+            "prize": {"enabled": False, "cells": [], "points": 0},
+            "pitfall": {"enabled": False, "cells": [], "points": 0},
+            "steal": {"enabled": False, "cells": [], "points": 0},
+            "selfEnclosedPenalty": {"enabled": False},
+        },
+        "players": {
+            "1": _serialize_player(game, game.players[1]),
+            "2": _serialize_player(game, game.players[2]),
+        },
+        "gameOver": {
+            "reason": _GAME_OVER_REASON_NAMES.get(game.game_over_reason),
+            "playerId": game.blocked_player_id or game.skipped_out_player_id or game.surrendered_player_id,
+            "winner": winner,
+        },
+    }
+
 
 @dataclass(frozen=True)
 class _NoPayloadMsg:

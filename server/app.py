@@ -5,13 +5,16 @@ from fastapi import FastAPI, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from rectangles.constants import (
+    BOARD_SIZE,
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
     PLAYER_2,
     SERIES_LENGTH_PRESETS,
+    SKIP_LIMIT,
     SKIP_LIMIT_PRESETS,
 )
-from server.schema import ErrorMsg, ErrorReason
+from rectangles.game import Game
+from server.schema import ErrorMsg, ErrorReason, StateMsg, serialize_game
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("RECTANGLES_SERVER_PORT", "8765"))
@@ -53,12 +56,25 @@ async def _send_error(websocket: WebSocket, reason: ErrorReason, message: str) -
     await websocket.send_json(error.to_json())
 
 
+async def _broadcast_state(websocket: WebSocket, game: Game) -> None:
+    state = StateMsg(protocol_version=PROTOCOL_VERSION, game=serialize_game(game))
+    await websocket.send_json(state.to_json())
+
+
+def _game_from_connect_params(query_params) -> Game:
+    board_size = int(query_params.get("boardSize", BOARD_SIZE))
+    skip_limit = int(query_params.get("skipLimit", SKIP_LIMIT))
+    return Game(board_size=board_size, skip_limit=skip_limit)
+
+
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
     if not _connect_params_valid(websocket.query_params):
         await websocket.close(code=1008)
         return
     await websocket.accept()
+    game = _game_from_connect_params(websocket.query_params)
+    await _broadcast_state(websocket, game)
     try:
         while True:
             text = await websocket.receive_text()
