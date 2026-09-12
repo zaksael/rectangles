@@ -1,12 +1,23 @@
+import asyncio
+
 import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from rectangles.constants import PLAYER_1, PLAYER_2
 from rectangles.game import Game, TurnState
+from rectangles.series import Series
 from rectangles.ui.net_adapter import ServerGameAdapter
-from server.app import ActionError, _apply_action, _bot_turn_step, app, run_in_background
+from server.app import ActionError, _apply_action, _bot_turn_step, _broadcast_and_run_bots, app, run_in_background
 from server.schema import ErrorReason
+
+
+class _FakeWebSocket:
+    def __init__(self):
+        self.sent = []
+
+    async def send_json(self, data):
+        self.sent.append(data)
 
 
 def test_run_in_background_serves_and_stops():
@@ -224,6 +235,13 @@ def test_ws_connect_with_series_length_starts_a_series():
         assert series["isComplete"] is False
 
 
+def test_ws_connect_with_series_length_honors_house_rule_params():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3&prizeEnabled=true") as ws:
+        game = ws.receive_json()["game"]
+        assert game["houseRules"]["prize"]["enabled"] is True
+
+
 def test_ws_connect_without_series_length_has_no_series():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
@@ -252,6 +270,33 @@ def test_ws_continue_series_starts_a_fresh_game():
         assert next_game["gameOver"]["reason"] is None
         assert next_game["players"]["1"]["board"]["pieces"] == []
         assert reply["series"]["gamesPlayed"] == 1
+
+
+def test_ws_continue_series_without_a_series_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "continueSeries"})
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == ErrorReason.INVALID_ACTION.value
+
+
+def test_ws_continue_series_after_series_complete_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3") as ws:
+        ws.receive_json()
+        for _ in range(3):
+            ws.send_json({"protocolVersion": 1, "type": "surrender"})
+            reply = ws.receive_json()
+            if not reply["series"]["isComplete"]:
+                ws.send_json({"protocolVersion": 1, "type": "continueSeries"})
+                ws.receive_json()
+        assert reply["series"]["isComplete"] is True
+        ws.send_json({"protocolVersion": 1, "type": "continueSeries"})
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == ErrorReason.INVALID_ACTION.value
 
 
 def test_ws_roll_broadcasts_new_state():
@@ -478,6 +523,18 @@ def test_bot_turn_step_rerolls_from_choosing_wildcard_instead_of_picking():
 
     assert result is True
     assert game.players[PLAYER_2].rerolls_used == 1
+
+
+def test_broadcast_and_run_bots_records_series_round_ended_by_a_bot_move():
+    game = Game(board_size=19, skip_limit=1)
+    game.current_player_id = PLAYER_2
+    game.state = TurnState.SKIPPED
+    series = Series(length=3, board_size=19, skip_limit=1)
+
+    asyncio.run(_broadcast_and_run_bots(_FakeWebSocket(), game, series, "Basic"))
+
+    assert game.state == TurnState.GAME_OVER
+    assert series.games_played == 1
 
 
 def test_ws_surrender_ends_game_and_declares_winner():

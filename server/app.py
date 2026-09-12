@@ -224,9 +224,21 @@ def _bot_turn_step(game: Game, difficulty: str) -> bool:
     return True
 
 
+def _record_round_if_over(series: Series | None, game: Game, recorded: bool) -> bool:
+    if series is not None and game.state == TurnState.GAME_OVER and not recorded:
+        series.record_game(game)
+        return True
+    return recorded
+
+
 async def _broadcast_and_run_bots(
-    websocket: WebSocket, game: Game, series: Series | None, bot_difficulty: str | None
-) -> None:
+    websocket: WebSocket,
+    game: Game,
+    series: Series | None,
+    bot_difficulty: str | None,
+    series_game_recorded: bool = False,
+) -> bool:
+    series_game_recorded = _record_round_if_over(series, game, series_game_recorded)
     await _broadcast_state(websocket, game, series)
     while (
         bot_difficulty is not None
@@ -235,7 +247,9 @@ async def _broadcast_and_run_bots(
     ):
         if not _bot_turn_step(game, bot_difficulty):
             break
+        series_game_recorded = _record_round_if_over(series, game, series_game_recorded)
         await _broadcast_state(websocket, game, series)
+    return series_game_recorded
 
 
 @app.websocket("/ws")
@@ -247,8 +261,7 @@ async def ws_endpoint(websocket: WebSocket) -> None:
     series = _series_from_connect_params(websocket.query_params)
     game = series.new_game() if series is not None else _game_from_connect_params(websocket.query_params)
     bot_difficulty = _bot_difficulty_from_connect_params(websocket.query_params)
-    series_game_recorded = False
-    await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
+    series_game_recorded = await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
     try:
         while True:
             text = await websocket.receive_text()
@@ -269,18 +282,16 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     await _send_error(websocket, ErrorReason.INVALID_ACTION, "no series to continue")
                     continue
                 game = series.new_game()
-                series_game_recorded = False
-                await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
+                series_game_recorded = await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
                 continue
             try:
                 _apply_action(game, data)
             except ActionError as exc:
                 await _send_error(websocket, exc.reason, exc.message)
                 continue
-            if series is not None and game.state == TurnState.GAME_OVER and not series_game_recorded:
-                series.record_game(game)
-                series_game_recorded = True
-            await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
+            series_game_recorded = await _broadcast_and_run_bots(
+                websocket, game, series, bot_difficulty, series_game_recorded
+            )
     except WebSocketDisconnect:
         pass
 
