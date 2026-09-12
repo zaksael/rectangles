@@ -1,6 +1,7 @@
-from rectangles.constants import PLAYER_1, CellKind
+from rectangles.constants import PLAYER_1, PLAYER_2, CellKind
 from rectangles.game import Game, TurnState
 from rectangles.models import Cell, SpecialCell
+from rectangles.series import Series
 from server.schema import (
     ChooseWildcardMsg,
     ErrorMsg,
@@ -12,6 +13,7 @@ from server.schema import (
     StateMsg,
     SurrenderMsg,
     serialize_game,
+    serialize_series,
 )
 
 
@@ -242,6 +244,33 @@ def test_serialize_game_player_score_potential_area_and_prize_points():
     assert potential["prize"]["points"] == 7
 
 
+def test_serialize_series_scores_and_round_breakdown():
+    series = Series(length=3, board_size=6, skip_limit=2, prize_enabled=True, special_cell_points={"prize": 10})
+    game = Game(board_size=6, prize_enabled=True, special_cell_points={"prize": 10})
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+    game.board.place(p1, (0, 0), w=5, h=1)
+    game.board.place(p2, (0, 1), w=2, h=1)
+    p1.special_captures[CellKind.PRIZE] = 1
+    series.record_game(game)
+
+    data = serialize_series(series)
+
+    assert data["length"] == 3
+    assert data["scores"] == {"1": 15, "2": 2}
+    assert data["gamesPlayed"] == 1
+    assert data["rounds"] == [
+        {
+            "area": {"1": 5, "2": 2},
+            "prizeCaptured": {"1": 1, "2": 0},
+            "pitfallCaptured": {"1": 0, "2": 0},
+            "stealCaptured": {"1": 0, "2": 0},
+            "total": {"1": 15, "2": 2},
+        }
+    ]
+    assert data["isComplete"] is False
+    assert data["winner"] == 1  # leading on cumulative score, even mid-series
+
+
 def test_serialize_game_wildcard_disabled_by_default():
     game = Game(board_size=19)
     wildcard = serialize_game(game)["houseRules"]["wildcard"]
@@ -288,5 +317,17 @@ def test_state_msg():
         "protocolVersion": 1,
         "type": "state",
         "game": {"board": {"size": 19}},
+        "series": None,
+    }
+    assert StateMsg.from_json(msg.to_json()) == msg
+
+
+def test_state_msg_with_series():
+    msg = StateMsg(protocol_version=1, game={"board": {"size": 19}}, series={"length": 3})
+    assert msg.to_json() == {
+        "protocolVersion": 1,
+        "type": "state",
+        "game": {"board": {"size": 19}},
+        "series": {"length": 3},
     }
     assert StateMsg.from_json(msg.to_json()) == msg

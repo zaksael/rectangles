@@ -215,6 +215,45 @@ def test_ws_connect_honors_comeback_nudge_enabled_param():
         assert game["houseRules"]["comebackNudge"]["enabled"] is True
 
 
+def test_ws_connect_with_series_length_starts_a_series():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3") as ws:
+        series = ws.receive_json()["series"]
+        assert series["length"] == 3
+        assert series["gamesPlayed"] == 0
+        assert series["isComplete"] is False
+
+
+def test_ws_connect_without_series_length_has_no_series():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        assert ws.receive_json()["series"] is None
+
+
+def test_ws_records_finished_round_into_series():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        series = ws.receive_json()["series"]
+        assert series["gamesPlayed"] == 1
+        assert len(series["rounds"]) == 1
+
+
+def test_ws_continue_series_starts_a_fresh_game():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3&boardSize=19") as ws:
+        first_game = ws.receive_json()["game"]
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "continueSeries"})
+        reply = ws.receive_json()
+        next_game = reply["game"]
+        assert next_game["gameOver"]["reason"] is None
+        assert next_game["players"]["1"]["board"]["pieces"] == []
+        assert reply["series"]["gamesPlayed"] == 1
+
+
 def test_ws_roll_broadcasts_new_state():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:

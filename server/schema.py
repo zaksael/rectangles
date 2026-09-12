@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
-from rectangles.constants import DICE_MAX, DICE_MIN, CellKind
+from rectangles.constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, CellKind
 from rectangles.game import Game, GameOverReason, TurnState
 from rectangles.models import Player
+from rectangles.series import RoundResult, Series
 
 _TURN_STATE_NAMES = {
     TurnState.AWAITING_ROLL: "awaitingRoll",
@@ -118,6 +119,36 @@ def serialize_game(game: Game) -> dict:
     }
 
 
+def _serialize_round(round_result: RoundResult) -> dict:
+    return {
+        "area": {"1": round_result.area[PLAYER_1], "2": round_result.area[PLAYER_2]},
+        "prizeCaptured": {
+            "1": round_result.prize_captured[PLAYER_1],
+            "2": round_result.prize_captured[PLAYER_2],
+        },
+        "pitfallCaptured": {
+            "1": round_result.pitfall_captured[PLAYER_1],
+            "2": round_result.pitfall_captured[PLAYER_2],
+        },
+        "stealCaptured": {
+            "1": round_result.steal_captured[PLAYER_1],
+            "2": round_result.steal_captured[PLAYER_2],
+        },
+        "total": {"1": round_result.total[PLAYER_1], "2": round_result.total[PLAYER_2]},
+    }
+
+
+def serialize_series(series: Series) -> dict:
+    return {
+        "length": series.length,
+        "scores": {"1": series.scores[PLAYER_1], "2": series.scores[PLAYER_2]},
+        "gamesPlayed": series.games_played,
+        "rounds": [_serialize_round(r) for r in series.rounds],
+        "isComplete": series.is_complete(),
+        "winner": series.winner(),
+    }
+
+
 @dataclass(frozen=True)
 class _NoPayloadMsg:
     _TYPE: ClassVar[str] = ""
@@ -169,13 +200,19 @@ class ChooseWildcardMsg:
 class StateMsg:
     protocol_version: int
     game: dict
+    series: dict | None = None
 
     def to_json(self) -> dict:
-        return {"protocolVersion": self.protocol_version, "type": "state", "game": self.game}
+        return {
+            "protocolVersion": self.protocol_version,
+            "type": "state",
+            "game": self.game,
+            "series": self.series,
+        }
 
     @classmethod
     def from_json(cls, data: dict) -> "StateMsg":
-        return cls(protocol_version=data["protocolVersion"], game=data["game"])
+        return cls(protocol_version=data["protocolVersion"], game=data["game"], series=data["series"])
 
 
 class ErrorReason(str, Enum):

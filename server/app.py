@@ -20,7 +20,16 @@ from rectangles.constants import (
 )
 from rectangles import bot
 from rectangles.game import Game, TurnState
-from server.schema import ChooseWildcardMsg, ErrorMsg, ErrorReason, PlaceMsg, StateMsg, serialize_game
+from rectangles.series import Series
+from server.schema import (
+    ChooseWildcardMsg,
+    ErrorMsg,
+    ErrorReason,
+    PlaceMsg,
+    StateMsg,
+    serialize_game,
+    serialize_series,
+)
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("RECTANGLES_SERVER_PORT", "8765"))
@@ -89,8 +98,12 @@ async def _send_error(websocket: WebSocket, reason: ErrorReason, message: str) -
     await websocket.send_json(error.to_json())
 
 
-async def _broadcast_state(websocket: WebSocket, game: Game) -> None:
-    state = StateMsg(protocol_version=PROTOCOL_VERSION, game=serialize_game(game))
+async def _broadcast_state(websocket: WebSocket, game: Game, series: Series | None) -> None:
+    state = StateMsg(
+        protocol_version=PROTOCOL_VERSION,
+        game=serialize_game(game),
+        series=serialize_series(series) if series is not None else None,
+    )
     await websocket.send_json(state.to_json())
 
 
@@ -99,9 +112,7 @@ def _bool_param_to_kwarg(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", base).lower() + "_enabled"
 
 
-def _game_from_connect_params(query_params) -> Game:
-    board_size = int(query_params.get("boardSize", BOARD_SIZE))
-    skip_limit = int(query_params.get("skipLimit", SKIP_LIMIT))
+def _rules_kwargs_from_connect_params(query_params) -> dict:
     bool_kwargs = {
         _bool_param_to_kwarg(name): query_params.get(name) == "true" for name in _BOOL_PARAM_NAMES
     }
@@ -112,12 +123,22 @@ def _game_from_connect_params(query_params) -> Game:
         special_cell_points["pitfall"] = int(query_params["pitfallPoints"])
     if "stealPoints" in query_params:
         special_cell_points["steal"] = int(query_params["stealPoints"])
-    return Game(
-        board_size=board_size,
-        skip_limit=skip_limit,
-        special_cell_points=special_cell_points,
+    return {
+        "board_size": int(query_params.get("boardSize", BOARD_SIZE)),
+        "skip_limit": int(query_params.get("skipLimit", SKIP_LIMIT)),
+        "special_cell_points": special_cell_points,
         **bool_kwargs,
-    )
+    }
+
+
+def _game_from_connect_params(query_params) -> Game:
+    return Game(**_rules_kwargs_from_connect_params(query_params))
+
+
+def _series_from_connect_params(query_params) -> Series | None:
+    if "seriesLength" not in query_params:
+        return None
+    return Series(length=int(query_params["seriesLength"]), **_rules_kwargs_from_connect_params(query_params))
 
 
 def _bot_difficulty_from_connect_params(query_params) -> str | None:
@@ -203,8 +224,10 @@ def _bot_turn_step(game: Game, difficulty: str) -> bool:
     return True
 
 
-async def _broadcast_and_run_bots(websocket: WebSocket, game: Game, bot_difficulty: str | None) -> None:
-    await _broadcast_state(websocket, game)
+async def _broadcast_and_run_bots(
+    websocket: WebSocket, game: Game, series: Series | None, bot_difficulty: str | None
+) -> None:
+    await _broadcast_state(websocket, game, series)
     while (
         bot_difficulty is not None
         and game.state != TurnState.GAME_OVER
@@ -212,7 +235,7 @@ async def _broadcast_and_run_bots(websocket: WebSocket, game: Game, bot_difficul
     ):
         if not _bot_turn_step(game, bot_difficulty):
             break
-        await _broadcast_state(websocket, game)
+        await _broadcast_state(websocket, game, series)
 
 
 @app.websocket("/ws")
@@ -221,9 +244,11 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         await websocket.close(code=1008)
         return
     await websocket.accept()
-    game = _game_from_connect_params(websocket.query_params)
+    series = _series_from_connect_params(websocket.query_params)
+    game = series.new_game() if series is not None else _game_from_connect_params(websocket.query_params)
     bot_difficulty = _bot_difficulty_from_connect_params(websocket.query_params)
-    await _broadcast_and_run_bots(websocket, game, bot_difficulty)
+    series_game_recorded = False
+    await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
     try:
         while True:
             text = await websocket.receive_text()
@@ -239,12 +264,23 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     websocket, ErrorReason.PROTOCOL_VERSION_MISMATCH, "protocol version mismatch"
                 )
                 continue
+            if data.get("type") == "continueSeries":
+                if series is None or series.is_complete():
+                    await _send_error(websocket, ErrorReason.INVALID_ACTION, "no series to continue")
+                    continue
+                game = series.new_game()
+                series_game_recorded = False
+                await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
+                continue
             try:
                 _apply_action(game, data)
             except ActionError as exc:
                 await _send_error(websocket, exc.reason, exc.message)
                 continue
-            await _broadcast_and_run_bots(websocket, game, bot_difficulty)
+            if series is not None and game.state == TurnState.GAME_OVER and not series_game_recorded:
+                series.record_game(game)
+                series_game_recorded = True
+            await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
     except WebSocketDisconnect:
         pass
 
