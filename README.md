@@ -344,17 +344,25 @@ uv run pytest
 
 ```
 rectangles/
-├── engine/         # rules engine, no dependency on Pygame
-│   ├── constants.py    # tunable game/UI values (board sizes, limits, presets)
-│   ├── models.py       # Rectangle, Player, TurnRecord
-│   ├── board.py        # grid + placement legality
-│   ├── game.py         # turn state machine, scoring, game-over rules
-│   ├── series.py       # N-round match series (cumulative score, next-round setup)
-│   ├── tournament.py   # single-elimination bracket (participants, matches, tiebreaks)
-│   ├── bot.py          # picks a placement for the bot opponent (Basic/Greedy/Blocking)
-│   └── persistence.py  # save/load a game (and series, if one is in progress)
-├── ui/             # Pygame rendering and input (all Pygame code lives here)
-└── server/         # FastAPI/WebSocket server for online play
+├── engine/               # rules engine, no dependency on Pygame
+│   ├── board.py          # grid + placement legality
+│   ├── bot.py            # picks a placement for the bot opponent (Basic/Greedy/Blocking)
+│   ├── constants.py      # tunable game/UI values (board sizes, limits, presets)
+│   ├── game.py           # turn state machine, scoring, game-over rules
+│   ├── models.py         # Rectangle, Player, TurnRecord
+│   ├── persistence.py    # save/load a game (and series/tournament, if in progress)
+│   ├── series.py         # N-round match series (cumulative score, next-round setup)
+│   └── tournament.py     # single-elimination bracket (participants, matches, tiebreaks)
+├── server/               # FastAPI/WebSocket server for online play
+│   ├── app.py            # WebSocket handler, one Game per connection
+│   └── schema.py         # wire message schema, state serialization
+└── ui/                   # Pygame rendering and input (all Pygame code lives here)
+    ├── input/            # event handling, one module per screen
+    ├── render/           # drawing, one module per screen
+    ├── app.py            # top-level app loop, screen dispatch
+    ├── layout.py         # panel/board geometry constants
+    ├── net_adapter.py    # bridges UI to the server over WebSocket
+    └── state.py          # UI-side app/session state
 ```
 
 The rules engine (`rectangles/engine/`) has no dependency on Pygame, so it's

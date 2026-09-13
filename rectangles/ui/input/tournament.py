@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine.tournament import Bracket
-from . import layout
-from .input_common import _design_pos, _new_game
-from .state import Screen, UIState
+from ...engine.tournament import Bracket
+from .. import layout
+from .common import _design_pos, _new_game
+from ..state import Screen, UIState
 
 
 def handle_tournament_event(event: pygame.event.Event, ui_state: UIState, tournament: Bracket) -> bool:

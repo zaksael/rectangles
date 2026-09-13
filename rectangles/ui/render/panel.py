@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import constants
-from ..engine.constants import CellKind
-from ..engine.game import Game, TurnState
-from ..engine.models import TurnRecord
-from ..engine.series import RoundResult, Series
-from ..engine.tournament import Bracket
-from . import layout
+from ...engine import constants
+from ...engine.constants import CellKind
+from ...engine.game import Game, TurnState
+from ...engine.models import TurnRecord
+from ...engine.series import RoundResult, Series
+from ...engine.tournament import Bracket
+from .. import layout
 from .colors import DIVIDER_COLOR, MUTED_TEXT_COLOR, PANEL_BG_COLOR, ROW_ACTIVE_BG_COLOR, TEXT_COLOR
-from .state import UIState
+from ..state import UIState
 
 
 class PanelMixin:

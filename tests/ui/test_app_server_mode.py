@@ -11,7 +11,7 @@ from rectangles.ui import layout
 from rectangles.ui.app import _connect_query_params, _new_game
 from rectangles.ui.input import handle_event
 from rectangles.ui.net_adapter import ServerGameAdapter
-from rectangles.ui.renderer import Renderer
+from rectangles.ui.render import Renderer
 from rectangles.ui.state import Screen, UIState
 from rectangles.server.app import run_in_background
 

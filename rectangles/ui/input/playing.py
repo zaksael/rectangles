@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import persistence
-from ..engine.game import Game, TurnState
-from ..engine.series import Series
-from ..engine.tournament import Bracket
-from . import layout
-from .input_common import (
+from ...engine import persistence
+from ...engine.game import Game, TurnState
+from ...engine.series import Series
+from ...engine.tournament import Bracket
+from .. import layout
+from .common import (
     _advance_or_end_series,
     _choose_wildcard_value,
     _design_pos,
@@ -19,7 +19,7 @@ from .input_common import (
     continue_turn,
     is_bots_turn,
 )
-from .state import ConfirmAction, Screen, UIState
+from ..state import ConfirmAction, Screen, UIState
 
 
 def _request_new_game(game: Game, ui_state: UIState) -> None:

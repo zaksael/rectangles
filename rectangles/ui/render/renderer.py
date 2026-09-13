@@ -2,18 +2,19 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine.game import Game, TurnState
-from ..engine.series import Series
-from ..engine.tournament import Bracket
-from . import colors, layout
-from .renderer_board import BoardMixin
-from .renderer_dialogs import DialogsMixin
-from .renderer_mode_select import ModeSelectMixin
-from .renderer_panel import PanelMixin
-from .renderer_replay import ReplayMixin, _AnalysisCandidate
-from .renderer_settings import SettingsMixin
-from .renderer_tournament import TournamentMixin
-from .state import Screen, UIState
+from ...engine.game import Game, TurnState
+from ...engine.series import Series
+from ...engine.tournament import Bracket
+from . import colors
+from .. import layout
+from .board import BoardMixin
+from .dialogs import DialogsMixin
+from .mode_select import ModeSelectMixin
+from .panel import PanelMixin
+from .replay import ReplayMixin, _AnalysisCandidate
+from .settings import SettingsMixin
+from .tournament import TournamentMixin
+from ..state import Screen, UIState
 
 
 class Renderer(BoardMixin, PanelMixin, ModeSelectMixin, SettingsMixin, ReplayMixin, TournamentMixin, DialogsMixin):

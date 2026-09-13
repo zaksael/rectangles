@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine.constants import REPLAY_SPEED_PRESETS
-from ..engine.game import Game
-from . import layout
-from .input_common import _design_pos
-from .state import Screen, UIState
+from ...engine.constants import REPLAY_SPEED_PRESETS
+from ...engine.game import Game
+from .. import layout
+from .common import _design_pos
+from ..state import Screen, UIState
 
 
 def _clamp_replay_step(ui_state: UIState, game: Game) -> None:

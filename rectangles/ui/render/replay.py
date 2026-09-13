@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import bot, constants
-from ..engine.board import Board
-from ..engine.constants import CellKind
-from ..engine.game import Game
-from ..engine.models import Player, Rectangle, TurnRecord
-from . import colors, layout
-from .state import UIState
+from ...engine import bot, constants
+from ...engine.board import Board
+from ...engine.constants import CellKind
+from ...engine.game import Game
+from ...engine.models import Player, Rectangle, TurnRecord
+from . import colors
+from .. import layout
+from ..state import UIState
 
 # (top_left, width, height) - one candidate placement a turn's analysis can
 # compare against the move actually played.

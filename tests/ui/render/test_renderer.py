@@ -10,7 +10,7 @@ from rectangles.engine.game import Game, GameOverReason, TurnState
 from rectangles.engine.models import Cell, Rectangle, SpecialCell, TurnRecord
 from rectangles.engine.series import Series
 from rectangles.ui import layout
-from rectangles.ui.renderer import Renderer
+from rectangles.ui.render import Renderer
 from rectangles.ui.state import ConfirmAction, Screen, UIState
 
 

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import persistence
-from . import layout
-from .input_common import _design_pos
-from .state import Screen, UIState
+from ...engine import persistence
+from .. import layout
+from .common import _design_pos
+from ..state import Screen, UIState
 
 
 def _select_game_mode(ui_state: UIState, mode: str) -> None:

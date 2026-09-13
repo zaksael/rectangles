@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import constants
-from ..engine.constants import CellKind
-from ..engine.game import Game, TurnState
-from ..engine.models import Rectangle
-from . import colors, layout
-from .state import UIState
+from ...engine import constants
+from ...engine.constants import CellKind
+from ...engine.game import Game, TurnState
+from ...engine.models import Rectangle
+from . import colors
+from .. import layout
+from ..state import UIState
 
 
 # Prize/Pitfall/Steal glyphs share one centered-bar primitive: "+", "-", and

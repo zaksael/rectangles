@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pygame
 
-from . import layout
+from .. import layout
 from .colors import MUTED_TEXT_COLOR, TEXT_COLOR
-from .state import UIState
+from ..state import UIState
 
 
 class SettingsMixin:

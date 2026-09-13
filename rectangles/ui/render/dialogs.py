@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import constants
-from ..engine.game import Game, GameOverReason
-from ..engine.series import Series
-from ..engine.tournament import Bracket
-from . import layout
+from ...engine import constants
+from ...engine.game import Game, GameOverReason
+from ...engine.series import Series
+from ...engine.tournament import Bracket
+from .. import layout
 from .colors import OVERLAY_COLOR, TEXT_COLOR
-from .state import ConfirmAction, UIState
+from ..state import ConfirmAction, UIState
 
 
 class DialogsMixin:

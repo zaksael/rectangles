@@ -12,7 +12,7 @@ from ..engine.tournament import Bracket
 from . import input as game_input
 from . import layout
 from .net_adapter import ServerGameAdapter
-from .renderer import Renderer
+from .render import Renderer
 from .state import Screen, UIState
 
 FPS = 60

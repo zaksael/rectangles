@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pygame
 
-from ..engine import bot
-from ..engine.constants import PLAYER_1, PLAYER_2
-from ..engine.game import Game, TurnState
-from ..engine.series import Series
-from ..engine.tournament import Bracket, Match, Participant
-from . import layout
-from .state import Screen, UIState
+from ...engine import bot
+from ...engine.constants import PLAYER_1, PLAYER_2
+from ...engine.game import Game, TurnState
+from ...engine.series import Series
+from ...engine.tournament import Bracket, Match, Participant
+from .. import layout
+from ..state import Screen, UIState
 
 
 def _current_window_size() -> tuple[int, int]:
