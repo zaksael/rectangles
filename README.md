@@ -163,25 +163,29 @@ Player 2's controls is ignored while the bot is taking its turn.
 
 The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
-- **Greedy** — prefers a placement that captures a prize (see
-  [Prize](#prize)); with Prize off, or when no
-  candidate reaches a prize, it falls back to denying cells in your
+- **Greedy** — prefers a placement that captures a [Prize](#prize) or
+  [Steal](#steal) cell (Steal weighted double, since capturing it swings the
+  score gap both ways at once), and avoids a [Pitfall](#pitfall) cell when a
+  Pitfall-free placement is available; with none of those on the board, or
+  when no candidate reaches one, it falls back to denying cells in your
   frontier, same as Blocking.
 - **Blocking** — prefers a placement that covers cells in *your* frontier,
-  denying you those spots; falls back to a random pick among equally
-  denying (or non-denying) candidates.
+  denying you those spots, weighted extra heavily when one of those cells is
+  a Steal cell you could otherwise have captured; falls back to a random
+  pick among equally denying (or non-denying) candidates.
 
 Greedy and Blocking also play [Wildcard Roll](#wildcard-roll) and
 [Reroll](#reroll) with the same underlying strategy: on a wildcard roll they
-pick whichever value scores best on their own metric (a reachable prize for
-Greedy, a deniable frontier cell for Blocking); if every value ties at zero,
-Blocking picks randomly among them, while Greedy instead prefers whichever
-value gives the larger piece. With Reroll on, Blocking spends a charge to
-discard a roll that wouldn't deny you anything right now. Greedy does the
-same, but only when a prize actually exists on the board — with
-[Prize](#prize) off, no roll could ever reach a prize anyway,
-so Greedy accepts whatever it gets instead of burning charges for nothing.
-Basic stays fully random for both and never rerolls.
+pick whichever value scores best on their own metric (a reachable
+Prize/Steal/Pitfall for Greedy, a deniable frontier cell for Blocking); if
+every value ties at zero, Blocking picks randomly among them, while Greedy
+instead prefers whichever value gives the larger piece. With Reroll on,
+Blocking spends a charge to discard a roll that wouldn't deny you anything
+right now. Greedy does the same, but only when it can't do better than a
+score of zero right now — with Prize, Steal, and Pitfall all off (or none of
+them reachable at all), no roll could ever score anyway, so Greedy accepts
+whatever it gets instead of burning charges for nothing. Basic stays fully
+random for both and never rerolls.
 
 ## Series mode
 

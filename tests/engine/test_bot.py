@@ -12,8 +12,8 @@ class ScriptedRandom:
         return self._values.pop(0)
 
 
-def _prizes(*cells: tuple[int, int]) -> frozenset[SpecialCell]:
-    return frozenset(SpecialCell(CellKind.PRIZE, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
+def _special(kind: CellKind, *cells: tuple[int, int]) -> frozenset[SpecialCell]:
+    return frozenset(SpecialCell(kind, Cell(*cell), pair_id=i) for i, cell in enumerate(cells))
 
 
 def test_choose_placement_returns_a_legal_candidate():
@@ -38,11 +38,31 @@ def test_choose_placement_is_deterministic_via_rng_index():
 def test_choose_placement_greedy_prefers_capturing_a_prize():
     game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
     game.prize_enabled = True
-    game.board.special_cells = _prizes((3, 3))
+    game.board.special_cells = _special(CellKind.PRIZE, (3, 3))
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
 
     assert choose_placement(game, "Greedy") == ((3, 3), 1, 1)
+
+
+def test_choose_placement_greedy_prefers_capturing_a_steal_cell_over_a_plain_cell():
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.steal_enabled = True
+    game.board.special_cells = _special(CellKind.STEAL, (3, 3))
+    game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
+    game.roll_dice()
+
+    assert choose_placement(game, "Greedy") == ((3, 3), 1, 1)
+
+
+def test_choose_placement_greedy_avoids_a_pitfall_when_a_pitfall_free_candidate_exists():
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.pitfall_enabled = True
+    game.board.special_cells = _special(CellKind.PITFALL, (0, 1))
+    game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
+    game.roll_dice()
+
+    assert choose_placement(game, "Greedy") == ((1, 0), 1, 1)
 
 
 def test_choose_placement_greedy_falls_back_to_blocking_score_without_prizes():
@@ -64,6 +84,19 @@ def test_choose_placement_blocking_prefers_denying_opponent_frontier():
     game.roll_dice()
 
     assert choose_placement(game, "Blocking") == ((2, 3), 1, 1)
+
+
+def test_choose_placement_blocking_prefers_denying_an_opponent_reachable_steal_cell():
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.steal_enabled = True
+    game.board.special_cells = _special(CellKind.STEAL, (4, 3))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.place(game.players[PLAYER_1], (4, 2), 1, 1)
+    game.board.place(game.players[PLAYER_2], (2, 4), 1, 1)
+    game.board.place(game.players[PLAYER_2], (4, 4), 1, 1)
+    game.roll_dice()
+
+    assert choose_placement(game, "Blocking") == ((4, 3), 1, 1)
 
 
 def test_blocking_score_fn_computes_frontier_once_per_call_not_per_candidate():
@@ -88,7 +121,18 @@ def test_blocking_score_fn_computes_frontier_once_per_call_not_per_candidate():
 def test_choose_wildcard_value_greedy_prefers_a_prize_capturing_value():
     game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
     game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
-    game.board.special_cells = _prizes((2, 5))
+    game.board.special_cells = _special(CellKind.PRIZE, (2, 5))
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_WILDCARD"
+
+    assert choose_wildcard_value(game, "Greedy") == 3
+
+
+def test_choose_wildcard_value_greedy_prefers_a_steal_capturing_value():
+    game = Game(board_size=6, wildcard_enabled=True, rng=ScriptedRandom([2, 2, 0]))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.steal_enabled = True
+    game.board.special_cells = _special(CellKind.STEAL, (2, 5))
     game.roll_dice()
     assert game.state.name == "CHOOSING_WILDCARD"
 
@@ -133,13 +177,40 @@ def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_prize():
 def test_should_reroll_true_for_greedy_when_prizes_exist_but_unreachable_this_turn():
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
     game.prize_enabled = True
-    game.board.special_cells = _prizes((5, 5))
+    game.board.special_cells = _special(CellKind.PRIZE, (5, 5))
     game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
     game.roll_dice()
     assert game.state.name == "CHOOSING_PLACEMENT"
     prize_cells = game.board.cells_of_kind(CellKind.PRIZE)
     assert prize_cells  # sanity: prizes do exist this game
     assert not (prize_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
+
+    assert should_reroll(game, "Greedy") is True
+
+
+def test_should_reroll_true_for_greedy_when_steal_exists_but_unreachable_this_turn():
+    # Guards against the old Prize-only early return, which would wrongly say False here.
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.steal_enabled = True
+    game.board.special_cells = _special(CellKind.STEAL, (5, 5))
+    game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_PLACEMENT"
+    steal_cells = game.board.cells_of_kind(CellKind.STEAL)
+    assert steal_cells  # sanity: steal cells do exist this game
+    assert not (steal_cells & {(0, 1), (1, 0)})  # ...just not reachable by this roll
+
+    assert should_reroll(game, "Greedy") is True
+
+
+def test_should_reroll_true_for_greedy_when_every_candidate_covers_a_pitfall():
+    # Every candidate scores negative here - worse than the old floor of 0.
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.pitfall_enabled = True
+    game.board.special_cells = _special(CellKind.PITFALL, (0, 1), (1, 0))
+    game.board.place(game.players[PLAYER_1], (0, 0), 1, 1)
+    game.roll_dice()
+    assert game.state.name == "CHOOSING_PLACEMENT"
 
     assert should_reroll(game, "Greedy") is True
 

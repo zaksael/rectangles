@@ -257,28 +257,34 @@ levels may be offered:
 
 - **Basic** — chooses uniformly at random among all of its legal placements
   for the current roll.
-- **Greedy** — prefers whichever legal placement captures the most prizes
-  (relevant only when Prize is in play — with it off, or when no
-  candidate reaches a prize, this behaves exactly like Basic); ties are
-  broken randomly.
+- **Greedy** — scores each legal placement by the special cells it would
+  capture: Prize and Pitfall each count at their own point value (Prize
+  positive, Pitfall negative — a placement covering a Pitfall is actively
+  avoided whenever a better-scoring alternative exists), and Steal counts
+  double its point value (capturing it swings the score gap both ways at
+  once, not just a one-sided gain). With none of Prize/Steal/Pitfall in
+  play, or when no candidate reaches one, this behaves exactly like
+  Blocking (denying the opponent's frontier) instead of Basic's plain random
+  pick; ties are broken randomly.
 - **Blocking** — prefers whichever legal placement takes away the most
   currently-available cells from its opponent (i.e. cells the opponent
-  could otherwise have used for at least a 1×1 piece); ties are broken
-  randomly.
+  could otherwise have used for at least a 1×1 piece), with an extra bonus
+  weight when one of those denied cells is a Steal cell the opponent could
+  otherwise have captured; ties are broken randomly.
 
 Greedy and Blocking apply the same underlying strategy to Wildcard Roll
 (§6.6) and Reroll (§6.8), where enabled:
 
 - On a wildcard roll, each picks whichever value scores best by its own
-  metric (most prizes reachable for Greedy, most opponent cells deniable
-  for Blocking). If every value ties — for Greedy, this includes every
-  turn Prize is off — Blocking picks among the tied values at
-  random, while Greedy instead prefers the value yielding the largest
-  piece.
+  metric (most special-cell value reachable for Greedy, most opponent cells
+  deniable for Blocking). If every value ties — for Greedy, this includes
+  every turn none of Prize/Steal/Pitfall are in play — Blocking picks among
+  the tied values at random, while Greedy instead prefers the value
+  yielding the largest piece.
 - With Reroll on, Blocking discards a roll whenever no candidate would
-  deny its opponent anything right now. Greedy does the same only when
-  Prize is in play and no candidate reaches a prize this turn;
-  with Prize off, no prize could ever be reached, so Greedy never
+  deny its opponent anything right now. Greedy does the same only when it
+  can't score better than zero this turn; with none of Prize/Steal/Pitfall
+  in play, nothing could ever score above zero anyway, so Greedy never
   rerolls.
 
 Basic never rerolls and always picks a wildcard value uniformly at
