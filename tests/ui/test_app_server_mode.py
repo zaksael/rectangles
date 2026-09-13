@@ -74,6 +74,9 @@ def test_connect_query_params_includes_comeback_nudge_enabled():
 
 
 def test_new_game_over_the_wire_plays_a_full_turn():
+    # Click scaling reads the current (global) pygame display size - fix it
+    # here so it doesn't inherit whatever size another test left active.
+    pygame.display.set_mode((layout.DESIGN_WIDTH, layout.DESIGN_HEIGHT))
     url, stop = run_in_background()
     try:
         ui_state = UIState(screen=Screen.PLAYING)
@@ -84,10 +87,15 @@ def test_new_game_over_the_wire_plays_a_full_turn():
             assert handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_d), game, ui_state) is True
             assert game.state == TurnState.CHOOSING_PLACEMENT
 
-            entry = next(e for e in game.legal_cache.items() if e[1])
-            (width, height), top_lefts = entry
+            # ui_state.current_dims is the orientation the roll actually
+            # picked; legal_cache may have both (a, b) and (b, a) legal.
+            width, height = ui_state.current_dims
+            top_lefts = game.legal_cache[(width, height)]
             row, col = next(iter(top_lefts))
-            pos = layout.cell_rect(row, col, board_size=game.board.size).center
+            # Clicks anchor on the piece's center cell, not its top-left
+            # (see compute_top_left).
+            center = (row + height // 2, col + width // 2)
+            pos = layout.cell_rect(*center, board_size=game.board.size).center
 
             assert handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=pos), game, ui_state) is True
 
