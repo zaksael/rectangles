@@ -52,8 +52,8 @@ may be placed if and only if all of the following hold:
 
 1. It fits entirely within the board.
 2. Every cell it would cover is currently unclaimed by either player, and
-   none of them is an obstacle cell (§6.3), if Obstacles is in play.
-3. If Walls (§6.2) is in play, it does not straddle a wall line.
+   none of them is an obstacle cell (§6.5), if Obstacles is in play.
+3. If Walls (§6.4) is in play, it does not straddle a wall line.
 4. **Anchoring**:
    - A player's *very first* placement of the match must include their own
      starting corner as one of the piece's own corners.
@@ -70,8 +70,15 @@ may be placed if and only if all of the following hold:
   i.e. the combined area of every piece they've placed.
 - If Prize is in play, each prize a player has captured (§6.1) adds
   a fixed bonus to their score on top of that area.
+- If Pitfall is in play, each pitfall a player has captured (§6.2) docks a
+  fixed amount from their own score - a pure penalty, the mirror image of
+  Prize.
+- If Steal is in play, each steal cell a player has captured (§6.3) adds a
+  fixed bonus to their score *and* docks that same amount from their
+  opponent's score - a zero-sum transfer, unlike Prize's or Pitfall's
+  one-sided effect.
 - If Enclosure Penalty is in play, each empty cell currently self-enclosed
-  by that player's own territory (§6.5) docks a fixed amount from their
+  by that player's own territory (§6.7) docks a fixed amount from their
   score - a live figure, recomputed continuously as the board changes.
 - Whoever has the higher score once the game ends (§8) wins; equal scores
   is a tie — except when the game ended by surrender (§9), in which case
@@ -95,7 +102,36 @@ captures it immediately (a single large enough piece can capture more than
 one prize at once). Each captured prize permanently earns that player a fixed
 10-point bonus added to their score; prizes are never lost once captured.
 
-### 6.2 Walls
+### 6.2 Pitfall
+
+When enabled: two mirrored single-cell pairs (four pitfall cells total) are
+marked on the board before play begins - each pair at a random position
+plus its mirror through the board's center, kept clear of both players'
+starting corners, of any Prize, Walls, or Obstacles cells already in play,
+and a minimum distance apart from other Pitfall cells, so neither player is
+favored and the cells don't cluster together. A pitfall cell behaves like
+any other empty cell
+for placement purposes; whichever player's piece happens to cover it
+captures it immediately (a single large enough piece can capture more than
+one pitfall at once). Each captured pitfall permanently docks the
+*capturing* player a fixed 10-point penalty from their own score - the
+mirror image of Prize's bonus, not a bonus to anyone.
+
+### 6.3 Steal
+
+When enabled: one mirrored single-cell pair (two steal cells total) is
+marked on the board before play begins - placed at a random position plus
+its mirror through the board's center, kept clear of both players' starting
+corners and of any Prize, Walls, Obstacles, or Pitfall cell already in
+play, so neither player is favored. A steal cell behaves like any other
+empty cell for placement
+purposes; whichever player's piece happens to cover it captures it
+immediately. Capturing a steal cell is a zero-sum transfer: the capturing
+player permanently gains a fixed 10 points, and their opponent permanently
+loses that same 10 points - unlike Prize's or Pitfall's one-sided effect,
+this one always touches both players' scores at once.
+
+### 6.4 Walls
 
 When enabled: several wall segments are marked on the board before play
 begins, in mirrored pairs — each pair placed at a random position and
@@ -109,7 +145,7 @@ placed straddling a wall line, and two cells on opposite sides of a wall are
 never considered edge-adjacent for the placement rule in §4 — the only way
 past a wall is to build around one of its ends.
 
-### 6.3 Obstacles
+### 6.5 Obstacles
 
 When enabled: a small number of individual cells are marked on the board
 before play begins, in mirrored pairs — each pair placed at a random
@@ -121,7 +157,7 @@ wall, an obstacle cell is a piece of the board itself that is permanently
 unplaceable — no candidate placement may ever cover it (§4), for either
 player, for the whole match.
 
-### 6.4 Wildcard roll
+### 6.6 Wildcard roll
 
 When enabled: every roll that comes up doubles (both dice show the same
 number) becomes a wildcard roll. When it triggers, one of the two
@@ -135,7 +171,7 @@ streak (§7). If no possible value for the editable number would ever
 produce a legal placement, the choice is skipped entirely and the turn
 resolves straight to that skip.
 
-### 6.5 Enclosure Penalty
+### 6.7 Enclosure Penalty
 
 When enabled: any connected group of empty cells bordered (ignoring
 obstacle cells and wall-blocked edges - neither counts as anyone's
@@ -153,13 +189,13 @@ partially). Since every player's own frontier always includes their
 self-enclosed cells, nothing is ever physically unfillable this way —
 the penalty is pressure to plug gaps promptly, not a trap.
 
-### 6.6 Reroll
+### 6.8 Reroll
 
 When enabled: each player may discard their current roll — both dice —
 and roll fresh, instead of accepting it, up to 2 times per game (not per
 turn, not per round of a series). A reroll is available any time a roll
 is pending and not yet committed: while choosing where to place it,
-while picking a Wildcard Roll value (§6.4, discarding that pending edit
+while picking a Wildcard Roll value (§6.6, discarding that pending edit
 entirely), or when it would otherwise result in a skip. Each use costs
 exactly one of the two charges, regardless of which of those situations
 prompted it. Declining to reroll a would-be skip and accepting it
@@ -167,6 +203,18 @@ instead costs nothing extra beyond the skip itself — the skip only
 counts toward the skip streak (§7) once the player actually accepts it,
 not before. Whether an automated opponent uses its rerolls, and how,
 depends on its difficulty — see §10.
+
+### 6.9 Comeback
+
+When enabled: once the trailing player's score (§5) falls behind the
+leader's by at least 8% of the board's total cell count (rounded up —
+29/43/59 points on the 19×19/23×23/27×27 presets), that player is
+permanently granted one extra Reroll charge for the remainder of that
+game. This charge is independent of the Reroll house rule (§6.8) — it
+applies even when Reroll itself is off — and, once granted, is never
+revoked, even if that player later retakes the lead. It's evaluated once
+per placement and granted at most once per game per player; falling
+behind again after retaking the lead does not grant a second charge.
 
 ## 7. Skip limit and being boxed in
 
@@ -219,7 +267,7 @@ levels may be offered:
   randomly.
 
 Greedy and Blocking apply the same underlying strategy to Wildcard Roll
-(§6.4) and Reroll (§6.6), where enabled:
+(§6.6) and Reroll (§6.8), where enabled:
 
 - On a wildcard roll, each picks whichever value scores best by its own
   metric (most prizes reachable for Greedy, most opponent cells deniable
@@ -235,18 +283,6 @@ Greedy and Blocking apply the same underlying strategy to Wildcard Roll
 
 Basic never rerolls and always picks a wildcard value uniformly at
 random, regardless of house rules.
-
-### 6.7 Comeback
-
-When enabled: once the trailing player's score (§5) falls behind the
-leader's by at least 8% of the board's total cell count (rounded up —
-29/43/59 points on the 19×19/23×23/27×27 presets), that player is
-permanently granted one extra Reroll charge for the remainder of that
-game. This charge is independent of the Reroll house rule (§6.6) — it
-applies even when Reroll itself is off — and, once granted, is never
-revoked, even if that player later retakes the lead. It's evaluated once
-per placement and granted at most once per game per player; falling
-behind again after retaking the lead does not grant a second charge.
 
 ## 11. Series play
 
@@ -289,6 +325,10 @@ progress, not the rest of the bracket.
 | Skip limit | 3, 5 | 5 |
 | Prize | on / off | off |
 | Prize bonus points | 10 (fixed) | 10 |
+| Pitfall | on / off | off |
+| Pitfall penalty points | 10 (fixed) | 10 |
+| Steal | on / off | off |
+| Steal points | 10 (fixed) | 10 |
 | Walls | on / off | off |
 | Obstacles | on / off | off |
 | Wildcard roll | on / off | off |
