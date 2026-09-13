@@ -1,6 +1,6 @@
-from rectangles.constants import PRIZE_BONUS_POINTS, PLAYER_1, PLAYER_2, CellKind
-from rectangles.game import Game
-from rectangles.series import Series
+from rectangles.engine.constants import PRIZE_BONUS_POINTS, PLAYER_1, PLAYER_2, CellKind
+from rectangles.engine.game import Game
+from rectangles.engine.series import Series
 
 BOARD_SIZE = 40  # large enough that any fabricated area below fits in one strip
 

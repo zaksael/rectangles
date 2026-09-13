@@ -2,10 +2,10 @@ import time
 
 import pytest
 
-from rectangles.constants import CellKind
+from rectangles.engine.constants import CellKind
 from rectangles.ui.net_adapter import ServerGameAdapter
-from server.app import run_in_background
-from server.schema import PlaceMsg, RerollMsg, RollMsg, SurrenderMsg
+from rectangles.server.app import run_in_background
+from rectangles.server.schema import PlaceMsg, RerollMsg, RollMsg, SurrenderMsg
 
 
 @pytest.fixture

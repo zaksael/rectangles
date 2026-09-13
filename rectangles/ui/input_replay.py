@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pygame
 
-from ..constants import REPLAY_SPEED_PRESETS
-from ..game import Game
+from ..engine.constants import REPLAY_SPEED_PRESETS
+from ..engine.game import Game
 from . import layout
 from .input_common import _design_pos
 from .state import Screen, UIState

@@ -1,7 +1,7 @@
 import pygame
 
-from rectangles import persistence
-from rectangles.constants import (
+from rectangles.engine import persistence
+from rectangles.engine.constants import (
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
     PLAYER_1,
@@ -11,10 +11,10 @@ from rectangles.constants import (
     TOURNAMENT_SIZE_PRESETS,
     CellKind,
 )
-from rectangles.game import Game, TurnState
-from rectangles.models import Cell, SpecialCell
-from rectangles.series import Series
-from rectangles.tournament import Bracket, Participant
+from rectangles.engine.game import Game, TurnState
+from rectangles.engine.models import Cell, SpecialCell
+from rectangles.engine.series import Series
+from rectangles.engine.tournament import Bracket, Participant
 from rectangles.ui import layout
 from rectangles.ui.input import (
     apply_match_identity,
@@ -653,7 +653,7 @@ def test_game_over_key_n_with_incomplete_series_requests_next_game():
 
 
 def test_game_over_new_game_button_with_decided_series_and_tournament_requests_next_match():
-    from rectangles.tournament import Bracket, Participant
+    from rectangles.engine.tournament import Bracket, Participant
 
     tournament = Bracket(
         participants=[Participant(name=f"Player {i + 1}") for i in range(4)],
@@ -678,7 +678,7 @@ def test_game_over_new_game_button_with_decided_series_and_tournament_requests_n
 
 
 def test_game_over_bracket_button_click_enters_tournament_screen():
-    from rectangles.tournament import Bracket, Participant
+    from rectangles.engine.tournament import Bracket, Participant
 
     tournament = Bracket(
         participants=[Participant(name=f"Player {i + 1}") for i in range(4)],

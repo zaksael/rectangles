@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from ..constants import (
+from ..engine.constants import (
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
     DICE_MAX,

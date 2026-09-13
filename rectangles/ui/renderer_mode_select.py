@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from .. import persistence
+from ..engine import persistence
 from . import layout
 from .colors import MUTED_TEXT_COLOR, TEXT_COLOR
 from .state import UIState

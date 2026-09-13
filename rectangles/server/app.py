@@ -9,7 +9,7 @@ import uvicorn
 from fastapi import FastAPI, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from rectangles.constants import (
+from rectangles.engine.constants import (
     BOARD_SIZE,
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
@@ -18,10 +18,10 @@ from rectangles.constants import (
     SKIP_LIMIT,
     SKIP_LIMIT_PRESETS,
 )
-from rectangles import bot
-from rectangles.game import Game, TurnState
-from rectangles.series import Series
-from server.schema import (
+from rectangles.engine import bot
+from rectangles.engine.game import Game, TurnState
+from rectangles.engine.series import Series
+from .schema import (
     ChooseWildcardMsg,
     ErrorMsg,
     ErrorReason,

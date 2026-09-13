@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pygame
 
-from .. import constants
-from ..game import Game, GameOverReason
-from ..series import Series
-from ..tournament import Bracket
+from ..engine import constants
+from ..engine.game import Game, GameOverReason
+from ..engine.series import Series
+from ..engine.tournament import Bracket
 from . import layout
 from .colors import OVERLAY_COLOR, TEXT_COLOR
 from .state import ConfirmAction, UIState

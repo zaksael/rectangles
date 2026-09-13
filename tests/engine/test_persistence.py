@@ -1,7 +1,7 @@
 import json
 
-from rectangles import persistence
-from rectangles.constants import (
+from rectangles.engine import persistence
+from rectangles.engine.constants import (
     STEAL_POINTS,
     PRIZE_BONUS_POINTS,
     PITFALL_PENALTY_POINTS,
@@ -9,9 +9,9 @@ from rectangles.constants import (
     PLAYER_2,
     CellKind,
 )
-from rectangles.game import Game, GameOverReason, TurnState
-from rectangles.models import Cell, SpecialCell
-from rectangles.series import Series
+from rectangles.engine.game import Game, GameOverReason, TurnState
+from rectangles.engine.models import Cell, SpecialCell
+from rectangles.engine.series import Series
 
 
 class ScriptedRandom:
@@ -620,7 +620,7 @@ def test_should_save_on_exit_false_once_series_is_complete():
 
 
 def _bracket(participants_n=4, **kwargs):
-    from rectangles.tournament import Bracket, Participant
+    from rectangles.engine.tournament import Bracket, Participant
 
     return Bracket(
         participants=[Participant(name=f"Player {i + 1}") for i in range(participants_n)],

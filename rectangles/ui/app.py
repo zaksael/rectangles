@@ -4,11 +4,11 @@ import os
 
 import pygame
 
-from .. import persistence
-from ..constants import PLAYER_2, REPLAY_SPEED_MS
-from ..game import Game, TurnState
-from ..series import Series
-from ..tournament import Bracket
+from ..engine import persistence
+from ..engine.constants import PLAYER_2, REPLAY_SPEED_MS
+from ..engine.game import Game, TurnState
+from ..engine.series import Series
+from ..engine.tournament import Bracket
 from . import input as game_input
 from . import layout
 from .net_adapter import ServerGameAdapter
@@ -97,7 +97,7 @@ def run() -> None:
 
     server_url: str | None = None
     if _USE_SERVER:
-        from server.app import run_in_background
+        from ..server.app import run_in_background
 
         server_url, _ = run_in_background()
 

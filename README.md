@@ -344,17 +344,18 @@ uv run pytest
 
 ```
 rectangles/
-├── constants.py    # tunable game/UI values (board sizes, limits, presets)
-├── models.py       # Rectangle, Player, TurnRecord
-├── board.py        # grid + placement legality
-├── game.py         # turn state machine, scoring, game-over rules
-├── series.py       # N-round match series (cumulative score, next-round setup)
-├── tournament.py   # single-elimination bracket (participants, matches, tiebreaks)
-├── bot.py          # picks a placement for the bot opponent (Basic/Greedy/Blocking)
-├── persistence.py  # save/load a game (and series, if one is in progress)
-└── ui/             # Pygame rendering and input (all Pygame code lives here)
+├── engine/         # rules engine, no dependency on Pygame
+│   ├── constants.py    # tunable game/UI values (board sizes, limits, presets)
+│   ├── models.py       # Rectangle, Player, TurnRecord
+│   ├── board.py        # grid + placement legality
+│   ├── game.py         # turn state machine, scoring, game-over rules
+│   ├── series.py       # N-round match series (cumulative score, next-round setup)
+│   ├── tournament.py   # single-elimination bracket (participants, matches, tiebreaks)
+│   ├── bot.py          # picks a placement for the bot opponent (Basic/Greedy/Blocking)
+│   └── persistence.py  # save/load a game (and series, if one is in progress)
+├── ui/             # Pygame rendering and input (all Pygame code lives here)
+└── server/         # FastAPI/WebSocket server for online play
 ```
 
-The rules engine (`constants.py`, `models.py`, `board.py`, `game.py`,
-`series.py`, `tournament.py`, `bot.py`) has no dependency on Pygame, so it's
+The rules engine (`rectangles/engine/`) has no dependency on Pygame, so it's
 fully unit-testable headlessly — see `tests/`.

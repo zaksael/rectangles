@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from ..tournament import Bracket
+from ..engine.tournament import Bracket
 from . import layout
 from .input_common import _design_pos, _new_game
 from .state import Screen, UIState

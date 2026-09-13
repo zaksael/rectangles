@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pygame
 
-from ..game import Game, TurnState
-from ..series import Series
-from ..tournament import Bracket
+from ..engine.game import Game, TurnState
+from ..engine.series import Series
+from ..engine.tournament import Bracket
 from . import colors, layout
 from .renderer_board import BoardMixin
 from .renderer_dialogs import DialogsMixin

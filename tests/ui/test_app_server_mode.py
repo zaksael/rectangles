@@ -5,15 +5,15 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
 import pytest
 
-from rectangles.constants import PLAYER_1
-from rectangles.game import TurnState
+from rectangles.engine.constants import PLAYER_1
+from rectangles.engine.game import TurnState
 from rectangles.ui import layout
 from rectangles.ui.app import _connect_query_params, _new_game
 from rectangles.ui.input import handle_event
 from rectangles.ui.net_adapter import ServerGameAdapter
 from rectangles.ui.renderer import Renderer
 from rectangles.ui.state import Screen, UIState
-from server.app import run_in_background
+from rectangles.server.app import run_in_background
 
 
 @pytest.fixture

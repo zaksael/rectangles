@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
-from ..constants import (
+from ..engine.constants import (
     BOARD_SIZE,
     BOT_DIFFICULTY_PRESETS,
     COMEBACK_NUDGE_ENABLED,

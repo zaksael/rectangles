@@ -1,7 +1,7 @@
-from rectangles.bot import choose_placement, choose_wildcard_value, should_reroll
-from rectangles.constants import PLAYER_1, PLAYER_2, REROLL_LIMIT, CellKind
-from rectangles.game import Game
-from rectangles.models import Cell, SpecialCell
+from rectangles.engine.bot import choose_placement, choose_wildcard_value, should_reroll
+from rectangles.engine.constants import PLAYER_1, PLAYER_2, REROLL_LIMIT, CellKind
+from rectangles.engine.game import Game
+from rectangles.engine.models import Cell, SpecialCell
 
 
 class ScriptedRandom:

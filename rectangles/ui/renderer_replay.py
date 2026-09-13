@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pygame
 
-from .. import bot, constants
-from ..board import Board
-from ..constants import CellKind
-from ..game import Game
-from ..models import Player, Rectangle, TurnRecord
+from ..engine import bot, constants
+from ..engine.board import Board
+from ..engine.constants import CellKind
+from ..engine.game import Game
+from ..engine.models import Player, Rectangle, TurnRecord
 from . import colors, layout
 from .state import UIState
 

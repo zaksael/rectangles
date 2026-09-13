@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pygame
 
-from .. import constants
-from ..constants import CellKind
-from ..game import Game, TurnState
-from ..models import Rectangle
+from ..engine import constants
+from ..engine.constants import CellKind
+from ..engine.game import Game, TurnState
+from ..engine.models import Rectangle
 from . import colors, layout
 from .state import UIState
 

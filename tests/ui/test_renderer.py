@@ -5,10 +5,10 @@ import pytest
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from rectangles.constants import PITFALL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
-from rectangles.game import Game, GameOverReason, TurnState
-from rectangles.models import Cell, Rectangle, SpecialCell, TurnRecord
-from rectangles.series import Series
+from rectangles.engine.constants import PITFALL_PENALTY_POINTS, PLAYER_1, PLAYER_2, CellKind
+from rectangles.engine.game import Game, GameOverReason, TurnState
+from rectangles.engine.models import Cell, Rectangle, SpecialCell, TurnRecord
+from rectangles.engine.series import Series
 from rectangles.ui import layout
 from rectangles.ui.renderer import Renderer
 from rectangles.ui.state import ConfirmAction, Screen, UIState
@@ -945,7 +945,7 @@ def test_draw_confirm_dialog_each_action_smoke(renderer, action):
 
 
 def _bracket(n=4):
-    from rectangles.tournament import Bracket, Participant
+    from rectangles.engine.tournament import Bracket, Participant
 
     participants = [Participant(name=f"Player {i + 1}") for i in range(n)]
     return Bracket(participants=participants, series_length=3, board_size=6, skip_limit=3)

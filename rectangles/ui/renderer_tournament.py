@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..tournament import Bracket
+from ..engine.tournament import Bracket
 from . import layout
 from .colors import BUTTON_SELECTED_COLOR, MUTED_TEXT_COLOR, TEXT_COLOR
 

@@ -17,11 +17,11 @@ import threading
 
 import websockets
 
-from rectangles.board import Board
-from rectangles.constants import CellKind
-from rectangles.game import GameOverReason
-from rectangles.models import Cell, Player, SpecialCell
-from server import schema
+from rectangles.engine.board import Board
+from rectangles.engine.constants import CellKind
+from rectangles.engine.game import GameOverReason
+from rectangles.engine.models import Cell, Player, SpecialCell
+from ..server import schema
 
 _TURN_STATE_FROM_WIRE = {v: k for k, v in schema._TURN_STATE_NAMES.items()}
 _GAME_OVER_REASON_FROM_WIRE = {v: k for k, v in schema._GAME_OVER_REASON_NAMES.items()}

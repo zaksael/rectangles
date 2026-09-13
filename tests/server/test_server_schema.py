@@ -1,8 +1,8 @@
-from rectangles.constants import PLAYER_1, PLAYER_2, CellKind
-from rectangles.game import Game, TurnState
-from rectangles.models import Cell, SpecialCell
-from rectangles.series import Series
-from server.schema import (
+from rectangles.engine.constants import PLAYER_1, PLAYER_2, CellKind
+from rectangles.engine.game import Game, TurnState
+from rectangles.engine.models import Cell, SpecialCell
+from rectangles.engine.series import Series
+from rectangles.server.schema import (
     ChooseWildcardMsg,
     ErrorMsg,
     ErrorReason,

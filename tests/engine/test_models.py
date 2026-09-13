@@ -1,4 +1,4 @@
-from rectangles.models import Player, Rectangle, TurnRecord
+from rectangles.engine.models import Player, Rectangle, TurnRecord
 
 
 def test_rectangle_area():

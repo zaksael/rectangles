@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
-from rectangles.constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, CellKind
-from rectangles.game import Game, GameOverReason, TurnState
-from rectangles.models import Player
-from rectangles.series import RoundResult, Series
+from rectangles.engine.constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, CellKind
+from rectangles.engine.game import Game, GameOverReason, TurnState
+from rectangles.engine.models import Player
+from rectangles.engine.series import RoundResult, Series
 
 _TURN_STATE_NAMES = {
     TurnState.AWAITING_ROLL: "awaitingRoll",

@@ -4,12 +4,12 @@ import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from rectangles.constants import PLAYER_1, PLAYER_2
-from rectangles.game import Game, TurnState
-from rectangles.series import Series
+from rectangles.engine.constants import PLAYER_1, PLAYER_2
+from rectangles.engine.game import Game, TurnState
+from rectangles.engine.series import Series
 from rectangles.ui.net_adapter import ServerGameAdapter
-from server.app import ActionError, _apply_action, _bot_turn_step, _broadcast_and_run_bots, app, run_in_background
-from server.schema import ErrorReason
+from rectangles.server.app import ActionError, _apply_action, _bot_turn_step, _broadcast_and_run_bots, app, run_in_background
+from rectangles.server.schema import ErrorReason
 
 
 class _FakeWebSocket:

@@ -1,6 +1,6 @@
-from rectangles.constants import PLAYER_1, PLAYER_2
-from rectangles.series import Series
-from rectangles.tournament import Bracket, Participant
+from rectangles.engine.constants import PLAYER_1, PLAYER_2
+from rectangles.engine.series import Series
+from rectangles.engine.tournament import Bracket, Participant
 
 
 class ScriptedRandom:
@@ -20,7 +20,7 @@ def _participants(n: int) -> list[Participant]:
 def _finished_series(series: Series, p1_area: int, p2_area: int) -> None:
     # Mirrors tests/test_series.py's _finished_game fabrication: fake a
     # completed round without playing one out.
-    from rectangles.game import Game
+    from rectangles.engine.game import Game
 
     game = Game(board_size=40)
     p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
@@ -112,7 +112,7 @@ def test_tied_series_requires_a_tiebreak_game_before_the_match_resolves():
     bracket.record_match_result()
     assert match.winner is None  # no tiebreak game yet - nothing to resolve with
 
-    from rectangles.game import Game
+    from rectangles.engine.game import Game
 
     tiebreak = Game(board_size=6)
     tiebreak.board.place(tiebreak.players[PLAYER_1], (0, 0), 3, 1)
@@ -134,7 +134,7 @@ def test_tied_tiebreak_game_breaks_via_coin_flip():
     series = bracket.new_series_for_current_match()
     _finished_series(series, p1_area=5, p2_area=5)
 
-    from rectangles.game import Game
+    from rectangles.engine.game import Game
 
     tiebreak = Game(board_size=6)  # both players score 0 - exact tie
     match.tiebreak_game = tiebreak

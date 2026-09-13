@@ -1,8 +1,8 @@
 import pytest
 
-from rectangles.board import Board
-from rectangles.constants import CellKind
-from rectangles.models import Cell, Player, SpecialCell
+from rectangles.engine.board import Board
+from rectangles.engine.constants import CellKind
+from rectangles.engine.models import Cell, Player, SpecialCell
 
 
 def make_players(size: int) -> tuple[Player, Player]:

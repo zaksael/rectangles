@@ -1,6 +1,6 @@
 import pytest
 
-from rectangles.constants import (
+from rectangles.engine.constants import (
     PRIZE_CELL_PAIRS,
     STEAL_POINTS,
     MIN_SPECIAL_CELL_DISTANCE,
@@ -15,8 +15,8 @@ from rectangles.constants import (
     WALL_LINE_PAIRS,
     CellKind,
 )
-from rectangles.game import Game, GameOverReason, TurnState
-from rectangles.models import Cell, SpecialCell
+from rectangles.engine.game import Game, GameOverReason, TurnState
+from rectangles.engine.models import Cell, SpecialCell
 
 
 class ScriptedRandom:

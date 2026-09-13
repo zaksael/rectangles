@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pygame
 
-from .. import bot
-from ..constants import PLAYER_1, PLAYER_2
-from ..game import Game, TurnState
-from ..series import Series
-from ..tournament import Bracket, Match, Participant
+from ..engine import bot
+from ..engine.constants import PLAYER_1, PLAYER_2
+from ..engine.game import Game, TurnState
+from ..engine.series import Series
+from ..engine.tournament import Bracket, Match, Participant
 from . import layout
 from .state import Screen, UIState
 

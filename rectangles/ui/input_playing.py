@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pygame
 
-from .. import persistence
-from ..game import Game, TurnState
-from ..series import Series
-from ..tournament import Bracket
+from ..engine import persistence
+from ..engine.game import Game, TurnState
+from ..engine.series import Series
+from ..engine.tournament import Bracket
 from . import layout
 from .input_common import (
     _advance_or_end_series,
