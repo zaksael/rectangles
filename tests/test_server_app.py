@@ -77,7 +77,7 @@ def test_ws_rejects_invalid_connect_params(query):
 def test_ws_replies_malformed_message_and_stays_open():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state broadcast
+        ws.receive_json()
 
         ws.send_text("not json")
         reply = ws.receive_json()
@@ -92,7 +92,7 @@ def test_ws_replies_malformed_message_and_stays_open():
 def test_ws_rejects_message_missing_type():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state broadcast
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 1})
         assert ws.receive_json()["reason"] == "malformedMessage"
@@ -101,7 +101,7 @@ def test_ws_rejects_message_missing_type():
 def test_ws_rejects_message_with_wrong_protocol_version():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state broadcast
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 2, "type": "roll"})
         reply = ws.receive_json()
@@ -302,7 +302,7 @@ def test_ws_continue_series_after_series_complete_returns_invalid_action():
 def test_ws_roll_broadcasts_new_state():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 1, "type": "roll"})
         reply = ws.receive_json()
@@ -315,9 +315,9 @@ def test_ws_roll_broadcasts_new_state():
 def test_ws_roll_in_wrong_state_returns_invalid_action():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
         ws.send_json({"protocolVersion": 1, "type": "roll"})
-        ws.receive_json()  # state after first roll
+        ws.receive_json()
 
         # rolling again before the turn resolves is not legal
         ws.send_json({"protocolVersion": 1, "type": "roll"})
@@ -336,7 +336,7 @@ def _roll_then_first_legal_placement(ws):
 def test_ws_place_success_advances_turn():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
         top_left, width, height = _roll_then_first_legal_placement(ws)
 
         ws.send_json(
@@ -357,9 +357,9 @@ def test_ws_place_success_advances_turn():
 def test_ws_place_illegal_returns_error():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
         ws.send_json({"protocolVersion": 1, "type": "roll"})
-        ws.receive_json()  # state after roll
+        ws.receive_json()
 
         # far corner is never anchored to a fresh player's start corner
         ws.send_json(
@@ -373,7 +373,7 @@ def test_ws_place_illegal_returns_error():
 def test_ws_place_before_roll_returns_invalid_action():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
 
         ws.send_json(
             {"protocolVersion": 1, "type": "place", "topLeft": [0, 0], "width": 1, "height": 1}
@@ -386,7 +386,7 @@ def test_ws_place_before_roll_returns_invalid_action():
 def test_ws_skip_before_roll_returns_invalid_action():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 1, "type": "skip"})
         reply = ws.receive_json()
@@ -453,7 +453,7 @@ def test_apply_action_choose_wildcard_success_resolves_roll():
 def test_ws_choose_wildcard_before_roll_returns_invalid_action():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1&wildcardEnabled=true") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 1, "type": "chooseWildcard", "value": 4})
         reply = ws.receive_json()
@@ -540,7 +540,7 @@ def test_broadcast_and_run_bots_records_series_round_ended_by_a_bot_move():
 def test_ws_surrender_ends_game_and_declares_winner():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 1, "type": "surrender"})
         reply = ws.receive_json()
@@ -555,9 +555,9 @@ def test_ws_surrender_ends_game_and_declares_winner():
 def test_ws_surrender_twice_is_a_no_op():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
         ws.send_json({"protocolVersion": 1, "type": "surrender"})
-        ws.receive_json()  # state after first surrender
+        ws.receive_json()
 
         ws.send_json({"protocolVersion": 1, "type": "surrender"})
         reply = ws.receive_json()
@@ -568,7 +568,7 @@ def test_ws_surrender_twice_is_a_no_op():
 def test_ws_uncaught_exception_propagates_and_closes_connection(monkeypatch):
     # A genuine server-side bug (as opposed to a normal rule rejection like
     # ValueError -> invalidAction) must not be swallowed into a generic error
-    # message - it propagates and the connection closes (M1_TASKS.md decision).
+    # message - it propagates and the connection closes.
     def boom(self):
         raise RuntimeError("boom")
 
@@ -576,7 +576,7 @@ def test_ws_uncaught_exception_propagates_and_closes_connection(monkeypatch):
     client = TestClient(app)
     with pytest.raises(RuntimeError):
         with client.websocket_connect("/ws?protocolVersion=1") as ws:
-            ws.receive_json()  # initial state
+            ws.receive_json()
             ws.send_json({"protocolVersion": 1, "type": "roll"})
             ws.receive_json()
 
@@ -584,7 +584,7 @@ def test_ws_uncaught_exception_propagates_and_closes_connection(monkeypatch):
 def test_ws_bot_takes_its_turn_after_human_places():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1&botSeats=2") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
         top_left, width, height = _roll_then_first_legal_placement(ws)
 
         ws.send_json(
@@ -607,7 +607,7 @@ def test_ws_bot_takes_its_turn_after_human_places():
 def test_ws_without_bot_seats_player_two_stays_human():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
-        ws.receive_json()  # initial state
+        ws.receive_json()
         top_left, width, height = _roll_then_first_legal_placement(ws)
 
         ws.send_json(

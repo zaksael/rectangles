@@ -318,9 +318,8 @@ def run() -> None:
 
     if isinstance(game, ServerGameAdapter):
         # A server-backed game can't be serialized by persistence.py (it
-        # reads Game-only fields the adapter never populates) - and per
-        # ROADMAP.md, save/load for networked games isn't this milestone's
-        # concern anyway.
+        # reads Game-only fields the adapter never populates), and
+        # save/load for networked games is out of scope for now anyway.
         game.close()
     elif persistence.should_save_on_exit(game, series, tournament):
         persistence.save_game(game, series, tournament)
