@@ -34,7 +34,7 @@ def _board_from_wire(data: dict) -> Board:
     house_rules = data["houseRules"]
     special_cells = frozenset(
         SpecialCell(kind, Cell(*cell), pair_id=i)
-        for kind in (CellKind.PRIZE, CellKind.PITFALL, CellKind.STEAL)
+        for kind in CellKind
         for i, cell in enumerate(house_rules[kind.value]["cells"])
     )
     wall_edges = frozenset(
@@ -64,9 +64,6 @@ def _player_from_wire(player_id: int, board: Board, data: dict) -> Player:
     for piece in data["board"]["pieces"]:
         board.place(player, tuple(piece["topLeft"]), piece["width"], piece["height"])
     return player
-
-
-_POINTS_KINDS = (CellKind.PRIZE, CellKind.PITFALL, CellKind.STEAL)
 
 
 class ServerGameAdapter:
@@ -152,7 +149,7 @@ class ServerGameAdapter:
         self.pitfall_enabled = house_rules["pitfall"]["enabled"]
         self.steal_enabled = house_rules["steal"]["enabled"]
         self.self_enclosed_penalty_enabled = house_rules["selfEnclosedPenalty"]["enabled"]
-        self._points = {kind: house_rules[kind.value]["points"] for kind in _POINTS_KINDS}
+        self._points = {kind: house_rules[kind.value]["points"] for kind in CellKind}
         self._total_score = {
             int(pid): p["score"]["totalScore"] for pid, p in data["players"].items()
         }
@@ -203,25 +200,27 @@ class ServerGameAdapter:
             raise ValueError(reply["message"])
 
     def roll_dice(self) -> tuple[int, int]:
-        reply = self._request(schema.RollMsg(protocol_version=1))
+        reply = self._request(schema.RollMsg(protocol_version=schema.PROTOCOL_VERSION))
         self._raise_if_error(reply)
         return self.last_roll
 
     def attempt_place(self, top_left: tuple[int, int], w: int, h: int) -> bool:
-        reply = self._request(schema.PlaceMsg(protocol_version=1, top_left=top_left, width=w, height=h))
+        reply = self._request(
+            schema.PlaceMsg(protocol_version=schema.PROTOCOL_VERSION, top_left=top_left, width=w, height=h)
+        )
         if reply["type"] == "error" and reply["reason"] == schema.ErrorReason.ILLEGAL_PLACEMENT.value:
             return False
         self._raise_if_error(reply)
         return True
 
     def confirm_skip(self) -> None:
-        reply = self._request(schema.SkipMsg(protocol_version=1))
+        reply = self._request(schema.SkipMsg(protocol_version=schema.PROTOCOL_VERSION))
         self._raise_if_error(reply)
 
     def surrender(self) -> None:
         # Game.surrender() never errors (see server/app.py's ActionError
         # mapping); no error check needed here.
-        self._request(schema.SurrenderMsg(protocol_version=1))
+        self._request(schema.SurrenderMsg(protocol_version=schema.PROTOCOL_VERSION))
 
     def end_turn(self) -> None:
         # The server folds end_turn() into its place/skip handling

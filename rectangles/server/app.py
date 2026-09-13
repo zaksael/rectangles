@@ -17,11 +17,13 @@ from rectangles.engine.constants import (
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
     SKIP_LIMIT_PRESETS,
+    CellKind,
 )
 from rectangles.engine import bot
 from rectangles.engine.game import Game, TurnState
 from rectangles.engine.series import Series
 from .schema import (
+    PROTOCOL_VERSION,
     ChooseWildcardMsg,
     ErrorMsg,
     ErrorReason,
@@ -33,8 +35,6 @@ from .schema import (
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("RECTANGLES_SERVER_PORT", "8765"))
-
-PROTOCOL_VERSION = 1
 
 _PRESET_PARAMS = {
     "protocolVersion": (PROTOCOL_VERSION,),
@@ -116,13 +116,11 @@ def _rules_kwargs_from_connect_params(query_params) -> dict:
     bool_kwargs = {
         _bool_param_to_kwarg(name): query_params.get(name) == "true" for name in _BOOL_PARAM_NAMES
     }
-    special_cell_points = {}
-    if "prizePoints" in query_params:
-        special_cell_points["prize"] = int(query_params["prizePoints"])
-    if "pitfallPoints" in query_params:
-        special_cell_points["pitfall"] = int(query_params["pitfallPoints"])
-    if "stealPoints" in query_params:
-        special_cell_points["steal"] = int(query_params["stealPoints"])
+    special_cell_points = {
+        kind.value: int(query_params[f"{kind.value}Points"])
+        for kind in CellKind
+        if f"{kind.value}Points" in query_params
+    }
     return {
         "board_size": int(query_params.get("boardSize", BOARD_SIZE)),
         "skip_limit": int(query_params.get("skipLimit", SKIP_LIMIT)),

@@ -7,6 +7,8 @@ from rectangles.engine.game import Game, GameOverReason, TurnState
 from rectangles.engine.models import Player
 from rectangles.engine.series import RoundResult, Series
 
+PROTOCOL_VERSION = 1
+
 _TURN_STATE_NAMES = {
     TurnState.AWAITING_ROLL: "awaitingRoll",
     TurnState.CHOOSING_WILDCARD: "choosingWildcard",
@@ -44,9 +46,10 @@ def _serialize_player(game: Game, player: Player, self_enclosed_counts: dict[int
             "reroll": {"used": player.rerolls_used, "limit": game.effective_reroll_limit(player)},
             "comebackNudge": {"granted": player.comeback_nudge_granted},
             "selfEnclosedPenalty": {"cells": self_enclosed_counts.get(player.id, 0)},
-            "prize": {"captured": player.special_captures.get(CellKind.PRIZE, 0)},
-            "pitfall": {"captured": player.special_captures.get(CellKind.PITFALL, 0)},
-            "steal": {"captured": player.special_captures.get(CellKind.STEAL, 0)},
+            **{
+                kind.value: {"captured": player.special_captures.get(kind, 0)}
+                for kind in CellKind
+            },
         },
     }
 
@@ -90,20 +93,13 @@ def serialize_game(game: Game) -> dict:
                 "enabled": game.obstacles_enabled,
                 "cells": [list(cell) for cell in sorted(game.board.obstacle_cells)],
             },
-            "prize": {
-                "enabled": game.prize_enabled,
-                "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.PRIZE))],
-                "points": game.points_for(CellKind.PRIZE),
-            },
-            "pitfall": {
-                "enabled": game.pitfall_enabled,
-                "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.PITFALL))],
-                "points": game.points_for(CellKind.PITFALL),
-            },
-            "steal": {
-                "enabled": game.steal_enabled,
-                "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(CellKind.STEAL))],
-                "points": game.points_for(CellKind.STEAL),
+            **{
+                kind.value: {
+                    "enabled": getattr(game, f"{kind.value}_enabled"),
+                    "cells": [list(cell) for cell in sorted(game.board.cells_of_kind(kind))],
+                    "points": game.points_for(kind),
+                }
+                for kind in CellKind
             },
             "selfEnclosedPenalty": {"enabled": game.self_enclosed_penalty_enabled},
         },
@@ -119,29 +115,24 @@ def serialize_game(game: Game) -> dict:
     }
 
 
+def _by_player(values: dict[int, object]) -> dict:
+    return {"1": values[PLAYER_1], "2": values[PLAYER_2]}
+
+
 def _serialize_round(round_result: RoundResult) -> dict:
     return {
-        "area": {"1": round_result.area[PLAYER_1], "2": round_result.area[PLAYER_2]},
-        "prizeCaptured": {
-            "1": round_result.prize_captured[PLAYER_1],
-            "2": round_result.prize_captured[PLAYER_2],
-        },
-        "pitfallCaptured": {
-            "1": round_result.pitfall_captured[PLAYER_1],
-            "2": round_result.pitfall_captured[PLAYER_2],
-        },
-        "stealCaptured": {
-            "1": round_result.steal_captured[PLAYER_1],
-            "2": round_result.steal_captured[PLAYER_2],
-        },
-        "total": {"1": round_result.total[PLAYER_1], "2": round_result.total[PLAYER_2]},
+        "area": _by_player(round_result.area),
+        "prizeCaptured": _by_player(round_result.prize_captured),
+        "pitfallCaptured": _by_player(round_result.pitfall_captured),
+        "stealCaptured": _by_player(round_result.steal_captured),
+        "total": _by_player(round_result.total),
     }
 
 
 def serialize_series(series: Series) -> dict:
     return {
         "length": series.length,
-        "scores": {"1": series.scores[PLAYER_1], "2": series.scores[PLAYER_2]},
+        "scores": _by_player(series.scores),
         "gamesPlayed": series.games_played,
         "rounds": [_serialize_round(r) for r in series.rounds],
         "isComplete": series.is_complete(),
