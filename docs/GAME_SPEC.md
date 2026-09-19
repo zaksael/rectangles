@@ -219,7 +219,7 @@ behind again after retaking the lead does not grant a second charge.
 ## 7. Skip limit and being boxed in
 
 - A player who is skipped several turns *in a row* — a limit agreed before
-  the match (typically 2, 3, or 5) — is eliminated from further play; see
+  the match (typically 3 or 5) — is eliminated from further play; see
   §8. A player's skip streak resets to zero the moment they successfully
   place a piece; a skip suffered by the *other* player never affects it.
 - Independent of the skip limit: once a player has placed at least one
@@ -248,7 +248,9 @@ is possible.
 
 At any point during their own turn, a player may concede the match outright
 instead of playing on. Their opponent wins immediately and unconditionally,
-regardless of the score at that moment.
+regardless of the score at that moment. In a series (§11), a surrender ends
+only the current round this way — the surrendering player's opponent wins
+that round outright, and the series continues to its next round as normal.
 
 ## 10. Bot opponent difficulty
 

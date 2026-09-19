@@ -30,7 +30,7 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
     empty cell touches their own anymore) even if empty cells remain
     elsewhere on the board, or
   - one player is skipped several turns in a row (configurable before each
-    match, 3 by default), or
+    match, 5 by default), or
   - one player surrenders, in which case the other player wins outright
     regardless of area covered so far.
 - Otherwise, whoever has placed the most total score (area, plus any prize
