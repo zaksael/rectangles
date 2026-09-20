@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { GameWireState } from './gameTypes'
+import { FakeWebSocket } from './testUtils/FakeWebSocket'
 import { useGameSocket } from './useGameSocket'
 
 const fakePlayerState = {
@@ -33,32 +34,6 @@ const fakeGame: GameWireState = {
   },
   players: { '1': fakePlayerState, '2': { ...fakePlayerState, name: 'Player 2' } },
   gameOver: { reason: null, playerId: null, winner: null },
-}
-
-class FakeWebSocket {
-  static instances: FakeWebSocket[] = []
-  url: string
-  private listeners: Record<string, ((event: { data: string }) => void)[]> = {}
-
-  constructor(url: string) {
-    this.url = url
-    FakeWebSocket.instances.push(this)
-  }
-
-  close() {
-    this.emit('close')
-  }
-
-  addEventListener(type: string, listener: (event: { data: string }) => void) {
-    this.listeners[type] ??= []
-    this.listeners[type].push(listener)
-  }
-
-  emit(type: string, data?: unknown) {
-    for (const listener of this.listeners[type] ?? []) {
-      listener({ data: data === undefined ? '' : JSON.stringify(data) })
-    }
-  }
 }
 
 beforeEach(() => {
