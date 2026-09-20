@@ -12,7 +12,7 @@ export function ConnectionLostModal({ isSeries, onNewGame }: ConnectionLostModal
     <div>
       <p>This game can&apos;t be resumed</p>
       <p>{body}</p>
-      <button onClick={onNewGame} autoFocus>
+      <button className="btn primary" onClick={onNewGame} autoFocus>
         New Game
       </button>
     </div>

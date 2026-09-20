@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
+import './ModeSelectScreen.css'
 
 type Opponent = 'bot' | 'local2p'
 type BotDifficulty = 'Basic' | 'Greedy' | 'Blocking'
@@ -42,7 +43,7 @@ export interface StartGameParams {
   comebackNudgeEnabled: boolean
 }
 
-const STORAGE_KEY = 'rectangles.modeSelectSettings'
+const STORAGE_KEY = 'rectangles.modeSelectSettings:v1'
 
 // The server's PLAYER_2 preset - the only value botSeats accepts.
 const BOT_SEATS = 2
@@ -119,7 +120,13 @@ function loadSettings(): ModeSelectSettings {
 }
 
 function saveSettings(settings: ModeSelectSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+  } catch {
+    // Throws in private browsing (Safari/Firefox) or when storage quota is
+    // exceeded - losing sticky settings for this one match isn't worth
+    // blocking Start Game over.
+  }
 }
 
 function buildStartGameParams(settings: ModeSelectSettings): StartGameParams {
@@ -163,11 +170,14 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
   }
 
   return (
-    <div>
-      <p>New Game</p>
+    <div className="mode-select">
+      <div className="screen-header">
+        <div className="title">New Game</div>
+      </div>
 
-      <div role="radiogroup" aria-label="Opponent">
+      <div className="mode-cards" role="radiogroup" aria-label="Opponent">
         <div
+          className={settings.opponent === 'bot' ? 'mode-card selected' : 'mode-card'}
           role="radio"
           aria-checked={settings.opponent === 'bot'}
           aria-label="Vs Bot"
@@ -175,12 +185,14 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           onClick={() => setSettings((s) => ({ ...s, opponent: 'bot' }))}
           onKeyDown={(e) => handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'bot' })))}
         >
-          Vs Bot
+          <span className="mode-name">Vs Bot</span>
+          <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
           {settings.opponent === 'bot' && (
-            <div role="radiogroup" aria-label="Difficulty">
+            <div className="difficulty-pills" role="radiogroup" aria-label="Difficulty">
               {DIFFICULTIES.map((difficulty) => (
-                <div
+                <span
                   key={difficulty}
+                  className={settings.botDifficulty === difficulty ? 'pill active' : 'pill'}
                   role="radio"
                   aria-checked={settings.botDifficulty === difficulty}
                   tabIndex={0}
@@ -190,83 +202,122 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                   }
                 >
                   {difficulty}
-                </div>
+                </span>
               ))}
             </div>
           )}
         </div>
         <div
+          className={settings.opponent === 'local2p' ? 'mode-card selected' : 'mode-card'}
           role="radio"
           aria-checked={settings.opponent === 'local2p'}
+          aria-label="Local 2P"
           tabIndex={0}
           onClick={() => setSettings((s) => ({ ...s, opponent: 'local2p' }))}
           onKeyDown={(e) => handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'local2p' })))}
         >
-          Local 2P
+          <span className="mode-name">Local 2P</span>
+          <span className="mode-desc">Two players share this device</span>
         </div>
       </div>
 
-      <div role="radiogroup" aria-label="Board size">
-        {BOARD_SIZES.map((size) => (
-          <button
-            key={size}
-            role="radio"
-            aria-checked={settings.boardSize === size}
-            onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
-          >
-            {size}×{size}
-          </button>
-        ))}
-      </div>
-
-      <div role="radiogroup" aria-label="Skip limit">
-        {SKIP_LIMITS.map((limit) => (
-          <button
-            key={limit}
-            role="radio"
-            aria-checked={settings.skipLimit === limit}
-            onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
-          >
-            {limit}
-          </button>
-        ))}
-      </div>
-
-      <div role="radiogroup" aria-label="Games">
-        {GAMES_OPTIONS.map((option) => (
-          <button
-            key={option.label}
-            role="radio"
-            aria-checked={settings.seriesLength === option.value}
-            onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      {HOUSE_RULE_GROUPS.map((group) => (
-        <div key={group.label}>
-          <span>{group.label}</span>
-          {group.rules.map(({ key, label }) => (
-            <div
-              key={key}
-              role="checkbox"
-              aria-checked={settings.houseRules[key]}
-              tabIndex={0}
-              onClick={() => updateHouseRule(key, !settings.houseRules[key])}
-              onKeyDown={(e) => handleActivateKey(e, () => updateHouseRule(key, !settings.houseRules[key]))}
-            >
-              {label}
+      <div className="config">
+        <div className="config-section">
+          <span className="section-label">Match setup</span>
+          <div className="field-row">
+            <div className="field">
+              <label>Board size</label>
+              <div className="segmented" role="radiogroup" aria-label="Board size">
+                {BOARD_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    className={settings.boardSize === size ? 'active' : undefined}
+                    role="radio"
+                    aria-checked={settings.boardSize === size}
+                    onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
+                  >
+                    {size}×{size}
+                  </button>
+                ))}
+              </div>
             </div>
-          ))}
+            <div className="field">
+              <label>Skip limit</label>
+              <div className="segmented" role="radiogroup" aria-label="Skip limit">
+                {SKIP_LIMITS.map((limit) => (
+                  <button
+                    key={limit}
+                    className={settings.skipLimit === limit ? 'active' : undefined}
+                    role="radio"
+                    aria-checked={settings.skipLimit === limit}
+                    onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
+                  >
+                    {limit}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Games</label>
+              <div className="segmented" role="radiogroup" aria-label="Games">
+                {GAMES_OPTIONS.map((option) => (
+                  <button
+                    key={option.label}
+                    className={settings.seriesLength === option.value ? 'active' : undefined}
+                    role="radio"
+                    aria-checked={settings.seriesLength === option.value}
+                    onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      ))}
 
-      <button onClick={handleStartGame} disabled={isConnecting}>
+        <div className="config-section">
+          <span className="section-label">House rules</span>
+          <div className="rules-groups">
+            {HOUSE_RULE_GROUPS.map((group) => (
+              <div className="rules-group" key={group.label}>
+                <span className="group-label">{group.label}</span>
+                <div className="rules-grid">
+                  {group.rules.map(({ key, label }) => (
+                    <div
+                      key={key}
+                      className={settings.houseRules[key] ? 'rule on' : 'rule'}
+                      role="checkbox"
+                      aria-checked={settings.houseRules[key]}
+                      tabIndex={0}
+                      onClick={() => updateHouseRule(key, !settings.houseRules[key])}
+                      onKeyDown={(e) =>
+                        handleActivateKey(e, () => updateHouseRule(key, !settings.houseRules[key]))
+                      }
+                    >
+                      <span className="checkbox"></span>
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <button
+        className={isConnecting ? 'btn primary connecting' : 'btn primary'}
+        onClick={handleStartGame}
+        disabled={isConnecting}
+      >
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
-      {connectFailed && <div aria-live="polite">Couldn&apos;t connect — try again</div>}
+      {connectFailed && (
+        <div className="start-error" aria-live="polite">
+          Couldn&apos;t connect — try again
+        </div>
+      )}
     </div>
   )
 }

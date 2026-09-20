@@ -7,8 +7,12 @@ export function PlayingScreen({ onOpenSettings, onGoToReplay }: PlayingScreenPro
   return (
     <div>
       <p>Playing</p>
-      <button onClick={onOpenSettings}>Pause</button>
-      <button onClick={onGoToReplay}>Replay</button>
+      <button className="btn secondary" onClick={onOpenSettings}>
+        Pause
+      </button>
+      <button className="btn secondary" onClick={onGoToReplay}>
+        Replay
+      </button>
     </div>
   )
 }

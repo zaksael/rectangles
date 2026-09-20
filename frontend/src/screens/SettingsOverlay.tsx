@@ -6,7 +6,9 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
   return (
     <div>
       <p>Settings</p>
-      <button onClick={onClose}>Close</button>
+      <button className="btn secondary" onClick={onClose}>
+        Close
+      </button>
     </div>
   )
 }

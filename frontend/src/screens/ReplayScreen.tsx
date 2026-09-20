@@ -6,7 +6,9 @@ export function ReplayScreen({ onBack }: ReplayScreenProps) {
   return (
     <div>
       <p>Replay</p>
-      <button onClick={onBack}>Back</button>
+      <button className="btn secondary" onClick={onBack}>
+        Back
+      </button>
     </div>
   )
 }
