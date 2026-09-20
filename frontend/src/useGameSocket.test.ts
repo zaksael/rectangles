@@ -77,6 +77,12 @@ test('opens a socket to /ws with the given connect params in the query string', 
   expect(FakeWebSocket.instances[0].url).toBe('/ws?protocolVersion=1&boardSize=19')
 })
 
+test('prefixes the socket URL with serverUrl when given', () => {
+  renderHook(() => useGameSocket({ protocolVersion: 1, serverUrl: 'ws://127.0.0.1:4000' }))
+
+  expect(FakeWebSocket.instances[0].url).toBe('ws://127.0.0.1:4000/ws?protocolVersion=1')
+})
+
 test('exposes the parsed game/series payload from a received state message', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
 

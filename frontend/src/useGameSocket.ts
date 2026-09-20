@@ -4,6 +4,7 @@ import type { ErrorReason, GameWireState, SeriesWireState } from './gameTypes'
 interface GameSocketParams {
   protocolVersion: number
   boardSize?: number
+  serverUrl?: string
 }
 
 interface GameState {
@@ -36,7 +37,7 @@ export function useGameSocket(params: GameSocketParams) {
 
   useEffect(() => {
     intentionalCloseRef.current = false
-    const socket = new WebSocket(`/ws?${connectParamsToQuery(params)}`)
+    const socket = new WebSocket(`${params.serverUrl ?? ''}/ws?${connectParamsToQuery(params)}`)
     socketRef.current = socket
     socket.addEventListener('open', () => {
       setStatus('open')
@@ -56,7 +57,7 @@ export function useGameSocket(params: GameSocketParams) {
       intentionalCloseRef.current = true
       socket.close()
     }
-  }, [params.protocolVersion, params.boardSize])
+  }, [params.protocolVersion, params.boardSize, params.serverUrl])
 
   function disconnect() {
     intentionalCloseRef.current = true
