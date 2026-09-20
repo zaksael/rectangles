@@ -4,8 +4,41 @@ import type { ErrorReason, GameWireState, SeriesWireState } from './gameTypes'
 interface GameSocketParams {
   protocolVersion: number
   boardSize?: number
+  skipLimit?: number
+  seriesLength?: number
+  botSeats?: number
+  botDifficulty?: string
+  wildcardEnabled?: boolean
+  rerollEnabled?: boolean
+  wallsEnabled?: boolean
+  obstaclesEnabled?: boolean
+  prizeEnabled?: boolean
+  pitfallEnabled?: boolean
+  stealEnabled?: boolean
+  selfEnclosedPenaltyEnabled?: boolean
+  comebackNudgeEnabled?: boolean
   serverUrl?: string
+  enabled?: boolean
+  connectionId?: number
 }
+
+const QUERY_PARAM_KEYS = [
+  'protocolVersion',
+  'boardSize',
+  'skipLimit',
+  'seriesLength',
+  'botSeats',
+  'botDifficulty',
+  'wildcardEnabled',
+  'rerollEnabled',
+  'wallsEnabled',
+  'obstaclesEnabled',
+  'prizeEnabled',
+  'pitfallEnabled',
+  'stealEnabled',
+  'selfEnclosedPenaltyEnabled',
+  'comebackNudgeEnabled',
+] as const satisfies readonly (keyof GameSocketParams)[]
 
 interface GameState {
   game: GameWireState
@@ -17,13 +50,15 @@ interface GameError {
   message: string
 }
 
-type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected'
+type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'connect-failed'
 
 function connectParamsToQuery(params: GameSocketParams): string {
   const query = new URLSearchParams()
-  query.set('protocolVersion', String(params.protocolVersion))
-  if (params.boardSize !== undefined) {
-    query.set('boardSize', String(params.boardSize))
+  for (const key of QUERY_PARAM_KEYS) {
+    const value = params[key]
+    if (value !== undefined) {
+      query.set(key, String(value))
+    }
   }
   return query.toString()
 }
@@ -34,16 +69,29 @@ export function useGameSocket(params: GameSocketParams) {
   const [status, setStatus] = useState<ConnectionStatus | undefined>(undefined)
   const socketRef = useRef<WebSocket | null>(null)
   const intentionalCloseRef = useRef(false)
+  const hasOpenedRef = useRef(false)
 
   useEffect(() => {
+    if (params.enabled === false) {
+      return
+    }
     intentionalCloseRef.current = false
+    hasOpenedRef.current = false
+    setStatus(undefined)
     const socket = new WebSocket(`${params.serverUrl ?? ''}/ws?${connectParamsToQuery(params)}`)
     socketRef.current = socket
     socket.addEventListener('open', () => {
+      hasOpenedRef.current = true
       setStatus('open')
     })
     socket.addEventListener('close', () => {
-      setStatus(intentionalCloseRef.current ? 'closed-intentional' : 'closed-unexpected')
+      if (intentionalCloseRef.current) {
+        setStatus('closed-intentional')
+      } else if (hasOpenedRef.current) {
+        setStatus('closed-unexpected')
+      } else {
+        setStatus('connect-failed')
+      }
     })
     socket.addEventListener('message', (event) => {
       const data = JSON.parse(event.data)
@@ -57,7 +105,26 @@ export function useGameSocket(params: GameSocketParams) {
       intentionalCloseRef.current = true
       socket.close()
     }
-  }, [params.protocolVersion, params.boardSize, params.serverUrl])
+  }, [
+    params.protocolVersion,
+    params.boardSize,
+    params.skipLimit,
+    params.seriesLength,
+    params.botSeats,
+    params.botDifficulty,
+    params.wildcardEnabled,
+    params.rerollEnabled,
+    params.wallsEnabled,
+    params.obstaclesEnabled,
+    params.prizeEnabled,
+    params.pitfallEnabled,
+    params.stealEnabled,
+    params.selfEnclosedPenaltyEnabled,
+    params.comebackNudgeEnabled,
+    params.serverUrl,
+    params.enabled,
+    params.connectionId,
+  ])
 
   function disconnect() {
     intentionalCloseRef.current = true

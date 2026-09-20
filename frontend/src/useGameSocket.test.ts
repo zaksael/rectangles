@@ -52,6 +52,35 @@ test('opens a socket to /ws with the given connect params in the query string', 
   expect(FakeWebSocket.instances[0].url).toBe('/ws?protocolVersion=1&boardSize=19')
 })
 
+test('includes skipLimit/seriesLength/botSeats/botDifficulty/house-rule flags in the connect query when given', () => {
+  renderHook(() =>
+    useGameSocket({
+      protocolVersion: 1,
+      boardSize: 19,
+      skipLimit: 5,
+      seriesLength: 3,
+      botSeats: 2,
+      botDifficulty: 'Greedy',
+      wildcardEnabled: false,
+      rerollEnabled: true,
+      wallsEnabled: true,
+      obstaclesEnabled: false,
+      prizeEnabled: true,
+      pitfallEnabled: false,
+      stealEnabled: true,
+      selfEnclosedPenaltyEnabled: true,
+      comebackNudgeEnabled: false,
+    }),
+  )
+
+  expect(FakeWebSocket.instances[0].url).toBe(
+    '/ws?protocolVersion=1&boardSize=19&skipLimit=5&seriesLength=3&botSeats=2&botDifficulty=Greedy' +
+      '&wildcardEnabled=false&rerollEnabled=true&wallsEnabled=true&obstaclesEnabled=false' +
+      '&prizeEnabled=true&pitfallEnabled=false&stealEnabled=true&selfEnclosedPenaltyEnabled=true' +
+      '&comebackNudgeEnabled=false',
+  )
+})
+
 test('prefixes the socket URL with serverUrl when given', () => {
   renderHook(() => useGameSocket({ protocolVersion: 1, serverUrl: 'ws://127.0.0.1:4000' }))
 
@@ -111,12 +140,41 @@ test('status becomes "closed-intentional" after calling disconnect()', () => {
   expect(result.current.status).toBe('closed-intentional')
 })
 
-test('status becomes "closed-unexpected" when the socket closes without disconnect() having been called', () => {
+test('status becomes "closed-unexpected" when an open socket closes without disconnect() having been called', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('open')
+    FakeWebSocket.instances[0].emit('close')
+  })
+
+  expect(result.current.status).toBe('closed-unexpected')
+})
+
+test('does not open a socket when enabled is false', () => {
+  renderHook(() => useGameSocket({ protocolVersion: 1, enabled: false }))
+
+  expect(FakeWebSocket.instances).toHaveLength(0)
+})
+
+test('status becomes "connect-failed" when the socket closes before ever opening', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
 
   act(() => {
     FakeWebSocket.instances[0].emit('close')
   })
 
-  expect(result.current.status).toBe('closed-unexpected')
+  expect(result.current.status).toBe('connect-failed')
+})
+
+test('bumping connectionId opens a fresh socket even with otherwise unchanged params', () => {
+  const { rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0 },
+  })
+
+  expect(FakeWebSocket.instances).toHaveLength(1)
+
+  rerender({ protocolVersion: 1, connectionId: 1 })
+
+  expect(FakeWebSocket.instances).toHaveLength(2)
 })
