@@ -6,6 +6,23 @@ correct copy of the game, independent of any particular codebase, language,
 or engine. For how to install, run, and play this specific implementation
 (controls, screens, buttons), see the [README](../README.md).
 
+## Index
+
+- [1. Overview](#1-overview)
+- [2. Setup](#2-setup)
+- [3. Turn structure](#3-turn-structure)
+- [4. Placement legality](#4-placement-legality)
+- [5. Scoring](#5-scoring)
+- [6. Optional rules](#6-optional-rules)
+- [7. Skip limit and being boxed in](#7-skip-limit-and-being-boxed-in)
+- [8. Game over](#8-game-over)
+- [9. Surrender](#9-surrender)
+- [10. Bot opponent difficulty](#10-bot-opponent-difficulty)
+- [11. Series play](#11-series-play)
+- [12. Tournament play](#12-tournament-play)
+- [13. Saving and resuming](#13-saving-and-resuming)
+- [14. Reference: typical match settings](#14-reference-typical-match-settings)
+
 ## 1. Overview
 
 Two players, Player 1 and Player 2, share one square grid board. Player 1

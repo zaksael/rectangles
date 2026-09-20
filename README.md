@@ -6,6 +6,27 @@ Two players share one grid board and grow their territory inward from
 opposite corners by rolling dice and placing rectangles. Whoever covers more
 area when the game ends wins.
 
+## Index
+
+- [Rules](#rules)
+- [Prize](#prize)
+- [Walls](#walls)
+- [Obstacles](#obstacles)
+- [Pitfall](#pitfall)
+- [Steal](#steal)
+- [Wildcard Roll](#wildcard-roll)
+- [Enclosure Penalty](#enclosure-penalty)
+- [Reroll](#reroll)
+- [Comeback](#comeback)
+- [Bot opponent](#bot-opponent)
+- [Series mode](#series-mode)
+- [Tournament mode](#tournament-mode)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Play](#play)
+- [Tests](#tests)
+- [Project structure](#project-structure)
+
 ## Rules
 
 For a precise, implementation-agnostic reference covering every rule and
