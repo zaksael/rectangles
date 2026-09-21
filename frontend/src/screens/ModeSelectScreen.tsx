@@ -56,14 +56,14 @@ const DEFAULT_SETTINGS: ModeSelectSettings = {
   seriesLength: null,
   houseRules: {
     prizeEnabled: true,
-    pitfallEnabled: false,
+    pitfallEnabled: true,
     stealEnabled: true,
     wallsEnabled: true,
-    obstaclesEnabled: false,
+    obstaclesEnabled: true,
     selfEnclosedPenaltyEnabled: true,
-    wildcardEnabled: false,
-    rerollEnabled: false,
-    comebackNudgeEnabled: false,
+    wildcardEnabled: true,
+    rerollEnabled: true,
+    comebackNudgeEnabled: true,
   },
 }
 

@@ -25,14 +25,14 @@ test('Start Game with default settings passes the documented first-launch connec
     botSeats: 2,
     botDifficulty: 'Greedy',
     prizeEnabled: true,
-    pitfallEnabled: false,
+    pitfallEnabled: true,
     stealEnabled: true,
     wallsEnabled: true,
-    obstaclesEnabled: false,
+    obstaclesEnabled: true,
     selfEnclosedPenaltyEnabled: true,
-    wildcardEnabled: false,
-    rerollEnabled: false,
-    comebackNudgeEnabled: false,
+    wildcardEnabled: true,
+    rerollEnabled: true,
+    comebackNudgeEnabled: true,
   })
 })
 
@@ -56,7 +56,7 @@ test('toggling a house rule checkbox flips it in the Start Game params', () => {
   fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
-  expect(onStartGame.mock.calls[0][0]).toMatchObject({ pitfallEnabled: true })
+  expect(onStartGame.mock.calls[0][0]).toMatchObject({ pitfallEnabled: false })
 })
 
 test('Enter activates a non-native radio/checkbox widget', () => {
