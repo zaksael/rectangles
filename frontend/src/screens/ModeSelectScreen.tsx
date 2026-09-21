@@ -190,19 +190,16 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           {settings.opponent === 'bot' && (
             <div className="difficulty-pills" role="radiogroup" aria-label="Difficulty">
               {DIFFICULTIES.map((difficulty) => (
-                <span
+                <button
                   key={difficulty}
+                  type="button"
                   className={settings.botDifficulty === difficulty ? 'pill active' : 'pill'}
                   role="radio"
                   aria-checked={settings.botDifficulty === difficulty}
-                  tabIndex={0}
                   onClick={() => setSettings((s) => ({ ...s, botDifficulty: difficulty }))}
-                  onKeyDown={(e) =>
-                    handleActivateKey(e, () => setSettings((s) => ({ ...s, botDifficulty: difficulty })))
-                  }
                 >
                   {difficulty}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -284,20 +281,17 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                 <span className="group-label">{group.label}</span>
                 <div className="rules-grid">
                   {group.rules.map(({ key, label }) => (
-                    <div
+                    <button
                       key={key}
+                      type="button"
                       className={settings.houseRules[key] ? 'rule on' : 'rule'}
                       role="checkbox"
                       aria-checked={settings.houseRules[key]}
-                      tabIndex={0}
                       onClick={() => updateHouseRule(key, !settings.houseRules[key])}
-                      onKeyDown={(e) =>
-                        handleActivateKey(e, () => updateHouseRule(key, !settings.houseRules[key]))
-                      }
                     >
                       <span className="checkbox"></span>
                       {label}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
