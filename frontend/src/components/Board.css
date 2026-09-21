@@ -1,0 +1,71 @@
+.board {
+  --cell: 44px;
+  position: relative;
+  display: grid;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: var(--cell) var(--cell);
+  border: 1px solid var(--ink);
+}
+
+.board-cell {
+  width: var(--cell);
+  height: var(--cell);
+  position: relative;
+}
+
+.board-cell.p1-fill {
+  background: var(--p1);
+  opacity: 0.85;
+}
+
+.board-cell.p2-fill {
+  background: var(--p2);
+  opacity: 0.85;
+}
+
+.board-cell.obstacle {
+  background: var(--obstacle);
+}
+
+.board-cell.prize::after,
+.board-cell.pitfall::after,
+.board-cell.steal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 46%;
+  height: 46%;
+  transform: rotate(45deg);
+  z-index: 2;
+}
+
+.board-cell.prize::after {
+  background: var(--prize);
+  border: 1.5px solid var(--ink);
+}
+
+.board-cell.pitfall::after {
+  background: var(--pitfall);
+  border: 1.5px solid var(--ink);
+}
+
+.board-cell.steal::after {
+  background: var(--steal);
+  border: 1.5px solid var(--ink);
+}
+
+.wall {
+  position: absolute;
+  background: var(--ink);
+  box-shadow: 0 0 0 1px var(--ledger);
+  z-index: 1;
+}
+
+.piece-outline {
+  position: absolute;
+  border: 1.5px solid color-mix(in srgb, var(--ledger) 85%, transparent);
+  pointer-events: none;
+}
