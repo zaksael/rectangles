@@ -30,6 +30,18 @@
   cursor: pointer;
   text-align: left;
 }
+/* Vs Bot's role="radio"/keyboard handling live on this inner wrapper, not
+   .mode-card itself — it nests the difficulty-pills radiogroup as a sibling,
+   and a "radio" role can't contain further interactive content. .mode-card's
+   own onClick (no role, so it isn't itself exposed as interactive) still
+   covers the whole card for mouse users, same click area as before. Local
+   2P has no nested content, so it keeps role="radio" directly on .mode-card. */
+.mode-card-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
 .mode-card:hover {
   background: color-mix(in srgb, var(--ink) 6%, transparent);
 }
@@ -77,13 +89,12 @@
   background: color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
-/* .mode-card can't be a native <button> — it nests the difficulty-pills
-   radiogroup, and interactive content can't nest inside a <button> — so
-   it needs the app-wide focus treatment repeated here (.pill and .rule
-   are real <button>s now, already covered by design-tokens.css's
-   button:focus rule); see that file's button:focus block for why
-   :focus over :focus-visible. */
-.mode-card:focus {
+/* .mode-card-select is the real radio for Vs Bot (see comment above) —
+   :focus-within so the ring still wraps the whole card, not just that
+   inner element; also covers Local 2P, whose role="radio" is .mode-card
+   itself. Neither is a native <button>, so this repeats the app-wide focus
+   treatment (design-tokens.css's button:focus) here. */
+.mode-card:focus-within {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }

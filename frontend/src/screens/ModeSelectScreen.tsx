@@ -180,15 +180,19 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       <div className="mode-cards" role="radiogroup" aria-label="Opponent">
         <div
           className={settings.opponent === 'bot' ? 'mode-card selected' : 'mode-card'}
-          role="radio"
-          aria-checked={settings.opponent === 'bot'}
-          aria-label="Vs Bot"
-          tabIndex={0}
           onClick={() => setSettings((s) => ({ ...s, opponent: 'bot' }))}
-          onKeyDown={(e) => handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'bot' })))}
         >
-          <span className="mode-name">Vs Bot</span>
-          <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
+          <div
+            className="mode-card-select"
+            role="radio"
+            aria-checked={settings.opponent === 'bot'}
+            aria-label="Vs Bot"
+            tabIndex={0}
+            onKeyDown={(e) => handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'bot' })))}
+          >
+            <span className="mode-name">Vs Bot</span>
+            <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
+          </div>
           {settings.opponent === 'bot' && (
             <div className="difficulty-pills" role="radiogroup" aria-label="Difficulty">
               {DIFFICULTIES.map((difficulty) => (
