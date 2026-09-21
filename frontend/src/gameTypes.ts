@@ -9,6 +9,14 @@ export type TurnStateName = 'awaitingRoll' | 'choosingWildcard' | 'choosingPlace
 
 export type GameOverReasonName = 'boardFull' | 'skipLimit' | 'playerBlocked' | 'surrender'
 
+export type GameAction =
+  | { type: 'roll' }
+  | { type: 'skip' }
+  | { type: 'reroll' }
+  | { type: 'surrender' }
+  | { type: 'chooseWildcard'; value: number }
+  | { type: 'place'; topLeft: [number, number]; width: number; height: number }
+
 export interface LegalPlacement {
   width: number
   height: number

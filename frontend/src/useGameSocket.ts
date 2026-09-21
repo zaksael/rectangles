@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ErrorReason, GameWireState, SeriesWireState } from './gameTypes'
+import type { ErrorReason, GameAction, GameWireState, SeriesWireState } from './gameTypes'
 
 interface GameSocketParams {
   protocolVersion: number
@@ -40,12 +40,12 @@ const QUERY_PARAM_KEYS = [
   'comebackNudgeEnabled',
 ] as const satisfies readonly (keyof GameSocketParams)[]
 
-interface GameState {
+export interface GameState {
   game: GameWireState
   series: SeriesWireState | null
 }
 
-interface GameError {
+export interface GameError {
   reason: ErrorReason
   message: string
 }
@@ -131,5 +131,9 @@ export function useGameSocket(params: GameSocketParams) {
     socketRef.current?.close()
   }
 
-  return { state, error, status, disconnect }
+  function sendAction(action: GameAction) {
+    socketRef.current?.send(JSON.stringify({ protocolVersion: params.protocolVersion, ...action }))
+  }
+
+  return { state, error, status, disconnect, sendAction }
 }

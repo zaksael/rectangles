@@ -1,11 +1,16 @@
 export class FakeWebSocket {
   static instances: FakeWebSocket[] = []
   url: string
+  sent: unknown[] = []
   private listeners: Record<string, ((event: { data: string }) => void)[]> = {}
 
   constructor(url: string) {
     this.url = url
     FakeWebSocket.instances.push(this)
+  }
+
+  send(data: string) {
+    this.sent.push(JSON.parse(data))
   }
 
   close() {

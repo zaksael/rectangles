@@ -56,7 +56,13 @@ function App() {
     }
     return (
       <>
-        <PlayingScreen onOpenSettings={() => setSettingsOpen(true)} onGoToReplay={() => setScreen('REPLAY')} />
+        <PlayingScreen
+          state={gameSocket.state}
+          error={gameSocket.error}
+          sendAction={gameSocket.sendAction}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onGoToReplay={() => setScreen('REPLAY')}
+        />
         {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
       </>
     )

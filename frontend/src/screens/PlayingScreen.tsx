@@ -1,4 +1,10 @@
+import type { GameAction } from '../gameTypes'
+import type { GameError, GameState } from '../useGameSocket'
+
 interface PlayingScreenProps {
+  state: GameState | null
+  error: GameError | null
+  sendAction: (action: GameAction) => void
   onOpenSettings: () => void
   onGoToReplay: () => void
 }

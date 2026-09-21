@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import type { GameWireState } from './gameTypes'
+import type { GameAction, GameWireState } from './gameTypes'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
 import { useGameSocket } from './useGameSocket'
 
@@ -165,6 +165,26 @@ test('status becomes "connect-failed" when the socket closes before ever opening
   })
 
   expect(result.current.status).toBe('connect-failed')
+})
+
+test.each<[GameAction, unknown]>([
+  [{ type: 'roll' }, { protocolVersion: 1, type: 'roll' }],
+  [{ type: 'skip' }, { protocolVersion: 1, type: 'skip' }],
+  [{ type: 'reroll' }, { protocolVersion: 1, type: 'reroll' }],
+  [{ type: 'surrender' }, { protocolVersion: 1, type: 'surrender' }],
+  [{ type: 'chooseWildcard', value: 4 }, { protocolVersion: 1, type: 'chooseWildcard', value: 4 }],
+  [
+    { type: 'place', topLeft: [2, 3], width: 4, height: 5 },
+    { protocolVersion: 1, type: 'place', topLeft: [2, 3], width: 4, height: 5 },
+  ],
+])('sendAction(%o) sends the matching wire message with protocolVersion', (action, expected) => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    result.current.sendAction(action)
+  })
+
+  expect(FakeWebSocket.instances[0].sent).toEqual([expected])
 })
 
 test('bumping connectionId opens a fresh socket even with otherwise unchanged params', () => {
