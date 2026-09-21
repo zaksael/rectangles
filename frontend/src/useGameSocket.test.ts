@@ -1,10 +1,10 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import type { GameAction, GameWireState } from './gameTypes'
+import type { GameAction, GameWireState, PlayerState } from './gameTypes'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
 import { useGameSocket } from './useGameSocket'
 
-const fakePlayerState = {
+const fakePlayerState: PlayerState = {
   name: 'Player 1',
   board: { startCorner: [0, 0], pieces: [], consecutiveSkips: 0 },
   score: { totalArea: 0, totalScore: 0, potential: { area: 0, prize: { points: 0 } } },
