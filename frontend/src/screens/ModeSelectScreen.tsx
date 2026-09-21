@@ -169,6 +169,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
     onStartGame(buildStartGameParams(settings))
   }
 
+  const noModeSelected = settings.opponent === null
+
   return (
     <div className="mode-select">
       <div className="screen-header">
@@ -303,12 +305,12 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       <button
         className={isConnecting ? 'btn primary connecting' : 'btn primary'}
         onClick={handleStartGame}
-        disabled={isConnecting || settings.opponent === null}
-        aria-describedby={settings.opponent === null ? 'start-game-hint' : undefined}
+        disabled={isConnecting || noModeSelected}
+        aria-describedby={noModeSelected ? 'start-game-hint' : undefined}
       >
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
-      {settings.opponent === null && (
+      {noModeSelected && (
         <p id="start-game-hint" className="empty-hint">
           Choose a mode to configure the match
         </p>

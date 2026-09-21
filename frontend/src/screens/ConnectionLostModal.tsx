@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
 interface ConnectionLostModalProps {
   isSeries: boolean
@@ -6,11 +6,7 @@ interface ConnectionLostModalProps {
 }
 
 export function ConnectionLostModal({ isSeries, onNewGame }: ConnectionLostModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    dialogRef.current?.showModal()
-  }, [])
+  const dialogRef = useAutoOpenDialog()
 
   const body = isSeries
     ? "The connection to the server dropped and couldn't be restored. Rejoining an in-progress game isn't supported yet, and the series can't be resumed either — you'll need to start a new one."

@@ -1,15 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
 interface SettingsOverlayProps {
   onClose: () => void
 }
 
 export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    dialogRef.current?.showModal()
-  }, [])
+  const dialogRef = useAutoOpenDialog()
 
   return (
     // Suppress the native auto-close so Escape routes through the same onClose as the button.
