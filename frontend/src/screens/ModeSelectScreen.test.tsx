@@ -6,17 +6,30 @@ beforeEach(() => {
   localStorage.clear()
 })
 
-test('on first launch, defaults to Vs Bot selected with Start Game enabled', () => {
+test('on first launch, no mode is selected and Start Game is disabled with a hint', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
-  expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'false')
+  expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAttribute('aria-checked', 'false')
+  const startButton = screen.getByRole('button', { name: 'Start Game' })
+  expect(startButton).toBeDisabled()
+  expect(startButton).toHaveAccessibleDescription('Choose a mode to configure the match')
+})
+
+test('selecting a mode enables Start Game and clears the hint', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
+  expect(screen.queryByText('Choose a mode to configure the match')).not.toBeInTheDocument()
 })
 
 test('Start Game with default settings passes the documented first-launch connect params', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
   expect(onStartGame).toHaveBeenCalledWith({
@@ -53,6 +66,7 @@ test('toggling a house rule checkbox flips it in the Start Game params', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
@@ -72,6 +86,7 @@ test('selecting Best of 3 includes seriesLength in Start Game params', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: 'Best of 3' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
@@ -101,6 +116,7 @@ test('while isConnecting, Start Game is disabled and reads Connecting…', () =>
 
 test('while connectFailed, shows an inline retry message and Start Game stays enabled', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   expect(screen.getByText("Couldn't connect — try again")).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()

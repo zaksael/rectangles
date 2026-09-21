@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import './ModeSelectScreen.css'
 
-type Opponent = 'bot' | 'local2p'
+type Opponent = 'bot' | 'local2p' | null
 type BotDifficulty = 'Basic' | 'Greedy' | 'Blocking'
 type SeriesLength = 3 | 5 | null
 
@@ -49,7 +49,7 @@ const STORAGE_KEY = 'rectangles.modeSelectSettings:v1'
 const BOT_SEATS = 2
 
 const DEFAULT_SETTINGS: ModeSelectSettings = {
-  opponent: 'bot',
+  opponent: null,
   botDifficulty: 'Greedy',
   boardSize: 19,
   skipLimit: 5,
@@ -303,10 +303,16 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       <button
         className={isConnecting ? 'btn primary connecting' : 'btn primary'}
         onClick={handleStartGame}
-        disabled={isConnecting}
+        disabled={isConnecting || settings.opponent === null}
+        aria-describedby={settings.opponent === null ? 'start-game-hint' : undefined}
       >
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
+      {settings.opponent === null && (
+        <p id="start-game-hint" className="empty-hint">
+          Choose a mode to configure the match
+        </p>
+      )}
       {connectFailed && (
         <div className="start-error" aria-live="polite">
           Couldn&apos;t connect — try again

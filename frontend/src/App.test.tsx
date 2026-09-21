@@ -14,6 +14,7 @@ afterEach(() => {
 })
 
 function startGameAndOpen() {
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
   act(() => {
     FakeWebSocket.instances.at(-1)!.emit('open')
@@ -34,6 +35,7 @@ describe('App', () => {
   it('shows a disabled "Connecting…" button after Start Game, before the socket opens', () => {
     render(<App />)
 
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
     expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled()
@@ -50,6 +52,7 @@ describe('App', () => {
   it('shows an inline retry message when the connection fails, and retrying opens a new socket', () => {
     render(<App />)
 
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
     act(() => {
       FakeWebSocket.instances[0].emit('close')
