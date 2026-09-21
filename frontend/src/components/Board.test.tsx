@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { expect, test } from 'vitest'
 import type { GameWireState } from '../gameTypes'
 import { Board } from './Board'
@@ -54,6 +54,11 @@ function makeGame(overrides: Partial<GameWireState> = {}): GameWireState {
 test('renders one cell per board square', () => {
   const { container } = render(<Board game={makeGame()} />)
   expect(container.querySelectorAll('.board-cell')).toHaveLength(9)
+})
+
+test('exposes the grid as an accessible role with a size label', () => {
+  render(<Board game={makeGame()} />)
+  expect(screen.getByRole('grid', { name: '3×3 board' })).toBeInTheDocument()
 })
 
 test('marks a cell covered by a player 1 piece with p1-fill', () => {

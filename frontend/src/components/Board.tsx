@@ -79,6 +79,8 @@ export function Board({ game }: BoardProps) {
   return (
     <div
       className="board"
+      role="grid"
+      aria-label={`${size}×${size} board`}
       style={{ gridTemplateColumns: `repeat(${size}, ${CELL}px)`, gridTemplateRows: `repeat(${size}, ${CELL}px)` }}
     >
       {cells}
