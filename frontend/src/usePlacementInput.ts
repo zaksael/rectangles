@@ -48,7 +48,7 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
 
   const previewTopLeft = game && dims && hoveredCell ? computeTopLeft(hoveredCell, dims, game.board.size) : null
 
-  function handleCellClick(cell: [number, number]) {
+  function place(cell: [number, number]) {
     if (!game || !dims) return
     const topLeft = computeTopLeft(cell, dims, game.board.size)
     const [width, height] = dims
@@ -59,5 +59,19 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
     }
   }
 
-  return { dims, rotate, previewTopLeft, handleCellHover, handleCellClick }
+  function handleCellTap(cell: [number, number], pointerType: string) {
+    if (pointerType !== 'touch') {
+      place(cell)
+      return
+    }
+    const isSameCell = hoveredCell?.[0] === cell[0] && hoveredCell?.[1] === cell[1]
+    if (isSameCell) {
+      place(cell)
+      setHoveredCell(null)
+    } else {
+      setHoveredCell(cell)
+    }
+  }
+
+  return { dims, rotate, previewTopLeft, handleCellHover, handleCellTap }
 }

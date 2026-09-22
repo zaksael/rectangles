@@ -65,7 +65,7 @@ test('hovering a cell previews the piece centered on it, clamped to the board', 
   expect(result.current.previewTopLeft).toEqual([0, 0])
 })
 
-test('clicking a legal cell sends a place action for the computed top-left', () => {
+test('mouse: tapping a legal cell sends a place action for the computed top-left', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
     turn: {
@@ -78,12 +78,12 @@ test('clicking a legal cell sends a place action for the computed top-left', () 
   const sendAction = vi.fn()
 
   const { result } = renderHook(() => usePlacementInput(game, sendAction))
-  act(() => result.current.handleCellClick([2, 2]))
+  act(() => result.current.handleCellTap([2, 2], 'mouse'))
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [1, 1], width: 2, height: 3 })
 })
 
-test('clicking an illegal cell for the current orientation sends nothing', () => {
+test('mouse: tapping an illegal cell for the current orientation sends nothing', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
     turn: {
@@ -96,9 +96,68 @@ test('clicking an illegal cell for the current orientation sends nothing', () =>
   const sendAction = vi.fn()
 
   const { result } = renderHook(() => usePlacementInput(game, sendAction))
-  act(() => result.current.handleCellClick([4, 4]))
+  act(() => result.current.handleCellTap([4, 4], 'mouse'))
 
   expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('touch: first tap on a legal cell previews it without placing', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+  const sendAction = vi.fn()
+
+  const { result } = renderHook(() => usePlacementInput(game, sendAction))
+  act(() => result.current.handleCellTap([2, 2], 'touch'))
+
+  expect(result.current.previewTopLeft).toEqual([1, 1])
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('touch: a second tap on the same cell confirms the placement', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+  const sendAction = vi.fn()
+
+  const { result } = renderHook(() => usePlacementInput(game, sendAction))
+  act(() => result.current.handleCellTap([2, 2], 'touch'))
+  act(() => result.current.handleCellTap([2, 2], 'touch'))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [1, 1], width: 2, height: 3 })
+  expect(result.current.previewTopLeft).toBeNull()
+})
+
+test('touch: tapping a different cell relocates the preview instead of placing', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+  const sendAction = vi.fn()
+
+  const { result } = renderHook(() => usePlacementInput(game, sendAction))
+  act(() => result.current.handleCellTap([2, 2], 'touch'))
+  act(() => result.current.handleCellTap([0, 0], 'touch'))
+
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(result.current.previewTopLeft).toEqual([0, 0])
 })
 
 test('falls back to the (b, a) orientation when only that one is legal', () => {

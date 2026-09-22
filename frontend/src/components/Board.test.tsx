@@ -94,13 +94,13 @@ test('calls onCellHover with the hovered cell', () => {
   expect(onCellHover).toHaveBeenCalledWith([1, 2])
 })
 
-test('calls onCellClick with the clicked cell', () => {
-  const onCellClick = vi.fn()
-  const { container } = render(<Board game={makeGame()} onCellClick={onCellClick} />)
+test('calls onCellTap with the tapped cell and pointer type', () => {
+  const onCellTap = vi.fn()
+  const { container } = render(<Board game={makeGame()} onCellTap={onCellTap} />)
 
-  fireEvent.click(container.querySelector('[data-cell="2,0"]')!)
+  fireEvent.pointerUp(container.querySelector('[data-cell="2,0"]')!, { pointerType: 'touch' })
 
-  expect(onCellClick).toHaveBeenCalledWith([2, 0])
+  expect(onCellTap).toHaveBeenCalledWith([2, 0], 'touch')
 })
 
 test('renders a preview box at previewTopLeft sized to previewDims', () => {

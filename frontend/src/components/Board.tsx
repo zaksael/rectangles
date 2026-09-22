@@ -9,14 +9,14 @@ interface BoardProps {
   previewTopLeft?: [number, number] | null
   previewDims?: [number, number] | null
   onCellHover?: (cell: [number, number]) => void
-  onCellClick?: (cell: [number, number]) => void
+  onCellTap?: (cell: [number, number], pointerType: string) => void
 }
 
 function cellKey(row: number, col: number): string {
   return `${row},${col}`
 }
 
-export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellClick }: BoardProps) {
+export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellTap }: BoardProps) {
   const { size } = game.board
   const { obstacles, prize, pitfall, steal, walls } = game.houseRules
 
@@ -72,7 +72,7 @@ export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellCl
           className={classes.join(' ')}
           data-cell={key}
           onMouseEnter={onCellHover && (() => onCellHover([r, c]))}
-          onClick={onCellClick && (() => onCellClick([r, c]))}
+          onPointerUp={onCellTap && ((e) => onCellTap([r, c], e.pointerType))}
         />,
       )
     }

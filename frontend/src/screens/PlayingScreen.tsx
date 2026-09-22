@@ -19,7 +19,7 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
 
-  const { rotate, previewTopLeft, dims, handleCellHover, handleCellClick } = usePlacementInput(
+  const { rotate, previewTopLeft, dims, handleCellHover, handleCellTap } = usePlacementInput(
     state?.game ?? null,
     sendAction,
   )
@@ -58,7 +58,7 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
             previewTopLeft={previewTopLeft}
             previewDims={dims}
             onCellHover={turnState === 'choosingPlacement' ? handleCellHover : undefined}
-            onCellClick={turnState === 'choosingPlacement' ? handleCellClick : undefined}
+            onCellTap={turnState === 'choosingPlacement' ? handleCellTap : undefined}
           />
         </>
       )}

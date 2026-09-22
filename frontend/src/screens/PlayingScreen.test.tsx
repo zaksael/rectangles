@@ -76,7 +76,7 @@ test('clicking a legal cell while choosing placement sends the place action', ()
     }),
   )
 
-  fireEvent.click(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
+  fireEvent.pointerUp(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
@@ -98,7 +98,28 @@ test('Rotate swaps the orientation used for placement', () => {
   )
 
   fireEvent.click(screen.getByRole('button', { name: 'Rotate' }))
-  fireEvent.click(screen.getByRole('grid').querySelector('[data-cell="3,2"]')!)
+  fireEvent.pointerUp(screen.getByRole('grid').querySelector('[data-cell="3,2"]')!, { pointerType: 'mouse' })
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [2, 2], width: 1, height: 2 })
+})
+
+test('touch: two taps on the same cell are needed to place', () => {
+  const sendAction = renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: {
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 1],
+        legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }],
+      },
+    }),
+  )
+  const cell = screen.getByRole('grid').querySelector('[data-cell="0,0"]')!
+
+  fireEvent.pointerUp(cell, { pointerType: 'touch' })
+  expect(sendAction).not.toHaveBeenCalled()
+
+  fireEvent.pointerUp(cell, { pointerType: 'touch' })
+  expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
