@@ -2,6 +2,7 @@
   --cell: 44px;
   position: relative;
   display: grid;
+  width: fit-content;
   background-image:
     linear-gradient(var(--line) 1px, transparent 1px),
     linear-gradient(90deg, var(--line) 1px, transparent 1px);
