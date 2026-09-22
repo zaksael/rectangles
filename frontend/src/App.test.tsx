@@ -46,7 +46,7 @@ describe('App', () => {
 
     startGameAndOpen()
 
-    expect(screen.getByText('Playing')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
   })
 
   it('shows an inline retry message when the connection fails, and retrying opens a new socket', () => {
@@ -72,11 +72,11 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
     expect(screen.getByText('Settings')).toBeInTheDocument()
-    expect(screen.getByText('Playing')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(screen.queryByText('Settings')).not.toBeInTheDocument()
-    expect(screen.getByText('Playing')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
   })
 
   it('navigates from Playing to Replay and back', () => {
@@ -87,7 +87,7 @@ describe('App', () => {
     expect(screen.getByText('Replay')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-    expect(screen.getByText('Playing')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
   })
 
   it('shows the connection-lost modal when the socket closes unexpectedly during Playing', () => {
