@@ -1,11 +1,23 @@
 /* Ported from the Playing design mockup (proof-playing-midgame.html) - keep
    in sync with it if the design changes there. */
 
+.frame {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+}
+
 .header {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: stretch;
   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--ledger);
 }
 
 .player {
@@ -58,6 +70,11 @@
   justify-content: center;
   gap: 16px;
   padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: var(--ledger);
 }
 
 .dice {

@@ -39,7 +39,7 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
   }, [turnState])
 
   return (
-    <div>
+    <div className="frame">
       {state && (
         <>
           <div className="header">
@@ -60,36 +60,35 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
             onCellHover={turnState === 'choosingPlacement' ? handleCellHover : undefined}
             onCellClick={turnState === 'choosingPlacement' ? handleCellClick : undefined}
           />
-          <div className="toolbar-actions">
-            {turnState === 'awaitingRoll' ? (
-              <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
-                Roll
-              </button>
-            ) : (
-              state.game.turn.lastRoll && (
-                <div className="dice">
-                  {state.game.turn.lastRoll.map((value, i) => (
-                    <span key={i} className="die">
-                      {value}
-                    </span>
-                  ))}
-                </div>
-              )
-            )}
-            {turnState === 'choosingPlacement' && (
-              <button className="btn secondary" onClick={rotate}>
-                Rotate
-              </button>
-            )}
-          </div>
         </>
       )}
-      <button className="btn secondary pause" onClick={onOpenSettings}>
-        Pause
-      </button>
-      <button className="btn secondary" onClick={onGoToReplay}>
-        Replay
-      </button>
+      <div className="toolbar-actions">
+        {turnState === 'awaitingRoll' && (
+          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
+            Roll
+          </button>
+        )}
+        {state && turnState !== 'awaitingRoll' && state.game.turn.lastRoll && (
+          <div className="dice">
+            {state.game.turn.lastRoll.map((value, i) => (
+              <span key={i} className="die">
+                {value}
+              </span>
+            ))}
+          </div>
+        )}
+        {turnState === 'choosingPlacement' && (
+          <button className="btn secondary" onClick={rotate}>
+            Rotate
+          </button>
+        )}
+        <button className="btn secondary pause" onClick={onOpenSettings}>
+          Pause
+        </button>
+        <button className="btn secondary" onClick={onGoToReplay}>
+          Replay
+        </button>
+      </div>
     </div>
   )
 }
