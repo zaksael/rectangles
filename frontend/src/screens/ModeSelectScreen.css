@@ -13,6 +13,11 @@
 .mode-select .screen-header {
   padding-bottom: 12px;
 }
+.mode-select .title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
 
 .mode-cards {
   display: grid;

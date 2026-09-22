@@ -6,6 +6,12 @@ beforeEach(() => {
   localStorage.clear()
 })
 
+test('the screen title is a heading', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  expect(screen.getByRole('heading', { name: 'New Game' })).toBeInTheDocument()
+})
+
 test('on first launch, no mode is selected and Start Game is disabled with a hint', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 

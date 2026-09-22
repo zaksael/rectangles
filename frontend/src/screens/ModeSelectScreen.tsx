@@ -174,7 +174,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
   return (
     <div className="mode-select">
       <div className="screen-header">
-        <div className="title">New Game</div>
+        <h1 className="title">New Game</h1>
       </div>
 
       <div className="mode-cards" role="radiogroup" aria-label="Opponent">
