@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { expect, test } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { expect, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
 import { Board } from './Board'
 
@@ -83,6 +83,37 @@ test('renders no walls when the walls house rule is disabled, even with edge dat
 
   const { container } = render(<Board game={game} />)
   expect(container.querySelectorAll('.wall')).toHaveLength(0)
+})
+
+test('calls onCellHover with the hovered cell', () => {
+  const onCellHover = vi.fn()
+  const { container } = render(<Board game={makeGame()} onCellHover={onCellHover} />)
+
+  fireEvent.mouseEnter(container.querySelector('[data-cell="1,2"]')!)
+
+  expect(onCellHover).toHaveBeenCalledWith([1, 2])
+})
+
+test('calls onCellClick with the clicked cell', () => {
+  const onCellClick = vi.fn()
+  const { container } = render(<Board game={makeGame()} onCellClick={onCellClick} />)
+
+  fireEvent.click(container.querySelector('[data-cell="2,0"]')!)
+
+  expect(onCellClick).toHaveBeenCalledWith([2, 0])
+})
+
+test('renders a preview box at previewTopLeft sized to previewDims', () => {
+  const { container } = render(<Board game={makeGame()} previewTopLeft={[1, 0]} previewDims={[2, 1]} />)
+
+  const preview = container.querySelector('.preview')
+  expect(preview).toHaveStyle({ left: '0px', top: '44px', width: '88px', height: '44px' })
+})
+
+test('renders no preview box when previewTopLeft is not given', () => {
+  const { container } = render(<Board game={makeGame()} />)
+
+  expect(container.querySelector('.preview')).not.toBeInTheDocument()
 })
 
 test('renders one outline per piece across both players', () => {

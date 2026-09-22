@@ -6,13 +6,17 @@ const CELL = 44
 
 interface BoardProps {
   game: GameWireState
+  previewTopLeft?: [number, number] | null
+  previewDims?: [number, number] | null
+  onCellHover?: (cell: [number, number]) => void
+  onCellClick?: (cell: [number, number]) => void
 }
 
 function cellKey(row: number, col: number): string {
   return `${row},${col}`
 }
 
-export function Board({ game }: BoardProps) {
+export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellClick }: BoardProps) {
   const { size } = game.board
   const { obstacles, prize, pitfall, steal, walls } = game.houseRules
 
@@ -62,7 +66,15 @@ export function Board({ game }: BoardProps) {
       else if (obstacleCells.has(key)) classes.push('obstacle')
       const special = specialCells.get(key)
       if (special) classes.push(special)
-      cells.push(<div key={key} className={classes.join(' ')} data-cell={key} />)
+      cells.push(
+        <div
+          key={key}
+          className={classes.join(' ')}
+          data-cell={key}
+          onMouseEnter={onCellHover && (() => onCellHover([r, c]))}
+          onClick={onCellClick && (() => onCellClick([r, c]))}
+        />,
+      )
     }
   }
 
@@ -86,6 +98,17 @@ export function Board({ game }: BoardProps) {
       {cells}
       {wallEls}
       {outlines}
+      {previewTopLeft && previewDims && (
+        <div
+          className="preview"
+          style={{
+            left: previewTopLeft[1] * CELL,
+            top: previewTopLeft[0] * CELL,
+            width: previewDims[0] * CELL,
+            height: previewDims[1] * CELL,
+          }}
+        />
+      )}
     </div>
   )
 }

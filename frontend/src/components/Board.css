@@ -69,3 +69,10 @@
   border: 1.5px solid color-mix(in srgb, var(--ledger) 85%, transparent);
   pointer-events: none;
 }
+
+.preview {
+  position: absolute;
+  border: 2px dashed var(--ink);
+  pointer-events: none;
+  z-index: 2;
+}

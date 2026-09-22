@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Board } from '../components/Board'
 import type { GameAction } from '../gameTypes'
+import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
 import './PlayingScreen.css'
 
@@ -18,10 +19,19 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
 
+  const { rotate, previewTopLeft, dims, handleCellHover, handleCellClick } = usePlacementInput(
+    state?.game ?? null,
+    sendAction,
+  )
+  const rotateRef = useRef(rotate)
+  rotateRef.current = rotate
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'd' && turnState === 'awaitingRoll') {
         sendActionRef.current({ type: 'roll' })
+      } else if (event.key === 'r' && turnState === 'choosingPlacement') {
+        rotateRef.current()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -43,7 +53,13 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
               </div>
             ))}
           </div>
-          <Board game={state.game} />
+          <Board
+            game={state.game}
+            previewTopLeft={previewTopLeft}
+            previewDims={dims}
+            onCellHover={turnState === 'choosingPlacement' ? handleCellHover : undefined}
+            onCellClick={turnState === 'choosingPlacement' ? handleCellClick : undefined}
+          />
           <div className="toolbar-actions">
             {turnState === 'awaitingRoll' ? (
               <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
@@ -59,6 +75,11 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
                   ))}
                 </div>
               )
+            )}
+            {turnState === 'choosingPlacement' && (
+              <button className="btn secondary" onClick={rotate}>
+                Rotate
+              </button>
             )}
           </div>
         </>
