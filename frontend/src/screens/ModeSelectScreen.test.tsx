@@ -68,6 +68,21 @@ test('selecting Local 2P hides the difficulty pills and omits botSeats/botDiffic
   expect(onStartGame.mock.calls[0][0]).not.toHaveProperty('botDifficulty')
 })
 
+test('the difficulty-pills row stays mounted (reserving its space) even when it is hidden', () => {
+  const { container } = render(
+    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />,
+  )
+
+  expect(container.querySelector('.difficulty-pills')).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+  expect(container.querySelector('.difficulty-pills')).toBeInTheDocument()
+  expect(container.querySelector('.difficulty-pills')).toHaveClass('hidden')
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  expect(container.querySelector('.difficulty-pills')).not.toHaveClass('hidden')
+})
+
 test('toggling a house rule checkbox flips it in the Start Game params', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)

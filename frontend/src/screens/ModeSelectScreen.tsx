@@ -193,22 +193,25 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             <span className="mode-name">Vs Bot</span>
             <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
           </div>
-          {settings.opponent === 'bot' && (
-            <div className="difficulty-pills" role="radiogroup" aria-label="Difficulty">
-              {DIFFICULTIES.map((difficulty) => (
-                <button
-                  key={difficulty}
-                  type="button"
-                  className={settings.botDifficulty === difficulty ? 'pill active' : 'pill'}
-                  role="radio"
-                  aria-checked={settings.botDifficulty === difficulty}
-                  onClick={() => setSettings((s) => ({ ...s, botDifficulty: difficulty }))}
-                >
-                  {difficulty}
-                </button>
-              ))}
-            </div>
-          )}
+          <div
+            className={settings.opponent === 'bot' ? 'difficulty-pills' : 'difficulty-pills hidden'}
+            role="radiogroup"
+            aria-label="Difficulty"
+            aria-hidden={settings.opponent !== 'bot'}
+          >
+            {DIFFICULTIES.map((difficulty) => (
+              <button
+                key={difficulty}
+                type="button"
+                className={settings.botDifficulty === difficulty ? 'pill active' : 'pill'}
+                role="radio"
+                aria-checked={settings.botDifficulty === difficulty}
+                onClick={() => setSettings((s) => ({ ...s, botDifficulty: difficulty }))}
+              >
+                {difficulty}
+              </button>
+            ))}
+          </div>
         </div>
         <div
           className={settings.opponent === 'local2p' ? 'mode-card selected' : 'mode-card'}

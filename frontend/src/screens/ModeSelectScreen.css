@@ -26,8 +26,11 @@
 }
 .mode-card {
   /* var(--line) alone measures ~1.5:1 against --ledger, below the 3:1
-     WCAG 1.4.11 minimum for a control's boundary; 55%-ink clears ~3.4:1 */
-  border: 1.5px solid color-mix(in srgb, var(--ink) 55%, transparent);
+     WCAG 1.4.11 minimum for a control's boundary; 55%-ink clears ~3.4:1.
+     Border-width is constant (only color toggles on .selected) so the
+     card's box size never changes when switching between Vs Bot/Local 2P -
+     a width change here would shift the shared grid row by a sub-pixel. */
+  border: 2px solid color-mix(in srgb, var(--ink) 55%, transparent);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -55,7 +58,6 @@
 }
 .mode-card.selected {
   border-color: var(--ink);
-  border-width: 2px;
 }
 .mode-card .mode-name {
   font-weight: 600;
@@ -70,6 +72,13 @@
   display: flex;
   gap: 6px;
   margin-top: 8px;
+}
+/* Always rendered (see ModeSelectScreen.tsx) so Vs Bot's card height stays
+   constant whether or not it's selected - visibility:hidden keeps the
+   layout space reserved instead of the card (and the shared grid row with
+   Local 2P) jumping height when a mode is picked. */
+.difficulty-pills.hidden {
+  visibility: hidden;
 }
 .pill {
   appearance: none;
