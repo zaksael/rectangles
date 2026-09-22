@@ -114,9 +114,10 @@
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
-.config-reset-row {
+.section-label-row {
   display: flex;
-  justify-content: flex-end;
+  align-items: baseline;
+  justify-content: space-between;
 }
 .reset-link {
   background: none;

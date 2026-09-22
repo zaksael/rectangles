@@ -232,22 +232,22 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
         </div>
       ) : (
         <div className="config">
-          <div className="config-reset-row">
-            <button
-              type="button"
-              className="reset-link"
-              onClick={() => {
-                if (!window.confirm('Reset all settings to defaults?')) {
-                  return
-                }
-                setSettings((s) => ({ ...DEFAULT_SETTINGS, opponent: s.opponent }))
-              }}
-            >
-              Reset to defaults
-            </button>
-          </div>
           <div className="config-section">
-            <span className="section-label">Match setup</span>
+            <div className="section-label-row">
+              <span className="section-label">Match setup</span>
+              <button
+                type="button"
+                className="reset-link"
+                onClick={() => {
+                  if (!window.confirm('Reset all settings to defaults?')) {
+                    return
+                  }
+                  setSettings((s) => ({ ...DEFAULT_SETTINGS, opponent: s.opponent }))
+                }}
+              >
+                Reset to defaults
+              </button>
+            </div>
             <div className="field-row">
               <div className="field">
                 <label>Board size</label>
