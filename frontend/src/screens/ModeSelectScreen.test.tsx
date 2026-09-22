@@ -121,3 +121,33 @@ test('while connectFailed, shows an inline retry message and Start Game stays en
   expect(screen.getByText("Couldn't connect — try again")).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 })
+
+test('Reset to defaults asks for confirmation, then restores match setup and house rules but keeps the chosen opponent', () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
+  fireEvent.click(screen.getByRole('radio', { name: 'Blocking' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+
+  expect(window.confirm).toHaveBeenCalled()
+  expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByRole('radio', { name: '19×19' })).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByRole('radio', { name: 'Greedy' })).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByRole('checkbox', { name: 'Pitfall' })).toHaveAttribute('aria-checked', 'true')
+})
+
+test('declining the Reset to defaults confirmation leaves settings untouched', () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(false)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+
+  expect(screen.getByRole('radio', { name: '23×23' })).toHaveAttribute('aria-checked', 'true')
+})
