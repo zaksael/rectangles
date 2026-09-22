@@ -58,7 +58,7 @@ describe('App', () => {
       FakeWebSocket.instances[0].emit('close')
     })
 
-    expect(screen.getByText("Couldn't connect — try again")).toBeInTheDocument()
+    expect(screen.getByText("Couldn't connect — your settings are unchanged, try again")).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
@@ -125,6 +125,6 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
 
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
-    expect(screen.queryByText("Couldn't connect — try again")).not.toBeInTheDocument()
+    expect(screen.queryByText("Couldn't connect — your settings are unchanged, try again")).not.toBeInTheDocument()
   })
 })
