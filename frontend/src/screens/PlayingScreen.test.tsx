@@ -103,6 +103,43 @@ test('Rotate swaps the orientation used for placement', () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [2, 2], width: 1, height: 2 })
 })
 
+test('marks every cell any legal placement of the current orientation would cover as coverable', () => {
+  renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: {
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 1],
+        legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }],
+      },
+    }),
+  )
+  const grid = screen.getByRole('grid')
+
+  expect(grid.querySelector('[data-cell="0,0"]')).toHaveClass('coverable')
+  expect(grid.querySelector('[data-cell="0,1"]')).toHaveClass('coverable')
+  expect(grid.querySelector('[data-cell="1,0"]')).not.toHaveClass('coverable')
+})
+
+test('hovering an illegal cell shows the preview in the danger state', () => {
+  renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: {
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 1],
+        legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }],
+      },
+    }),
+  )
+
+  fireEvent.mouseEnter(screen.getByRole('grid').querySelector('[data-cell="4,4"]')!)
+
+  expect(screen.getByRole('grid').querySelector('.preview')).toHaveClass('danger')
+})
+
 test('touch: two taps on the same cell are needed to place', () => {
   const sendAction = renderScreen(
     makeState({

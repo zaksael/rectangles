@@ -25,6 +25,45 @@ test('picks the (a, b) orientation when it is legal for the roll', () => {
   expect(result.current.dims).toEqual([2, 3])
 })
 
+test('coverableCells is the union of every cell any legal placement of the current orientation would cover', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 1],
+      legalPlacements: [
+        {
+          width: 2,
+          height: 1,
+          topLefts: [
+            [0, 0],
+            [3, 3],
+          ],
+        },
+      ],
+    },
+  })
+
+  const { result } = renderHook(() => usePlacementInput(game, vi.fn()))
+
+  expect(result.current.coverableCells).toEqual(
+    expect.arrayContaining([
+      [0, 0],
+      [0, 1],
+      [3, 3],
+      [3, 4],
+    ]),
+  )
+  expect(result.current.coverableCells).toHaveLength(4)
+})
+
+test('coverableCells is empty when there is no active placement', () => {
+  const { result } = renderHook(() => usePlacementInput(null, vi.fn()))
+
+  expect(result.current.coverableCells).toEqual([])
+})
+
 test('rotate swaps width and height', () => {
   const game = makeGame({
     turn: {
@@ -63,6 +102,40 @@ test('hovering a cell previews the piece centered on it, clamped to the board', 
 
   act(() => result.current.handleCellHover([0, 0]))
   expect(result.current.previewTopLeft).toEqual([0, 0])
+})
+
+test('previewKind is "legal" when hovering a legal top-left', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+
+  const { result } = renderHook(() => usePlacementInput(game, vi.fn()))
+  act(() => result.current.handleCellHover([2, 2]))
+
+  expect(result.current.previewKind).toBe('legal')
+})
+
+test('previewKind is "danger" when hovering a top-left with no legal placement there', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+
+  const { result } = renderHook(() => usePlacementInput(game, vi.fn()))
+  act(() => result.current.handleCellHover([4, 4]))
+
+  expect(result.current.previewKind).toBe('danger')
 })
 
 test('mouse: tapping a legal cell sends a place action for the computed top-left', () => {
@@ -117,7 +190,25 @@ test('touch: first tap on a legal cell previews it without placing', () => {
   act(() => result.current.handleCellTap([2, 2], 'touch'))
 
   expect(result.current.previewTopLeft).toEqual([1, 1])
+  expect(result.current.previewKind).toBe('pending')
   expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('touch: the pending preview is shown even over an illegal cell', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+
+  const { result } = renderHook(() => usePlacementInput(game, vi.fn()))
+  act(() => result.current.handleCellTap([4, 4], 'touch'))
+
+  expect(result.current.previewKind).toBe('pending')
 })
 
 test('touch: a second tap on the same cell confirms the placement', () => {

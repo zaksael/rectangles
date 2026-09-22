@@ -8,6 +8,8 @@ interface BoardProps {
   game: GameWireState
   previewTopLeft?: [number, number] | null
   previewDims?: [number, number] | null
+  previewKind?: 'legal' | 'danger' | 'pending' | null
+  coverableCells?: [number, number][]
   onCellHover?: (cell: [number, number]) => void
   onCellTap?: (cell: [number, number], pointerType: string) => void
 }
@@ -16,9 +18,18 @@ function cellKey(row: number, col: number): string {
   return `${row},${col}`
 }
 
-export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellTap }: BoardProps) {
+export function Board({
+  game,
+  previewTopLeft,
+  previewDims,
+  previewKind,
+  coverableCells,
+  onCellHover,
+  onCellTap,
+}: BoardProps) {
   const { size } = game.board
   const { obstacles, prize, pitfall, steal, walls } = game.houseRules
+  const coverableSet = new Set((coverableCells ?? []).map(([r, c]) => cellKey(r, c)))
 
   const owners = new Map<string, number>()
   const outlines: ReactElement[] = []
@@ -66,6 +77,7 @@ export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellTa
       else if (obstacleCells.has(key)) classes.push('obstacle')
       const special = specialCells.get(key)
       if (special) classes.push(special)
+      if (coverableSet.has(key)) classes.push('coverable')
       cells.push(
         <div
           key={key}
@@ -100,7 +112,7 @@ export function Board({ game, previewTopLeft, previewDims, onCellHover, onCellTa
       {outlines}
       {previewTopLeft && previewDims && (
         <div
-          className="preview"
+          className={`preview ${previewKind}`}
           style={{
             left: previewTopLeft[1] * CELL,
             top: previewTopLeft[0] * CELL,

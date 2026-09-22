@@ -103,11 +103,33 @@ test('calls onCellTap with the tapped cell and pointer type', () => {
   expect(onCellTap).toHaveBeenCalledWith([2, 0], 'touch')
 })
 
+test('marks each cell in coverableCells with the coverable class', () => {
+  const { container } = render(
+    <Board
+      game={makeGame()}
+      coverableCells={[
+        [0, 0],
+        [1, 2],
+      ]}
+    />,
+  )
+
+  expect(container.querySelector('[data-cell="0,0"]')).toHaveClass('coverable')
+  expect(container.querySelector('[data-cell="1,2"]')).toHaveClass('coverable')
+  expect(container.querySelector('[data-cell="0,1"]')).not.toHaveClass('coverable')
+})
+
 test('renders a preview box at previewTopLeft sized to previewDims', () => {
   const { container } = render(<Board game={makeGame()} previewTopLeft={[1, 0]} previewDims={[2, 1]} />)
 
   const preview = container.querySelector('.preview')
   expect(preview).toHaveStyle({ left: '0px', top: '44px', width: '88px', height: '44px' })
+})
+
+test.each(['legal', 'danger', 'pending'] as const)('renders the preview box with the %s class for that previewKind', (kind) => {
+  const { container } = render(<Board game={makeGame()} previewTopLeft={[0, 0]} previewDims={[1, 1]} previewKind={kind} />)
+
+  expect(container.querySelector('.preview')).toHaveClass(kind)
 })
 
 test('renders no preview box when previewTopLeft is not given', () => {

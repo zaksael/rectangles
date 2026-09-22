@@ -30,6 +30,10 @@
   background: var(--obstacle);
 }
 
+.board-cell.coverable {
+  background: color-mix(in srgb, var(--coverable) 55%, transparent);
+}
+
 .board-cell.prize::after,
 .board-cell.pitfall::after,
 .board-cell.steal::after {
@@ -73,7 +77,21 @@
 
 .preview {
   position: absolute;
-  border: 2px dashed var(--ink);
   pointer-events: none;
   z-index: 2;
+}
+
+.preview.legal {
+  background: color-mix(in srgb, var(--preview-legal) 35%, transparent);
+  border: 2px dashed var(--preview-legal);
+}
+
+.preview.danger {
+  background: color-mix(in srgb, var(--preview-illegal) 30%, transparent);
+  border: 2px dashed var(--preview-illegal);
+}
+
+.preview.pending {
+  background: color-mix(in srgb, var(--preview-legal) 55%, transparent);
+  border: 2px solid var(--preview-legal);
 }
