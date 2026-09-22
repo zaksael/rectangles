@@ -224,87 +224,95 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
         </div>
       </div>
 
-      <div className="config">
-        <div className="config-section">
-          <span className="section-label">Match setup</span>
-          <div className="field-row">
-            <div className="field">
-              <label>Board size</label>
-              <div className="segmented" role="radiogroup" aria-label="Board size">
-                {BOARD_SIZES.map((size) => (
-                  <button
-                    key={size}
-                    className={settings.boardSize === size ? 'active' : undefined}
-                    role="radio"
-                    aria-checked={settings.boardSize === size}
-                    onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
-                  >
-                    {size}×{size}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="field">
-              <label>Skip limit</label>
-              <div className="segmented" role="radiogroup" aria-label="Skip limit">
-                {SKIP_LIMITS.map((limit) => (
-                  <button
-                    key={limit}
-                    className={settings.skipLimit === limit ? 'active' : undefined}
-                    role="radio"
-                    aria-checked={settings.skipLimit === limit}
-                    onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
-                  >
-                    {limit}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="field">
-              <label>Games</label>
-              <div className="segmented" role="radiogroup" aria-label="Games">
-                {GAMES_OPTIONS.map((option) => (
-                  <button
-                    key={option.label}
-                    className={settings.seriesLength === option.value ? 'active' : undefined}
-                    role="radio"
-                    aria-checked={settings.seriesLength === option.value}
-                    onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+      {noModeSelected ? (
+        <div className="empty-hint-box">
+          <p id="start-game-hint" className="empty-hint">
+            Choose a mode to configure the match
+          </p>
         </div>
-
-        <div className="config-section">
-          <span className="section-label">House rules</span>
-          <div className="rules-groups">
-            {HOUSE_RULE_GROUPS.map((group) => (
-              <div className="rules-group" key={group.label}>
-                <span className="group-label">{group.label}</span>
-                <div className="rules-grid">
-                  {group.rules.map(({ key, label }) => (
+      ) : (
+        <div className="config">
+          <div className="config-section">
+            <span className="section-label">Match setup</span>
+            <div className="field-row">
+              <div className="field">
+                <label>Board size</label>
+                <div className="segmented" role="radiogroup" aria-label="Board size">
+                  {BOARD_SIZES.map((size) => (
                     <button
-                      key={key}
-                      type="button"
-                      className={settings.houseRules[key] ? 'rule on' : 'rule'}
-                      role="checkbox"
-                      aria-checked={settings.houseRules[key]}
-                      onClick={() => updateHouseRule(key, !settings.houseRules[key])}
+                      key={size}
+                      className={settings.boardSize === size ? 'active' : undefined}
+                      role="radio"
+                      aria-checked={settings.boardSize === size}
+                      onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
                     >
-                      <span className="checkbox"></span>
-                      {label}
+                      {size}×{size}
                     </button>
                   ))}
                 </div>
               </div>
-            ))}
+              <div className="field">
+                <label>Skip limit</label>
+                <div className="segmented" role="radiogroup" aria-label="Skip limit">
+                  {SKIP_LIMITS.map((limit) => (
+                    <button
+                      key={limit}
+                      className={settings.skipLimit === limit ? 'active' : undefined}
+                      role="radio"
+                      aria-checked={settings.skipLimit === limit}
+                      onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
+                    >
+                      {limit}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="field">
+                <label>Games</label>
+                <div className="segmented" role="radiogroup" aria-label="Games">
+                  {GAMES_OPTIONS.map((option) => (
+                    <button
+                      key={option.label}
+                      className={settings.seriesLength === option.value ? 'active' : undefined}
+                      role="radio"
+                      aria-checked={settings.seriesLength === option.value}
+                      onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="config-section">
+            <span className="section-label">House rules</span>
+            <div className="rules-groups">
+              {HOUSE_RULE_GROUPS.map((group) => (
+                <div className="rules-group" key={group.label}>
+                  <span className="group-label">{group.label}</span>
+                  <div className="rules-grid">
+                    {group.rules.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={settings.houseRules[key] ? 'rule on' : 'rule'}
+                        role="checkbox"
+                        aria-checked={settings.houseRules[key]}
+                        onClick={() => updateHouseRule(key, !settings.houseRules[key])}
+                      >
+                        <span className="checkbox"></span>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <button
         className={isConnecting ? 'btn primary connecting' : 'btn primary'}
@@ -314,11 +322,6 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       >
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
-      {noModeSelected && (
-        <p id="start-game-hint" className="empty-hint">
-          Choose a mode to configure the match
-        </p>
-      )}
       {connectFailed && (
         <div className="start-error" aria-live="polite">
           Couldn&apos;t connect — try again

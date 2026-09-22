@@ -116,6 +116,11 @@
   flex-direction: column;
   gap: 16px;
 }
+.empty-hint-box {
+  border: 1px dashed var(--line);
+  padding: 16px;
+  text-align: center;
+}
 .config-section {
   display: flex;
   flex-direction: column;
@@ -248,8 +253,6 @@
 .empty-hint {
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 70%, transparent);
-  text-align: center;
-  margin-top: -2px;
 }
 .start-error {
   font-size: 12px;
