@@ -52,6 +52,8 @@ export interface GameError {
 
 type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'connect-failed'
 
+const STATE_PACING_DELAY_MS = 500
+
 function connectParamsToQuery(params: GameSocketParams): string {
   const query = new URLSearchParams()
   for (const key of QUERY_PARAM_KEYS) {
@@ -70,6 +72,8 @@ export function useGameSocket(params: GameSocketParams) {
   const socketRef = useRef<WebSocket | null>(null)
   const intentionalCloseRef = useRef(false)
   const hasOpenedRef = useRef(false)
+  const stateQueueRef = useRef<GameState[]>([])
+  const drainTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (params.enabled === false) {
@@ -78,6 +82,21 @@ export function useGameSocket(params: GameSocketParams) {
     intentionalCloseRef.current = false
     hasOpenedRef.current = false
     setStatus(undefined)
+    stateQueueRef.current = []
+    if (drainTimeoutRef.current !== null) {
+      clearTimeout(drainTimeoutRef.current)
+      drainTimeoutRef.current = null
+    }
+
+    function drainNext() {
+      const next = stateQueueRef.current.shift()
+      if (next === undefined) {
+        drainTimeoutRef.current = null
+        return
+      }
+      setState(next)
+      drainTimeoutRef.current = setTimeout(drainNext, STATE_PACING_DELAY_MS)
+    }
     const socket = new WebSocket(`${params.serverUrl ?? ''}/ws?${connectParamsToQuery(params)}`)
     socketRef.current = socket
     socket.addEventListener('open', () => {
@@ -96,13 +115,20 @@ export function useGameSocket(params: GameSocketParams) {
     socket.addEventListener('message', (event) => {
       const data = JSON.parse(event.data)
       if (data.type === 'state') {
-        setState({ game: data.game, series: data.series })
+        stateQueueRef.current.push({ game: data.game, series: data.series })
+        if (drainTimeoutRef.current === null) {
+          drainNext()
+        }
       } else if (data.type === 'error') {
         setError({ reason: data.reason, message: data.message })
       }
     })
     return () => {
       intentionalCloseRef.current = true
+      if (drainTimeoutRef.current !== null) {
+        clearTimeout(drainTimeoutRef.current)
+        drainTimeoutRef.current = null
+      }
       socket.close()
     }
   }, [

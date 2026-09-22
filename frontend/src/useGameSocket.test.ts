@@ -39,10 +39,12 @@ const fakeGame: GameWireState = {
 beforeEach(() => {
   FakeWebSocket.instances = []
   vi.stubGlobal('WebSocket', FakeWebSocket)
+  vi.useFakeTimers()
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
 test('opens a socket to /ws with the given connect params in the query string', () => {
@@ -185,6 +187,82 @@ test.each<[GameAction, unknown]>([
   })
 
   expect(FakeWebSocket.instances[0].sent).toEqual([expected])
+})
+
+test('applies a single state message immediately, with no delay', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', {
+      protocolVersion: 1,
+      type: 'state',
+      game: fakeGame,
+      series: null,
+    })
+  })
+
+  expect(result.current.state).toEqual({ game: fakeGame, series: null })
+})
+
+test('a second state message arriving before the delay elapses is not applied yet', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0].emit('message', {
+      protocolVersion: 1,
+      type: 'state',
+      game: secondGame,
+      series: null,
+    })
+  })
+
+  expect(result.current.state).toEqual({ game: fakeGame, series: null })
+})
+
+test('the queued second state message applies once the pacing delay elapses', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0].emit('message', {
+      protocolVersion: 1,
+      type: 'state',
+      game: secondGame,
+      series: null,
+    })
+    vi.advanceTimersByTime(500)
+  })
+
+  expect(result.current.state).toEqual({ game: secondGame, series: null })
+})
+
+test('three back-to-back state messages surface one at a time, in order, not collapsed to the last', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const thirdGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [1, 1] } }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  const seen: (GameWireState | undefined)[] = []
+
+  act(() => {
+    for (const game of [fakeGame, secondGame, thirdGame]) {
+      FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game, series: null })
+    }
+  })
+  seen.push(result.current.state?.game)
+
+  act(() => {
+    vi.advanceTimersByTime(500)
+  })
+  seen.push(result.current.state?.game)
+
+  act(() => {
+    vi.advanceTimersByTime(500)
+  })
+  seen.push(result.current.state?.game)
+
+  expect(seen).toEqual([fakeGame, secondGame, thirdGame])
 })
 
 test('bumping connectionId opens a fresh socket even with otherwise unchanged params', () => {
