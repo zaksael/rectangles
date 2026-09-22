@@ -83,6 +83,20 @@ test('the difficulty-pills row stays mounted (reserving its space) even when it 
   expect(container.querySelector('.difficulty-pills')).not.toHaveClass('hidden')
 })
 
+test('hidden difficulty pills are inert (unreachable by keyboard, not just visually hidden)', () => {
+  const { container } = render(
+    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />,
+  )
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+
+  const pillsContainer = container.querySelector('.difficulty-pills') as HTMLDivElement
+  expect(pillsContainer).toHaveAttribute('inert')
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  expect(pillsContainer).not.toHaveAttribute('inert')
+})
+
 test('toggling a house rule checkbox flips it in the Start Game params', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)

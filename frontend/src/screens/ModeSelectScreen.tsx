@@ -198,6 +198,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             role="radiogroup"
             aria-label="Difficulty"
             aria-hidden={settings.opponent !== 'bot'}
+            inert={settings.opponent !== 'bot'}
           >
             {DIFFICULTIES.map((difficulty) => (
               <button
