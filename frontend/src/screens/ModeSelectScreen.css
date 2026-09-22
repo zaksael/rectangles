@@ -283,3 +283,23 @@
   text-align: center;
   margin-top: -2px;
 }
+
+/* Desktop/laptop is the only supported viewport — no mobile breakpoints —
+   but touchscreen laptops are explicitly in scope, and these
+   controls are well under the WCAG 24px/44px touch-target minimums at their
+   default mouse-tuned size. Grow hit areas under a coarse pointer without
+   touching layout or the fine-pointer sizing. */
+@media (pointer: coarse) {
+  .pill {
+    padding: 10px 14px;
+  }
+  .rule {
+    padding: 12px 0;
+  }
+  .segmented button {
+    padding: 13px 16px;
+  }
+  .reset-link {
+    padding: 12px 0;
+  }
+}
