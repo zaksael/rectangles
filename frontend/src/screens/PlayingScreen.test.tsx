@@ -328,3 +328,59 @@ test('game over shows a per-player territory and final-score breakdown', () => {
   expect(rowCells('Final score')).toEqual(['Final score', '5', '4'])
   expect(within(table).queryByRole('row', { name: /Prize/ })).not.toBeInTheDocument()
 })
+
+test('Surrender opens a confirm dialog naming the opponent as winner, without sending anything', () => {
+  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(within(dialog).getByText('Surrender the match?')).toBeInTheDocument()
+  expect(within(dialog).getByText(/Player 2 wins immediately/)).toBeInTheDocument()
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+function openSurrender(state = makeState()) {
+  const sendAction = renderScreen(state)
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+  return { sendAction, dialog: screen.getByRole('dialog') }
+}
+
+test('confirming Surrender sends the action and closes the dialog', () => {
+  const { sendAction, dialog } = openSurrender()
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Surrender' }))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'surrender' })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('Cancel closes the Surrender dialog without sending anything', () => {
+  const { sendAction, dialog } = openSurrender()
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('Escape cancels the Surrender dialog', () => {
+  const { sendAction, dialog } = openSurrender()
+
+  fireEvent(dialog, new Event('cancel', { cancelable: true }))
+
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('Surrender copy says the round, not the match, mid-series', () => {
+  const { dialog } = openSurrender({ ...makeState(), series: { length: 3 } as GameState['series'] })
+
+  expect(within(dialog).getByText('Surrender this round?')).toBeInTheDocument()
+  expect(within(dialog).getByText(/The series continues to the next round/)).toBeInTheDocument()
+})
+
+test('the Surrender button is gone once the game is over', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  expect(screen.queryByRole('button', { name: 'Surrender' })).not.toBeInTheDocument()
+})

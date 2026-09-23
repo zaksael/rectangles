@@ -28,7 +28,7 @@ export function GameOverOverlay({ game }: { game: GameWireState }) {
 
   return (
     // Escape has no dismiss action here, so cancel is suppressed.
-    <dialog className="game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title">
+    <dialog className="modal game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title">
       {reason && <p className="reason">{reason}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} />}

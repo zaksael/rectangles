@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
 import { GameOverOverlay } from './GameOverOverlay'
+import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 import type { ErrorReason, GameAction } from '../gameTypes'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
@@ -26,6 +27,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
 
 export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
+  const [confirmingSurrender, setConfirmingSurrender] = useState(false)
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
   useEffect(() => {
@@ -97,6 +99,17 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
         </>
       )}
       {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} />}
+      {state && confirmingSurrender && (
+        <SurrenderConfirmDialog
+          opponentName={state.game.players[state.game.turn.currentPlayerId === 1 ? '2' : '1'].name}
+          isSeries={state.series !== null}
+          onCancel={() => setConfirmingSurrender(false)}
+          onConfirm={() => {
+            sendAction({ type: 'surrender' })
+            setConfirmingSurrender(false)
+          }}
+        />
+      )}
       <div className="toolbar-actions">
         {turnState === 'awaitingRoll' && (
           <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
@@ -120,6 +133,11 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
         {turnState === 'skipped' && (
           <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })}>
             Skip
+          </button>
+        )}
+        {state && turnState !== 'gameOver' && (
+          <button className="btn secondary" onClick={() => setConfirmingSurrender(true)}>
+            Surrender
           </button>
         )}
         <button className="btn secondary pause" onClick={onOpenSettings}>
