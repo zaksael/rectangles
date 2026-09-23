@@ -57,6 +57,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
 
   return (
     <div className="frame">
+      <h1 className="visually-hidden">Playing</h1>
       {state && (
         <>
           <div className="header">

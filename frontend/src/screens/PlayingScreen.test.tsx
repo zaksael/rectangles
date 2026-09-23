@@ -262,3 +262,9 @@ test('the error status region is mounted from the start and empty until an error
 
   expect(screen.getByRole('status')).toBeEmptyDOMElement()
 })
+
+test('the Playing screen has a level-1 heading', () => {
+  renderScreen(makeState())
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Playing' })).toBeInTheDocument()
+})
