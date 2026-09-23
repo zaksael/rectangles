@@ -121,8 +121,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
         />
       )}
       <div className="toolbar-actions">
-        {humanTurnState === 'awaitingRoll' && (
-          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
+        {turnState === 'awaitingRoll' && (
+          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} disabled={isBotTurn}>
             Roll
           </button>
         )}
@@ -135,18 +135,18 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
             ))}
           </div>
         )}
-        {humanTurnState === 'choosingPlacement' && (
-          <button className="btn secondary" onClick={rotate}>
+        {turnState === 'choosingPlacement' && (
+          <button className="btn secondary" onClick={rotate} disabled={isBotTurn}>
             Rotate
           </button>
         )}
-        {humanTurnState === 'skipped' && (
-          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })}>
+        {turnState === 'skipped' && (
+          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })} disabled={isBotTurn}>
             Skip
           </button>
         )}
         {state && turnState !== 'gameOver' && (
-          <button className="btn secondary" onClick={() => setConfirmingSurrender(true)}>
+          <button className="btn secondary" onClick={() => setConfirmingSurrender(true)} disabled={isBotTurn}>
             Surrender
           </button>
         )}

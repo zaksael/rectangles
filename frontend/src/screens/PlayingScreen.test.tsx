@@ -430,21 +430,21 @@ test("on the bot's turn, hovering shows no preview or coverable overlay and tapp
   expect(grid.querySelector('.preview')).not.toBeInTheDocument()
   expect(grid.querySelector('.coverable')).not.toBeInTheDocument()
   expect(sendAction).not.toHaveBeenCalled()
-  expect(screen.queryByRole('button', { name: 'Rotate' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Rotate' })).toBeDisabled()
 })
 
-test("on the bot's turn there is no Roll button and d does not roll", () => {
+test("on the bot's turn the Roll button is disabled and d does not roll", () => {
   const sendAction = renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'd' })
 
-  expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Roll' })).toBeDisabled()
   expect(sendAction).not.toHaveBeenCalled()
 })
 
-test("on the bot's turn there is no Skip button", () => {
+test("on the bot's turn the Skip button is disabled", () => {
   renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
-  expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Skip' })).toBeDisabled()
 })
 
 test("on the human's turn against a bot, placement still works", () => {
@@ -466,4 +466,9 @@ test('announces whose turn it is in a polite live region', () => {
 test('does not announce a turn once the game is over', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
   expect(document.querySelector('.turn-announcer')).not.toBeInTheDocument()
+})
+
+test("on the bot's turn Surrender is disabled, since it would make the bot surrender", () => {
+  renderVsBot(makeState({ turn: botPlacementTurn }))
+  expect(screen.getByRole('button', { name: 'Surrender' })).toBeDisabled()
 })
