@@ -243,3 +243,16 @@ test('a newer error replaces the toast and restarts the 4 second timer', () => {
   rerender(<PlayingScreen {...props} error={{ reason: 'invalidAction', message: 'y' }} />)
   expect(screen.getByRole('status')).toBeInTheDocument()
 })
+
+test("marks only the current player's slot with aria-current", () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(screen.getByText('Player 1').closest('.player')).not.toHaveAttribute('aria-current')
+  expect(screen.getByText('Player 2').closest('.player')).toHaveAttribute('aria-current', 'true')
+})
+
+test('the dice have an accessible name describing the roll', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 1], legalPlacements: [] } }))
+
+  expect(screen.getByRole('img', { name: 'Rolled 3 and 1' })).toBeInTheDocument()
+})

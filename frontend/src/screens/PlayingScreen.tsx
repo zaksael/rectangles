@@ -64,6 +64,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
               <div
                 key={id}
                 className={`player p${id}${state.game.turn.currentPlayerId === Number(id) ? ' current' : ''}`}
+                aria-current={state.game.turn.currentPlayerId === Number(id) ? 'true' : undefined}
               >
                 <span className="dot" />
                 <span className="name">{state.game.players[id].name}</span>
@@ -103,7 +104,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
           </button>
         )}
         {state && turnState !== 'awaitingRoll' && state.game.turn.lastRoll && (
-          <div className="dice">
+          <div className="dice" role="img" aria-label={`Rolled ${state.game.turn.lastRoll.join(' and ')}`}>
             {state.game.turn.lastRoll.map((value, i) => (
               <span key={i} className="die">
                 {value}
