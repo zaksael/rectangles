@@ -268,3 +268,20 @@ test('the Playing screen has a level-1 heading', () => {
 
   expect(screen.getByRole('heading', { level: 1, name: 'Playing' })).toBeInTheDocument()
 })
+
+test('the d hotkey does not roll while a modal dialog is open', () => {
+  const sendAction = renderScreen(
+    makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
+  )
+  const dialog = document.createElement('dialog')
+  document.body.appendChild(dialog)
+  dialog.showModal()
+
+  fireEvent.keyDown(window, { key: 'd' })
+  expect(sendAction).not.toHaveBeenCalled()
+
+  dialog.close()
+  fireEvent.keyDown(window, { key: 'd' })
+  expect(sendAction).toHaveBeenCalledWith({ type: 'roll' })
+  dialog.remove()
+})

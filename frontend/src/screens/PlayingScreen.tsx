@@ -45,6 +45,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (document.querySelector('dialog[open]')) return
       if (event.key === 'd' && turnState === 'awaitingRoll') {
         sendActionRef.current({ type: 'roll' })
       } else if (event.key === 'r' && turnState === 'choosingPlacement') {
