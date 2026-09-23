@@ -84,6 +84,11 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
             Rotate
           </button>
         )}
+        {turnState === 'skipped' && (
+          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })}>
+            Skip
+          </button>
+        )}
         <button className="btn secondary pause" onClick={onOpenSettings}>
           Pause
         </button>

@@ -160,3 +160,19 @@ test('touch: two taps on the same cell are needed to place', () => {
   fireEvent.pointerUp(cell, { pointerType: 'touch' })
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
+
+test('shows a Skip button when the turn was skipped, which sends the skip action', () => {
+  const sendAction = renderScreen(
+    makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }),
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
+})
+
+test.each(['awaitingRoll', 'choosingPlacement'] as const)('has no Skip button while %s', (turnState) => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+
+  expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
+})
