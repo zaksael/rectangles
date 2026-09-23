@@ -202,11 +202,11 @@ test("shows both players' skip streaks against the skip limit at the same time",
 })
 
 test.each([
-  ['illegalPlacement', "That piece can't go there."],
-  ['invalidAction', "You can't do that right now."],
-  ['protocolVersionMismatch', 'This game is out of date - reload the page.'],
-  ['illegalWildcardValue', "That number can't be placed - pick another."],
-  ['malformedMessage', 'Something went wrong - try again.'],
+  ['illegalPlacement', 'That piece can’t go there.'],
+  ['invalidAction', 'You can’t do that right now.'],
+  ['protocolVersionMismatch', 'This game is out of date — reload the page.'],
+  ['illegalWildcardValue', 'That number can’t be placed — pick another.'],
+  ['malformedMessage', 'Something went wrong — try again.'],
 ] as const)('shows friendly toast text for a %s server error', (reason, text) => {
   renderScreen(makeState(), vi.fn(), { reason, message: 'raw server text' })
 
@@ -233,7 +233,7 @@ test('a newer error replaces the toast and restarts the 4 second timer', () => {
 
   act(() => vi.advanceTimersByTime(3000))
   rerender(<PlayingScreen {...props} error={{ reason: 'invalidAction', message: 'y' }} />)
-  expect(screen.getByRole('status')).toHaveTextContent("You can't do that right now.")
+  expect(screen.getByRole('status')).toHaveTextContent('You can’t do that right now.')
 
   act(() => vi.advanceTimersByTime(3999))
   expect(screen.getByRole('status')).toBeInTheDocument()

@@ -16,11 +16,11 @@ interface PlayingScreenProps {
 const ERROR_TOAST_MS = 4000
 
 const ERROR_TEXT: Record<ErrorReason, string> = {
-  illegalPlacement: "That piece can't go there.",
-  invalidAction: "You can't do that right now.",
-  protocolVersionMismatch: 'This game is out of date - reload the page.',
-  illegalWildcardValue: "That number can't be placed - pick another.",
-  malformedMessage: 'Something went wrong - try again.',
+  illegalPlacement: 'That piece can’t go there.',
+  invalidAction: 'You can’t do that right now.',
+  protocolVersionMismatch: 'This game is out of date — reload the page.',
+  illegalWildcardValue: 'That number can’t be placed — pick another.',
+  malformedMessage: 'Something went wrong — try again.',
 }
 
 export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay }: PlayingScreenProps) {
