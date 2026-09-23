@@ -8,6 +8,8 @@
     linear-gradient(90deg, var(--line) 1px, transparent 1px);
   background-size: var(--cell) var(--cell);
   border: 1px solid var(--ink);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .board-cell {
