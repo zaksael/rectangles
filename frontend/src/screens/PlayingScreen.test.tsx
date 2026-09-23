@@ -285,3 +285,46 @@ test('the d hotkey does not roll while a modal dialog is open', () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'roll' })
   dialog.remove()
 })
+
+const gameOverTurn = { currentPlayerId: 1, turnState: 'gameOver' as const, lastRoll: null, legalPlacements: [] }
+
+test('game over shows a dialog with the end reason and the winner', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(within(dialog).getByText('Board settled')).toBeInTheDocument()
+  expect(within(dialog).getByRole('heading', { name: 'Player 1 wins' })).toBeInTheDocument()
+})
+
+test('no game-over dialog while the game is in progress', () => {
+  renderScreen(makeState())
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test.each([
+  ['playerBlocked', 2, 'Player 2 boxed in'],
+  ['skipLimit', 1, 'Player 1 skipped out (5/5)'],
+  ['surrender', 2, 'Player 2 surrendered'],
+] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason, playerId, winner: 1 } }))
+  expect(within(screen.getByRole('dialog')).getByText(text)).toBeInTheDocument()
+})
+
+test('game over reads "Tied" when there is no winner', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: null } }))
+  expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Tied' })).toBeInTheDocument()
+})
+
+test('game over shows a per-player territory and final-score breakdown', () => {
+  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  game.players['1'].score = { ...game.players['1'].score, totalArea: 5, totalScore: 5 }
+  game.players['2'].score = { ...game.players['2'].score, totalArea: 4, totalScore: 4 }
+  renderScreen({ game, series: null })
+
+  const table = within(screen.getByRole('dialog')).getByRole('table')
+  const rowCells = (name: string) =>
+    within(within(table).getByRole('row', { name: new RegExp(name) })).getAllByRole('cell').map((c) => c.textContent)
+  expect(rowCells('Territory')).toEqual(['Territory', '5', '4'])
+  expect(rowCells('Final score')).toEqual(['Final score', '5', '4'])
+  expect(within(table).queryByRole('row', { name: /Prize/ })).not.toBeInTheDocument()
+})

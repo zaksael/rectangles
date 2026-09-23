@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
+import { GameOverOverlay } from './GameOverOverlay'
 import type { ErrorReason, GameAction } from '../gameTypes'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
@@ -95,6 +96,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
           </div>
         </>
       )}
+      {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} />}
       <div className="toolbar-actions">
         {turnState === 'awaitingRoll' && (
           <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
