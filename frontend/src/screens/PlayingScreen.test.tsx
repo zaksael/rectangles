@@ -21,7 +21,6 @@ function renderScreen(
       error={error}
       sendAction={sendAction}
       onOpenSettings={vi.fn()}
-      onGoToReplay={vi.fn()}
       onNewGame={onNewGame}
       botSeat={botSeat}
     />,
@@ -236,7 +235,7 @@ test('the error toast auto-dismisses after 4 seconds', () => {
 
 test('a newer error replaces the toast and restarts the 4 second timer', () => {
   vi.useFakeTimers()
-  const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onGoToReplay: vi.fn(), onNewGame: vi.fn() }
+  const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
   const { rerender } = render(<PlayingScreen {...props} error={{ reason: 'illegalPlacement', message: 'x' }} />)
 
   act(() => vi.advanceTimersByTime(3000))
@@ -471,4 +470,9 @@ test('does not announce a turn once the game is over', () => {
 test("on the bot's turn Surrender is disabled, since it would make the bot surrender", () => {
   renderVsBot(makeState({ turn: botPlacementTurn }))
   expect(screen.getByRole('button', { name: 'Surrender' })).toBeDisabled()
+})
+
+test('there is no Replay button mid-game; Replay is only reachable from the game-over dialog', () => {
+  renderScreen(makeState())
+  expect(screen.queryByRole('button', { name: 'Replay' })).not.toBeInTheDocument()
 })

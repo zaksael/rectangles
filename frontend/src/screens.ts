@@ -1,1 +1,1 @@
-export type Screen = 'MODE_SELECT' | 'PLAYING' | 'REPLAY'
+export type Screen = 'MODE_SELECT' | 'PLAYING'

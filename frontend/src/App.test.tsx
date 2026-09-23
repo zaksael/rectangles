@@ -80,17 +80,6 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
   })
 
-  it('navigates from Playing to Replay and back', () => {
-    render(<App />)
-    startGameAndOpen()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Replay' }))
-    expect(screen.getByText('Replay')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
-  })
-
   it('shows the connection-lost modal when the socket closes unexpectedly during Playing', () => {
     render(<App />)
     startGameAndOpen()

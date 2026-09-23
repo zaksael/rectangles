@@ -12,7 +12,6 @@ interface PlayingScreenProps {
   error: GameError | null
   sendAction: (action: GameAction) => void
   onOpenSettings: () => void
-  onGoToReplay: () => void
   onNewGame: () => void
   botSeat?: number
 }
@@ -27,7 +26,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay, onNewGame, botSeat }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, botSeat }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
@@ -152,9 +151,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
         )}
         <button className="btn secondary pause" onClick={onOpenSettings}>
           Pause
-        </button>
-        <button className="btn secondary" onClick={onGoToReplay}>
-          Replay
         </button>
       </div>
     </div>
