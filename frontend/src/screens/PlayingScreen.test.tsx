@@ -294,7 +294,7 @@ test('game over shows a dialog with the end reason and the winner', () => {
 
   const dialog = screen.getByRole('dialog')
   expect(within(dialog).getByText('Board settled')).toBeInTheDocument()
-  expect(within(dialog).getByRole('heading', { name: 'Player 1 wins' })).toBeInTheDocument()
+  expect(within(dialog).getByRole('heading', { name: 'Player\u00a01 wins' })).toBeInTheDocument()
 })
 
 test('no game-over dialog while the game is in progress', () => {
@@ -304,7 +304,7 @@ test('no game-over dialog while the game is in progress', () => {
 
 test.each([
   ['playerBlocked', 2, 'Player 2 boxed in'],
-  ['skipLimit', 1, 'Player 1 skipped out (5/5)'],
+  ['skipLimit', 1, 'Player 1 skipped out (5 of 5)'],
   ['surrender', 2, 'Player 2 surrendered'],
 ] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason, playerId, winner: 1 } }))
@@ -323,10 +323,14 @@ test('game over shows a per-player territory and final-score breakdown', () => {
   renderScreen({ game, series: null })
 
   const table = within(screen.getByRole('dialog')).getByRole('table')
-  const rowCells = (name: string) =>
-    within(within(table).getByRole('row', { name: new RegExp(name) })).getAllByRole('cell').map((c) => c.textContent)
-  expect(rowCells('Territory')).toEqual(['Territory', '5', '4'])
-  expect(rowCells('Final score')).toEqual(['Final score', '5', '4'])
+  const row = (name: string) => within(table).getByRole('row', { name: new RegExp(name) })
+  const rowValues = (name: string) => [
+    within(row(name)).getByRole('rowheader').textContent,
+    ...within(row(name)).getAllByRole('cell').map((c) => c.textContent),
+  ]
+  expect(rowValues('Territory')).toEqual(['Territory', '5', '4'])
+  expect(rowValues('Final score')).toEqual(['Final score', '5', '4'])
+  expect(within(table).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Score', 'Player\u00a01', 'Player\u00a02'])
   expect(within(table).queryByRole('row', { name: /Prize/ })).not.toBeInTheDocument()
 })
 
@@ -393,4 +397,9 @@ test('the game-over dialog offers New Game', () => {
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New Game' }))
 
   expect(onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('game-over player names use a non-breaking space so they never wrap mid-name', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  expect(within(screen.getByRole('dialog')).getByRole('heading').textContent).toBe('Player\u00a01 wins')
 })

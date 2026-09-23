@@ -7,7 +7,7 @@ const ROWS = [
 ] as const
 
 function nameOf(game: GameWireState, id: number) {
-  return game.players[String(id) as '1' | '2'].name
+  return game.players[String(id) as '1' | '2'].name.replace(/ /g, '\u00a0')
 }
 
 function reasonText(game: GameWireState): string | null {
@@ -16,7 +16,7 @@ function reasonText(game: GameWireState): string | null {
   if (reason === null || playerId === null) return null
   const name = nameOf(game, playerId)
   if (reason === 'playerBlocked') return `${name} boxed in`
-  if (reason === 'skipLimit') return `${name} skipped out (${game.board.skipLimit}/${game.board.skipLimit})`
+  if (reason === 'skipLimit') return `${name} skipped out (${game.board.skipLimit} of ${game.board.skipLimit})`
   return `${name} surrendered`
 }
 
@@ -31,27 +31,27 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
     <dialog className="modal game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title">
       {reason && <p className="reason">{reason}</p>}
       <h2 id="gameover-title">
-        {winner !== null && <span className={`dot p${winner}`} />}
+        {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
         {headline}
       </h2>
       <table className="breakdown">
         <thead>
           <tr>
-            <th />
-            <th>
-              <span className="swatch p1" />
-              P1
+            <th scope="col">
+              <span className="visually-hidden">Score</span>
             </th>
-            <th>
-              <span className="swatch p2" />
-              P2
-            </th>
+            {(['1', '2'] as const).map((id) => (
+              <th key={id} scope="col">
+                <span className={`swatch p${id}`} aria-hidden="true" />
+                {nameOf(game, Number(id))}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {ROWS.map(([label, key]) => (
             <tr key={key} className={key === 'totalScore' ? 'total' : undefined}>
-              <td>{label}</td>
+              <th scope="row">{label}</th>
               <td>{game.players['1'].score[key]}</td>
               <td>{game.players['2'].score[key]}</td>
             </tr>

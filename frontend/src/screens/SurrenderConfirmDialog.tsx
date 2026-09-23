@@ -23,7 +23,7 @@ export function SurrenderConfirmDialog({ opponentName, isSeries, onCancel, onCon
     >
       <h2 id="surrender-title">{isSeries ? 'Surrender this round?' : 'Surrender the match?'}</h2>
       <p>
-        {opponentName} wins {isSeries ? 'this round ' : ''}immediately, regardless of the current score.
+        {opponentName.replace(/ /g, '\u00a0')} wins {isSeries ? 'this round ' : ''}immediately, regardless of the current score.
         {isSeries && ' The series continues to the next round.'} This can’t be undone.
       </p>
       <div className="actions">

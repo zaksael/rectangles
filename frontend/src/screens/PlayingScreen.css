@@ -156,6 +156,7 @@ dialog.modal {
   color: var(--ink);
   border: 1px solid var(--ink);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+  overscroll-behavior: contain;
 }
 dialog.modal::backdrop {
   background: color-mix(in srgb, var(--ink) 30%, transparent);
@@ -164,6 +165,7 @@ dialog.modal h2 {
   font-family: 'Source Serif 4', serif;
   font-weight: 700;
   margin: 0;
+  text-wrap: balance;
 }
 dialog.modal .actions {
   display: flex;
@@ -224,6 +226,9 @@ dialog.game-over {
   text-align: left;
   font-family: 'IBM Plex Sans', sans-serif;
 }
+.game-over table.breakdown tbody th {
+  font-weight: 400;
+}
 .game-over table.breakdown thead th {
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 11px;
@@ -242,6 +247,7 @@ dialog.game-over {
   margin-right: 6px;
   border-radius: 50%;
 }
+.game-over table.breakdown tr.total th,
 .game-over table.breakdown tr.total td {
   font-weight: 600;
   border-top: 1px solid var(--line);
