@@ -69,6 +69,11 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
       <h1 className="visually-hidden">Playing</h1>
       {state && (
         <>
+          {turnState !== 'gameOver' && (
+            <div className="visually-hidden turn-announcer" aria-live="polite">
+              {state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name}’s turn
+            </div>
+          )}
           <div className="header">
             {(['1', '2'] as const).map((id) => (
               <div
@@ -76,7 +81,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
                 className={`player p${id}${state.game.turn.currentPlayerId === Number(id) ? ' current' : ''}`}
                 aria-current={state.game.turn.currentPlayerId === Number(id) ? 'true' : undefined}
               >
-                <span className="dot" />
+                <span className="dot" aria-hidden="true" />
                 <span className="name">{state.game.players[id].name}</span>
                 <span className="scoreline">
                   <span className="score">{state.game.players[id].score.totalScore}</span>

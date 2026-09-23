@@ -454,3 +454,16 @@ test("on the human's turn against a bot, placement still works", () => {
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
+
+test('announces whose turn it is in a polite live region', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  const announcer = document.querySelector('.turn-announcer')
+  expect(announcer).toHaveAttribute('aria-live', 'polite')
+  expect(announcer).toHaveTextContent('Player 2’s turn')
+})
+
+test('does not announce a turn once the game is over', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  expect(document.querySelector('.turn-announcer')).not.toBeInTheDocument()
+})
