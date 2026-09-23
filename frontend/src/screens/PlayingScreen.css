@@ -94,6 +94,9 @@
 }
 
 .toolbar-actions {
+  /* Buttons and dice share one height so the row doesn't jump when the Roll
+     button swaps for the rolled numbers. */
+  --control-height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,9 +118,13 @@
   font-size: 24px;
   font-weight: 500;
 }
+.toolbar-actions .btn {
+  height: var(--control-height);
+  padding: 0 16px;
+}
 .die {
-  width: 34px;
-  height: 34px;
+  width: var(--control-height);
+  height: var(--control-height);
   display: flex;
   align-items: center;
   justify-content: center;
