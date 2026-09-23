@@ -1,21 +1,10 @@
 import { useState, type KeyboardEvent } from 'react'
+import { implementedGroups, implementedHouseRules, type HouseRules } from '../houseRules'
 import './ModeSelectScreen.css'
 
 type Opponent = 'bot' | 'local2p' | null
 type BotDifficulty = 'Basic' | 'Greedy' | 'Blocking'
 type SeriesLength = 3 | 5 | null
-
-interface HouseRules {
-  prizeEnabled: boolean
-  pitfallEnabled: boolean
-  stealEnabled: boolean
-  wallsEnabled: boolean
-  obstaclesEnabled: boolean
-  selfEnclosedPenaltyEnabled: boolean
-  wildcardEnabled: boolean
-  rerollEnabled: boolean
-  comebackNudgeEnabled: boolean
-}
 
 interface ModeSelectSettings {
   opponent: Opponent
@@ -26,21 +15,12 @@ interface ModeSelectSettings {
   houseRules: HouseRules
 }
 
-export interface StartGameParams {
+export interface StartGameParams extends Partial<HouseRules> {
   boardSize: number
   skipLimit: number
   seriesLength?: number
   botSeats?: number
   botDifficulty?: BotDifficulty
-  wildcardEnabled: boolean
-  rerollEnabled: boolean
-  wallsEnabled: boolean
-  obstaclesEnabled: boolean
-  prizeEnabled: boolean
-  pitfallEnabled: boolean
-  stealEnabled: boolean
-  selfEnclosedPenaltyEnabled: boolean
-  comebackNudgeEnabled: boolean
 }
 
 const STORAGE_KEY = 'rectangles.modeSelectSettings:v1'
@@ -75,33 +55,6 @@ const GAMES_OPTIONS: { label: string; value: SeriesLength }[] = [
   { label: 'Best of 3', value: 3 },
   { label: 'Best of 5', value: 5 },
 ]
-const HOUSE_RULE_GROUPS: { label: string; rules: { key: keyof HouseRules; label: string }[] }[] = [
-  {
-    label: 'Special cells',
-    rules: [
-      { key: 'prizeEnabled', label: 'Prize' },
-      { key: 'pitfallEnabled', label: 'Pitfall' },
-      { key: 'stealEnabled', label: 'Steal' },
-    ],
-  },
-  {
-    label: 'Board setup',
-    rules: [
-      { key: 'wallsEnabled', label: 'Walls' },
-      { key: 'obstaclesEnabled', label: 'Obstacles' },
-      { key: 'selfEnclosedPenaltyEnabled', label: 'Enclosure penalty' },
-    ],
-  },
-  {
-    label: 'Dice & turn',
-    rules: [
-      { key: 'wildcardEnabled', label: 'Wildcard roll' },
-      { key: 'rerollEnabled', label: 'Reroll' },
-      { key: 'comebackNudgeEnabled', label: 'Comeback' },
-    ],
-  },
-]
-
 function loadSettings(): ModeSelectSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -137,7 +90,7 @@ function buildStartGameParams(settings: ModeSelectSettings): StartGameParams {
     ...(settings.opponent === 'bot'
       ? { botSeats: BOT_SEATS, botDifficulty: settings.botDifficulty }
       : {}),
-    ...settings.houseRules,
+    ...implementedHouseRules(settings.houseRules),
   }
 }
 
@@ -170,6 +123,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
   }
 
   const noModeSelected = settings.opponent === null
+  const visibleGroups = implementedGroups()
 
   return (
     <div className="mode-select">
@@ -304,31 +258,33 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             </div>
           </div>
 
-          <div className="config-section">
-            <span className="section-label">House rules</span>
-            <div className="rules-groups">
-              {HOUSE_RULE_GROUPS.map((group) => (
-                <div className="rules-group" key={group.label}>
-                  <span className="group-label">{group.label}</span>
-                  <div className="rules-grid">
-                    {group.rules.map(({ key, label }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={settings.houseRules[key] ? 'rule on' : 'rule'}
-                        role="checkbox"
-                        aria-checked={settings.houseRules[key]}
-                        onClick={() => updateHouseRule(key, !settings.houseRules[key])}
-                      >
-                        <span className="checkbox"></span>
-                        {label}
-                      </button>
-                    ))}
+          {visibleGroups.length > 0 && (
+            <div className="config-section">
+              <span className="section-label">House rules</span>
+              <div className="rules-groups">
+                {visibleGroups.map((group) => (
+                  <div className="rules-group" key={group.label}>
+                    <span className="group-label">{group.label}</span>
+                    <div className="rules-grid">
+                      {group.rules.map(({ key, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={settings.houseRules[key] ? 'rule on' : 'rule'}
+                          role="checkbox"
+                          aria-checked={settings.houseRules[key]}
+                          onClick={() => updateHouseRule(key, !settings.houseRules[key])}
+                        >
+                          <span className="checkbox"></span>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

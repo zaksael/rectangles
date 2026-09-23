@@ -31,7 +31,7 @@ test('selecting a mode enables Start Game and clears the hint', () => {
   expect(screen.queryByText('Choose a mode to configure the match')).not.toBeInTheDocument()
 })
 
-test('Start Game with default settings passes the documented first-launch connect params', () => {
+test('Start Game with default settings passes the documented first-launch connect params, with no house-rule flags', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
@@ -43,16 +43,16 @@ test('Start Game with default settings passes the documented first-launch connec
     skipLimit: 5,
     botSeats: 2,
     botDifficulty: 'Greedy',
-    prizeEnabled: true,
-    pitfallEnabled: true,
-    stealEnabled: true,
-    wallsEnabled: true,
-    obstaclesEnabled: true,
-    selfEnclosedPenaltyEnabled: true,
-    wildcardEnabled: true,
-    rerollEnabled: true,
-    comebackNudgeEnabled: true,
   })
+})
+
+test('no house rules are shown until their UI is implemented', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+  expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
+  expect(screen.queryByText('House rules')).not.toBeInTheDocument()
 })
 
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {
@@ -95,17 +95,6 @@ test('hidden difficulty pills are inert (unreachable by keyboard, not just visua
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   expect(pillsContainer).not.toHaveAttribute('inert')
-})
-
-test('toggling a house rule checkbox flips it in the Start Game params', () => {
-  const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
-
-  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
-
-  expect(onStartGame.mock.calls[0][0]).toMatchObject({ pitfallEnabled: false })
 })
 
 test('Enter activates a non-native radio/checkbox widget', () => {
@@ -159,14 +148,13 @@ test('while connectFailed, shows an inline retry message and Start Game stays en
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 })
 
-test('Reset to defaults asks for confirmation, then restores match setup and house rules but keeps the chosen opponent', () => {
+test('Reset to defaults asks for confirmation, then restores match setup but keeps the chosen opponent', () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
   fireEvent.click(screen.getByRole('radio', { name: 'Blocking' }))
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
 
   fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
 
@@ -174,7 +162,6 @@ test('Reset to defaults asks for confirmation, then restores match setup and hou
   expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: '19×19' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: 'Greedy' })).toHaveAttribute('aria-checked', 'true')
-  expect(screen.getByRole('checkbox', { name: 'Pitfall' })).toHaveAttribute('aria-checked', 'true')
 })
 
 test('declining the Reset to defaults confirmation leaves settings untouched', () => {
