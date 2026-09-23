@@ -220,10 +220,10 @@ test('the error toast auto-dismisses after 4 seconds', () => {
   renderScreen(makeState(), vi.fn(), { reason: 'illegalPlacement', message: 'x' })
 
   act(() => vi.advanceTimersByTime(3999))
-  expect(screen.getByRole('status')).toBeInTheDocument()
+  expect(screen.getByRole('status')).not.toBeEmptyDOMElement()
 
   act(() => vi.advanceTimersByTime(1))
-  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toBeEmptyDOMElement()
 })
 
 test('a newer error replaces the toast and restarts the 4 second timer', () => {
@@ -236,12 +236,12 @@ test('a newer error replaces the toast and restarts the 4 second timer', () => {
   expect(screen.getByRole('status')).toHaveTextContent('You can’t do that right now.')
 
   act(() => vi.advanceTimersByTime(3999))
-  expect(screen.getByRole('status')).toBeInTheDocument()
+  expect(screen.getByRole('status')).not.toBeEmptyDOMElement()
   act(() => vi.advanceTimersByTime(1))
-  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toBeEmptyDOMElement()
 
   rerender(<PlayingScreen {...props} error={{ reason: 'invalidAction', message: 'y' }} />)
-  expect(screen.getByRole('status')).toBeInTheDocument()
+  expect(screen.getByRole('status')).not.toBeEmptyDOMElement()
 })
 
 test("marks only the current player's slot with aria-current", () => {
@@ -255,4 +255,10 @@ test('the dice have an accessible name describing the roll', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 1], legalPlacements: [] } }))
 
   expect(screen.getByRole('img', { name: 'Rolled 3 and 1' })).toBeInTheDocument()
+})
+
+test('the error status region is mounted from the start and empty until an error arrives', () => {
+  renderScreen(makeState())
+
+  expect(screen.getByRole('status')).toBeEmptyDOMElement()
 })

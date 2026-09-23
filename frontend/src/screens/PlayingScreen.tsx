@@ -78,13 +78,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
             ))}
           </div>
           <div className="board-area">
-            {error && error !== dismissedError && (
-              <div className="toast-anchor">
-                <div className="toast" role="status" aria-live="polite">
-                  {ERROR_TEXT[error.reason]}
-                </div>
-              </div>
-            )}
+            <div className="toast-anchor" role="status" aria-live="polite">
+              {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
+            </div>
             <Board
               game={state.game}
               previewTopLeft={previewTopLeft}
