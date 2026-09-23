@@ -150,4 +150,27 @@ describe('App', () => {
 
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
   })
+
+  it('hands the Vs Bot seat to Playing so the human gets no Roll button on the bot turn', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    startGameAndOpen()
+    const broadcast = (currentPlayerId: number) =>
+      act(() => {
+        FakeWebSocket.instances.at(-1)!.emit('message', {
+          protocolVersion: 1,
+          type: 'state',
+          game: makeGame({ turn: { currentPlayerId, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
+          series: null,
+        })
+      })
+
+    broadcast(1)
+    expect(screen.getByRole('button', { name: 'Roll' })).toBeInTheDocument()
+
+    broadcast(2)
+    act(() => vi.advanceTimersByTime(500)) // state broadcasts are paced, so the second one lands after the delay
+    expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
 })

@@ -9,7 +9,11 @@ import { useGameSocket } from './useGameSocket'
 
 const PROTOCOL_VERSION = 1
 
-const IDLE_CONNECT_PARAMS = { protocolVersion: PROTOCOL_VERSION, enabled: false, connectionId: 0 }
+const IDLE_CONNECT_PARAMS: { protocolVersion: number; enabled: boolean; connectionId: number; botSeats?: number } = {
+  protocolVersion: PROTOCOL_VERSION,
+  enabled: false,
+  connectionId: 0,
+}
 
 function App() {
   const [screen, setScreen] = useState<Screen>('MODE_SELECT')
@@ -63,6 +67,7 @@ function App() {
           onOpenSettings={() => setSettingsOpen(true)}
           onGoToReplay={() => setScreen('REPLAY')}
           onNewGame={handleNewGame}
+          botSeat={connectParams.botSeats}
         />
         {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
       </>

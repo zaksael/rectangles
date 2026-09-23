@@ -14,6 +14,7 @@ interface PlayingScreenProps {
   onOpenSettings: () => void
   onGoToReplay: () => void
   onNewGame: () => void
+  botSeat?: number
 }
 
 const ERROR_TOAST_MS = 4000
@@ -26,8 +27,11 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay, onNewGame }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay, onNewGame, botSeat }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
+  // The bot acts on its own turns; the human's controls stay inert until it hands back.
+  const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
+  const humanTurnState = isBotTurn ? undefined : turnState
   const [confirmingSurrender, setConfirmingSurrender] = useState(false)
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
@@ -41,7 +45,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
   sendActionRef.current = sendAction
 
   const { rotate, previewTopLeft, previewKind, coverableCells, dims, handleCellHover, handleCellTap } = usePlacementInput(
-    state?.game ?? null,
+    isBotTurn ? null : (state?.game ?? null),
     sendAction,
   )
   const rotateRef = useRef(rotate)
@@ -50,15 +54,15 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (document.querySelector('dialog[open]')) return
-      if (event.key === 'd' && turnState === 'awaitingRoll') {
+      if (event.key === 'd' && humanTurnState === 'awaitingRoll') {
         sendActionRef.current({ type: 'roll' })
-      } else if (event.key === 'r' && turnState === 'choosingPlacement') {
+      } else if (event.key === 'r' && humanTurnState === 'choosingPlacement') {
         rotateRef.current()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [turnState])
+  }, [humanTurnState])
 
   return (
     <div className="frame">
@@ -93,8 +97,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
               previewDims={dims}
               previewKind={previewKind}
               coverableCells={coverableCells}
-              onCellHover={turnState === 'choosingPlacement' ? handleCellHover : undefined}
-              onCellTap={turnState === 'choosingPlacement' ? handleCellTap : undefined}
+              onCellHover={humanTurnState === 'choosingPlacement' ? handleCellHover : undefined}
+              onCellTap={humanTurnState === 'choosingPlacement' ? handleCellTap : undefined}
             />
           </div>
         </>
@@ -112,7 +116,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
         />
       )}
       <div className="toolbar-actions">
-        {turnState === 'awaitingRoll' && (
+        {humanTurnState === 'awaitingRoll' && (
           <button className="btn primary" onClick={() => sendAction({ type: 'roll' })}>
             Roll
           </button>
@@ -126,12 +130,12 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
             ))}
           </div>
         )}
-        {turnState === 'choosingPlacement' && (
+        {humanTurnState === 'choosingPlacement' && (
           <button className="btn secondary" onClick={rotate}>
             Rotate
           </button>
         )}
-        {turnState === 'skipped' && (
+        {humanTurnState === 'skipped' && (
           <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })}>
             Skip
           </button>

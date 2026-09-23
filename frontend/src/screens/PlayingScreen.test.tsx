@@ -8,7 +8,13 @@ function makeState(overrides: Parameters<typeof makeGame>[0] = {}): GameState {
   return { game: makeGame(overrides), series: null }
 }
 
-function renderScreen(state: GameState | null, sendAction = vi.fn(), error: GameError | null = null, onNewGame = vi.fn()) {
+function renderScreen(
+  state: GameState | null,
+  sendAction = vi.fn(),
+  error: GameError | null = null,
+  onNewGame = vi.fn(),
+  botSeat?: number,
+) {
   render(
     <PlayingScreen
       state={state}
@@ -17,6 +23,7 @@ function renderScreen(state: GameState | null, sendAction = vi.fn(), error: Game
       onOpenSettings={vi.fn()}
       onGoToReplay={vi.fn()}
       onNewGame={onNewGame}
+      botSeat={botSeat}
     />,
   )
   return sendAction
@@ -402,4 +409,48 @@ test('the game-over dialog offers New Game', () => {
 test('game-over player names use a non-breaking space so they never wrap mid-name', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
   expect(within(screen.getByRole('dialog')).getByRole('heading').textContent).toBe('Player\u00a01 wins')
+})
+
+const renderVsBot = (state: GameState) => renderScreen(state, vi.fn(), null, vi.fn(), 2)
+
+const botPlacementTurn = {
+  currentPlayerId: 2,
+  turnState: 'choosingPlacement' as const,
+  lastRoll: [2, 1] as [number, number],
+  legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] as [number, number][] }],
+}
+
+test("on the bot's turn, hovering shows no preview or coverable overlay and tapping places nothing", () => {
+  const sendAction = renderVsBot(makeState({ board: { size: 5, skipLimit: 5 }, turn: botPlacementTurn }))
+  const grid = screen.getByRole('grid')
+
+  fireEvent.mouseEnter(grid.querySelector('[data-cell="0,0"]')!)
+  fireEvent.pointerUp(grid.querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
+
+  expect(grid.querySelector('.preview')).not.toBeInTheDocument()
+  expect(grid.querySelector('.coverable')).not.toBeInTheDocument()
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(screen.queryByRole('button', { name: 'Rotate' })).not.toBeInTheDocument()
+})
+
+test("on the bot's turn there is no Roll button and d does not roll", () => {
+  const sendAction = renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  fireEvent.keyDown(window, { key: 'd' })
+
+  expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test("on the bot's turn there is no Skip button", () => {
+  renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+  expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
+})
+
+test("on the human's turn against a bot, placement still works", () => {
+  const sendAction = renderVsBot(makeState({ board: { size: 5, skipLimit: 5 }, turn: { ...botPlacementTurn, currentPlayerId: 1 } }))
+
+  fireEvent.pointerUp(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
