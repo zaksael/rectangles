@@ -50,6 +50,12 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
               >
                 <span className="dot" />
                 <span className="name">{state.game.players[id].name}</span>
+                <span className="scoreline">
+                  <span className="score">{state.game.players[id].score.totalScore}</span>
+                  <span className="streak">
+                    {state.game.players[id].board.consecutiveSkips}/{state.game.board.skipLimit} skips
+                  </span>
+                </span>
               </div>
             ))}
           </div>

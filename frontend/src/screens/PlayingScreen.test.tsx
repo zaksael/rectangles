@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
 import type { GameState } from '../useGameSocket'
@@ -175,4 +175,28 @@ test.each(['awaitingRoll', 'choosingPlacement'] as const)('has no Skip button wh
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
+})
+
+test("shows each player's total score in their header slot", () => {
+  const game = makeGame()
+  game.players['1'].score.totalScore = 12
+  game.players['2'].score.totalScore = 7
+  renderScreen({ game, series: null })
+
+  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
+  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
+  expect(within(p1).getByText('12')).toHaveClass('score')
+  expect(within(p2).getByText('7')).toHaveClass('score')
+})
+
+test("shows both players' skip streaks against the skip limit at the same time", () => {
+  const game = makeGame({ board: { size: 3, skipLimit: 5 } })
+  game.players['1'].board.consecutiveSkips = 2
+  game.players['2'].board.consecutiveSkips = 0
+  renderScreen({ game, series: null })
+
+  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
+  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
+  expect(within(p1).getByText('2/5 skips')).toHaveClass('streak')
+  expect(within(p2).getByText('0/5 skips')).toHaveClass('streak')
 })

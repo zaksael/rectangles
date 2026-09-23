@@ -64,6 +64,24 @@
   font-weight: 600;
 }
 
+.player .scoreline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 500;
+}
+.streak {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
