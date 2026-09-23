@@ -1,18 +1,18 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { expect, test, vi } from 'vitest'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, expect, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
-import type { GameState } from '../useGameSocket'
+import type { GameError, GameState } from '../useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
 
 function makeState(overrides: Parameters<typeof makeGame>[0] = {}): GameState {
   return { game: makeGame(overrides), series: null }
 }
 
-function renderScreen(state: GameState | null, sendAction = vi.fn()) {
+function renderScreen(state: GameState | null, sendAction = vi.fn(), error: GameError | null = null) {
   render(
     <PlayingScreen
       state={state}
-      error={null}
+      error={error}
       sendAction={sendAction}
       onOpenSettings={vi.fn()}
       onGoToReplay={vi.fn()}
@@ -199,4 +199,47 @@ test("shows both players' skip streaks against the skip limit at the same time",
   const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
   expect(within(p1).getByText('2/5 skips')).toHaveClass('streak')
   expect(within(p2).getByText('0/5 skips')).toHaveClass('streak')
+})
+
+test.each([
+  ['illegalPlacement', "That piece can't go there."],
+  ['invalidAction', "You can't do that right now."],
+  ['protocolVersionMismatch', 'This game is out of date - reload the page.'],
+  ['illegalWildcardValue', "That number can't be placed - pick another."],
+  ['malformedMessage', 'Something went wrong - try again.'],
+] as const)('shows friendly toast text for a %s server error', (reason, text) => {
+  renderScreen(makeState(), vi.fn(), { reason, message: 'raw server text' })
+
+  expect(screen.getByRole('status')).toHaveTextContent(text)
+})
+
+afterEach(() => vi.useRealTimers())
+
+test('the error toast auto-dismisses after 4 seconds', () => {
+  vi.useFakeTimers()
+  renderScreen(makeState(), vi.fn(), { reason: 'illegalPlacement', message: 'x' })
+
+  act(() => vi.advanceTimersByTime(3999))
+  expect(screen.getByRole('status')).toBeInTheDocument()
+
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+})
+
+test('a newer error replaces the toast and restarts the 4 second timer', () => {
+  vi.useFakeTimers()
+  const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onGoToReplay: vi.fn() }
+  const { rerender } = render(<PlayingScreen {...props} error={{ reason: 'illegalPlacement', message: 'x' }} />)
+
+  act(() => vi.advanceTimersByTime(3000))
+  rerender(<PlayingScreen {...props} error={{ reason: 'invalidAction', message: 'y' }} />)
+  expect(screen.getByRole('status')).toHaveTextContent("You can't do that right now.")
+
+  act(() => vi.advanceTimersByTime(3999))
+  expect(screen.getByRole('status')).toBeInTheDocument()
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+  rerender(<PlayingScreen {...props} error={{ reason: 'invalidAction', message: 'y' }} />)
+  expect(screen.getByRole('status')).toBeInTheDocument()
 })

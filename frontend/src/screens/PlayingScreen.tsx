@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
-import type { GameAction } from '../gameTypes'
+import type { ErrorReason, GameAction } from '../gameTypes'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
 import './PlayingScreen.css'
@@ -13,8 +13,25 @@ interface PlayingScreenProps {
   onGoToReplay: () => void
 }
 
-export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay }: PlayingScreenProps) {
+const ERROR_TOAST_MS = 4000
+
+const ERROR_TEXT: Record<ErrorReason, string> = {
+  illegalPlacement: "That piece can't go there.",
+  invalidAction: "You can't do that right now.",
+  protocolVersionMismatch: 'This game is out of date - reload the page.',
+  illegalWildcardValue: "That number can't be placed - pick another.",
+  malformedMessage: 'Something went wrong - try again.',
+}
+
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
+  const [dismissedError, setDismissedError] = useState<GameError | null>(null)
+
+  useEffect(() => {
+    if (!error) return
+    const timer = setTimeout(() => setDismissedError(error), ERROR_TOAST_MS)
+    return () => clearTimeout(timer)
+  }, [error])
 
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
@@ -59,15 +76,22 @@ export function PlayingScreen({ state, sendAction, onOpenSettings, onGoToReplay 
               </div>
             ))}
           </div>
-          <Board
-            game={state.game}
-            previewTopLeft={previewTopLeft}
-            previewDims={dims}
-            previewKind={previewKind}
-            coverableCells={coverableCells}
-            onCellHover={turnState === 'choosingPlacement' ? handleCellHover : undefined}
-            onCellTap={turnState === 'choosingPlacement' ? handleCellTap : undefined}
-          />
+          <div className="board-area">
+            {error && error !== dismissedError && (
+              <div className="toast" role="status" aria-live="polite">
+                {ERROR_TEXT[error.reason]}
+              </div>
+            )}
+            <Board
+              game={state.game}
+              previewTopLeft={previewTopLeft}
+              previewDims={dims}
+              previewKind={previewKind}
+              coverableCells={coverableCells}
+              onCellHover={turnState === 'choosingPlacement' ? handleCellHover : undefined}
+              onCellTap={turnState === 'choosingPlacement' ? handleCellTap : undefined}
+            />
+          </div>
         </>
       )}
       <div className="toolbar-actions">
