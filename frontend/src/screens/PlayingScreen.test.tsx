@@ -202,8 +202,8 @@ test("shows both players' skip streaks against the skip limit at the same time",
 })
 
 test.each([
-  ['illegalPlacement', 'That piece can’t go there.'],
-  ['invalidAction', 'You can’t do that right now.'],
+  ['illegalPlacement', 'That piece can’t go there — try another spot.'],
+  ['invalidAction', 'You can’t do that right now — finish your current step.'],
   ['protocolVersionMismatch', 'This game is out of date — reload the page.'],
   ['illegalWildcardValue', 'That number can’t be placed — pick another.'],
   ['malformedMessage', 'Something went wrong — try again.'],
@@ -233,7 +233,7 @@ test('a newer error replaces the toast and restarts the 4 second timer', () => {
 
   act(() => vi.advanceTimersByTime(3000))
   rerender(<PlayingScreen {...props} error={{ reason: 'invalidAction', message: 'y' }} />)
-  expect(screen.getByRole('status')).toHaveTextContent('You can’t do that right now.')
+  expect(screen.getByRole('status')).toHaveTextContent('You can’t do that right now — finish your current step.')
 
   act(() => vi.advanceTimersByTime(3999))
   expect(screen.getByRole('status')).not.toBeEmptyDOMElement()
