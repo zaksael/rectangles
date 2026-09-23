@@ -116,12 +116,20 @@
   position: relative;
 }
 
-.toast {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
+.toast-anchor {
+  /* Zero-height sticky strip just under the sticky header (56px tall), so the
+     toast stays in view when the board is taller than the viewport. */
+  position: sticky;
+  top: 56px;
   z-index: 3;
+  height: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.toast {
+  margin-top: 12px;
   padding: 8px 16px;
   background: var(--ink);
   color: var(--ledger);

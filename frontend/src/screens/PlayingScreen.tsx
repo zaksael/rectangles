@@ -78,8 +78,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
           </div>
           <div className="board-area">
             {error && error !== dismissedError && (
-              <div className="toast" role="status" aria-live="polite">
-                {ERROR_TEXT[error.reason]}
+              <div className="toast-anchor">
+                <div className="toast" role="status" aria-live="polite">
+                  {ERROR_TEXT[error.reason]}
+                </div>
               </div>
             )}
             <Board
