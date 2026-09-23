@@ -8,7 +8,7 @@ function makeState(overrides: Parameters<typeof makeGame>[0] = {}): GameState {
   return { game: makeGame(overrides), series: null }
 }
 
-function renderScreen(state: GameState | null, sendAction = vi.fn(), error: GameError | null = null) {
+function renderScreen(state: GameState | null, sendAction = vi.fn(), error: GameError | null = null, onNewGame = vi.fn()) {
   render(
     <PlayingScreen
       state={state}
@@ -16,6 +16,7 @@ function renderScreen(state: GameState | null, sendAction = vi.fn(), error: Game
       sendAction={sendAction}
       onOpenSettings={vi.fn()}
       onGoToReplay={vi.fn()}
+      onNewGame={onNewGame}
     />,
   )
   return sendAction
@@ -228,7 +229,7 @@ test('the error toast auto-dismisses after 4 seconds', () => {
 
 test('a newer error replaces the toast and restarts the 4 second timer', () => {
   vi.useFakeTimers()
-  const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onGoToReplay: vi.fn() }
+  const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onGoToReplay: vi.fn(), onNewGame: vi.fn() }
   const { rerender } = render(<PlayingScreen {...props} error={{ reason: 'illegalPlacement', message: 'x' }} />)
 
   act(() => vi.advanceTimersByTime(3000))
@@ -383,4 +384,13 @@ test('Surrender copy says the round, not the match, mid-series', () => {
 test('the Surrender button is gone once the game is over', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
   expect(screen.queryByRole('button', { name: 'Surrender' })).not.toBeInTheDocument()
+})
+
+test('the game-over dialog offers New Game', () => {
+  const onNewGame = vi.fn()
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }), vi.fn(), null, onNewGame)
+
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New Game' }))
+
+  expect(onNewGame).toHaveBeenCalledTimes(1)
 })

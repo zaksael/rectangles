@@ -156,6 +156,8 @@ export function useGameSocket(params: GameSocketParams) {
 
   function disconnect() {
     intentionalCloseRef.current = true
+    // The socket's `close` event fires asynchronously; until it does, status would still read 'open'.
+    setStatus('closed-intentional')
     socketRef.current?.close()
   }
 

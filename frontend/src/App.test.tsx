@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
+import { makeGame } from './testUtils/gameFixtures'
 
 beforeEach(() => {
   localStorage.clear()
@@ -126,5 +127,27 @@ describe('App', () => {
 
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
     expect(screen.queryByText("Couldn't connect — your settings are unchanged, try again")).not.toBeInTheDocument()
+  })
+
+  it('returns to Mode Select from the game-over dialog on one New Game click, even when the socket closes asynchronously', () => {
+    render(<App />)
+    startGameAndOpen()
+    // Real sockets report `close` some time after `close()` is called, not synchronously.
+    FakeWebSocket.instances.at(-1)!.close = () => {}
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1 },
+        }),
+        series: null,
+      })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
+
+    expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
   })
 })

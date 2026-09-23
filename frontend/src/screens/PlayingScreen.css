@@ -165,11 +165,22 @@ dialog.modal h2 {
   font-weight: 700;
   margin: 0;
 }
+dialog.modal .actions {
+  display: flex;
+  gap: 12px;
+}
+dialog.modal .actions .btn {
+  flex: 1;
+  padding: 12px;
+}
 
 /* Game-over overlay (variant A). */
 dialog.game-over {
   width: 480px;
   padding: 32px 32px 24px;
+}
+.game-over .actions {
+  margin-top: 24px;
 }
 .game-over .reason {
   font-family: 'IBM Plex Mono', monospace;
@@ -249,12 +260,4 @@ dialog.surrender-confirm {
 .surrender-confirm p {
   font-size: 14px;
   margin: 0 0 24px;
-}
-.surrender-confirm .actions {
-  display: flex;
-  gap: 12px;
-}
-.surrender-confirm .btn {
-  flex: 1;
-  padding: 12px;
 }

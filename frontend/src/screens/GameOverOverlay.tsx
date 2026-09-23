@@ -20,7 +20,7 @@ function reasonText(game: GameWireState): string | null {
   return `${name} surrendered`
 }
 
-export function GameOverOverlay({ game }: { game: GameWireState }) {
+export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNewGame: () => void }) {
   const dialogRef = useAutoOpenDialog()
   const { winner } = game.gameOver
   const reason = reasonText(game)
@@ -58,6 +58,11 @@ export function GameOverOverlay({ game }: { game: GameWireState }) {
           ))}
         </tbody>
       </table>
+      <div className="actions">
+        <button className="btn secondary" onClick={onNewGame} autoFocus>
+          New Game
+        </button>
+      </div>
     </dialog>
   )
 }

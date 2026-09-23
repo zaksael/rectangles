@@ -13,6 +13,7 @@ interface PlayingScreenProps {
   sendAction: (action: GameAction) => void
   onOpenSettings: () => void
   onGoToReplay: () => void
+  onNewGame: () => void
 }
 
 const ERROR_TOAST_MS = 4000
@@ -25,7 +26,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoToReplay, onNewGame }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
   const [confirmingSurrender, setConfirmingSurrender] = useState(false)
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
@@ -98,7 +99,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onGoTo
           </div>
         </>
       )}
-      {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} />}
+      {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} onNewGame={onNewGame} />}
       {state && confirmingSurrender && (
         <SurrenderConfirmDialog
           opponentName={state.game.players[state.game.turn.currentPlayerId === 1 ? '2' : '1'].name}

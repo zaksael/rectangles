@@ -62,6 +62,7 @@ function App() {
           sendAction={gameSocket.sendAction}
           onOpenSettings={() => setSettingsOpen(true)}
           onGoToReplay={() => setScreen('REPLAY')}
+          onNewGame={handleNewGame}
         />
         {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
       </>
