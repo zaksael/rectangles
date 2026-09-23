@@ -276,3 +276,25 @@ test('bumping connectionId opens a fresh socket even with otherwise unchanged pa
 
   expect(FakeWebSocket.instances).toHaveLength(2)
 })
+
+test('a fresh connection clears the previous game state and error', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0 },
+  })
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0].emit('message', {
+      protocolVersion: 1,
+      type: 'error',
+      reason: 'illegalPlacement',
+      message: 'x',
+    })
+  })
+  expect(result.current.state).not.toBeNull()
+  expect(result.current.error).not.toBeNull()
+
+  rerender({ protocolVersion: 1, connectionId: 1 })
+
+  expect(result.current.state).toBeNull()
+  expect(result.current.error).toBeNull()
+})

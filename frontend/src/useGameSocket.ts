@@ -82,6 +82,8 @@ export function useGameSocket(params: GameSocketParams) {
     intentionalCloseRef.current = false
     hasOpenedRef.current = false
     setStatus(undefined)
+    setState(null)
+    setError(null)
     stateQueueRef.current = []
     if (drainTimeoutRef.current !== null) {
       clearTimeout(drainTimeoutRef.current)
