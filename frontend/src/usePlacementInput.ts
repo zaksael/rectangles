@@ -1,7 +1,14 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { GameAction, GameWireState } from './gameTypes'
 
 const UNSET = Symbol('unset')
+
+const ARROWS: Record<string, [number, number]> = {
+  ArrowUp: [-1, 0],
+  ArrowDown: [1, 0],
+  ArrowLeft: [0, -1],
+  ArrowRight: [0, 1],
+}
 
 function computeTopLeft(cell: [number, number], dims: [number, number], boardSize: number): [number, number] {
   const [row, col] = cell
@@ -124,5 +131,29 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
     }
   }
 
-  return { dims, rotate, previewTopLeft, previewKind, coverableCells, handleCellHover, handleCellTap }
+  // Keyboard: the piece follows the same cursor a mouse hover sets (the cell under its middle).
+  function handleBoardFocus() {
+    if (!game || !dims || hoveredCell) return
+    const first = findLegalEntry(dims, game.turn.legalPlacements)?.topLefts[0]
+    if (!first) return
+    setHoveredCell([first[0] + Math.floor(dims[1] / 2), first[1] + Math.floor(dims[0] / 2)])
+    setPreviewSource('hover')
+  }
+
+  function handleBoardKeyDown(event: KeyboardEvent) {
+    if (!game || !dims) return
+    const step = ARROWS[event.key]
+    if (step) {
+      event.preventDefault()
+      const [row, col] = hoveredCell ?? [0, 0]
+      const last = game.board.size - 1
+      setHoveredCell([Math.max(0, Math.min(row + step[0], last)), Math.max(0, Math.min(col + step[1], last))])
+      setPreviewSource('hover')
+    } else if ((event.key === 'Enter' || event.key === ' ') && hoveredCell) {
+      event.preventDefault()
+      place(hoveredCell)
+    }
+  }
+
+  return { dims, rotate, previewTopLeft, previewKind, coverableCells, handleCellHover, handleCellTap, handleBoardFocus, handleBoardKeyDown }
 }

@@ -95,7 +95,7 @@ test('the toolbar reads Roll, Rotate, Skip on the left and Surrender, Pause on t
 
   const names = within(document.querySelector('.toolbar-actions') as HTMLElement)
     .getAllByRole('button')
-    .map((b) => b.textContent)
+    .map((b) => b.firstChild!.textContent!.trim())
   expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Surrender', 'Pause'])
 })
 
@@ -477,16 +477,12 @@ test("on the human's turn against a bot, placement still works", () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
 
-test('announces whose turn it is in a polite live region', () => {
+test('the turn status line is a polite live region that is re-read whole', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
-  const announcer = document.querySelector('.turn-announcer')
-  expect(announcer).toHaveAttribute('aria-live', 'polite')
-  expect(announcer).toHaveTextContent('Player 2’s turn')
-})
-
-test('does not announce a turn once the game is over', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  const status = screen.getByTestId('turn-status')
+  expect(status).toHaveAttribute('aria-live', 'polite')
+  expect(status).toHaveAttribute('aria-atomic', 'true')
   expect(document.querySelector('.turn-announcer')).not.toBeInTheDocument()
 })
 
@@ -659,4 +655,93 @@ test('hovering a legal spot shows no reason', () => {
   fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2×1$/)
+})
+
+const keyboardState = () =>
+  makeState({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 1],
+      legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0], [0, 1]] }],
+    },
+  })
+
+test('the board is keyboard-focusable only while a placement can be made', () => {
+  renderScreen(keyboardState())
+  expect(screen.getByRole('grid')).toHaveAttribute('tabindex', '0')
+})
+
+test('the board is not focusable while awaiting a roll', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  expect(screen.getByRole('grid')).not.toHaveAttribute('tabindex')
+})
+
+test('focusing the board puts the piece on the first legal spot', () => {
+  renderScreen(keyboardState())
+
+  fireEvent.focus(screen.getByRole('grid'))
+
+  const preview = document.querySelector<HTMLElement>('.preview.legal')!
+  expect(preview.style.left).toBe('0px')
+  expect(preview.style.top).toBe('0px')
+})
+
+test('arrow keys move the piece and Enter places it', () => {
+  const sendAction = renderScreen(keyboardState())
+  const grid = screen.getByRole('grid')
+
+  fireEvent.focus(grid)
+  fireEvent.keyDown(grid, { key: 'ArrowRight' })
+  expect(document.querySelector<HTMLElement>('.preview.legal')!.style.left).toBe('44px')
+
+  fireEvent.keyDown(grid, { key: 'Enter' })
+  expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 1], width: 2, height: 1 })
+})
+
+test('moving onto an illegal spot explains why, and Enter does not place', () => {
+  const sendAction = renderScreen(keyboardState())
+  const grid = screen.getByRole('grid')
+
+  fireEvent.focus(grid)
+  fireEvent.keyDown(grid, { key: 'ArrowDown' })
+
+  expect(document.querySelector('.preview.danger')).toBeInTheDocument()
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Your first piece must cover your starting corner')
+  fireEvent.keyDown(grid, { key: 'Enter' })
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('the board explains its keys to assistive tech', () => {
+  renderScreen(keyboardState())
+
+  const help = document.getElementById(screen.getByRole('grid').getAttribute('aria-describedby')!)
+  expect(help).toHaveTextContent('Arrow keys move the piece, Enter places it, R rotates it')
+})
+
+test('Roll, Rotate and Skip show their keys, without changing their accessible names', () => {
+  renderScreen(keyboardState())
+
+  for (const [name, key] of [['Roll', 'D'], ['Rotate', 'R'], ['Skip', 'S']]) {
+    const button = screen.getByRole('button', { name })
+    expect(button).toHaveAttribute('aria-keyshortcuts', key.toLowerCase())
+    expect(button.querySelector('kbd')).toHaveTextContent(key)
+  }
+})
+
+test('pressing s skips a dead roll', () => {
+  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  fireEvent.keyDown(window, { key: 's' })
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
+})
+
+test('pressing s does nothing when the roll is playable', () => {
+  const sendAction = renderScreen(keyboardState())
+
+  fireEvent.keyDown(window, { key: 's' })
+
+  expect(sendAction).not.toHaveBeenCalled()
 })

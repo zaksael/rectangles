@@ -33,6 +33,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
   const humanTurnState = isBotTurn ? undefined : turnState
+  const placing = humanTurnState === 'choosingPlacement'
   const [confirmingSurrender, setConfirmingSurrender] = useState(false)
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
@@ -45,7 +46,17 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
 
-  const { rotate, previewTopLeft, previewKind, coverableCells, dims, handleCellHover, handleCellTap } = usePlacementInput(
+  const {
+    rotate,
+    previewTopLeft,
+    previewKind,
+    coverableCells,
+    dims,
+    handleCellHover,
+    handleCellTap,
+    handleBoardFocus,
+    handleBoardKeyDown,
+  } = usePlacementInput(
     isBotTurn ? null : (state?.game ?? null),
     sendAction,
   )
@@ -83,6 +94,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         sendActionRef.current({ type: 'roll' })
       } else if (event.key === 'r' && humanTurnState === 'choosingPlacement') {
         rotateRef.current()
+      } else if (event.key === 's' && humanTurnState === 'skipped') {
+        sendActionRef.current({ type: 'skip' })
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -94,11 +107,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       <h1 className="visually-hidden">Playing</h1>
       {state && (
         <>
-          {turnState !== 'gameOver' && (
-            <div className="visually-hidden turn-announcer" aria-live="polite">
-              {state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name}’s turn
-            </div>
-          )}
           <div className="header">
             {(['1', '2'] as const).map((id) => (
               <div
@@ -117,7 +125,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               </div>
             ))}
             {turnStatus && (
-              <div className="turn-status" data-testid="turn-status">
+              <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
                 {turnStatus}
               </div>
             )}
@@ -133,9 +141,17 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               previewKind={previewKind}
               coverableCells={coverableCells}
               lastPlaced={lastPlaced}
-              onCellHover={humanTurnState === 'choosingPlacement' ? handleCellHover : undefined}
-              onCellTap={humanTurnState === 'choosingPlacement' ? handleCellTap : undefined}
+              onCellHover={placing ? handleCellHover : undefined}
+              onCellTap={placing ? handleCellTap : undefined}
+              onKeyDown={placing ? handleBoardKeyDown : undefined}
+              onFocus={placing ? handleBoardFocus : undefined}
+              describedBy={placing ? 'board-help' : undefined}
             />
+            {placing && (
+              <span id="board-help" className="visually-hidden">
+                Arrow keys move the piece, Enter places it, R rotates it.
+              </span>
+            )}
           </div>
         </>
       )}
@@ -153,14 +169,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       )}
       <div className="toolbar-actions">
         <div className="toolbar-leading">
-          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} disabled={isBotTurn || turnState !== 'awaitingRoll'}>
-            Roll
+          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d" disabled={isBotTurn || turnState !== 'awaitingRoll'}>
+            Roll <kbd aria-hidden="true">D</kbd>
           </button>
-          <button className="btn secondary" onClick={rotate} disabled={isBotTurn || turnState !== 'choosingPlacement'}>
-            Rotate
+          <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r" disabled={isBotTurn || turnState !== 'choosingPlacement'}>
+            Rotate <kbd aria-hidden="true">R</kbd>
           </button>
-          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })} disabled={isBotTurn || turnState !== 'skipped'}>
-            Skip
+          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s" disabled={isBotTurn || turnState !== 'skipped'}>
+            Skip <kbd aria-hidden="true">S</kbd>
           </button>
         </div>
         {shownRoll && (

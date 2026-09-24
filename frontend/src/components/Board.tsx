@@ -1,4 +1,4 @@
-import { memo, type CSSProperties, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
+import { memo, type CSSProperties, type FocusEventHandler, type KeyboardEventHandler, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
 import type { GameWireState } from '../gameTypes'
 import './Board.css'
 
@@ -13,6 +13,10 @@ interface BoardProps {
   lastPlaced?: [number, number] | null
   onCellHover?: (cell: [number, number]) => void
   onCellTap?: (cell: [number, number], pointerType: string) => void
+  // Keyboard play: giving onKeyDown makes the board a single tab stop.
+  onKeyDown?: KeyboardEventHandler
+  onFocus?: FocusEventHandler
+  describedBy?: string
 }
 
 function cellKey(row: number, col: number): string {
@@ -126,6 +130,9 @@ export function Board({
   lastPlaced,
   onCellHover,
   onCellTap,
+  onKeyDown,
+  onFocus,
+  describedBy,
 }: BoardProps) {
   const { size } = game.board
 
@@ -134,6 +141,10 @@ export function Board({
       className="board"
       role="grid"
       aria-label={`${size}×${size} board`}
+      aria-describedby={describedBy}
+      tabIndex={onKeyDown ? 0 : undefined}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
       style={{ gridTemplateColumns: `repeat(${size}, ${CELL}px)`, gridTemplateRows: `repeat(${size}, ${CELL}px)` }}
       // One delegated handler per event instead of a closure on every cell.
       onMouseOver={(e: MouseEvent) => {
