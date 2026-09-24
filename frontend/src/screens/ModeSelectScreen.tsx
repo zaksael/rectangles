@@ -47,6 +47,9 @@ const DEFAULT_SETTINGS: ModeSelectSettings = {
   },
 }
 
+// Flip to true when the round-transition screen lands; until then the Games picker is hidden and seriesLength isn't sent.
+const SERIES_IMPLEMENTED = false
+
 const BOARD_SIZES = [19, 23, 27]
 const SKIP_LIMITS = [3, 5]
 const DIFFICULTIES: BotDifficulty[] = ['Basic', 'Greedy', 'Blocking']
@@ -86,7 +89,7 @@ function buildStartGameParams(settings: ModeSelectSettings): StartGameParams {
   return {
     boardSize: settings.boardSize,
     skipLimit: settings.skipLimit,
-    ...(settings.seriesLength !== null ? { seriesLength: settings.seriesLength } : {}),
+    ...(SERIES_IMPLEMENTED && settings.seriesLength !== null ? { seriesLength: settings.seriesLength } : {}),
     ...(settings.opponent === 'bot'
       ? { botSeats: BOT_SEATS, botDifficulty: settings.botDifficulty }
       : {}),
@@ -239,22 +242,24 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                   ))}
                 </div>
               </div>
-              <div className="field">
-                <label>Games</label>
-                <div className="segmented" role="radiogroup" aria-label="Games">
-                  {GAMES_OPTIONS.map((option) => (
-                    <button
-                      key={option.label}
-                      className={settings.seriesLength === option.value ? 'active' : undefined}
-                      role="radio"
-                      aria-checked={settings.seriesLength === option.value}
-                      onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+              {SERIES_IMPLEMENTED && (
+                <div className="field">
+                  <label>Games</label>
+                  <div className="segmented" role="radiogroup" aria-label="Games">
+                    {GAMES_OPTIONS.map((option) => (
+                      <button
+                        key={option.label}
+                        className={settings.seriesLength === option.value ? 'active' : undefined}
+                        role="radio"
+                        aria-checked={settings.seriesLength === option.value}
+                        onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

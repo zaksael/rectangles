@@ -106,15 +106,25 @@ test('Enter activates a non-native radio/checkbox widget', () => {
   expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAttribute('aria-checked', 'true')
 })
 
-test('selecting Best of 3 includes seriesLength in Start Game params', () => {
+// Series play needs the round-transition screen, so the Games picker stays hidden until it lands.
+test('hides the Games picker while series play is not implemented', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+  expect(screen.getByRole('radiogroup', { name: 'Skip limit' })).toBeInTheDocument()
+  expect(screen.queryByRole('radiogroup', { name: 'Games' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('radio', { name: 'Best of 3' })).not.toBeInTheDocument()
+})
+
+test('does not send seriesLength even when a stored setting has one', () => {
+  localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ seriesLength: 3 }))
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
-  fireEvent.click(screen.getByRole('radio', { name: 'Best of 3' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
-  expect(onStartGame.mock.calls[0][0]).toMatchObject({ seriesLength: 3 })
+  expect(onStartGame.mock.calls[0][0]).not.toHaveProperty('seriesLength')
 })
 
 test('persists settings to localStorage on Start Game and pre-fills them on the next mount', () => {
