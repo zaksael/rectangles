@@ -97,7 +97,7 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
 
   const previewTopLeft = game && dims && hoveredCell ? computeTopLeft(hoveredCell, dims, game.board.size) : null
   const previewIsLegal = game && dims && previewTopLeft ? isLegalTopLeft(previewTopLeft, dims, game.turn.legalPlacements) : false
-  const previewKind = !previewTopLeft ? null : previewSource === 'touch' ? 'pending' : previewIsLegal ? 'legal' : 'danger'
+  const previewKind: 'legal' | 'danger' | 'pending' | null = !previewTopLeft ? null : previewSource === 'touch' ? 'pending' : previewIsLegal ? 'legal' : 'danger'
 
   function place(cell: [number, number]) {
     if (!game || !dims) return
