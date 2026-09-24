@@ -66,10 +66,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const lastPlaced = useLastPlaced(state?.game)
 
   // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
-  const lastRollRef = useRef<[number, number] | null>(null)
+  const lastRollRef = useRef<{ values: [number, number]; owner: '1' | '2' } | null>(null)
   const roll = state?.game.turn.lastRoll ?? null
-  if (roll) lastRollRef.current = roll
-  const shownRoll = roll ?? lastRollRef.current
+  if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
+  const shownRoll = lastRollRef.current
 
   const currentName = state?.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name
   let turnStatus: string | null = null
@@ -179,13 +179,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             Skip <kbd aria-hidden="true">S</kbd>
           </button>
         </div>
-        {shownRoll && (
+        {state && shownRoll && (
           <div
-            className={roll ? 'dice' : 'dice stale'}
+            className={`dice p${shownRoll.owner}${roll ? '' : ' stale'}`}
             role="img"
-            aria-label={`${roll ? 'Rolled' : 'Last roll'} ${shownRoll.join(' and ')}`}
+            aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
           >
-            {shownRoll.map((value, i) => (
+            <span className="dot" aria-hidden="true" />
+            {shownRoll.values.map((value, i) => (
               <span key={i} className="die">
                 {value}
               </span>

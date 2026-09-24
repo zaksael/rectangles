@@ -73,7 +73,7 @@ test('shows the last roll as dice once past awaitingRoll, with Roll still there 
 test('shows no dice while awaiting a roll', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
-  expect(screen.queryByRole('img', { name: /Rolled/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: /rolled/i })).not.toBeInTheDocument()
 })
 
 test.each([
@@ -284,7 +284,7 @@ test("marks only the current player's slot with aria-current", () => {
 test('the dice have an accessible name describing the roll', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 1], legalPlacements: [] } }))
 
-  expect(screen.getByRole('img', { name: 'Rolled 3 and 1' })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Player 1 rolled 3 and 1' })).toBeInTheDocument()
 })
 
 test('the error status region is mounted from the start and empty until an error arrives', () => {
@@ -575,11 +575,11 @@ function renderRerenderable(state: GameState) {
 
 test('keeps the last roll on screen, marked as the last roll, once the next turn awaits a roll', () => {
   const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
-  expect(screen.getByRole('img', { name: 'Rolled 3 and 5' })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Player 1 rolled 3 and 5' })).toBeInTheDocument()
 
   update(rolledState('awaitingRoll', null))
 
-  const dice = screen.getByRole('img', { name: 'Last roll 3 and 5' })
+  const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
   expect(dice).toHaveClass('stale')
 })
 
@@ -594,8 +594,8 @@ test('a new roll replaces the dimmed last roll', () => {
   update(rolledState('awaitingRoll', null))
   update(rolledState('choosingPlacement', [1, 6]))
 
-  expect(screen.getByRole('img', { name: 'Rolled 1 and 6' })).not.toHaveClass('stale')
-  expect(screen.queryByRole('img', { name: /Last roll/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Player 1 rolled 1 and 6' })).not.toHaveClass('stale')
+  expect(screen.queryByRole('img', { name: /last roll/i })).not.toBeInTheDocument()
 })
 
 function withPieces(p1: [number, number][], p2: [number, number][]): GameState {
@@ -745,4 +745,22 @@ test('pressing s does nothing when the roll is playable', () => {
   fireEvent.keyDown(window, { key: 's' })
 
   expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('the dice carry a dot in the color of the player who rolled them', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [4, 2], legalPlacements: [] } }))
+
+  const dice = screen.getByRole('img', { name: 'Player 2 rolled 4 and 2' })
+  expect(dice).toHaveClass('p2')
+  expect(dice.querySelector('.dot')).toBeInTheDocument()
+})
+
+test("a dimmed last roll keeps its roller's name and color through the next player's turn", () => {
+  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+
+  update(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
+  expect(dice).toHaveClass('p1')
+  expect(dice.querySelector('.dot')).toBeInTheDocument()
 })
