@@ -64,7 +64,7 @@
   padding: 8px 24px;
   border-top: 1px solid var(--line);
   text-align: center;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -416,8 +416,8 @@ dialog.settings {
   opacity: 0.7;
 }
 
-/* The board is a single tab stop for keyboard play; the app-wide focus ring applies to it too. */
+/* The board is a single tab stop for keyboard play. */
 .board:focus {
   outline: 2px solid var(--ink);
-  outline-offset: 2px;
+  outline-offset: -2px; /* inside the board, so the sticky header and toolbar can't clip it */
 }
