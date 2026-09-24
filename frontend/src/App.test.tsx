@@ -22,6 +22,12 @@ function startGameAndOpen() {
   })
 }
 
+function sendState() {
+  act(() => {
+    FakeWebSocket.instances.at(-1)!.emit('message', { type: 'state', game: makeGame(), series: null })
+  })
+}
+
 describe('App', () => {
   it('shows Mode Select by default, with a Start Game action', () => {
     render(<App />)
@@ -70,12 +76,13 @@ describe('App', () => {
   it('opens the Settings overlay from Playing on Pause, and closes it back to Playing', () => {
     render(<App />)
     startGameAndOpen()
+    sendState()
 
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }))
     expect(screen.queryByText('Settings')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
   })
@@ -94,6 +101,7 @@ describe('App', () => {
   it('dismisses an open Settings overlay once the connection-lost modal appears', () => {
     render(<App />)
     startGameAndOpen()
+    sendState()
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
     expect(screen.getByText('Settings')).toBeInTheDocument()
 

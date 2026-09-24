@@ -8,7 +8,11 @@ import { useGameSocket } from './useGameSocket'
 
 const PROTOCOL_VERSION = 1
 
-const IDLE_CONNECT_PARAMS: { protocolVersion: number; enabled: boolean; connectionId: number; botSeats?: number } = {
+const IDLE_CONNECT_PARAMS: Pick<StartGameParams, 'botSeats' | 'botDifficulty'> & {
+  protocolVersion: number
+  enabled: boolean
+  connectionId: number
+} = {
   protocolVersion: PROTOCOL_VERSION,
   enabled: false,
   connectionId: 0,
@@ -67,7 +71,14 @@ function App() {
           onNewGame={handleNewGame}
           botSeat={connectParams.botSeats}
         />
-        {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
+        {settingsOpen && gameSocket.state && (
+          <SettingsOverlay
+            game={gameSocket.state.game}
+            series={gameSocket.state.series}
+            opponentLabel={connectParams.botSeats ? `Bot (${connectParams.botDifficulty})` : 'Local 2P'}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
       </>
     )
   }
