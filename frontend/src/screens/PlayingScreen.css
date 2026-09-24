@@ -97,12 +97,13 @@
 }
 
 .toolbar-actions {
-  /* Buttons and dice share one height so the row doesn't jump when the Roll
-     button swaps for the rolled numbers. */
+  /* Left: Roll/Rotate/Skip (always shown, disabled when they don't apply).
+     Center: the rolled dice, or nothing. Right: Surrender/Pause. Buttons and
+     dice share one height so the row doesn't jump when the dice appear. */
   --control-height: 34px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  flex-wrap: wrap;
   gap: 16px;
   padding: 16px 24px max(16px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
@@ -112,14 +113,17 @@
   background: var(--ledger);
 }
 
+.toolbar-leading,
 .toolbar-trailing {
-  /* Surrender/Pause stay pinned right while the turn controls come and go. */
   display: flex;
   gap: 16px;
-  margin-left: auto;
 }
-
+.toolbar-trailing {
+  grid-column: 3;
+  justify-content: flex-end;
+}
 .dice {
+  grid-column: 2;
   display: flex;
   gap: 6px;
   font-family: 'IBM Plex Mono', monospace;
@@ -130,6 +134,11 @@
 .toolbar-actions .btn {
   height: var(--control-height);
   padding: 0 16px;
+}
+/* Skip is always shown; when it doesn't apply it reads as a plain gray control, not a faded warning. */
+.toolbar-actions .btn.danger-outline:disabled {
+  border-color: var(--ink);
+  color: var(--ink);
 }
 .die {
   width: var(--control-height);

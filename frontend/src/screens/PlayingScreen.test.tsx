@@ -62,12 +62,41 @@ test('pressing d does nothing once a roll is already showing', () => {
   expect(sendAction).not.toHaveBeenCalled()
 })
 
-test('shows the last roll as dice once past awaitingRoll, with no Roll button', () => {
+test('shows the last roll as dice once past awaitingRoll, with Roll still there but disabled', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 5], legalPlacements: [] } }))
 
   const dice = screen.getByText('2').closest('.dice')
   expect(dice).toContainElement(screen.getByText('5'))
-  expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Roll' })).toBeDisabled()
+})
+
+test('shows no dice while awaiting a roll', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(screen.queryByRole('img', { name: /Rolled/ })).not.toBeInTheDocument()
+})
+
+test.each([
+  ['awaitingRoll', { Roll: true, Rotate: false, Skip: false }],
+  ['choosingPlacement', { Roll: false, Rotate: true, Skip: false }],
+  ['skipped', { Roll: false, Rotate: false, Skip: true }],
+] as const)('Roll, Rotate and Skip are always shown, enabled only when they apply (%s)', (turnState, enabled) => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+
+  for (const [name, isEnabled] of Object.entries(enabled)) {
+    const button = screen.getByRole('button', { name })
+    if (isEnabled) expect(button).toBeEnabled()
+    else expect(button).toBeDisabled()
+  }
+})
+
+test('the toolbar reads Roll, Rotate, Skip on the left and Surrender, Pause on the right', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  const names = within(document.querySelector('.toolbar-actions') as HTMLElement)
+    .getAllByRole('button')
+    .map((b) => b.textContent)
+  expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Surrender', 'Pause'])
 })
 
 test('clicking a legal cell while choosing placement sends the place action', () => {
@@ -176,12 +205,6 @@ test('shows a Skip button when the turn was skipped, which sends the skip action
   fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
-})
-
-test.each(['awaitingRoll', 'choosingPlacement'] as const)('has no Skip button while %s', (turnState) => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
-
-  expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
 })
 
 test("shows each player's total score in their header slot", () => {

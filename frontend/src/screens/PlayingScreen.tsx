@@ -120,11 +120,17 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         />
       )}
       <div className="toolbar-actions">
-        {turnState === 'awaitingRoll' && (
-          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} disabled={isBotTurn}>
+        <div className="toolbar-leading">
+          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} disabled={isBotTurn || turnState !== 'awaitingRoll'}>
             Roll
           </button>
-        )}
+          <button className="btn secondary" onClick={rotate} disabled={isBotTurn || turnState !== 'choosingPlacement'}>
+            Rotate
+          </button>
+          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })} disabled={isBotTurn || turnState !== 'skipped'}>
+            Skip
+          </button>
+        </div>
         {state && turnState !== 'awaitingRoll' && state.game.turn.lastRoll && (
           <div className="dice" role="img" aria-label={`Rolled ${state.game.turn.lastRoll.join(' and ')}`}>
             {state.game.turn.lastRoll.map((value, i) => (
@@ -133,16 +139,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               </span>
             ))}
           </div>
-        )}
-        {turnState === 'choosingPlacement' && (
-          <button className="btn secondary" onClick={rotate} disabled={isBotTurn}>
-            Rotate
-          </button>
-        )}
-        {turnState === 'skipped' && (
-          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })} disabled={isBotTurn}>
-            Skip
-          </button>
         )}
         <div className="toolbar-trailing">
           {state && turnState !== 'gameOver' && (
