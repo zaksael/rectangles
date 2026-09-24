@@ -633,3 +633,30 @@ test("moves the last-placed outline to the opponent's next piece", () => {
   expect(document.querySelectorAll('.piece-outline.last')).toHaveLength(1)
   expect(outlineAt(5, 4)).toBe(true)
 })
+
+const hoverState = () =>
+  makeState({
+    board: { size: 5, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 1],
+      legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }],
+    },
+  })
+
+test('hovering an illegal spot explains why in the status line', () => {
+  renderScreen(hoverState())
+
+  fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="4,4"]')!)
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2×1 — Your first piece must cover your starting corner')
+})
+
+test('hovering a legal spot shows no reason', () => {
+  renderScreen(hoverState())
+
+  fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2×1$/)
+})

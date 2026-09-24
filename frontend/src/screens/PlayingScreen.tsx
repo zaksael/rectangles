@@ -3,6 +3,7 @@ import { Board } from '../components/Board'
 import { GameOverOverlay } from './GameOverOverlay'
 import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 import type { ErrorReason, GameAction } from '../gameTypes'
+import { placementReason } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
@@ -64,7 +65,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   if (currentName && turnState !== 'gameOver') {
     if (isBotTurn) turnStatus = `${currentName} is playing…`
     else if (turnState === 'awaitingRoll') turnStatus = `${currentName}: roll`
-    else if (turnState === 'choosingPlacement') turnStatus = `${currentName}: place ${dims ? `${dims[0]}×${dims[1]}` : 'a rectangle'}`
+    else if (turnState === 'choosingPlacement') {
+      turnStatus = `${currentName}: place ${dims ? `${dims[0]}×${dims[1]}` : 'a rectangle'}`
+      const reason =
+        previewKind === 'danger' && previewTopLeft && dims && state
+          ? placementReason(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)
+          : null
+      if (reason) turnStatus += ` — ${reason}`
+    }
     else if (turnState === 'skipped') turnStatus = `${currentName}: no legal move, skip`
   }
 
