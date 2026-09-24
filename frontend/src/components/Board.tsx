@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react'
+import { memo, type CSSProperties, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
 import type { GameWireState } from '../gameTypes'
 import './Board.css'
 
@@ -18,15 +18,15 @@ function cellKey(row: number, col: number): string {
   return `${row},${col}`
 }
 
-export function Board({
+// The cells, walls and piece outlines only change with the game state, so hovering
+// (which just moves the preview) doesn't rebuild the whole grid.
+const BoardLayers = memo(function BoardLayers({
   game,
-  previewTopLeft,
-  previewDims,
-  previewKind,
   coverableCells,
-  onCellHover,
-  onCellTap,
-}: BoardProps) {
+}: {
+  game: GameWireState
+  coverableCells?: [number, number][]
+}) {
   const { size } = game.board
   const { obstacles, prize, pitfall, steal, walls } = game.houseRules
   const coverableSet = new Set((coverableCells ?? []).map(([r, c]) => cellKey(r, c)))
@@ -83,8 +83,6 @@ export function Board({
           key={key}
           className={classes.join(' ')}
           data-cell={key}
-          onMouseEnter={onCellHover && (() => onCellHover([r, c]))}
-          onPointerUp={onCellTap && ((e) => onCellTap([r, c], e.pointerType))}
         />,
       )
     }
@@ -101,15 +99,49 @@ export function Board({
     : []
 
   return (
+    <>
+      {cells}
+      {wallEls}
+      {outlines}
+    </>
+  )
+})
+
+function cellFromEvent(target: EventTarget): [number, number] | null {
+  const key = (target as HTMLElement).closest('[data-cell]')?.getAttribute('data-cell')
+  if (!key) return null
+  const [r, c] = key.split(',').map(Number)
+  return [r, c]
+}
+
+export function Board({
+  game,
+  previewTopLeft,
+  previewDims,
+  previewKind,
+  coverableCells,
+  onCellHover,
+  onCellTap,
+}: BoardProps) {
+  const { size } = game.board
+
+  return (
     <div
       className="board"
       role="grid"
       aria-label={`${size}×${size} board`}
       style={{ gridTemplateColumns: `repeat(${size}, ${CELL}px)`, gridTemplateRows: `repeat(${size}, ${CELL}px)` }}
+      // One delegated handler per event instead of a closure on every cell.
+      onMouseOver={(e: MouseEvent) => {
+        const cell = cellFromEvent(e.target)
+        if (cell) onCellHover?.(cell)
+      }}
+      onPointerUp={(e: PointerEvent) => {
+        const cell = cellFromEvent(e.target)
+        if (cell) onCellTap?.(cell, e.pointerType)
+      }}
     >
-      {cells}
-      {wallEls}
-      {outlines}
+      <BoardLayers game={game} coverableCells={coverableCells} />
       {previewTopLeft && previewDims && (
         <div
           className={`preview ${previewKind}`}
