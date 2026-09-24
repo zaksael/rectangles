@@ -74,6 +74,8 @@ export function useGameSocket(params: GameSocketParams) {
   const hasOpenedRef = useRef(false)
   const stateQueueRef = useRef<GameState[]>([])
   const drainTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // A primitive dependency: the effect reconnects exactly when a connect param changes.
+  const query = connectParamsToQuery(params)
 
   useEffect(() => {
     if (params.enabled === false) {
@@ -99,7 +101,7 @@ export function useGameSocket(params: GameSocketParams) {
       setState(next)
       drainTimeoutRef.current = setTimeout(drainNext, STATE_PACING_DELAY_MS)
     }
-    const socket = new WebSocket(`${params.serverUrl ?? ''}/ws?${connectParamsToQuery(params)}`)
+    const socket = new WebSocket(`${params.serverUrl ?? ''}/ws?${query}`)
     socketRef.current = socket
     socket.addEventListener('open', () => {
       hasOpenedRef.current = true
@@ -133,26 +135,7 @@ export function useGameSocket(params: GameSocketParams) {
       }
       socket.close()
     }
-  }, [
-    params.protocolVersion,
-    params.boardSize,
-    params.skipLimit,
-    params.seriesLength,
-    params.botSeats,
-    params.botDifficulty,
-    params.wildcardEnabled,
-    params.rerollEnabled,
-    params.wallsEnabled,
-    params.obstaclesEnabled,
-    params.prizeEnabled,
-    params.pitfallEnabled,
-    params.stealEnabled,
-    params.selfEnclosedPenaltyEnabled,
-    params.comebackNudgeEnabled,
-    params.serverUrl,
-    params.enabled,
-    params.connectionId,
-  ])
+  }, [query, params.serverUrl, params.enabled, params.connectionId])
 
   function disconnect() {
     intentionalCloseRef.current = true
