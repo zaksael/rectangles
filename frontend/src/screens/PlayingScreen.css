@@ -131,6 +131,7 @@
 .toolbar-trailing {
   grid-column: 3;
   justify-content: flex-end;
+  gap: 40px; /* keeps the irreversible Surrender clear of the routine Settings button */
 }
 .dice {
   grid-column: 2;
@@ -146,6 +147,16 @@
   height: var(--control-height);
   padding: 0 16px;
 }
+/* Surrender is rare and irreversible, so it stays quiet until hovered or focused. */
+.toolbar-actions .btn.quiet {
+  border-color: transparent;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+.toolbar-actions .btn.quiet:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
 /* Roll, Rotate and Skip are always shown. When one doesn't apply it drops its fill and its color
    and reads as a plain outline, so only the enabled control looks pressable. */
 .toolbar-actions .btn:disabled {
