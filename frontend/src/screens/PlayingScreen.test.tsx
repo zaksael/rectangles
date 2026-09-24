@@ -476,3 +476,20 @@ test('there is no Replay button mid-game; Replay is only reachable from the game
   renderScreen(makeState())
   expect(screen.queryByRole('button', { name: 'Replay' })).not.toBeInTheDocument()
 })
+
+test.each(['awaitingRoll', 'choosingPlacement', 'skipped'] as const)(
+  'Surrender and Pause sit together in the trailing toolbar group while %s',
+  (turnState) => {
+    renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+
+    const trailing = screen.getByRole('button', { name: 'Pause' }).parentElement
+    expect(trailing).toHaveClass('toolbar-trailing')
+    expect(within(trailing as HTMLElement).getByRole('button', { name: 'Surrender' })).toBeInTheDocument()
+  },
+)
+
+test('Pause stays in the trailing toolbar group once the game is over', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }))
+
+  expect(screen.getByRole('button', { name: 'Pause' }).parentElement).toHaveClass('toolbar-trailing')
+})

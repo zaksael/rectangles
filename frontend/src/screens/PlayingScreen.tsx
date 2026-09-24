@@ -144,14 +144,16 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             Skip
           </button>
         )}
-        {state && turnState !== 'gameOver' && (
-          <button className="btn secondary" onClick={() => setConfirmingSurrender(true)} disabled={isBotTurn}>
-            Surrender
+        <div className="toolbar-trailing">
+          {state && turnState !== 'gameOver' && (
+            <button className="btn secondary" onClick={() => setConfirmingSurrender(true)} disabled={isBotTurn}>
+              Surrender
+            </button>
+          )}
+          <button className="btn secondary pause" onClick={onOpenSettings}>
+            Pause
           </button>
-        )}
-        <button className="btn secondary pause" onClick={onOpenSettings}>
-          Pause
-        </button>
+        </div>
       </div>
     </div>
   )
