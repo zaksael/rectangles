@@ -764,3 +764,15 @@ test("a dimmed last roll keeps its roller's name and color through the next play
   expect(dice).toHaveClass('p1')
   expect(dice.querySelector('.dot')).toBeInTheDocument()
 })
+
+test('the first placement hint points at the starting corner, and goes away once a piece is down', () => {
+  const state = keyboardState()
+  const update = renderRerenderable(state)
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2×1 — cover your starting corner')
+
+  const placed = keyboardState()
+  placed.game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 2, height: 1, owner: 1 }]
+  update(placed)
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2×1$/)
+})

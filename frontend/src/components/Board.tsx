@@ -76,6 +76,13 @@ const BoardLayers = memo(function BoardLayers({
     }
   }
 
+  // A player's starting corner stays marked until their first piece covers it.
+  const startCells = new Map<string, '1' | '2'>()
+  for (const id of ['1', '2'] as const) {
+    const { startCorner, pieces } = game.players[id].board
+    if (pieces.length === 0) startCells.set(cellKey(startCorner[0], startCorner[1]), id)
+  }
+
   const cells = []
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
@@ -88,6 +95,8 @@ const BoardLayers = memo(function BoardLayers({
       const special = specialCells.get(key)
       if (special) classes.push(special)
       if (coverableSet.has(key)) classes.push('coverable')
+      const start = startCells.get(key)
+      if (start) classes.push(`start-p${start}`)
       cells.push(
         <div
           key={key}

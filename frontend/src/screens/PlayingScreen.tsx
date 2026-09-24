@@ -82,7 +82,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         previewKind === 'danger' && previewTopLeft && dims && state
           ? placementReason(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)
           : null
+      const firstMove = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.pieces.length === 0
       if (reason) turnStatus += ` — ${reason}`
+      else if (firstMove && previewKind !== 'legal') turnStatus += ' — cover your starting corner'
     }
     else if (turnState === 'skipped') turnStatus = `${currentName}: no legal move, skip`
   }

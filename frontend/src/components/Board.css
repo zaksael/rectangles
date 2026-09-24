@@ -41,6 +41,19 @@
   background: color-mix(in srgb, var(--coverable) 55%, transparent);
 }
 
+.board-cell.start-p1,
+.board-cell.start-p2 {
+  box-sizing: border-box;
+  border: 2px solid var(--start-color);
+  background: color-mix(in srgb, var(--start-color) 25%, transparent);
+}
+.board-cell.start-p1 {
+  --start-color: var(--p1);
+}
+.board-cell.start-p2 {
+  --start-color: var(--p2);
+}
+
 .board-cell.prize::after,
 .board-cell.pitfall::after,
 .board-cell.steal::after {

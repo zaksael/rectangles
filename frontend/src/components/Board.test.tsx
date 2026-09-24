@@ -200,3 +200,23 @@ test('marks only the last-placed piece outline with the last class', () => {
   expect(container.querySelectorAll('.piece-outline.last')).toHaveLength(1)
   expect(outlines[1]).toHaveClass('last')
 })
+
+test("marks each player's starting corner until they place a piece", () => {
+  const game = makeGame()
+
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector('[data-cell="0,0"]')).toHaveClass('start-p1')
+  expect(container.querySelector('[data-cell="2,2"]')).toHaveClass('start-p2')
+  expect(container.querySelectorAll('.start-p1, .start-p2')).toHaveLength(2)
+})
+
+test('drops a start marker once that player has a piece, and keeps the other', () => {
+  const game = makeGame()
+  game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 2, height: 1, owner: 1 }]
+
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector('.start-p1')).not.toBeInTheDocument()
+  expect(container.querySelector('[data-cell="2,2"]')).toHaveClass('start-p2')
+})
