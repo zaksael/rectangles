@@ -75,6 +75,7 @@
 
 .difficulty-pills {
   display: flex;
+  justify-content: center;
   gap: 6px;
   margin-top: 8px;
 }
@@ -166,6 +167,7 @@
 }
 .field-row {
   display: flex;
+  justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
 }
