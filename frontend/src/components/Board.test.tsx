@@ -119,11 +119,50 @@ test('marks each cell in coverableCells with the coverable class', () => {
   expect(container.querySelector('[data-cell="0,1"]')).not.toHaveClass('coverable')
 })
 
+// A grid box as the custom properties the stylesheet turns into pixels.
+const box = (el: Element | null) => {
+  const style = (el as HTMLElement).style
+  return { r: style.getPropertyValue('--r'), c: style.getPropertyValue('--c'), w: style.getPropertyValue('--w'), h: style.getPropertyValue('--h') }
+}
+
 test('renders a preview box at previewTopLeft sized to previewDims', () => {
   const { container } = render(<Board game={makeGame()} previewTopLeft={[1, 0]} previewDims={[2, 1]} />)
 
-  const preview = container.querySelector('.preview')
-  expect(preview).toHaveStyle({ left: '0px', top: '44px', width: '88px', height: '44px' })
+  expect(box(container.querySelector('.preview'))).toEqual({ r: '1', c: '0', w: '2', h: '1' })
+})
+
+test('exposes the board size so the stylesheet can size the cells to the viewport', () => {
+  const { container } = render(<Board game={makeGame({ board: { size: 19, skipLimit: 5 } })} />)
+
+  expect((container.querySelector('.board') as HTMLElement).style.getPropertyValue('--n')).toBe('19')
+})
+
+test('places a piece outline by its grid box, not by pixels', () => {
+  const game = makeGame()
+  game.players['1'].board.pieces = [{ topLeft: [1, 0], width: 2, height: 1, owner: 1 }]
+
+  const { container } = render(<Board game={game} />)
+
+  expect(box(container.querySelector('.piece-outline'))).toEqual({ r: '1', c: '0', w: '2', h: '1' })
+})
+
+test('places a vertical wall on the column boundary and a horizontal one on the row boundary', () => {
+  const game = makeGame()
+  game.houseRules.walls = {
+    enabled: true,
+    edges: [
+      [[0, 1], [0, 2]],
+      [[1, 0], [2, 0]],
+    ],
+  }
+
+  const { container } = render(<Board game={game} />)
+
+  const [vertical, horizontal] = container.querySelectorAll<HTMLElement>('.wall')
+  expect(vertical).toHaveClass('wall-v')
+  expect(box(vertical)).toMatchObject({ r: '0', c: '2' })
+  expect(horizontal).toHaveClass('wall-h')
+  expect(box(horizontal)).toMatchObject({ r: '2', c: '0' })
 })
 
 test.each(['legal', 'danger', 'pending'] as const)('renders the preview box with the %s class for that previewKind', (kind) => {

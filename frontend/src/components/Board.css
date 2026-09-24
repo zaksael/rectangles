@@ -1,7 +1,12 @@
 .board {
-  --cell: 44px;
+  /* Cells shrink so the whole board fits the window height (--chrome is what the screen
+     spends on its header and toolbar), never above 44px or below 20px. --n is set inline. */
+  --cell: clamp(20px, calc((100dvh - var(--chrome, 176px)) / var(--n)), 44px);
   position: relative;
   display: grid;
+  margin-inline: auto; /* the toolbar can be wider than a shrunken board */
+  grid-template-columns: repeat(var(--n), var(--cell));
+  grid-template-rows: repeat(var(--n), var(--cell));
   width: fit-content;
   background-image:
     linear-gradient(var(--line) 1px, transparent 1px),
@@ -69,6 +74,27 @@
   background: var(--ink);
   box-shadow: 0 0 0 1px var(--ledger);
   z-index: 1;
+}
+.wall-v {
+  left: calc(var(--c) * var(--cell) - 2.5px);
+  top: calc(var(--r) * var(--cell));
+  width: 5px;
+  height: var(--cell);
+}
+.wall-h {
+  left: calc(var(--c) * var(--cell));
+  top: calc(var(--r) * var(--cell) - 2.5px);
+  width: var(--cell);
+  height: 5px;
+}
+
+.piece-outline,
+.preview {
+  box-sizing: border-box; /* borders sit inside the piece's cells, not beyond them */
+  left: calc(var(--c) * var(--cell));
+  top: calc(var(--r) * var(--cell));
+  width: calc(var(--w) * var(--cell));
+  height: calc(var(--h) * var(--cell));
 }
 
 .piece-outline {

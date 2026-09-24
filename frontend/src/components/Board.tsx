@@ -2,7 +2,10 @@ import { memo, type CSSProperties, type FocusEventHandler, type KeyboardEventHan
 import type { GameWireState } from '../gameTypes'
 import './Board.css'
 
-const CELL = 44
+// A grid box, in cells. The stylesheet turns it into pixels from --cell, which fits the viewport.
+function gridBox(row: number, col: number, width?: number, height?: number): CSSProperties {
+  return { '--r': row, '--c': col, '--w': width, '--h': height } as CSSProperties
+}
 
 interface BoardProps {
   game: GameWireState
@@ -52,7 +55,7 @@ const BoardLayers = memo(function BoardLayers({
         <div
           key={`${playerId}-${cellKey(row, col)}`}
           className={row === lastPlaced?.[0] && col === lastPlaced[1] ? 'piece-outline last' : 'piece-outline'}
-          style={{ left: col * CELL, top: row * CELL, width: piece.width * CELL, height: piece.height * CELL }}
+          style={gridBox(row, col, piece.width, piece.height)}
         />,
       )
     }
@@ -95,14 +98,15 @@ const BoardLayers = memo(function BoardLayers({
     }
   }
 
+  // A wall sits on the boundary between two cells: a column boundary is vertical, a row boundary horizontal.
   const wallEls = walls.enabled
-    ? walls.edges.map(([[r1, c1], [r2, c2]], i) => {
-        const style: CSSProperties =
-          r1 === r2
-            ? { left: Math.max(c1, c2) * CELL - 2.5, top: r1 * CELL, width: 5, height: CELL }
-            : { left: c1 * CELL, top: Math.max(r1, r2) * CELL - 2.5, width: CELL, height: 5 }
-        return <div key={i} className="wall" style={style} />
-      })
+    ? walls.edges.map(([[r1, c1], [r2, c2]], i) =>
+        r1 === r2 ? (
+          <div key={i} className="wall wall-v" style={gridBox(r1, Math.max(c1, c2))} />
+        ) : (
+          <div key={i} className="wall wall-h" style={gridBox(Math.max(r1, r2), c1)} />
+        ),
+      )
     : []
 
   return (
@@ -145,7 +149,7 @@ export function Board({
       tabIndex={onKeyDown ? 0 : undefined}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
-      style={{ gridTemplateColumns: `repeat(${size}, ${CELL}px)`, gridTemplateRows: `repeat(${size}, ${CELL}px)` }}
+      style={{ '--n': size } as CSSProperties}
       // One delegated handler per event instead of a closure on every cell.
       onMouseOver={(e: MouseEvent) => {
         const cell = cellFromEvent(e.target)
@@ -160,12 +164,7 @@ export function Board({
       {previewTopLeft && previewDims && (
         <div
           className={`preview ${previewKind}`}
-          style={{
-            left: previewTopLeft[1] * CELL,
-            top: previewTopLeft[0] * CELL,
-            width: previewDims[0] * CELL,
-            height: previewDims[1] * CELL,
-          }}
+          style={gridBox(previewTopLeft[0], previewTopLeft[1], previewDims[0], previewDims[1])}
         />
       )}
     </div>

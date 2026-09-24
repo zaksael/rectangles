@@ -605,9 +605,10 @@ function withPieces(p1: [number, number][], p2: [number, number][]): GameState {
   return state
 }
 
-const outlineAt = (row: number, col: number) =>
-  document.querySelector<HTMLElement>('.piece-outline.last')?.style.left === `${col * 44}px` &&
-  document.querySelector<HTMLElement>('.piece-outline.last')?.style.top === `${row * 44}px`
+const outlineAt = (row: number, col: number) => {
+  const style = document.querySelector<HTMLElement>('.piece-outline.last')?.style
+  return style?.getPropertyValue('--r') === String(row) && style?.getPropertyValue('--c') === String(col)
+}
 
 test('outlines the piece that was just placed, and keeps it through a skip', () => {
   const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
@@ -684,8 +685,8 @@ test('focusing the board puts the piece on the first legal spot', () => {
   fireEvent.focus(screen.getByRole('grid'))
 
   const preview = document.querySelector<HTMLElement>('.preview.legal')!
-  expect(preview.style.left).toBe('0px')
-  expect(preview.style.top).toBe('0px')
+  expect(preview.style.getPropertyValue('--c')).toBe('0')
+  expect(preview.style.getPropertyValue('--r')).toBe('0')
 })
 
 test('arrow keys move the piece and Enter places it', () => {
@@ -694,7 +695,7 @@ test('arrow keys move the piece and Enter places it', () => {
 
   fireEvent.focus(grid)
   fireEvent.keyDown(grid, { key: 'ArrowRight' })
-  expect(document.querySelector<HTMLElement>('.preview.legal')!.style.left).toBe('44px')
+  expect(document.querySelector<HTMLElement>('.preview.legal')!.style.getPropertyValue('--c')).toBe('1')
 
   fireEvent.keyDown(grid, { key: 'Enter' })
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 1], width: 2, height: 1 })
