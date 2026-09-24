@@ -198,8 +198,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               Surrender
             </button>
           )}
-          <button className="btn secondary pause" onClick={onOpenSettings}>
-            Pause
+          <button className="btn secondary" onClick={onOpenSettings}>
+            Settings
           </button>
         </div>
       </div>

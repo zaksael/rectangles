@@ -30,7 +30,7 @@ function renderScreen(
 
 test('renders nothing game-specific before the first state broadcast arrives', () => {
   renderScreen(null)
-  expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
   expect(screen.queryByRole('grid')).not.toBeInTheDocument()
 })
 
@@ -90,13 +90,13 @@ test.each([
   }
 })
 
-test('the toolbar reads Roll, Rotate, Skip on the left and Surrender, Pause on the right', () => {
+test('the toolbar reads Roll, Rotate, Skip on the left and Surrender, Settings on the right', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   const names = within(document.querySelector('.toolbar-actions') as HTMLElement)
     .getAllByRole('button')
     .map((b) => b.firstChild!.textContent!.trim())
-  expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Surrender', 'Pause'])
+  expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Surrender', 'Settings'])
 })
 
 test('clicking a legal cell while choosing placement sends the place action', () => {
@@ -497,20 +497,20 @@ test('there is no Replay button mid-game; Replay is only reachable from the game
 })
 
 test.each(['awaitingRoll', 'choosingPlacement', 'skipped'] as const)(
-  'Surrender and Pause sit together in the trailing toolbar group while %s',
+  'Surrender and Settings sit together in the trailing toolbar group while %s',
   (turnState) => {
     renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
-    const trailing = screen.getByRole('button', { name: 'Pause' }).parentElement
+    const trailing = screen.getByRole('button', { name: 'Settings' }).parentElement
     expect(trailing).toHaveClass('toolbar-trailing')
     expect(within(trailing as HTMLElement).getByRole('button', { name: 'Surrender' })).toBeInTheDocument()
   },
 )
 
-test('Pause stays in the trailing toolbar group once the game is over', () => {
+test('Settings stays in the trailing toolbar group once the game is over', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }))
 
-  expect(screen.getByRole('button', { name: 'Pause' }).parentElement).toHaveClass('toolbar-trailing')
+  expect(screen.getByRole('button', { name: 'Settings' }).parentElement).toHaveClass('toolbar-trailing')
 })
 
 test('the turn status line tells the current player what to do: roll', () => {

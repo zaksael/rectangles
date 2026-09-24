@@ -108,7 +108,7 @@
 
 .toolbar-actions {
   /* Left: Roll/Rotate/Skip (always shown, disabled when they don't apply).
-     Center: the rolled dice, or nothing. Right: Surrender/Pause. Buttons and
+     Center: the rolled dice, or nothing. Right: Surrender/Settings. Buttons and
      dice share one height so the row doesn't jump when the dice appear. */
   --control-height: 34px;
   display: grid;
@@ -145,10 +145,13 @@
   height: var(--control-height);
   padding: 0 16px;
 }
-/* Skip is always shown; when it doesn't apply it reads as a plain gray control, not a faded warning. */
-.toolbar-actions .btn.danger-outline:disabled {
-  border-color: var(--ink);
-  color: var(--ink);
+/* Roll, Rotate and Skip are always shown. When one doesn't apply it drops its fill and its color
+   and reads as a plain outline, so only the enabled control looks pressable. */
+.toolbar-actions .btn:disabled {
+  opacity: 1;
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
 .dice.stale {
   opacity: 0.45;
