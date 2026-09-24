@@ -38,9 +38,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px;
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
+  padding: 16px 24px 12px;
+  border-bottom: 4px solid transparent;
 }
 .player.p2 {
   justify-content: flex-end;
@@ -49,13 +48,24 @@
 .player.p2 .dot {
   order: 2;
 }
+/* The active player: a solid underline in their color plus a stronger tint. */
 .player.p1.current {
-  border-left-color: var(--p1);
-  background: color-mix(in srgb, var(--p1) 8%, transparent);
+  border-bottom-color: var(--p1);
+  background: color-mix(in srgb, var(--p1) 14%, transparent);
 }
 .player.p2.current {
-  border-right-color: var(--p2);
-  background: color-mix(in srgb, var(--p2) 8%, transparent);
+  border-bottom-color: var(--p2);
+  background: color-mix(in srgb, var(--p2) 14%, transparent);
+}
+
+/* What the current player should do next. */
+.turn-status {
+  grid-column: 1 / -1;
+  padding: 8px 24px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .dot {
@@ -139,6 +149,9 @@
 .toolbar-actions .btn.danger-outline:disabled {
   border-color: var(--ink);
   color: var(--ink);
+}
+.dice.stale {
+  opacity: 0.45;
 }
 .die {
   width: var(--control-height);

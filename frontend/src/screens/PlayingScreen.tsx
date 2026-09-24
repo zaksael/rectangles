@@ -3,6 +3,7 @@ import { Board } from '../components/Board'
 import { GameOverOverlay } from './GameOverOverlay'
 import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 import type { ErrorReason, GameAction } from '../gameTypes'
+import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
 import './PlayingScreen.css'
@@ -50,6 +51,23 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const rotateRef = useRef(rotate)
   rotateRef.current = rotate
 
+  const lastPlaced = useLastPlaced(state?.game)
+
+  // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
+  const lastRollRef = useRef<[number, number] | null>(null)
+  const roll = state?.game.turn.lastRoll ?? null
+  if (roll) lastRollRef.current = roll
+  const shownRoll = roll ?? lastRollRef.current
+
+  const currentName = state?.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name
+  let turnStatus: string | null = null
+  if (currentName && turnState !== 'gameOver') {
+    if (isBotTurn) turnStatus = `${currentName} is playing…`
+    else if (turnState === 'awaitingRoll') turnStatus = `${currentName}: roll`
+    else if (turnState === 'choosingPlacement') turnStatus = `${currentName}: place ${dims ? `${dims[0]}×${dims[1]}` : 'a rectangle'}`
+    else if (turnState === 'skipped') turnStatus = `${currentName}: no legal move, skip`
+  }
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (document.querySelector('dialog[open]')) return
@@ -90,6 +108,11 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 </span>
               </div>
             ))}
+            {turnStatus && (
+              <div className="turn-status" data-testid="turn-status">
+                {turnStatus}
+              </div>
+            )}
           </div>
           <div className="board-area">
             <div className="toast-anchor" role="status" aria-live="polite">
@@ -101,6 +124,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               previewDims={dims}
               previewKind={previewKind}
               coverableCells={coverableCells}
+              lastPlaced={lastPlaced}
               onCellHover={humanTurnState === 'choosingPlacement' ? handleCellHover : undefined}
               onCellTap={humanTurnState === 'choosingPlacement' ? handleCellTap : undefined}
             />
@@ -131,9 +155,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             Skip
           </button>
         </div>
-        {state && turnState !== 'awaitingRoll' && state.game.turn.lastRoll && (
-          <div className="dice" role="img" aria-label={`Rolled ${state.game.turn.lastRoll.join(' and ')}`}>
-            {state.game.turn.lastRoll.map((value, i) => (
+        {shownRoll && (
+          <div
+            className={roll ? 'dice' : 'dice stale'}
+            role="img"
+            aria-label={`${roll ? 'Rolled' : 'Last roll'} ${shownRoll.join(' and ')}`}
+          >
+            {shownRoll.map((value, i) => (
               <span key={i} className="die">
                 {value}
               </span>

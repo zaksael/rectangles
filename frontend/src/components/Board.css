@@ -77,6 +77,10 @@
   pointer-events: none;
 }
 
+.piece-outline.last {
+  border: 2px solid var(--ink);
+}
+
 .preview {
   position: absolute;
   pointer-events: none;

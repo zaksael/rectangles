@@ -149,3 +149,15 @@ test('renders one outline per piece across both players', () => {
   const { container } = render(<Board game={game} />)
   expect(container.querySelectorAll('.piece-outline')).toHaveLength(3)
 })
+
+test('marks only the last-placed piece outline with the last class', () => {
+  const game = makeGame()
+  game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 2, height: 1, owner: 1 }]
+  game.players['2'].board.pieces = [{ topLeft: [2, 2], width: 1, height: 1, owner: 2 }]
+
+  const { container } = render(<Board game={game} lastPlaced={[2, 2]} />)
+
+  const outlines = container.querySelectorAll('.piece-outline')
+  expect(container.querySelectorAll('.piece-outline.last')).toHaveLength(1)
+  expect(outlines[1]).toHaveClass('last')
+})

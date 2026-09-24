@@ -10,6 +10,7 @@ interface BoardProps {
   previewDims?: [number, number] | null
   previewKind?: 'legal' | 'danger' | 'pending' | null
   coverableCells?: [number, number][]
+  lastPlaced?: [number, number] | null
   onCellHover?: (cell: [number, number]) => void
   onCellTap?: (cell: [number, number], pointerType: string) => void
 }
@@ -23,9 +24,11 @@ function cellKey(row: number, col: number): string {
 const BoardLayers = memo(function BoardLayers({
   game,
   coverableCells,
+  lastPlaced,
 }: {
   game: GameWireState
   coverableCells?: [number, number][]
+  lastPlaced?: BoardProps['lastPlaced']
 }) {
   const { size } = game.board
   const { obstacles, prize, pitfall, steal, walls } = game.houseRules
@@ -44,7 +47,7 @@ const BoardLayers = memo(function BoardLayers({
       outlines.push(
         <div
           key={`${playerId}-${cellKey(row, col)}`}
-          className="piece-outline"
+          className={row === lastPlaced?.[0] && col === lastPlaced[1] ? 'piece-outline last' : 'piece-outline'}
           style={{ left: col * CELL, top: row * CELL, width: piece.width * CELL, height: piece.height * CELL }}
         />,
       )
@@ -120,6 +123,7 @@ export function Board({
   previewDims,
   previewKind,
   coverableCells,
+  lastPlaced,
   onCellHover,
   onCellTap,
 }: BoardProps) {
@@ -141,7 +145,7 @@ export function Board({
         if (cell) onCellTap?.(cell, e.pointerType)
       }}
     >
-      <BoardLayers game={game} coverableCells={coverableCells} />
+      <BoardLayers game={game} coverableCells={coverableCells} lastPlaced={lastPlaced} />
       {previewTopLeft && previewDims && (
         <div
           className={`preview ${previewKind}`}

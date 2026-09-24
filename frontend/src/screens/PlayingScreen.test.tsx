@@ -516,3 +516,120 @@ test('Pause stays in the trailing toolbar group once the game is over', () => {
 
   expect(screen.getByRole('button', { name: 'Pause' }).parentElement).toHaveClass('toolbar-trailing')
 })
+
+test('the turn status line tells the current player what to do: roll', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 2: roll')
+})
+
+test('the turn status line names the rectangle to place, following Rotate', () => {
+  renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: {
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 1],
+        legalPlacements: [
+          { width: 2, height: 1, topLefts: [[0, 0]] },
+          { width: 1, height: 2, topLefts: [[2, 2]] },
+        ],
+      },
+    }),
+  )
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2×1')
+  fireEvent.click(screen.getByRole('button', { name: 'Rotate' }))
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 1×2')
+})
+
+test('the turn status line says when a dead roll must be skipped', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
+})
+
+test("the turn status line shows the bot is playing on the bot's turn", () => {
+  renderScreen(
+    makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
+    vi.fn(),
+    null,
+    vi.fn(),
+    2,
+  )
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 2 is playing…')
+})
+
+test('there is no turn status line once the game is over', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+
+  expect(screen.queryByTestId('turn-status')).not.toBeInTheDocument()
+})
+
+const rolledState = (turnState: 'choosingPlacement' | 'awaitingRoll', lastRoll: [number, number] | null) =>
+  makeState({ turn: { currentPlayerId: 1, turnState, lastRoll, legalPlacements: [] } })
+
+function renderRerenderable(state: GameState) {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const view = render(<PlayingScreen state={state} {...props} />)
+  return (next: GameState) => view.rerender(<PlayingScreen state={next} {...props} />)
+}
+
+test('keeps the last roll on screen, marked as the last roll, once the next turn awaits a roll', () => {
+  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  expect(screen.getByRole('img', { name: 'Rolled 3 and 5' })).toBeInTheDocument()
+
+  update(rolledState('awaitingRoll', null))
+
+  const dice = screen.getByRole('img', { name: 'Last roll 3 and 5' })
+  expect(dice).toHaveClass('stale')
+})
+
+test('shows no dice before the first roll of the game', () => {
+  renderScreen(rolledState('awaitingRoll', null))
+
+  expect(screen.queryByRole('img', { name: /roll/i })).not.toBeInTheDocument()
+})
+
+test('a new roll replaces the dimmed last roll', () => {
+  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  update(rolledState('awaitingRoll', null))
+  update(rolledState('choosingPlacement', [1, 6]))
+
+  expect(screen.getByRole('img', { name: 'Rolled 1 and 6' })).not.toHaveClass('stale')
+  expect(screen.queryByRole('img', { name: /Last roll/ })).not.toBeInTheDocument()
+})
+
+function withPieces(p1: [number, number][], p2: [number, number][]): GameState {
+  const state = makeState({ board: { size: 6, skipLimit: 5 } })
+  state.game.players['1'].board.pieces = p1.map((topLeft) => ({ topLeft, width: 1, height: 1, owner: 1 }))
+  state.game.players['2'].board.pieces = p2.map((topLeft) => ({ topLeft, width: 1, height: 1, owner: 2 }))
+  return state
+}
+
+const outlineAt = (row: number, col: number) =>
+  document.querySelector<HTMLElement>('.piece-outline.last')?.style.left === `${col * 44}px` &&
+  document.querySelector<HTMLElement>('.piece-outline.last')?.style.top === `${row * 44}px`
+
+test('outlines the piece that was just placed, and keeps it through a skip', () => {
+  const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
+  expect(document.querySelector('.piece-outline.last')).not.toBeInTheDocument()
+
+  update(withPieces([[0, 0], [0, 1]], [[5, 5]]))
+  expect(document.querySelectorAll('.piece-outline.last')).toHaveLength(1)
+  expect(outlineAt(0, 1)).toBe(true)
+
+  update(withPieces([[0, 0], [0, 1]], [[5, 5]]))
+  expect(outlineAt(0, 1)).toBe(true)
+})
+
+test("moves the last-placed outline to the opponent's next piece", () => {
+  const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
+  update(withPieces([[0, 0], [0, 1]], [[5, 5]]))
+  update(withPieces([[0, 0], [0, 1]], [[5, 5], [5, 4]]))
+
+  expect(document.querySelectorAll('.piece-outline.last')).toHaveLength(1)
+  expect(outlineAt(5, 4)).toBe(true)
+})
