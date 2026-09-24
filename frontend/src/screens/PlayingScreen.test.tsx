@@ -776,3 +776,10 @@ test('the first placement hint points at the starting corner, and goes away once
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2×1$/)
 })
+
+test('the error toast hangs from the sticky header, so it follows the header height', () => {
+  renderScreen(makeState(), vi.fn(), { reason: 'illegalPlacement', message: 'x' })
+
+  const toast = screen.getByText(/can’t go there/)
+  expect(toast.closest('.header')).toBeInTheDocument()
+})

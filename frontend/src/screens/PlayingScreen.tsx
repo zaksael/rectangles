@@ -126,6 +126,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 </span>
               </div>
             ))}
+            <div className="toast-anchor" role="status" aria-live="polite">
+              {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
+            </div>
             {turnStatus && (
               <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
                 {turnStatus}
@@ -133,9 +136,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             )}
           </div>
           <div className="board-area">
-            <div className="toast-anchor" role="status" aria-live="polite">
-              {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
-            </div>
             <Board
               game={state.game}
               previewTopLeft={previewTopLeft}

@@ -182,10 +182,12 @@
 }
 
 .toast-anchor {
-  /* Zero-height sticky strip just under the sticky header (56px tall), so the
-     toast stays in view when the board is taller than the viewport. */
-  position: sticky;
-  top: 56px;
+  /* Hangs from the bottom of the sticky header (which is positioned), so it stays in view
+     under the header whatever its height, even when the board scrolls. */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   z-index: 3;
   height: 0;
   display: flex;
