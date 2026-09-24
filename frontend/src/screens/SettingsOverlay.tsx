@@ -22,13 +22,13 @@ export function SettingsOverlay({ game, series, opponentLabel, onClose }: Settin
         onClose()
       }}
     >
-      <div className="header">
+      <div className="settings-header">
         <button className="btn primary" onClick={onClose} autoFocus>
           <span aria-hidden="true">← </span>Resume
         </button>
         <h2 id="settings-title">Settings</h2>
       </div>
-      <div className="body">
+      <div className="settings-body">
         <dl className="match-info">
           <div>
             <dt>Opponent</dt>
@@ -53,7 +53,7 @@ export function SettingsOverlay({ game, series, opponentLabel, onClose }: Settin
             </div>
           )}
         </dl>
-        <div className="rules-groups">
+        <div className="settings-rules">
           {HOUSE_RULE_GROUPS.map((group) => (
             <section key={group.label}>
               <h3>{group.label}</h3>
@@ -62,8 +62,8 @@ export function SettingsOverlay({ game, series, opponentLabel, onClose }: Settin
                   const wireKey = rule.key.replace(/Enabled$/, '') as keyof GameWireState['houseRules']
                   const on = game.houseRules[wireKey].enabled
                   return (
-                    <li key={rule.key} className={on ? 'rule on' : 'rule'}>
-                      <span className="box" aria-hidden="true" />
+                    <li key={rule.key} className={on ? 'settings-rule on' : 'settings-rule'}>
+                      <span className="settings-box" aria-hidden="true" />
                       <span>{rule.label}</span>
                       <span className="visually-hidden">{on ? 'On' : 'Off'}</span>
                     </li>
