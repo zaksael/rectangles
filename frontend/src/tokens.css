@@ -1,0 +1,129 @@
+/*
+ * Rectangles design tokens: shared custom properties and component styles.
+ *
+ * "Ledger" aesthetic: flat, no rounded corners, no drop shadows.
+ * Two exceptions: a true modal dialog (connection lost, Surrender
+ * confirm, Settings, Game-over) floating over a dimmed backdrop scrim, and the
+ * Playing toast floating over the live board. Each elevates one layer
+ * above another rather than decorating a flat card, and needs the shadow
+ * to read as lifted rather than pasted on. Everything else stays flat.
+ */
+
+:root {
+  --ledger: #E7EBDD; /* page background */
+  --ink: #23262B;    /* text, borders, outlines */
+  --line: #B9C2AE;   /* dividers, secondary borders */
+
+  --p1: #2E6F95;
+  --p2: #C9622B;
+
+  /* Special cells (must read distinct from --p1/--p2 and each other
+     under deuteranopia/protanopia) */
+  --prize: #E8C440;
+  --pitfall: #A23B3B;
+  --steal: #6B4E8E;
+  --obstacle: #6E6A5D;
+
+  /* Skip button only; destructive actions use --pitfall */
+  --danger: #9B2FAE;
+
+  /* Illegal-placement preview outline and hatch. Legal previews and the
+     legal-cell highlight use the mover's colour (--mover) instead. */
+  --preview-illegal: #DC4646;
+}
+
+/* Typography: IBM Plex Sans for UI text; IBM Plex Mono with tabular numerals for
+   anything that changes every turn (dice, scores, skip counts) so the layout
+   doesn't jitter; Source Serif 4 (.title) for screen titles only. */
+
+body {
+  font-family: "IBM Plex Sans", sans-serif;
+  color: var(--ink);
+  background: var(--ledger);
+}
+
+.title {
+  font-family: "Source Serif 4", serif;
+  font-weight: 600;
+}
+
+/* Radius: flat everywhere; circular is reserved for status dots and swatches. */
+
+.btn,
+.checkbox,
+.segmented {
+  border-radius: 0;
+}
+
+.dot,
+.swatch {
+  border-radius: 50%;
+}
+
+/* Spacing: no formal scale; reuse one of these before introducing a new number.
+   Not enforced in CSS. Component-internal geometry (small insets, optical
+   offsets) is exempt.
+     6px 8px 12px 16px 24px 32px 40px 48px 64px */
+
+/* Focus outline, app-wide. Uses :focus, not :focus-visible: Chrome doesn't reliably
+   treat an autofocused dialog button as focus-visible. */
+
+button:focus,
+.rule:focus,
+.segmented button:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.btn {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+}
+
+.btn.primary {
+  color: var(--ledger);
+  background: var(--ink);
+}
+.btn.primary:hover {
+  background: color-mix(in srgb, var(--ink) 85%, black);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+}
+.btn.secondary:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.btn.destructive {
+  background: var(--pitfall);
+  color: var(--ledger);
+  border: 1px solid var(--pitfall);
+}
+.btn.destructive:hover {
+  background: color-mix(in srgb, var(--pitfall) 85%, black);
+}
+
+.btn.danger-outline {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.btn.danger-outline:hover {
+  background: var(--danger);
+  color: var(--ledger);
+}
+
+.btn:disabled,
+.segmented button:disabled {
+  /* One rule that works across every variant regardless of its base color. */
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
