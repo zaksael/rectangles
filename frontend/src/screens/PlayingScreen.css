@@ -1,4 +1,4 @@
-/* Ported from the Playing design mockup (proof-playing-midgame.html) - keep
+/* Ported from the Playing design mockup (mockup-playing-midgame.html) - keep
    in sync with it if the design changes there. */
 
 .frame {
@@ -205,7 +205,7 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Shared modal shell - ported from proof-game-over.html / proof-surrender-confirm.html. */
+/* Shared modal shell - ported from mockup-game-over.html / mockup-surrender-confirm.html. */
 dialog.modal {
   max-width: calc(100vw - 32px);
   background: var(--ledger);
@@ -324,7 +324,7 @@ dialog.surrender-confirm {
   margin: 0 0 24px;
 }
 
-/* Settings (read-only mid-game view) - ported from proof-settings.html. */
+/* Settings (read-only mid-game view) - ported from mockup-settings.html. */
 dialog.settings {
   width: 600px;
   padding: 0;

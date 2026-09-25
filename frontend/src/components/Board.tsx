@@ -158,7 +158,8 @@ export function Board({
       tabIndex={onKeyDown ? 0 : undefined}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
-      style={{ '--n': size } as CSSProperties}
+      // --mover tints the legal-move layers with whoever is placing.
+      style={{ '--n': size, '--mover': game.turn.currentPlayerId === 1 ? 'var(--p1)' : 'var(--p2)' } as CSSProperties}
       // One delegated handler per event instead of a closure on every cell.
       onMouseOver={(e: MouseEvent) => {
         const cell = cellFromEvent(e.target)

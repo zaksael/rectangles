@@ -171,6 +171,17 @@ test.each(['legal', 'danger', 'pending'] as const)('renders the preview box with
   expect(container.querySelector('.preview')).toHaveClass(kind)
 })
 
+test.each([
+  [1, 'var(--p1)'],
+  [2, 'var(--p2)'],
+] as const)("tints the legal-move layers with the mover's colour on player %i's turn", (currentPlayerId, colour) => {
+  const game = makeGame()
+  game.turn.currentPlayerId = currentPlayerId
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector<HTMLElement>('.board')!.style.getPropertyValue('--mover')).toBe(colour)
+})
+
 test('renders no preview box when previewTopLeft is not given', () => {
   const { container } = render(<Board game={makeGame()} />)
 
