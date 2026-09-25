@@ -726,6 +726,12 @@ test('the board explains its keys to assistive tech', () => {
   expect(help).toHaveTextContent('Arrow keys move the piece, Enter places it, R rotates it')
 })
 
+test('the placement keys are visible under the board, not only announced', () => {
+  renderScreen(keyboardState())
+
+  expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it.')).not.toHaveClass('visually-hidden')
+})
+
 test('Roll, Rotate and Skip show their keys, without changing their accessible names', () => {
   renderScreen(keyboardState())
 

@@ -149,11 +149,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               onFocus={placing ? handleBoardFocus : undefined}
               describedBy={placing ? 'board-help' : undefined}
             />
-            {placing && (
-              <span id="board-help" className="visually-hidden">
-                Arrow keys move the piece, Enter places it, R rotates it.
-              </span>
-            )}
+            <p id="board-help" className="board-help">
+              Arrow keys move the piece, Enter places it, R rotates it.
+            </p>
           </div>
         </>
       )}
