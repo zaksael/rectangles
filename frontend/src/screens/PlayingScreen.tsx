@@ -77,14 +77,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     if (isBotTurn) turnStatus = `${currentName} is playing…`
     else if (turnState === 'awaitingRoll') turnStatus = `${currentName}: roll`
     else if (turnState === 'choosingPlacement') {
-      turnStatus = `${currentName}: place ${dims ? `${dims[0]}×${dims[1]}` : 'a rectangle'}`
+      turnStatus = `${currentName}: place ${dims ? `${dims[0]} wide × ${dims[1]} tall` : 'a rectangle'}`
       const reason =
         previewKind === 'danger' && previewTopLeft && dims && state
           ? placementReason(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)
           : null
       const firstMove = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.pieces.length === 0
       if (reason) turnStatus += ` — ${reason}`
-      else if (firstMove && previewKind !== 'legal') turnStatus += ' — cover your starting corner'
+      else if (previewKind !== 'legal') turnStatus += firstMove ? ' — cover your starting corner' : ' — share an edge with your territory'
     }
     else if (turnState === 'skipped') turnStatus = `${currentName}: no legal move, skip`
   }

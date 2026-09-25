@@ -540,9 +540,9 @@ test('the turn status line names the rectangle to place, following Rotate', () =
     }),
   )
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2×1')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall')
   fireEvent.click(screen.getByRole('button', { name: 'Rotate' }))
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 1×2')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 1 wide × 2 tall')
 })
 
 test('the turn status line says when a dead roll must be skipped', () => {
@@ -652,7 +652,7 @@ test('hovering an illegal spot explains why in the status line', () => {
 
   fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="4,4"]')!)
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2×1 — Your first piece must cover your starting corner')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — Your first piece must cover your starting corner')
 })
 
 test('hovering a legal spot shows no reason', () => {
@@ -660,7 +660,7 @@ test('hovering a legal spot shows no reason', () => {
 
   fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2×1$/)
+  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2 wide × 1 tall$/)
 })
 
 const keyboardState = () =>
@@ -770,16 +770,16 @@ test("a dimmed last roll keeps its roller's name and color through the next play
   expect(dice.querySelector('.dot')).toBeInTheDocument()
 })
 
-test('the first placement hint points at the starting corner, and goes away once a piece is down', () => {
+test('the placement hint points at the starting corner first, then at the adjacency rule once a piece is down', () => {
   const state = keyboardState()
   const update = renderRerenderable(state)
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2×1 — cover your starting corner')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — cover your starting corner')
 
   const placed = keyboardState()
   placed.game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 2, height: 1, owner: 1 }]
   update(placed)
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2×1$/)
+  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2 wide × 1 tall — share an edge with your territory$/)
 })
 
 test('the error toast hangs from the sticky header, so it follows the header height', () => {
