@@ -13,7 +13,7 @@ export interface HouseRules {
 interface HouseRuleDef {
   key: keyof HouseRules
   label: string
-  // Flip to true when the rule's Playing-screen task is ticked; until then it is
+  // Flip to true when the Playing screen supports the rule; until then it is
   // neither shown on Mode Select nor sent to the server.
   implemented: boolean
 }

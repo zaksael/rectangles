@@ -1,6 +1,3 @@
-/* Ported from the Mode Select design mockup - keep in sync with it if the
-   design changes there. */
-
 .mode-select {
   max-width: 740px;
   margin: 0 auto;
@@ -42,7 +39,7 @@
    .mode-card itself — it nests the difficulty-pills radiogroup as a sibling,
    and a "radio" role can't contain further interactive content. .mode-card's
    own onClick (no role, so it isn't itself exposed as interactive) still
-   covers the whole card for mouse users, same click area as before. Local
+   covers the whole card for mouse users. Local
    2P has no nested content, so it keeps role="radio" directly on .mode-card. */
 .mode-card-select {
   display: flex;
@@ -113,7 +110,7 @@
    :focus-within so the ring still wraps the whole card, not just that
    inner element; also covers Local 2P, whose role="radio" is .mode-card
    itself. Neither is a native <button>, so this repeats the app-wide focus
-   treatment (design-tokens.css's button:focus) here. */
+   treatment here. */
 .mode-card:focus-within {
   outline: 2px solid var(--ink);
   outline-offset: 2px;

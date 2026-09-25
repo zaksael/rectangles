@@ -1,6 +1,3 @@
-/* Ported from the Playing design mockup (mockup-playing-midgame.html) - keep
-   in sync with it if the design changes there. */
-
 .frame {
   --chrome: 200px; /* header, status line, key hint and toolbar; the board fills the rest */
   position: relative;
@@ -49,7 +46,6 @@
 .player.p2 .dot {
   order: 2;
 }
-/* The active player: a solid underline in their color plus a stronger tint. */
 .player.p1.current {
   border-bottom-color: var(--p1);
   background: color-mix(in srgb, var(--p1) 14%, transparent);
@@ -59,7 +55,6 @@
   background: color-mix(in srgb, var(--p2) 14%, transparent);
 }
 
-/* What the current player should do next. */
 .turn-status {
   grid-column: 1 / -1;
   padding: 8px 24px;
@@ -215,7 +210,6 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Shared modal shell - ported from mockup-game-over.html / mockup-surrender-confirm.html. */
 dialog.modal {
   max-width: calc(100vw - 32px);
   background: var(--ledger);
@@ -242,7 +236,6 @@ dialog.modal .actions .btn {
   padding: 12px;
 }
 
-/* Game-over overlay (variant A). */
 dialog.game-over {
   width: 480px;
   padding: 32px 32px 24px;
@@ -320,7 +313,6 @@ dialog.game-over {
   padding-top: 8px;
 }
 
-/* Surrender confirm (variant A). */
 dialog.surrender-confirm {
   width: 420px;
   padding: 28px 28px 24px;
@@ -350,7 +342,6 @@ dialog.surrender-confirm {
   font-weight: 500;
 }
 
-/* Settings (read-only mid-game view) - ported from mockup-settings.html. */
 dialog.settings {
   width: 600px;
   padding: 0;
@@ -436,7 +427,6 @@ dialog.settings {
   box-shadow: inset 0 0 0 4px var(--ledger);
 }
 
-/* Key hints on the turn buttons. */
 .toolbar-actions .btn kbd {
   margin-left: 6px;
   font-family: 'IBM Plex Mono', monospace;
@@ -444,7 +434,6 @@ dialog.settings {
   opacity: 0.7;
 }
 
-/* The board is a single tab stop for keyboard play. */
 .board:focus {
   outline: 2px solid var(--ink);
   outline-offset: -2px; /* inside the board, so the sticky header and toolbar can't clip it */
