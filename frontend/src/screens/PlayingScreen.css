@@ -333,6 +333,22 @@ dialog.surrender-confirm {
   font-size: 14px;
   margin: 0 0 24px;
 }
+.surrender-confirm .scores {
+  margin: -12px 0 24px; /* tucks under the explanation instead of adding a second gap */
+  font-size: 14px;
+}
+.surrender-confirm .scores div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.surrender-confirm .scores dd {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
 
 /* Settings (read-only mid-game view) - ported from mockup-settings.html. */
 dialog.settings {

@@ -1,4 +1,5 @@
 import type { GameWireState } from '../gameTypes'
+import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
 const ROWS = [
@@ -7,7 +8,7 @@ const ROWS = [
 ] as const
 
 function nameOf(game: GameWireState, id: number) {
-  return game.players[String(id) as '1' | '2'].name.replace(/ /g, '\u00a0')
+  return noBreak(game.players[String(id) as '1' | '2'].name)
 }
 
 function reasonText(game: GameWireState): string | null {

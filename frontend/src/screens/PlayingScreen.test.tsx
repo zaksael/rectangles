@@ -379,6 +379,16 @@ test('Surrender opens a confirm dialog naming the opponent as winner, without se
   expect(sendAction).not.toHaveBeenCalled()
 })
 
+test('the Surrender confirm shows both current scores', () => {
+  const state = makeState()
+  state.game.players['1'].score.totalScore = 218
+  state.game.players['2'].score.totalScore = 123
+  const { dialog } = openSurrender(state)
+
+  const rows = [...dialog.querySelectorAll('.scores div')].map((row) => [row.querySelector('dt')!.textContent, row.querySelector('dd')!.textContent])
+  expect(rows).toEqual([['Player\u00a01', '218'], ['Player\u00a02', '123']])
+})
+
 function openSurrender(state = makeState()) {
   const sendAction = renderScreen(state)
   fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))

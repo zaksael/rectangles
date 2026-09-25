@@ -1,13 +1,15 @@
+import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
 interface SurrenderConfirmDialogProps {
   opponentName: string
+  scores: { name: string; score: number }[]
   isSeries: boolean
   onCancel: () => void
   onConfirm: () => void
 }
 
-export function SurrenderConfirmDialog({ opponentName, isSeries, onCancel, onConfirm }: SurrenderConfirmDialogProps) {
+export function SurrenderConfirmDialog({ opponentName, scores, isSeries, onCancel, onConfirm }: SurrenderConfirmDialogProps) {
   const dialogRef = useAutoOpenDialog()
 
   return (
@@ -23,9 +25,17 @@ export function SurrenderConfirmDialog({ opponentName, isSeries, onCancel, onCon
     >
       <h2 id="surrender-title">{isSeries ? 'Surrender this round?' : 'Surrender the match?'}</h2>
       <p>
-        {opponentName.replace(/ /g, '\u00a0')} wins {isSeries ? 'this round ' : ''}immediately, regardless of the current score.
+        {noBreak(opponentName)} wins {isSeries ? 'this round ' : ''}immediately, regardless of the current score.
         {isSeries && ' The series continues to the next round.'} This can’t be undone.
       </p>
+      <dl className="scores">
+        {scores.map(({ name, score }) => (
+          <div key={name}>
+            <dt>{noBreak(name)}</dt>
+            <dd>{score}</dd>
+          </div>
+        ))}
+      </dl>
       <div className="actions">
         <button className="btn secondary" onClick={onCancel} autoFocus>
           Cancel

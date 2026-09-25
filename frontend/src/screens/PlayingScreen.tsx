@@ -159,6 +159,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       {state && confirmingSurrender && (
         <SurrenderConfirmDialog
           opponentName={state.game.players[state.game.turn.currentPlayerId === 1 ? '2' : '1'].name}
+          scores={(['1', '2'] as const).map((id) => ({ name: state.game.players[id].name, score: state.game.players[id].score.totalScore }))}
           isSeries={state.series !== null}
           onCancel={() => setConfirmingSurrender(false)}
           onConfirm={() => {
