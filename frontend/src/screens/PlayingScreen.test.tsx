@@ -322,8 +322,8 @@ test('game over shows a dialog with the end reason and the winner', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const dialog = screen.getByRole('dialog')
-  expect(within(dialog).getByText('Board settled')).toBeInTheDocument()
-  expect(within(dialog).getByRole('heading', { name: 'Player\u00a01 wins' })).toBeInTheDocument()
+  expect(within(dialog).getByText('Game ended: board settled')).toBeInTheDocument()
+  expect(within(dialog).getByRole('heading', { name: 'Player\u00a01 wins on score' })).toBeInTheDocument()
 })
 
 test('no game-over dialog while the game is in progress', () => {
@@ -332,12 +332,17 @@ test('no game-over dialog while the game is in progress', () => {
 })
 
 test.each([
-  ['playerBlocked', 2, 'Player 2 boxed in'],
-  ['skipLimit', 1, 'Player 1 skipped out (5 of 5)'],
-  ['surrender', 2, 'Player 2 surrendered'],
+  ['playerBlocked', 2, 'Game ended: Player 2 boxed in'],
+  ['skipLimit', 1, 'Game ended: Player 1 hit the skip limit (5 of 5)'],
+  ['surrender', 2, 'Game ended: Player 2 surrendered'],
 ] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason, playerId, winner: 1 } }))
   expect(within(screen.getByRole('dialog')).getByText(text)).toBeInTheDocument()
+})
+
+test('a surrender win reads plain "wins", not "on score"', () => {
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'surrender', playerId: 2, winner: 1 } }))
+  expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Player\u00a01 wins' })).toBeInTheDocument()
 })
 
 test('game over reads "Tied" when there is no winner', () => {
@@ -430,7 +435,7 @@ test('the game-over dialog offers New Game', () => {
 
 test('game-over player names use a non-breaking space so they never wrap mid-name', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
-  expect(within(screen.getByRole('dialog')).getByRole('heading').textContent).toBe('Player\u00a01 wins')
+  expect(within(screen.getByRole('dialog')).getByRole('heading').textContent).toBe('Player\u00a01 wins on score')
 })
 
 const renderVsBot = (state: GameState) => renderScreen(state, vi.fn(), null, vi.fn(), 2)

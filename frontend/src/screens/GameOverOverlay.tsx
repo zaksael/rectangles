@@ -12,24 +12,27 @@ function nameOf(game: GameWireState, id: number) {
 
 function reasonText(game: GameWireState): string | null {
   const { reason, playerId } = game.gameOver
-  if (reason === 'boardFull') return 'Board settled'
+  if (reason === 'boardFull') return 'board settled'
   if (reason === null || playerId === null) return null
   const name = nameOf(game, playerId)
   if (reason === 'playerBlocked') return `${name} boxed in`
-  if (reason === 'skipLimit') return `${name} skipped out (${game.board.skipLimit} of ${game.board.skipLimit})`
+  if (reason === 'skipLimit') {
+    const { skipLimit } = game.board
+    return `${name} hit the skip limit (${skipLimit} of ${skipLimit})`
+  }
   return `${name} surrendered`
 }
 
 export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNewGame: () => void }) {
   const dialogRef = useAutoOpenDialog()
-  const { winner } = game.gameOver
-  const reason = reasonText(game)
-  const headline = winner === null ? 'Tied' : `${nameOf(game, winner)} wins`
+  const { winner, reason: endReason } = game.gameOver
+  const detail = reasonText(game)
+  const headline = winner === null ? 'Tied' : `${nameOf(game, winner)} wins${endReason === 'surrender' ? '' : ' on score'}`
 
   return (
     // Escape has no dismiss action here, so cancel is suppressed.
     <dialog className="modal game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title">
-      {reason && <p className="reason">{reason}</p>}
+      {detail && <p className="reason">Game ended: {detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
         {headline}
