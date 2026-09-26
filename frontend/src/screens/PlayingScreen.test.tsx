@@ -630,6 +630,13 @@ test('the last roll is marked by a dashed border and a one-line owner label, not
   expect(getComputedStyle(screen.getByText('P1 last')).whiteSpace).toBe('nowrap')
 })
 
+test('Surrender is underlined, so it reads as an action and not a label', () => {
+  injectPlayingCss()
+  renderScreen(rolledState('awaitingRoll', null))
+
+  expect(getComputedStyle(screen.getByRole('button', { name: 'Surrender' })).textDecorationLine).toBe('underline')
+})
+
 test('shows no dice before the first roll of the game', () => {
   renderScreen(rolledState('awaitingRoll', null))
 

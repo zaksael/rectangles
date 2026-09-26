@@ -153,6 +153,8 @@
 .toolbar-actions .btn.quiet {
   border-color: transparent;
   color: color-mix(in srgb, var(--ink) 70%, transparent);
+  text-decoration-line: underline; /* reads as an action, like Mode Select's reset link, without a border that would look disabled */
+  text-underline-offset: 3px;
 }
 .toolbar-actions .btn.quiet:hover {
   border-color: var(--ink);
