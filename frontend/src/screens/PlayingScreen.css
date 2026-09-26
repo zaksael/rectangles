@@ -176,6 +176,7 @@
   font-weight: 400;
 }
 .die {
+  box-sizing: border-box; /* so the border stays inside the 34px, matching the buttons */
   width: var(--control-height);
   height: var(--control-height);
   display: flex;
