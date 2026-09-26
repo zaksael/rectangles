@@ -744,6 +744,24 @@ test('the placement keys are visible under the board, not only announced', () =>
   expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it.')).not.toHaveClass('visually-hidden')
 })
 
+test('the key hint under the board follows the turn: roll key, then placement keys, blank when nothing applies', () => {
+  const roll = makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const { unmount } = render(<PlayingScreen state={roll} error={null} sendAction={vi.fn()} onOpenSettings={vi.fn()} onNewGame={vi.fn()} />)
+  expect(screen.getByText('D rolls the dice.')).toBeInTheDocument()
+  expect(screen.queryByText(/Arrow keys/)).not.toBeInTheDocument()
+  unmount()
+
+  renderScreen(roll, vi.fn(), null, vi.fn(), 1)
+  expect(screen.queryByText('D rolls the dice.')).not.toBeInTheDocument()
+  expect(screen.queryByText(/Arrow keys/)).not.toBeInTheDocument()
+})
+
+test('the key hint names the skip key on a dead roll', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  expect(screen.getByText('S skips this turn.')).toBeInTheDocument()
+})
+
 test('Roll, Rotate and Skip show their keys, without changing their accessible names', () => {
   renderScreen(keyboardState())
 

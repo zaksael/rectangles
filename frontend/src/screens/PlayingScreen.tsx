@@ -20,6 +20,13 @@ interface PlayingScreenProps {
 
 const ERROR_TOAST_MS = 4000
 
+// The key that applies in each of the human's turn states; other states show a blank line.
+const KEY_HINT: Partial<Record<string, string>> = {
+  awaitingRoll: 'D rolls the dice.',
+  choosingPlacement: 'Arrow keys move the piece, Enter places it, R rotates it.',
+  skipped: 'S skips this turn.',
+}
+
 const ERROR_TEXT: Record<ErrorReason, string> = {
   illegalPlacement: 'That piece can’t go there — try another spot.',
   invalidAction: 'You can’t do that right now — finish your current step.',
@@ -149,8 +156,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               onFocus={placing ? handleBoardFocus : undefined}
               describedBy={placing ? 'board-help' : undefined}
             />
+            {/* Always rendered (blank when no key applies) so the board doesn't shift vertically. */}
             <p id="board-help" className="board-help">
-              Arrow keys move the piece, Enter places it, R rotates it.
+              {(humanTurnState && KEY_HINT[humanTurnState]) ?? '\u00A0'}
             </p>
           </div>
         </>
