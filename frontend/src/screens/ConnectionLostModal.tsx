@@ -14,12 +14,20 @@ export function ConnectionLostModal({ isSeries, onNewGame }: ConnectionLostModal
 
   return (
     // Escape has no dismiss action here (only "New Game" clears this state), so cancel is suppressed.
-    <dialog ref={dialogRef} onCancel={(e) => e.preventDefault()}>
-      <p>This game can&apos;t be resumed</p>
-      <p>{body}</p>
-      <button className="btn primary" onClick={onNewGame} autoFocus>
-        New Game
-      </button>
+    <dialog
+      className="modal connection-lost"
+      ref={dialogRef}
+      aria-labelledby="connection-lost-title"
+      onCancel={(e) => e.preventDefault()}
+    >
+      <p className="reason">Connection lost</p>
+      <h2 id="connection-lost-title">This game can&apos;t be resumed</h2>
+      <p className="body">{body}</p>
+      <div className="actions">
+        <button className="btn primary" onClick={onNewGame} autoFocus>
+          New Game
+        </button>
+      </div>
     </dialog>
   )
 }

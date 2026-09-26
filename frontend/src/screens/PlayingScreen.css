@@ -243,7 +243,7 @@ dialog.game-over {
 .game-over .actions {
   margin-top: 24px;
 }
-.game-over .reason {
+dialog.modal .reason {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   text-transform: uppercase;
@@ -311,6 +311,25 @@ dialog.game-over {
   font-weight: 600;
   border-top: 1px solid var(--line);
   padding-top: 8px;
+}
+
+dialog.connection-lost {
+  width: 420px;
+  padding: 24px;
+}
+dialog.connection-lost .reason {
+  color: color-mix(in srgb, var(--pitfall) 85%, var(--ink));
+  margin-bottom: 8px;
+}
+.connection-lost h2 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.connection-lost .body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+  margin: 0 0 24px;
 }
 
 dialog.surrender-confirm {
