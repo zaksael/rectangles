@@ -87,6 +87,7 @@ test('summarises the house rules: none enabled, or how many are on', () => {
   const base = makeGame()
   const { unmount } = render(<SettingsOverlay game={base} series={null} opponentLabel="Bot" onClose={vi.fn()} />)
   expect(screen.getByText('No house rules in this match')).toBeInTheDocument()
+  expect(screen.queryByRole('list')).not.toBeInTheDocument()
   unmount()
 
   renderOverlay({

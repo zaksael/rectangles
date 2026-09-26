@@ -57,26 +57,28 @@ export function SettingsOverlay({ game, series, opponentLabel, onClose }: Settin
         <p className="settings-rules-summary">
           {enabledCount === 0 ? 'No house rules in this match' : `${enabledCount} house ${enabledCount === 1 ? 'rule' : 'rules'} on`}
         </p>
-        <div className="settings-rules">
-          {HOUSE_RULE_GROUPS.map((group) => (
-            <section key={group.label}>
-              <h3>{group.label}</h3>
-              <ul>
-                {group.rules.map((rule) => {
-                  const wireKey = rule.key.replace(/Enabled$/, '') as keyof GameWireState['houseRules']
-                  const on = game.houseRules[wireKey].enabled
-                  return (
-                    <li key={rule.key} className={on ? 'settings-rule on' : 'settings-rule'}>
-                      <span className="settings-box" aria-hidden="true" />
-                      <span>{rule.label}</span>
-                      <span className="visually-hidden">{on ? 'On' : 'Off'}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          ))}
-        </div>
+        {enabledCount > 0 && (
+          <div className="settings-rules">
+            {HOUSE_RULE_GROUPS.map((group) => (
+              <section key={group.label}>
+                <h3>{group.label}</h3>
+                <ul>
+                  {group.rules.map((rule) => {
+                    const wireKey = rule.key.replace(/Enabled$/, '') as keyof GameWireState['houseRules']
+                    const on = game.houseRules[wireKey].enabled
+                    return (
+                      <li key={rule.key} className={on ? 'settings-rule on' : 'settings-rule'}>
+                        <span className="settings-box" aria-hidden="true" />
+                        <span>{rule.label}</span>
+                        <span className="visually-hidden">{on ? 'On' : 'Off'}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
     </dialog>
   )
