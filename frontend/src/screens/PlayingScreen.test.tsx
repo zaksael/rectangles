@@ -596,6 +596,7 @@ test('keeps the last roll on screen, marked as the last roll, once the next turn
 
   const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
   expect(dice).toHaveClass('stale')
+  expect(dice).toHaveTextContent('last')
 })
 
 test('shows no dice before the first roll of the game', () => {
@@ -610,6 +611,7 @@ test('a new roll replaces the dimmed last roll', () => {
   update(rolledState('choosingPlacement', [1, 6]))
 
   expect(screen.getByRole('img', { name: 'Player 1 rolled 1 and 6' })).not.toHaveClass('stale')
+  expect(screen.getByRole('img', { name: 'Player 1 rolled 1 and 6' })).not.toHaveTextContent('last')
   expect(screen.queryByRole('img', { name: /last roll/i })).not.toBeInTheDocument()
 })
 

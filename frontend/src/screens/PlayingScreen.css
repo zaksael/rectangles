@@ -107,7 +107,7 @@
      Center: the rolled dice, or nothing. Right: Surrender/Settings. Buttons and
      dice share one height so the row doesn't jump when the dice appear. */
   --control-height: 34px;
-  --dice-slot: 104px; /* reserved even with no dice, so the frame width never changes on the first roll */
+  --dice-slot: 128px; /* reserved even with no dice, so the frame width never changes on the first roll */
   display: grid;
   grid-template-columns: 1fr var(--dice-slot) 1fr;
   align-items: center;
@@ -167,8 +167,13 @@
   color: color-mix(in srgb, var(--ink) 50%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
-.dice.stale {
-  opacity: 0.45;
+.dice.stale .dot,
+.dice.stale .die {
+  opacity: 0.45; /* the "last" label stays at full strength so the state reads */
+}
+.dice-label {
+  font-size: 11px;
+  font-weight: 400;
 }
 .die {
   width: var(--control-height);
