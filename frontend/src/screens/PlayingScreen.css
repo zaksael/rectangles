@@ -164,7 +164,7 @@
 .toolbar-actions .btn:disabled {
   opacity: 1;
   background: transparent;
-  color: color-mix(in srgb, var(--ink) 50%, transparent);
+  color: color-mix(in srgb, var(--ink) 67%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
 .dice-label {
