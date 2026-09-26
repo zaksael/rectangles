@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
 import type { GameError, GameState } from '../useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
@@ -597,18 +597,37 @@ test('keeps the last roll on screen, marked as the last roll, once the next turn
 
   const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
   expect(dice).toHaveClass('stale')
-  expect(dice).toHaveTextContent('last')
+  expect(dice).toHaveTextContent('P1 last')
 })
 
-test('the dice are border-box, so their 34px matches the buttons and the toolbar does not grow on the first roll', () => {
+// jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
+function injectPlayingCss() {
   const style = document.createElement('style')
   style.textContent = readFileSync('src/screens/PlayingScreen.css', 'utf8')
   document.head.append(style)
+  onTestFinished(() => style.remove())
+}
+
+test('the dice are border-box, so their 34px matches the buttons and the toolbar does not grow on the first roll', () => {
+  injectPlayingCss()
 
   renderScreen(rolledState('choosingPlacement', [3, 5]))
 
   expect([...document.querySelectorAll('.die')].map((d) => getComputedStyle(d).boxSizing)).toEqual(['border-box', 'border-box'])
-  style.remove()
+})
+
+test('the last roll is marked by a dashed border and a one-line owner label, not by dimming its digits', () => {
+  injectPlayingCss()
+  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const dice = () => [...document.querySelectorAll('.die')].map((d) => getComputedStyle(d))
+
+  expect(dice().map((c) => c.borderTopStyle)).not.toContain('dashed')
+
+  update(rolledState('awaitingRoll', null))
+
+  expect(dice().map((c) => c.borderTopStyle)).toEqual(['dashed', 'dashed'])
+  expect([...dice(), getComputedStyle(document.querySelector('.dice .dot')!)].map((c) => c.opacity)).toEqual(['1', '1', '1'])
+  expect(getComputedStyle(screen.getByText('P1 last')).whiteSpace).toBe('nowrap')
 })
 
 test('shows no dice before the first roll of the game', () => {

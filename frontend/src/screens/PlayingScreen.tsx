@@ -195,7 +195,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
           >
             <span className="dot" aria-hidden="true" />
-            {!roll && <span className="dice-label">last</span>}
+            {!roll && <span className="dice-label">P{shownRoll.owner} last</span>}
             {shownRoll.values.map((value, i) => (
               <span key={i} className="die">
                 {value}
