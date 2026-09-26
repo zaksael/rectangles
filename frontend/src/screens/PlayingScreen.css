@@ -408,6 +408,11 @@ dialog.settings {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
 }
+.settings-rules-summary {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
 .settings-rules {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

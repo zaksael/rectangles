@@ -82,3 +82,21 @@ test('Escape closes the overlay through the same handler', () => {
 
   expect(onClose).toHaveBeenCalledTimes(1)
 })
+
+test('summarises the house rules: none enabled, or how many are on', () => {
+  const base = makeGame()
+  const { unmount } = render(<SettingsOverlay game={base} series={null} opponentLabel="Bot" onClose={vi.fn()} />)
+  expect(screen.getByText('No house rules in this match')).toBeInTheDocument()
+  unmount()
+
+  renderOverlay({
+    game: makeGame({
+      houseRules: {
+        ...base.houseRules,
+        wildcard: { ...base.houseRules.wildcard, enabled: true },
+        steal: { ...base.houseRules.steal, enabled: true },
+      },
+    }),
+  })
+  expect(screen.getByText('2 house rules on')).toBeInTheDocument()
+})

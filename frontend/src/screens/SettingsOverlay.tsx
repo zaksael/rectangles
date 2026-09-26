@@ -11,6 +11,7 @@ interface SettingsOverlayProps {
 
 export function SettingsOverlay({ game, series, opponentLabel, onClose }: SettingsOverlayProps) {
   const dialogRef = useAutoOpenDialog()
+  const enabledCount = Object.values(game.houseRules).filter((rule) => rule.enabled).length
   return (
     // Suppress the native auto-close so Escape routes through the same onClose as the button.
     <dialog
@@ -53,6 +54,9 @@ export function SettingsOverlay({ game, series, opponentLabel, onClose }: Settin
             </div>
           )}
         </dl>
+        <p className="settings-rules-summary">
+          {enabledCount === 0 ? 'No house rules in this match' : `${enabledCount} house ${enabledCount === 1 ? 'rule' : 'rules'} on`}
+        </p>
         <div className="settings-rules">
           {HOUSE_RULE_GROUPS.map((group) => (
             <section key={group.label}>
