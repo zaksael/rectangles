@@ -18,7 +18,7 @@ test('names the opponent when the piece overlaps their territory', () => {
     g.players['2'].board.pieces = [piece(2, [2, 2], 2, 2)]
   })
 
-  expect(placementReason(g, 1, [2, 1], [2, 2])).toBe('Overlaps Player 2’s territory')
+  expect(placementReason(g, 1, [2, 1], [2, 2])).toBe('overlaps Player 2’s territory')
 })
 
 test('says your own territory when the piece overlaps it', () => {
@@ -26,7 +26,7 @@ test('says your own territory when the piece overlaps it', () => {
     g.players['1'].board.pieces = [piece(1, [0, 0], 2, 2)]
   })
 
-  expect(placementReason(g, 1, [1, 1], [2, 2])).toBe('Overlaps your territory')
+  expect(placementReason(g, 1, [1, 1], [2, 2])).toBe('overlaps your territory')
 })
 
 test('says when the piece covers an obstacle', () => {
@@ -34,7 +34,7 @@ test('says when the piece covers an obstacle', () => {
     g.houseRules.obstacles = { enabled: true, cells: [[1, 1]] }
   })
 
-  expect(placementReason(g, 1, [0, 0], [2, 2])).toBe('Covers an obstacle')
+  expect(placementReason(g, 1, [0, 0], [2, 2])).toBe('covers an obstacle')
 })
 
 test('ignores obstacle cells while Obstacles is off', () => {
@@ -50,7 +50,7 @@ test('says when the piece crosses a wall', () => {
     g.houseRules.walls = { enabled: true, edges: [[[0, 1], [0, 2]]] }
   })
 
-  expect(placementReason(g, 1, [0, 0], [3, 1])).toBe('Crosses a wall')
+  expect(placementReason(g, 1, [0, 0], [3, 1])).toBe('crosses a wall')
 })
 
 test('a piece that sits on one side of a wall is fine', () => {
@@ -64,7 +64,7 @@ test('a piece that sits on one side of a wall is fine', () => {
 test('the first piece must include your starting corner', () => {
   const g = game()
 
-  expect(placementReason(g, 1, [2, 2], [2, 2])).toBe('Your first piece must cover your starting corner')
+  expect(placementReason(g, 1, [2, 2], [2, 2])).toBe('your first piece must cover your starting corner')
   expect(placementReason(g, 1, [0, 0], [2, 2])).toBeNull()
   expect(placementReason(g, 2, [4, 4], [2, 2])).toBeNull()
 })
@@ -75,7 +75,7 @@ test('a later piece must share an edge with your own territory', () => {
   })
 
   expect(placementReason(g, 1, [0, 2], [1, 2])).toBeNull()
-  expect(placementReason(g, 1, [3, 3], [1, 1])).toBe('Must share an edge with your territory')
+  expect(placementReason(g, 1, [3, 3], [1, 1])).toBe('must share an edge with your territory')
 })
 
 test('touching only a corner or only the opponent is not enough', () => {
@@ -84,8 +84,8 @@ test('touching only a corner or only the opponent is not enough', () => {
     g.players['2'].board.pieces = [piece(2, [4, 4], 2, 2)]
   })
 
-  expect(placementReason(g, 1, [2, 2], [1, 1])).toBe('Must share an edge with your territory')
-  expect(placementReason(g, 1, [3, 4], [1, 1])).toBe('Must share an edge with your territory')
+  expect(placementReason(g, 1, [2, 2], [1, 1])).toBe('must share an edge with your territory')
+  expect(placementReason(g, 1, [3, 4], [1, 1])).toBe('must share an edge with your territory')
 })
 
 test('a wall between the two cells means the edge does not count', () => {
@@ -94,5 +94,5 @@ test('a wall between the two cells means the edge does not count', () => {
     g.houseRules.walls = { enabled: true, edges: [[[0, 1], [0, 2]]] }
   })
 
-  expect(placementReason(g, 1, [0, 2], [1, 1])).toBe('Must share an edge with your territory')
+  expect(placementReason(g, 1, [0, 2], [1, 1])).toBe('must share an edge with your territory')
 })

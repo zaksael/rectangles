@@ -664,7 +664,7 @@ test('hovering an illegal spot explains why in the status line', () => {
 
   fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="4,4"]')!)
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — Your first piece must cover your starting corner')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — your first piece must cover your starting corner')
 })
 
 test('hovering a legal spot shows no reason', () => {
@@ -726,7 +726,7 @@ test('moving onto an illegal spot explains why, and Enter does not place', () =>
   fireEvent.keyDown(grid, { key: 'ArrowDown' })
 
   expect(document.querySelector('.preview.danger')).toBeInTheDocument()
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Your first piece must cover your starting corner')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('your first piece must cover your starting corner')
   fireEvent.keyDown(grid, { key: 'Enter' })
   expect(sendAction).not.toHaveBeenCalled()
 })
@@ -809,13 +809,13 @@ test("a dimmed last roll keeps its roller's name and color through the next play
 test('the placement hint points at the starting corner first, then at the adjacency rule once a piece is down', () => {
   const state = keyboardState()
   const update = renderRerenderable(state)
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — cover your starting corner')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — your first piece must cover your starting corner')
 
   const placed = keyboardState()
   placed.game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 2, height: 1, owner: 1 }]
   update(placed)
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2 wide × 1 tall — share an edge with your territory$/)
+  expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2 wide × 1 tall — must share an edge with your territory$/)
 })
 
 test('the error toast hangs from the sticky header, so it follows the header height', () => {

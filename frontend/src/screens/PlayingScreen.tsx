@@ -3,7 +3,7 @@ import { Board } from '../components/Board'
 import { GameOverOverlay } from './GameOverOverlay'
 import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 import type { ErrorReason, GameAction } from '../gameTypes'
-import { placementReason } from '../placementReason'
+import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
@@ -91,7 +91,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           : null
       const firstMove = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.pieces.length === 0
       if (reason) turnStatus += ` — ${reason}`
-      else if (previewKind !== 'legal') turnStatus += firstMove ? ' — cover your starting corner' : ' — share an edge with your territory'
+      else if (previewKind !== 'legal') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
     }
     else if (turnState === 'skipped') turnStatus = `${currentName}: no legal move, skip`
   }
