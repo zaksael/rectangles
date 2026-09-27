@@ -31,7 +31,7 @@ test('selecting a mode enables Start Game and clears the hint', () => {
   expect(screen.queryByText('Choose a mode to configure the match')).not.toBeInTheDocument()
 })
 
-test('Start Game with default settings passes the documented first-launch connect params, with no house-rule flags', () => {
+test('Start Game with default settings passes the documented first-launch connect params, plus implemented house-rule flags', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
@@ -43,16 +43,17 @@ test('Start Game with default settings passes the documented first-launch connec
     skipLimit: 5,
     botSeats: 2,
     botDifficulty: 'Greedy',
+    wallsEnabled: true,
   })
 })
 
-test('no house rules are shown until their UI is implemented', () => {
+test('only house rules with implemented UI are shown', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
-  expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
-  expect(screen.queryByText('House rules')).not.toBeInTheDocument()
+  expect(screen.getAllByRole('checkbox')).toHaveLength(1)
+  expect(screen.getByRole('checkbox', { name: 'Walls' })).toBeInTheDocument()
 })
 
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {
