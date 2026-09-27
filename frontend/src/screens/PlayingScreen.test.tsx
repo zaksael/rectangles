@@ -232,6 +232,22 @@ test("shows both players' skip streaks against the skip limit at the same time",
   expect(within(p2).getByText('0/5 skips')).toHaveClass('streak')
 })
 
+test("groups each player's dot with their name, and orders the scoreline skips before score", () => {
+  const game = makeGame()
+  game.players['1'].score.totalScore = 12
+  renderScreen({ game, series: null })
+
+  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
+  const playerId = screen.getByText('Player 1').closest('.player-id') as HTMLElement
+  expect(playerId).not.toBeNull()
+  expect(playerId.querySelector('.dot')).toBeInTheDocument()
+
+  const scoreline = p1.querySelector('.scoreline') as HTMLElement
+  const [first, second] = Array.from(scoreline.children)
+  expect(first).toHaveClass('streak')
+  expect(second).toHaveClass('score')
+})
+
 test.each([
   ['illegalPlacement', 'That piece can’t go there — try another spot.'],
   ['invalidAction', 'You can’t do that right now — finish your current step.'],

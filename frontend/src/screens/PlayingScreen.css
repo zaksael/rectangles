@@ -35,16 +35,30 @@
 .player {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 16px 24px 12px;
   border-bottom: 4px solid transparent;
 }
-.player.p2 {
-  justify-content: flex-end;
-  text-align: right;
+/* dot+name always sit at the block's outer corner (the screen edge); the scoreline sits at its
+   inner corner (facing the header's center divider). P2 mirrors P1's order exactly via
+   row-reverse, rather than a separate right-aligned layout, so both players' scores face each
+   other in the middle and both names sit at the two outer edges. */
+.player-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.player.p2 .dot {
+.player.p2 .player-id {
   order: 2;
+  flex-direction: row-reverse;
+}
+.player.p2 .scoreline {
+  flex-direction: row-reverse;
+}
+/* Mirrors P1's free space toward its own streak, not the center divider. */
+.player.p2 .score {
+  text-align: left;
 }
 .player.p1.current {
   border-bottom-color: var(--p1);
@@ -106,6 +120,9 @@
   font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 500;
+  display: inline-block;
+  min-width: 3ch; /* reserves 3-digit width so gaining/losing a digit doesn't shift the scoreline */
+  text-align: right;
 }
 .streak {
   font-family: 'IBM Plex Mono', monospace;

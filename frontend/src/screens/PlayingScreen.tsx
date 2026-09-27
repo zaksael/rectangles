@@ -123,13 +123,15 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 className={`player p${id}${state.game.turn.currentPlayerId === Number(id) ? ' current' : ''}`}
                 aria-current={state.game.turn.currentPlayerId === Number(id) ? 'true' : undefined}
               >
-                <span className="dot" aria-hidden="true" />
-                <span className="name">{state.game.players[id].name}</span>
+                <div className="player-id">
+                  <span className="dot" aria-hidden="true" />
+                  <span className="name">{state.game.players[id].name}</span>
+                </div>
                 <span className="scoreline">
-                  <span className="score">{state.game.players[id].score.totalScore}</span>
                   <span className="streak">
                     {state.game.players[id].board.consecutiveSkips}/{state.game.board.skipLimit} skips
                   </span>
+                  <span className="score">{state.game.players[id].score.totalScore}</span>
                 </span>
               </div>
             ))}
