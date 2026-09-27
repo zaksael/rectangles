@@ -359,6 +359,30 @@ geometry they seed (walls, obstacles, prize/pitfall/steal cells) and the
 side panel's score/potential/points display — except Wildcard and Reroll,
 which are grayed out and forced off in this mode.
 
+### Web frontend (in progress)
+
+A React frontend (`frontend/`) is under active development as an eventual
+replacement for the server-backed WebSocket path above. It talks to the same
+`rectangles/server` over `/ws` and is not yet wired into the Python app or
+built by any release process — run it separately for now:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+This starts the server (see above) automatically via the Vite dev proxy;
+open the printed `localhost` URL to play.
+
+Current state: a full vanilla match (Mode Select → roll/place/skip → game
+over → New Game) works start to finish, including disconnect handling,
+surrender, and a read-only mid-game Settings/pause screen. Not yet built:
+any house rule's UI (Wildcard, Reroll, Walls, Obstacles, Prize/Pitfall/Steal,
+Enclosure Penalty, Comeback Nudge — all forced off and hidden from the
+picker until each lands), Replay, Series/Tournament flows, and production
+serving from the FastAPI backend.
+
 ## Tests
 
 ```bash
