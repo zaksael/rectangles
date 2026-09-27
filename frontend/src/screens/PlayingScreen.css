@@ -76,6 +76,18 @@
 .p2 .dot {
   background: var(--p2);
 }
+/* Absolutely positioned (shared rule with .dice-label further down, both anchored off .dice) so
+   it doesn't count toward .dice's centered width - only the die faces should decide where the
+   dice cluster centers in its toolbar slot. */
+.dice .dot,
+.dice-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.dice .dot {
+  right: calc(100% + 6px);
+}
 
 .player .name {
   font-size: 16px;
@@ -133,6 +145,7 @@
 .dice {
   grid-column: 2;
   justify-self: center;
+  position: relative; /* anchor for .dot/.dice-label, see the rule above */
   display: flex;
   align-items: center;
   gap: 6px;
@@ -170,6 +183,8 @@
   border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
 .dice-label {
+  left: 100%;
+  margin-left: 6px;
   font-size: 12px;
   font-weight: 400;
   white-space: nowrap;
