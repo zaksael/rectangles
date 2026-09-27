@@ -43,16 +43,16 @@ const BoardLayers = memo(function BoardLayers({
 
   const owners = new Map<string, number>()
   const outlines: ReactElement[] = []
-  let lastPlacedCells: Set<string> | null = null
+  let lastPlacedCells: [number, number][] | null = null
   for (const playerId of ['1', '2'] as const) {
     for (const piece of game.players[playerId].board.pieces) {
       const [row, col] = piece.topLeft
       const isLastPlaced = row === lastPlaced?.[0] && col === lastPlaced[1]
-      if (isLastPlaced) lastPlacedCells = new Set()
+      if (isLastPlaced) lastPlacedCells = []
       for (let r = row; r < row + piece.height; r++) {
         for (let c = col; c < col + piece.width; c++) {
           owners.set(cellKey(r, c), piece.owner)
-          if (isLastPlaced) lastPlacedCells!.add(cellKey(r, c))
+          if (isLastPlaced) lastPlacedCells!.push([r, c])
         }
       }
       outlines.push(
@@ -62,17 +62,6 @@ const BoardLayers = memo(function BoardLayers({
           style={gridBox(row, col, piece.width, piece.height)}
         />,
       )
-    }
-  }
-
-  // The most recent placement briefly rings whichever prize cell(s) it just captured,
-  // mirroring the Pygame renderer's last-move prize highlight - a diamond marker alone
-  // isn't enough of a signal for a capture that just happened.
-  const prizeCaptureRing = new Set<string>()
-  if (prize.enabled && lastPlacedCells) {
-    for (const [r, c] of prize.cells) {
-      const key = cellKey(r, c)
-      if (lastPlacedCells.has(key)) prizeCaptureRing.add(key)
     }
   }
 
@@ -88,6 +77,17 @@ const BoardLayers = memo(function BoardLayers({
       for (const [r, c] of rule.cells) {
         specialCells.set(cellKey(r, c), kind)
       }
+    }
+  }
+
+  // The most recent placement briefly rings whichever special cell(s) it just captured,
+  // mirroring the Pygame renderer's last-move prize highlight - a marker alone isn't
+  // enough of a signal for a capture that just happened. Applies to all three kinds
+  // for consistency, even though the Pygame reference only ever did it for Prize.
+  const captureRing: [number, number][] = []
+  if (lastPlacedCells) {
+    for (const [r, c] of lastPlacedCells) {
+      if (specialCells.has(cellKey(r, c))) captureRing.push([r, c])
     }
   }
 
@@ -110,7 +110,6 @@ const BoardLayers = memo(function BoardLayers({
       // A capture is permanent once a piece covers the cell - the marker doesn't outlive it.
       const special = owner ? undefined : specialCells.get(key)
       if (special) classes.push(special)
-      if (prizeCaptureRing.has(key)) classes.push('prize-ring')
       if (coverableSet.has(key)) classes.push('coverable')
       const start = startCells.get(key)
       if (start) classes.push(`start-p${start}`)
@@ -135,11 +134,18 @@ const BoardLayers = memo(function BoardLayers({
       )
     : []
 
+  // A separate overlay element, not a cell class - the marker itself uses ::before/::after
+  // per kind (Steal uses both), so a shared ring class on the cell would collide with them.
+  const ringEls = captureRing.map(([r, c]) => (
+    <div key={cellKey(r, c)} className="capture-ring" data-cell={cellKey(r, c)} style={gridBox(r, c)} />
+  ))
+
   return (
     <>
       {cells}
       {wallEls}
       {outlines}
+      {ringEls}
     </>
   )
 })

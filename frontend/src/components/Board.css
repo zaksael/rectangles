@@ -105,7 +105,15 @@
   transform: translateX(-50%);
 }
 
-.board-cell.prize-ring::before {
+.capture-ring {
+  position: absolute;
+  left: calc(var(--c) * var(--cell));
+  top: calc(var(--r) * var(--cell));
+  width: var(--cell);
+  height: var(--cell);
+  pointer-events: none;
+}
+.capture-ring::before {
   content: '';
   position: absolute;
   inset: 12%;
