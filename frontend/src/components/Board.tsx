@@ -92,7 +92,8 @@ const BoardLayers = memo(function BoardLayers({
       if (owner === 1) classes.push('p1-fill')
       else if (owner === 2) classes.push('p2-fill')
       else if (obstacleCells.has(key)) classes.push('obstacle')
-      const special = specialCells.get(key)
+      // A capture is permanent once a piece covers the cell - the marker doesn't outlive it.
+      const special = owner ? undefined : specialCells.get(key)
       if (special) classes.push(special)
       if (coverableSet.has(key)) classes.push('coverable')
       const start = startCells.get(key)

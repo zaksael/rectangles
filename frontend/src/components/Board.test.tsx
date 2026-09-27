@@ -53,6 +53,18 @@ test.each(['prize', 'pitfall', 'steal'] as const)('marks a %s cell when that hou
   expect(container.querySelector('[data-cell="0,1"]')).toHaveClass(kind)
 })
 
+test('drops the special-cell marker once a piece has captured it', () => {
+  const game = makeGame()
+  game.houseRules.prize = { enabled: true, cells: [[0, 0]], points: 5 }
+  game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 1, height: 1, owner: 1 }]
+
+  const { container } = render(<Board game={game} />)
+
+  const cell = container.querySelector('[data-cell="0,0"]')
+  expect(cell).toHaveClass('p1-fill')
+  expect(cell).not.toHaveClass('prize')
+})
+
 test('renders one wall element per edge when the walls house rule is enabled', () => {
   const game = makeGame()
   game.houseRules.walls = {
