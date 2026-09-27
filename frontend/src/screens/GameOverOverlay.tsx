@@ -1,4 +1,4 @@
-import type { GameWireState, PlayerState } from '../gameTypes'
+import type { GameWireState } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
@@ -7,15 +7,44 @@ const FINAL_ROW = ['Final score', 'totalScore'] as const
 
 const SELF_ENCLOSED_PENALTY_PER_CELL = 1 // fixed on the server, not sent on the wire or configurable per-game
 
-function deduction(count: number, points: number): string | number {
-  const total = count * points
-  return total > 0 ? `−${total}` : 0
+interface ModifierRow {
+  label: string
+  enabled: (game: GameWireState) => boolean
+  value: (game: GameWireState, id: '1' | '2') => number
 }
 
-// Steal is zero-sum: each capture adds to the capturer and docks the opponent by the
-// same amount, so a player's net is their own captures minus the opponent's, in points.
-function stealNet(player: PlayerState, opponent: PlayerState, points: number): number {
-  return (player.houseRules.steal.captured - opponent.houseRules.steal.captured) * points
+const MODIFIER_ROWS: ModifierRow[] = [
+  {
+    label: 'Prize',
+    enabled: (game) => game.houseRules.prize.enabled,
+    value: (game, id) => game.players[id].houseRules.prize.captured * game.houseRules.prize.points,
+  },
+  {
+    label: 'Pitfall',
+    enabled: (game) => game.houseRules.pitfall.enabled,
+    value: (game, id) => -(game.players[id].houseRules.pitfall.captured * game.houseRules.pitfall.points),
+  },
+  {
+    label: 'Steal',
+    // Zero-sum: each capture adds to the capturer and docks the opponent by the same
+    // amount, so a player's net is their own captures minus the opponent's, in points.
+    enabled: (game) => game.houseRules.steal.enabled,
+    value: (game, id) => {
+      const opponent = id === '1' ? '2' : '1'
+      const { captured: own } = game.players[id].houseRules.steal
+      const { captured: theirs } = game.players[opponent].houseRules.steal
+      return (own - theirs) * game.houseRules.steal.points
+    },
+  },
+  {
+    label: 'Enclosure',
+    enabled: (game) => game.houseRules.selfEnclosedPenalty.enabled,
+    value: (game, id) => -(game.players[id].houseRules.selfEnclosedPenalty.cells * SELF_ENCLOSED_PENALTY_PER_CELL),
+  },
+]
+
+function formatSigned(value: number): string | number {
+  return value < 0 ? `−${-value}` : value
 }
 
 function nameOf(game: GameWireState, id: number) {
@@ -71,45 +100,19 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
               <td>{game.players['2'].score[key]}</td>
             </tr>
           ))}
-          {game.houseRules.prize.enabled && (
-            <tr>
-              <th scope="row">Prize</th>
-              <td>{game.players['1'].houseRules.prize.captured * game.houseRules.prize.points}</td>
-              <td>{game.players['2'].houseRules.prize.captured * game.houseRules.prize.points}</td>
-            </tr>
-          )}
-          {game.houseRules.pitfall.enabled && (
-            <tr>
-              <th scope="row">Pitfall</th>
-              <td className="negative">{deduction(game.players['1'].houseRules.pitfall.captured, game.houseRules.pitfall.points)}</td>
-              <td className="negative">{deduction(game.players['2'].houseRules.pitfall.captured, game.houseRules.pitfall.points)}</td>
-            </tr>
-          )}
-          {game.houseRules.steal.enabled && (
-            <tr>
-              <th scope="row">Steal</th>
+          {MODIFIER_ROWS.filter((row) => row.enabled(game)).map((row) => (
+            <tr key={row.label}>
+              <th scope="row">{row.label}</th>
               {(['1', '2'] as const).map((id) => {
-                const opponent = id === '1' ? '2' : '1'
-                const net = stealNet(game.players[id], game.players[opponent], game.houseRules.steal.points)
+                const value = row.value(game, id)
                 return (
-                  <td key={id} className={net < 0 ? 'negative' : undefined}>
-                    {net < 0 ? `−${-net}` : net}
+                  <td key={id} className={value < 0 ? 'negative' : undefined}>
+                    {formatSigned(value)}
                   </td>
                 )
               })}
             </tr>
-          )}
-          {game.houseRules.selfEnclosedPenalty.enabled && (
-            <tr>
-              <th scope="row">Enclosure</th>
-              <td className="negative">
-                {deduction(game.players['1'].houseRules.selfEnclosedPenalty.cells, SELF_ENCLOSED_PENALTY_PER_CELL)}
-              </td>
-              <td className="negative">
-                {deduction(game.players['2'].houseRules.selfEnclosedPenalty.cells, SELF_ENCLOSED_PENALTY_PER_CELL)}
-              </td>
-            </tr>
-          )}
+          ))}
           <tr className="total">
             <th scope="row">{FINAL_ROW[0]}</th>
             <td>{game.players['1'].score[FINAL_ROW[1]]}</td>
