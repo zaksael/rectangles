@@ -9,21 +9,25 @@ area when the game ends wins.
 ## Index
 
 - [Rules](#rules)
-- [Prize](#prize)
-- [Walls](#walls)
-- [Obstacles](#obstacles)
-- [Pitfall](#pitfall)
-- [Steal](#steal)
-- [Wildcard Roll](#wildcard-roll)
-- [Enclosure Penalty](#enclosure-penalty)
-- [Reroll](#reroll)
-- [Comeback](#comeback)
+- [House Rules](#house-rules)
+  - [Prize](#prize)
+  - [Walls](#walls)
+  - [Obstacles](#obstacles)
+  - [Pitfall](#pitfall)
+  - [Steal](#steal)
+  - [Wildcard Roll](#wildcard-roll)
+  - [Enclosure Penalty](#enclosure-penalty)
+  - [Reroll](#reroll)
+  - [Comeback](#comeback)
 - [Bot opponent](#bot-opponent)
 - [Series mode](#series-mode)
 - [Tournament mode](#tournament-mode)
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Play](#play)
+- [Development](#development)
+  - [Experimental: server-backed play](#experimental-server-backed-play)
+  - [Web frontend (in progress)](#web-frontend-in-progress)
 - [Tests](#tests)
 - [Project structure](#project-structure)
 
@@ -58,9 +62,14 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
   bonus points — see [Prize](#prize) below) wins; equal
   scores is a tie.
 
-## Prize
+## House Rules
 
-An optional mode, off by default. When turned on, four prize cells are seeded on
+Nine optional modes, each off by default, toggled independently on the
+settings screen before a match begins.
+
+### Prize
+
+When turned on, four prize cells are seeded on
 the board: two random positions each game, each mirrored through the
 board's center so neither player starts closer to one than the other. Prizes
 are kept clear of both starting corners and spread apart from each other,
@@ -72,9 +81,9 @@ plus mark, which disappears once a piece covers it; a green ring around
 whichever prize cell(s) your most recent placement captured makes sure a
 capture doesn't go unnoticed.
 
-## Walls
+### Walls
 
-An optional mode, off by default. When turned on, several wall lines are
+When turned on, several wall lines are
 seeded on the board in mirrored pairs, each pair randomly placed and
 oriented (horizontal or vertical), kept clear of both starting corners, and
 spread apart from any other wall pair so they never cluster together —
@@ -86,9 +95,9 @@ ends. Each pair's second segment is the exact mirror image of the first
 through the board's center, so the obstacle is symmetric for both players
 regardless of which corner they start from.
 
-## Obstacles
+### Obstacles
 
-An optional mode, off by default. When turned on, a handful of individual
+When turned on, a handful of individual
 cells are seeded on the board in mirrored pairs, randomly placed and kept
 clear of both starting corners, Prize's cells, Walls' lines, and
 any other Obstacle pair, so they never cluster together.
@@ -96,9 +105,9 @@ Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
 cover it, and it never counts as a legal move for either player. Shown on
 the board as a solid dark square.
 
-## Pitfall
+### Pitfall
 
-An optional mode, off by default. When turned on, two pitfall cells are seeded
+When turned on, two pitfall cells are seeded
 on the board as a single mirrored pair, randomly placed and kept clear of
 both starting corners and every other special cell (Prize's cells,
 Walls' lines, Obstacles), so they never overlap. Covering a pitfall docks the
@@ -109,9 +118,9 @@ red bar, which disappears once a piece covers it, and the live panel shows the
 count separately from your score (e.g. "Pitfall 1") so it's never silently baked
 into the total.
 
-## Steal
+### Steal
 
-An optional mode, off by default. When turned on, two steal cells are seeded on
+When turned on, two steal cells are seeded on
 the board as a single mirrored pair, randomly placed and kept clear of both
 starting corners and every other special cell (Prize's cells, Walls' lines,
 Obstacles, Pitfall's cells), so they never overlap. Covering a steal cell is a
@@ -123,9 +132,9 @@ plus-over-minus mark, which disappears once a piece covers it; the live panel sh
 the running swing on both players' rows (e.g. "Steal +10" for the capturer,
 "Steal -10" for the opponent) so it's never silently baked into the total.
 
-## Wildcard Roll
+### Wildcard Roll
 
-An optional mode, off by default. When turned on, every roll that comes up
+When turned on, every roll that comes up
 doubles (both dice matching) becomes a wildcard roll. One of the
 two just-rolled numbers (picked at random) becomes yours to change to any
 value 1-6, or leave as rolled — the other number stays fixed. Once you
@@ -135,9 +144,9 @@ If no number you could pick would ever fit, the pick is skipped entirely and
 the turn resolves straight to a skip — no pointless click through an
 all-illegal picker.
 
-## Enclosure Penalty
+### Enclosure Penalty
 
-An optional mode, off by default. When turned on, any empty cell that's
+When turned on, any empty cell that's
 fully surrounded by only *your own* territory docks you 1 point — a live
 penalty, recomputed every frame from the current board, not a one-time or
 permanent effect. Filling the hole back in (even partially, breaking the
@@ -149,9 +158,9 @@ closes off, with no help from the edge, counts. The live panel shows the
 penalty separately from your score (e.g. "-3 enclosed") so it's never
 silently baked into the total.
 
-## Reroll
+### Reroll
 
-An optional mode, off by default. Each player gets 2 rerolls per game (not
+Each player gets 2 rerolls per game (not
 per turn, not per series round) to discard their current roll — both
 dice — and roll fresh instead of accepting it. Usable any time a roll is
 pending and you haven't committed to it yet: while choosing where to place,
@@ -163,9 +172,9 @@ rerolls; **Greedy**/**Blocking** reroll whenever nothing on the board (or in
 [Wildcard Roll](#wildcard-roll)'s value picker) would advance their own
 strategy at all — see [Bot opponent](#bot-opponent).
 
-## Comeback
+### Comeback
 
-An optional mode, off by default. Once the trailing player's score falls far
+Once the trailing player's score falls far
 enough behind — the gap crosses 8% of the board's total cells (rounded up:
 29/43/59 points on the 19×19/23×23/27×27 presets) — they're permanently
 granted one extra [Reroll](#reroll) charge for the rest of that game. It's
@@ -347,6 +356,8 @@ most recent entries plus a note when there's more, so the panel always fits.
 - The side panel keeps a running **History** log of every placement and
   skip, most recent first; scroll the mouse wheel over it to see older
   entries once a match runs past the visible rows.
+
+## Development
 
 ### Experimental: server-backed play
 
