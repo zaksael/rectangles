@@ -378,11 +378,11 @@ open the printed `localhost` URL to play.
 
 Current state: a full vanilla match (Mode Select → roll/place/skip → game
 over → New Game) works start to finish, including disconnect handling,
-surrender, and a read-only mid-game Settings/pause screen. Not yet built:
-any house rule's UI (Wildcard, Reroll, Walls, Obstacles, Prize/Pitfall/Steal,
-Enclosure Penalty, Comeback Nudge — all forced off and hidden from the
-picker until each lands), Replay, Series/Tournament flows, and production
-serving from the FastAPI backend.
+surrender, and a read-only mid-game Settings/pause screen. Walls, Obstacles,
+Prize, Pitfall, Steal, and Enclosure Penalty are built and toggleable on the
+picker. Not yet built: Wildcard, Reroll, and Comeback Nudge (still forced
+off and hidden from the picker until each lands), Replay, Series/Tournament
+flows, and production serving from the FastAPI backend.
 
 ## Tests
 
