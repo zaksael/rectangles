@@ -65,7 +65,7 @@ describe('App', () => {
       FakeWebSocket.instances[0].emit('close')
     })
 
-    expect(screen.getByText("Couldn't connect — your settings are unchanged, try again")).toBeInTheDocument()
+    expect(screen.getByText('Couldn’t connect — your settings are unchanged, try again')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))

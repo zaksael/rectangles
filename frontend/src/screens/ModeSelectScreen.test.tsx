@@ -153,7 +153,7 @@ test('while connectFailed, shows an inline retry message and Start Game stays en
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   expect(
-    screen.getByText("Couldn't connect — your settings are unchanged, try again"),
+    screen.getByText('Couldn’t connect — your settings are unchanged, try again'),
   ).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 })
