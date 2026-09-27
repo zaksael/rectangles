@@ -40,7 +40,7 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
       {
         key: 'selfEnclosedPenaltyEnabled',
         label: 'Enclosure penalty',
-        implemented: false,
+        implemented: true,
       },
     ],
   },

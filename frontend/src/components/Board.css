@@ -121,6 +121,21 @@
   border-radius: 50%;
 }
 
+.enclosed-hatch {
+  position: absolute;
+  left: calc(var(--c) * var(--cell));
+  top: calc(var(--r) * var(--cell));
+  width: var(--cell);
+  height: var(--cell);
+  pointer-events: none;
+}
+.enclosed-hatch.p1 {
+  background: repeating-linear-gradient(45deg, var(--p1) 0 2px, transparent 2px 6px);
+}
+.enclosed-hatch.p2 {
+  background: repeating-linear-gradient(45deg, var(--p2) 0 2px, transparent 2px 6px);
+}
+
 .wall {
   position: absolute;
   background: var(--ink);

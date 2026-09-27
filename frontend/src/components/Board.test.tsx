@@ -260,3 +260,96 @@ test('drops a start marker once that player has a piece, and keeps the other', (
   expect(container.querySelector('.start-p1')).not.toBeInTheDocument()
   expect(container.querySelector('[data-cell="2,2"]')).toHaveClass('start-p2')
 })
+
+test('hatches a self-enclosed empty region in the enclosing player\'s color', () => {
+  const game = makeGame({ board: { size: 5, skipLimit: 5 } })
+  game.houseRules.selfEnclosedPenalty = { enabled: true }
+  // Center cell (2,2) is surrounded on all 4 sides by player 1, never touching the board edge.
+  game.players['1'].board.pieces = [
+    { topLeft: [1, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [3, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 1], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 3], width: 1, height: 1, owner: 1 },
+  ]
+
+  const { container } = render(<Board game={game} />)
+
+  const hatch = container.querySelector('.enclosed-hatch[data-cell="2,2"]')
+  expect(hatch).toBeInTheDocument()
+  expect(hatch).toHaveClass('p1')
+})
+
+test('does not hatch an empty region that touches the board edge', () => {
+  const game = makeGame({ board: { size: 3, skipLimit: 5 } })
+  game.houseRules.selfEnclosedPenalty = { enabled: true }
+  // (0,0) is empty and borders player 1 on one side, but it's a corner cell - touches the edge.
+  game.players['1'].board.pieces = [{ topLeft: [0, 1], width: 1, height: 1, owner: 1 }]
+
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector('.enclosed-hatch')).not.toBeInTheDocument()
+})
+
+test('does not hatch an empty region bordered by both players', () => {
+  const game = makeGame({ board: { size: 5, skipLimit: 5 } })
+  game.houseRules.selfEnclosedPenalty = { enabled: true }
+  game.players['1'].board.pieces = [
+    { topLeft: [1, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [3, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 1], width: 1, height: 1, owner: 1 },
+  ]
+  game.players['2'].board.pieces = [{ topLeft: [2, 3], width: 1, height: 1, owner: 2 }]
+
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector('.enclosed-hatch')).not.toBeInTheDocument()
+})
+
+test('a wall excludes the far side from the enclosing-owner check', () => {
+  const game = makeGame({ board: { size: 5, skipLimit: 5 } })
+  game.houseRules.selfEnclosedPenalty = { enabled: true }
+  game.houseRules.walls = { enabled: true, edges: [[[2, 2], [2, 3]]] }
+  game.players['1'].board.pieces = [
+    { topLeft: [1, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [3, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 1], width: 1, height: 1, owner: 1 },
+  ]
+  // Without the wall, this player 2 piece would make the region two-owner and disqualify it.
+  game.players['2'].board.pieces = [{ topLeft: [2, 3], width: 1, height: 1, owner: 2 }]
+
+  const { container } = render(<Board game={game} />)
+
+  const hatch = container.querySelector('.enclosed-hatch[data-cell="2,2"]')
+  expect(hatch).toBeInTheDocument()
+  expect(hatch).toHaveClass('p1')
+})
+
+test('does not hatch when the self-enclosed-penalty house rule is disabled', () => {
+  const game = makeGame({ board: { size: 5, skipLimit: 5 } })
+  game.houseRules.selfEnclosedPenalty = { enabled: false }
+  game.players['1'].board.pieces = [
+    { topLeft: [1, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [3, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 1], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 3], width: 1, height: 1, owner: 1 },
+  ]
+
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector('.enclosed-hatch')).not.toBeInTheDocument()
+})
+
+test('an obstacle excludes the far side from the enclosing-owner check, same as a wall', () => {
+  const game = makeGame({ board: { size: 5, skipLimit: 5 } })
+  game.houseRules.selfEnclosedPenalty = { enabled: true }
+  game.houseRules.obstacles = { enabled: true, cells: [[2, 3]] }
+  game.players['1'].board.pieces = [
+    { topLeft: [1, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [3, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [2, 1], width: 1, height: 1, owner: 1 },
+  ]
+
+  const { container } = render(<Board game={game} />)
+
+  expect(container.querySelector('.enclosed-hatch[data-cell="2,2"]')).toBeInTheDocument()
+})
