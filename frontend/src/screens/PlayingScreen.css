@@ -349,6 +349,9 @@ dialog.modal .reason {
   margin-right: 6px;
   border-radius: 50%;
 }
+.game-over table.breakdown .negative {
+  color: var(--danger);
+}
 .game-over table.breakdown tr.total th,
 .game-over table.breakdown tr.total td {
   font-weight: 600;

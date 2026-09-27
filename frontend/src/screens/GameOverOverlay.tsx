@@ -1,9 +1,14 @@
-import type { GameWireState } from '../gameTypes'
+import type { GameWireState, PlayerState } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
 const SCORE_ROWS = [['Territory', 'totalArea']] as const
 const FINAL_ROW = ['Final score', 'totalScore'] as const
+
+function deduction(player: PlayerState, points: number): string | number {
+  const total = player.houseRules.pitfall.captured * points
+  return total > 0 ? `−${total}` : 0
+}
 
 function nameOf(game: GameWireState, id: number) {
   return noBreak(game.players[String(id) as '1' | '2'].name)
@@ -63,6 +68,13 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
               <th scope="row">Prize</th>
               <td>{game.players['1'].houseRules.prize.captured * game.houseRules.prize.points}</td>
               <td>{game.players['2'].houseRules.prize.captured * game.houseRules.prize.points}</td>
+            </tr>
+          )}
+          {game.houseRules.pitfall.enabled && (
+            <tr>
+              <th scope="row">Pitfall</th>
+              <td className="negative">{deduction(game.players['1'], game.houseRules.pitfall.points)}</td>
+              <td className="negative">{deduction(game.players['2'], game.houseRules.pitfall.points)}</td>
             </tr>
           )}
           <tr className="total">

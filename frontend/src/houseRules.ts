@@ -28,7 +28,7 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     label: 'Special cells',
     rules: [
       { key: 'prizeEnabled', label: 'Prize', implemented: true },
-      { key: 'pitfallEnabled', label: 'Pitfall', implemented: false },
+      { key: 'pitfallEnabled', label: 'Pitfall', implemented: true },
       { key: 'stealEnabled', label: 'Steal', implemented: false },
     ],
   },
