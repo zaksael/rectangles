@@ -65,6 +65,20 @@ test('drops the special-cell marker once a piece has captured it', () => {
   expect(cell).not.toHaveClass('prize')
 })
 
+test('rings a prize cell captured by the most recent placement, and only that one', () => {
+  const game = makeGame()
+  game.houseRules.prize = { enabled: true, cells: [[0, 0], [2, 2]], points: 5 }
+  game.players['1'].board.pieces = [
+    { topLeft: [2, 2], width: 1, height: 1, owner: 1 },
+    { topLeft: [0, 0], width: 1, height: 1, owner: 1 },
+  ]
+
+  const { container } = render(<Board game={game} lastPlaced={[0, 0]} />)
+
+  expect(container.querySelector('[data-cell="0,0"]')).toHaveClass('prize-ring')
+  expect(container.querySelector('[data-cell="2,2"]')).not.toHaveClass('prize-ring')
+})
+
 test('renders one wall element per edge when the walls house rule is enabled', () => {
   const game = makeGame()
   game.houseRules.walls = {

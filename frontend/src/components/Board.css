@@ -105,6 +105,14 @@
   transform: translateX(-50%);
 }
 
+.board-cell.prize-ring::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+}
+
 .wall {
   position: absolute;
   background: var(--ink);

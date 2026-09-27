@@ -43,21 +43,36 @@ const BoardLayers = memo(function BoardLayers({
 
   const owners = new Map<string, number>()
   const outlines: ReactElement[] = []
+  let lastPlacedCells: Set<string> | null = null
   for (const playerId of ['1', '2'] as const) {
     for (const piece of game.players[playerId].board.pieces) {
       const [row, col] = piece.topLeft
+      const isLastPlaced = row === lastPlaced?.[0] && col === lastPlaced[1]
+      if (isLastPlaced) lastPlacedCells = new Set()
       for (let r = row; r < row + piece.height; r++) {
         for (let c = col; c < col + piece.width; c++) {
           owners.set(cellKey(r, c), piece.owner)
+          if (isLastPlaced) lastPlacedCells!.add(cellKey(r, c))
         }
       }
       outlines.push(
         <div
           key={`${playerId}-${cellKey(row, col)}`}
-          className={row === lastPlaced?.[0] && col === lastPlaced[1] ? 'piece-outline last' : 'piece-outline'}
+          className={isLastPlaced ? 'piece-outline last' : 'piece-outline'}
           style={gridBox(row, col, piece.width, piece.height)}
         />,
       )
+    }
+  }
+
+  // The most recent placement briefly rings whichever prize cell(s) it just captured,
+  // mirroring the Pygame renderer's last-move prize highlight - a diamond marker alone
+  // isn't enough of a signal for a capture that just happened.
+  const prizeCaptureRing = new Set<string>()
+  if (prize.enabled && lastPlacedCells) {
+    for (const [r, c] of prize.cells) {
+      const key = cellKey(r, c)
+      if (lastPlacedCells.has(key)) prizeCaptureRing.add(key)
     }
   }
 
@@ -95,6 +110,7 @@ const BoardLayers = memo(function BoardLayers({
       // A capture is permanent once a piece covers the cell - the marker doesn't outlive it.
       const special = owner ? undefined : specialCells.get(key)
       if (special) classes.push(special)
+      if (prizeCaptureRing.has(key)) classes.push('prize-ring')
       if (coverableSet.has(key)) classes.push('coverable')
       const start = startCells.get(key)
       if (start) classes.push(`start-p${start}`)

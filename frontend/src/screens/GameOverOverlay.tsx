@@ -2,10 +2,8 @@ import type { GameWireState } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
-const ROWS = [
-  ['Territory', 'totalArea'],
-  ['Final score', 'totalScore'],
-] as const
+const SCORE_ROWS = [['Territory', 'totalArea']] as const
+const FINAL_ROW = ['Final score', 'totalScore'] as const
 
 function nameOf(game: GameWireState, id: number) {
   return noBreak(game.players[String(id) as '1' | '2'].name)
@@ -53,13 +51,25 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
           </tr>
         </thead>
         <tbody>
-          {ROWS.map(([label, key]) => (
-            <tr key={key} className={key === 'totalScore' ? 'total' : undefined}>
+          {SCORE_ROWS.map(([label, key]) => (
+            <tr key={key}>
               <th scope="row">{label}</th>
               <td>{game.players['1'].score[key]}</td>
               <td>{game.players['2'].score[key]}</td>
             </tr>
           ))}
+          {game.houseRules.prize.enabled && (
+            <tr>
+              <th scope="row">Prize</th>
+              <td>{game.players['1'].houseRules.prize.captured * game.houseRules.prize.points}</td>
+              <td>{game.players['2'].houseRules.prize.captured * game.houseRules.prize.points}</td>
+            </tr>
+          )}
+          <tr className="total">
+            <th scope="row">{FINAL_ROW[0]}</th>
+            <td>{game.players['1'].score[FINAL_ROW[1]]}</td>
+            <td>{game.players['2'].score[FINAL_ROW[1]]}</td>
+          </tr>
         </tbody>
       </table>
       <div className="actions">

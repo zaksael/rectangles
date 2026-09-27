@@ -385,6 +385,22 @@ test('game over shows a per-player territory and final-score breakdown', () => {
   expect(within(table).queryByRole('row', { name: /Prize/ })).not.toBeInTheDocument()
 })
 
+test('game over shows a Prize breakdown row, in points, when Prize is enabled', () => {
+  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  game.houseRules.prize = { enabled: true, cells: [], points: 5 }
+  game.players['1'].houseRules.prize.captured = 2
+  game.players['2'].houseRules.prize.captured = 1
+  renderScreen({ game, series: null })
+
+  const table = within(screen.getByRole('dialog')).getByRole('table')
+  const row = within(table).getByRole('row', { name: /Prize/ })
+  expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
+    'Prize',
+    '10',
+    '5',
+  ])
+})
+
 test('Surrender opens a confirm dialog naming the opponent as winner, without sending anything', () => {
   const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
