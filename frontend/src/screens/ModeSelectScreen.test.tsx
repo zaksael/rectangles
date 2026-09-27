@@ -44,6 +44,7 @@ test('Start Game with default settings passes the documented first-launch connec
     botSeats: 2,
     botDifficulty: 'Greedy',
     wallsEnabled: true,
+    obstaclesEnabled: true,
   })
 })
 
@@ -52,8 +53,9 @@ test('only house rules with implemented UI are shown', () => {
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
-  expect(screen.getAllByRole('checkbox')).toHaveLength(1)
+  expect(screen.getAllByRole('checkbox')).toHaveLength(2)
   expect(screen.getByRole('checkbox', { name: 'Walls' })).toBeInTheDocument()
+  expect(screen.getByRole('checkbox', { name: 'Obstacles' })).toBeInTheDocument()
 })
 
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {

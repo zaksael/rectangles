@@ -36,7 +36,7 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     label: 'Board setup',
     rules: [
       { key: 'wallsEnabled', label: 'Walls', implemented: true },
-      { key: 'obstaclesEnabled', label: 'Obstacles', implemented: false },
+      { key: 'obstaclesEnabled', label: 'Obstacles', implemented: true },
       {
         key: 'selfEnclosedPenaltyEnabled',
         label: 'Enclosure penalty',
