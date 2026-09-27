@@ -417,6 +417,22 @@ test('game over shows a Pitfall breakdown row, as a negative deduction, when Pit
   ])
 })
 
+test('game over shows a Steal breakdown row, as each player\'s net swing, when Steal is enabled', () => {
+  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  game.houseRules.steal = { enabled: true, cells: [], points: 10 }
+  game.players['1'].houseRules.steal.captured = 2
+  game.players['2'].houseRules.steal.captured = 1
+  renderScreen({ game, series: null })
+
+  const table = within(screen.getByRole('dialog')).getByRole('table')
+  const row = within(table).getByRole('row', { name: /Steal/ })
+  expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
+    'Steal',
+    '10',
+    '−10',
+  ])
+})
+
 test('Surrender opens a confirm dialog naming the opponent as winner, without sending anything', () => {
   const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 

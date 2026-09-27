@@ -47,6 +47,7 @@ test('Start Game with default settings passes the documented first-launch connec
     obstaclesEnabled: true,
     prizeEnabled: true,
     pitfallEnabled: true,
+    stealEnabled: true,
   })
 })
 
@@ -55,11 +56,12 @@ test('only house rules with implemented UI are shown', () => {
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
-  expect(screen.getAllByRole('checkbox')).toHaveLength(4)
+  expect(screen.getAllByRole('checkbox')).toHaveLength(5)
   expect(screen.getByRole('checkbox', { name: 'Walls' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Obstacles' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Prize' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Pitfall' })).toBeInTheDocument()
+  expect(screen.getByRole('checkbox', { name: 'Steal' })).toBeInTheDocument()
 })
 
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {

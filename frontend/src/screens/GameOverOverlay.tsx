@@ -10,6 +10,12 @@ function deduction(player: PlayerState, points: number): string | number {
   return total > 0 ? `−${total}` : 0
 }
 
+// Steal is zero-sum: each capture adds to the capturer and docks the opponent by the
+// same amount, so a player's net is their own captures minus the opponent's, in points.
+function stealNet(player: PlayerState, opponent: PlayerState, points: number): number {
+  return (player.houseRules.steal.captured - opponent.houseRules.steal.captured) * points
+}
+
 function nameOf(game: GameWireState, id: number) {
   return noBreak(game.players[String(id) as '1' | '2'].name)
 }
@@ -75,6 +81,20 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
               <th scope="row">Pitfall</th>
               <td className="negative">{deduction(game.players['1'], game.houseRules.pitfall.points)}</td>
               <td className="negative">{deduction(game.players['2'], game.houseRules.pitfall.points)}</td>
+            </tr>
+          )}
+          {game.houseRules.steal.enabled && (
+            <tr>
+              <th scope="row">Steal</th>
+              {(['1', '2'] as const).map((id) => {
+                const opponent = id === '1' ? '2' : '1'
+                const net = stealNet(game.players[id], game.players[opponent], game.houseRules.steal.points)
+                return (
+                  <td key={id} className={net < 0 ? 'negative' : undefined}>
+                    {net < 0 ? `−${-net}` : net}
+                  </td>
+                )
+              })}
             </tr>
           )}
           <tr className="total">

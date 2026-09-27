@@ -29,7 +29,7 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     rules: [
       { key: 'prizeEnabled', label: 'Prize', implemented: true },
       { key: 'pitfallEnabled', label: 'Pitfall', implemented: true },
-      { key: 'stealEnabled', label: 'Steal', implemented: false },
+      { key: 'stealEnabled', label: 'Steal', implemented: true },
     ],
   },
   {
