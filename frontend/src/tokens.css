@@ -17,11 +17,7 @@
   --p1: #2E6F95;
   --p2: #C9622B;
 
-  /* Special cells (must read distinct from --p1/--p2 and each other
-     under deuteranopia/protanopia) */
-  --prize: #E8C440;
   --pitfall: #A23B3B;
-  --steal: #6B4E8E;
   --obstacle: #6E6A5D;
 
   /* Skip button only; destructive actions use --pitfall */

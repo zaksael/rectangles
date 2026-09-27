@@ -54,32 +54,55 @@
   --start-color: var(--p2);
 }
 
+/* Prize/Pitfall/Steal read as +/-/+- (score up, score down, one player's
+   loss is the other's gain), solid ink, no per-rule color. Steal needs two
+   marks in one cell, so it uses both ::before (the mini plus) and ::after
+   (the minus bar) - Prize and Pitfall only need ::after. */
 .board-cell.prize::after,
 .board-cell.pitfall::after,
+.board-cell.steal::before,
 .board-cell.steal::after {
   content: '';
   position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 46%;
-  height: 46%;
-  transform: rotate(45deg);
-  z-index: 2;
+  background: var(--ink);
 }
 
 .board-cell.prize::after {
-  background: var(--prize);
-  border: 1.5px solid var(--ink);
+  inset: 0;
+  margin: auto;
+  width: 52%;
+  height: 52%;
+  clip-path: polygon(
+    38% 0%, 62% 0%, 62% 38%, 100% 38%, 100% 62%, 62% 62%,
+    62% 100%, 38% 100%, 38% 62%, 0% 62%, 0% 38%, 38% 38%
+  );
 }
 
 .board-cell.pitfall::after {
-  background: var(--pitfall);
-  border: 1.5px solid var(--ink);
+  inset: 0;
+  margin: auto;
+  width: 60%;
+  height: 22%;
+}
+
+.board-cell.steal::before {
+  left: 50%;
+  top: 16%;
+  width: 34%;
+  height: 34%;
+  transform: translateX(-50%);
+  clip-path: polygon(
+    30% 0%, 70% 0%, 70% 30%, 100% 30%, 100% 70%, 70% 70%,
+    70% 100%, 30% 100%, 30% 70%, 0% 70%, 0% 30%, 30% 30%
+  );
 }
 
 .board-cell.steal::after {
-  background: var(--steal);
-  border: 1.5px solid var(--ink);
+  left: 50%;
+  bottom: 16%;
+  width: 40%;
+  height: 13%;
+  transform: translateX(-50%);
 }
 
 .wall {
