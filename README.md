@@ -67,9 +67,10 @@ are kept clear of both starting corners and spread apart from each other,
 so they never cluster together. Whichever player's
 placed piece happens to cover a prize captures it immediately, earning a
 fixed bonus of 10 points added on top of their area. A single large piece can capture more
-than one prize at once if it covers them both. A gold ring marks whichever
-prize cell(s) your most recent placement captured, so a capture doesn't go
-unnoticed.
+than one prize at once if it covers them both. Shown on the board as a green
+plus mark, which disappears once a piece covers it; a green ring around
+whichever prize cell(s) your most recent placement captured makes sure a
+capture doesn't go unnoticed.
 
 ## Walls
 
@@ -104,7 +105,7 @@ Walls' lines, Obstacles), so they never overlap. Covering a pitfall docks the
 capturer 10 points off their own score — the mirror image of Prize's
 bonus, with no effect on the opponent. Scores aren't floored at 0, so
 triggering enough pitfalls can push a player negative. Shown on the board as a
-red X, which disappears once a piece covers it, and the live panel shows the
+red bar, which disappears once a piece covers it, and the live panel shows the
 count separately from your score (e.g. "Pitfall 1") so it's never silently baked
 into the total.
 
@@ -117,8 +118,8 @@ Obstacles, Pitfall's cells), so they never overlap. Covering a steal cell is a
 zero-sum transfer: you gain 10 points *and* your opponent loses 10, a 20-point
 swing in the score gap for a single cell — higher stakes than Prize's pure
 gain or Pitfall's pure loss. Scores aren't floored at 0, so being on the wrong
-end of enough steals can push you negative. Shown on the board as a hollow
-purple diamond, which disappears once a piece covers it; the live panel shows
+end of enough steals can push you negative. Shown on the board as an amber
+plus-over-minus mark, which disappears once a piece covers it; the live panel shows
 the running swing on both players' rows (e.g. "Steal +10" for the capturer,
 "Steal -10" for the opponent) so it's never silently baked into the total.
 
