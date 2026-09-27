@@ -175,10 +175,6 @@
   height: var(--control-height);
   padding: 0 16px;
 }
-/* The disabled style adds a 1px border; Roll carries an ink one always so its width never changes. */
-.toolbar-actions .btn.primary {
-  border: 1px solid var(--ink);
-}
 /* Surrender is rare and irreversible, so it stays quiet until hovered or focused. */
 .toolbar-actions .btn.quiet {
   border-color: transparent;

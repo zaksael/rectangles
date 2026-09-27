@@ -20,9 +20,6 @@
   --pitfall: #A23B3B;
   --obstacle: #6E6A5D;
 
-  /* Skip button only; destructive actions use --pitfall */
-  --danger: #9B2FAE;
-
   /* Illegal-placement preview outline and hatch. Legal previews and the
      legal-cell highlight use the mover's colour (--mover) instead. */
   --preview-illegal: #DC4646;
@@ -81,11 +78,12 @@ button:focus,
 }
 
 .btn.primary {
-  color: var(--ledger);
-  background: var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
 }
 .btn.primary:hover {
-  background: color-mix(in srgb, var(--ink) 85%, black);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .btn.secondary {
@@ -104,16 +102,6 @@ button:focus,
 }
 .btn.destructive:hover {
   background: color-mix(in srgb, var(--pitfall) 85%, black);
-}
-
-.btn.danger-outline {
-  background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-}
-.btn.danger-outline:hover {
-  background: var(--danger);
-  color: var(--ledger);
 }
 
 .btn:disabled,

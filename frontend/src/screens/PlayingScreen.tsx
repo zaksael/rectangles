@@ -186,7 +186,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r" disabled={isBotTurn || turnState !== 'choosingPlacement'}>
             Rotate <kbd aria-hidden="true">R</kbd>
           </button>
-          <button className="btn danger-outline" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s" disabled={isBotTurn || turnState !== 'skipped'}>
+          <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s" disabled={isBotTurn || turnState !== 'skipped'}>
             Skip <kbd aria-hidden="true">S</kbd>
           </button>
         </div>
