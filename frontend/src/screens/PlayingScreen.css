@@ -376,6 +376,21 @@ dialog.surrender-confirm {
   font-weight: 500;
 }
 
+dialog.reset-confirm {
+  width: 400px;
+  padding: 24px;
+}
+.reset-confirm h2 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.reset-confirm p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+  margin: 0 0 24px;
+}
+
 dialog.settings {
   width: 600px;
   padding: 0;

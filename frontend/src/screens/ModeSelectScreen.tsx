@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
 import { implementedGroups, implementedHouseRules, type HouseRules } from '../houseRules'
+import { ResetConfirmDialog } from './ResetConfirmDialog'
 import './ModeSelectScreen.css'
 
 type Opponent = 'bot' | 'local2p' | null
@@ -115,6 +116,7 @@ interface ModeSelectScreenProps {
 
 export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: ModeSelectScreenProps) {
   const [settings, setSettings] = useState<ModeSelectSettings>(loadSettings)
+  const [confirmingReset, setConfirmingReset] = useState(false)
 
   function updateHouseRule(key: keyof HouseRules, value: boolean): void {
     setSettings((s) => ({ ...s, houseRules: { ...s.houseRules, [key]: value } }))
@@ -196,16 +198,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           <div className="config-section">
             <div className="section-label-row">
               <span className="section-label">Match setup</span>
-              <button
-                type="button"
-                className="reset-link"
-                onClick={() => {
-                  if (!window.confirm('Reset all settings to defaults?')) {
-                    return
-                  }
-                  setSettings((s) => ({ ...DEFAULT_SETTINGS, opponent: s.opponent }))
-                }}
-              >
+              <button type="button" className="reset-link" onClick={() => setConfirmingReset(true)}>
                 Reset to defaults
               </button>
             </div>
@@ -305,6 +298,15 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
         <div className="start-error" aria-live="polite">
           Couldn’t connect — your settings are unchanged, try again
         </div>
+      )}
+      {confirmingReset && (
+        <ResetConfirmDialog
+          onCancel={() => setConfirmingReset(false)}
+          onConfirm={() => {
+            setSettings((s) => ({ ...DEFAULT_SETTINGS, opponent: s.opponent }))
+            setConfirmingReset(false)
+          }}
+        />
       )}
     </div>
   )

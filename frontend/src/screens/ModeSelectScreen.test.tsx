@@ -158,8 +158,16 @@ test('while connectFailed, shows an inline retry message and Start Game stays en
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 })
 
-test('Reset to defaults asks for confirmation, then restores match setup but keeps the chosen opponent', () => {
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
+test('Reset to defaults opens a confirm dialog', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+
+  expect(screen.getByRole('heading', { name: 'Reset to defaults?' })).toBeInTheDocument()
+})
+
+test('confirming the reset dialog restores match setup but keeps the chosen opponent', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
@@ -167,21 +175,23 @@ test('Reset to defaults asks for confirmation, then restores match setup but kee
   fireEvent.click(screen.getByRole('radio', { name: 'Blocking' }))
 
   fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 
-  expect(window.confirm).toHaveBeenCalled()
+  expect(screen.queryByRole('heading', { name: 'Reset to defaults?' })).not.toBeInTheDocument()
   expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: '19×19' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: 'Greedy' })).toHaveAttribute('aria-checked', 'true')
 })
 
-test('declining the Reset to defaults confirmation leaves settings untouched', () => {
-  vi.spyOn(window, 'confirm').mockReturnValue(false)
+test('cancelling the reset dialog leaves settings untouched', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
 
   fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
+  expect(screen.queryByRole('heading', { name: 'Reset to defaults?' })).not.toBeInTheDocument()
   expect(screen.getByRole('radio', { name: '23×23' })).toHaveAttribute('aria-checked', 'true')
 })

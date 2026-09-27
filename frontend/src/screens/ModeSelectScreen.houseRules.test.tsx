@@ -42,11 +42,11 @@ test('Start Game sends only implemented house rules, and toggling one flips it',
 })
 
 test('Reset to defaults restores an implemented house rule', () => {
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
   renderWithBot()
 
   fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
   fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 
   expect(screen.getByRole('checkbox', { name: 'Pitfall' })).toHaveAttribute('aria-checked', 'true')
 })
