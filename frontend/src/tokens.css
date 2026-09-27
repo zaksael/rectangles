@@ -17,7 +17,7 @@
   --p1: #2E6F95;
   --p2: #C9622B;
 
-  --pitfall: #A23B3B;
+  --danger: #A23B3B; /* destructive buttons, warning/error text */
   --obstacle: #6E6A5D;
 
   /* Illegal-placement preview outline and hatch. Legal previews and the
@@ -96,12 +96,12 @@ button:focus,
 }
 
 .btn.destructive {
-  background: var(--pitfall);
+  background: var(--danger);
   color: var(--ledger);
-  border: 1px solid var(--pitfall);
+  border: 1px solid var(--danger);
 }
 .btn.destructive:hover {
-  background: color-mix(in srgb, var(--pitfall) 85%, black);
+  background: color-mix(in srgb, var(--danger) 85%, black);
 }
 
 .btn:disabled,

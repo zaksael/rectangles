@@ -361,7 +361,7 @@ dialog.connection-lost {
   padding: 24px;
 }
 dialog.connection-lost .reason {
-  color: color-mix(in srgb, var(--pitfall) 85%, var(--ink));
+  color: color-mix(in srgb, var(--danger) 85%, var(--ink));
   margin-bottom: 8px;
 }
 .connection-lost h2 {
