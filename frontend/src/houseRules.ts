@@ -48,7 +48,7 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     label: 'Dice & turn',
     rules: [
       { key: 'wildcardEnabled', label: 'Wildcard roll', implemented: false },
-      { key: 'rerollEnabled', label: 'Reroll', implemented: false },
+      { key: 'rerollEnabled', label: 'Reroll', implemented: true },
       { key: 'comebackNudgeEnabled', label: 'Comeback', implemented: false },
     ],
   },

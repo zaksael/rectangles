@@ -70,6 +70,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const rotateRef = useRef(rotate)
   rotateRef.current = rotate
 
+  const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false
+  const canReroll = state?.game.houseRules.reroll.canReroll ?? false
+  const rerollUsable = canReroll && (humanTurnState === 'choosingPlacement' || humanTurnState === 'skipped')
+
   const lastPlaced = useLastPlaced(state?.game)
 
   // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
@@ -93,8 +97,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       if (reason) turnStatus += ` — ${reason}`
       else if (previewKind !== 'legal') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
     }
-    else if (turnState === 'skipped') turnStatus = `${currentName}: no legal move, skip`
+    else if (turnState === 'skipped') {
+      turnStatus = canReroll ? `${currentName}: no legal move — skip, or reroll` : `${currentName}: no legal move, skip`
+    }
   }
+
+  const hint = (humanTurnState && KEY_HINT[humanTurnState]) ?? ' '
+  const boardHint = rerollUsable ? `${hint.replace(/\.$/, '')}, E rerolls` : hint
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -105,11 +114,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         rotateRef.current()
       } else if (event.key === 's' && humanTurnState === 'skipped') {
         sendActionRef.current({ type: 'skip' })
+      } else if (event.key === 'e' && rerollUsable) {
+        sendActionRef.current({ type: 'reroll' })
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [humanTurnState])
+  }, [humanTurnState, rerollUsable])
 
   return (
     <div className="frame">
@@ -130,6 +141,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 <span className="scoreline">
                   <span className="streak">
                     {state.game.players[id].board.consecutiveSkips}/{state.game.board.skipLimit} skips
+                    {rerollEnabled &&
+                      `, ${state.game.players[id].houseRules.reroll.limit - state.game.players[id].houseRules.reroll.used}/${state.game.players[id].houseRules.reroll.limit} rerolls`}
                   </span>
                   <span className="score">{state.game.players[id].score.totalScore}</span>
                 </span>
@@ -160,7 +173,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             />
             {/* Always rendered (blank when no key applies) so the board doesn't shift vertically. */}
             <p id="board-help" className="board-help">
-              {(humanTurnState && KEY_HINT[humanTurnState]) ?? '\u00A0'}
+              {boardHint}
             </p>
           </div>
         </>
@@ -189,6 +202,11 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s" disabled={isBotTurn || turnState !== 'skipped'}>
             Skip <kbd aria-hidden="true">S</kbd>
           </button>
+          {rerollEnabled && (
+            <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e" disabled={!rerollUsable}>
+              Reroll <kbd aria-hidden="true">E</kbd>
+            </button>
+          )}
         </div>
         {state && shownRoll && (
           <div

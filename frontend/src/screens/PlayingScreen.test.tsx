@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
 import type { GameError, GameState } from '../useGameSocket'
@@ -941,4 +941,111 @@ test('the error toast hangs from the sticky header, so it follows the header hei
 
   const toast = screen.getByText(/can’t go there/)
   expect(toast.closest('.header')).toBeInTheDocument()
+})
+
+const rerollState = (canReroll: boolean, turnState: 'choosingPlacement' | 'skipped' = 'choosingPlacement') => {
+  const state = makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
+  state.game.houseRules.reroll = { enabled: true, canReroll }
+  return state
+}
+
+test('there is no Reroll button when the house rule is off', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  expect(screen.queryByRole('button', { name: 'Reroll' })).not.toBeInTheDocument()
+})
+
+test('shows an enabled Reroll button with charges remaining, which sends the reroll action', () => {
+  const sendAction = renderScreen(rerollState(true))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reroll' }))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
+})
+
+test('disables Reroll once charges are exhausted', () => {
+  renderScreen(rerollState(false))
+
+  expect(screen.getByRole('button', { name: 'Reroll' })).toBeDisabled()
+})
+
+test('Reroll stays enabled alongside a forced Skip', () => {
+  renderScreen(rerollState(true, 'skipped'))
+
+  expect(screen.getByRole('button', { name: 'Reroll' })).toBeEnabled()
+})
+
+test("on the bot's turn the Reroll button is disabled", () => {
+  renderScreen(rerollState(true), vi.fn(), null, vi.fn(), 1)
+
+  expect(screen.getByRole('button', { name: 'Reroll' })).toBeDisabled()
+})
+
+test('Reroll shows its key, without changing its accessible name', () => {
+  renderScreen(rerollState(true))
+
+  const button = screen.getByRole('button', { name: 'Reroll' })
+  expect(button).toHaveAttribute('aria-keyshortcuts', 'e')
+  expect(button.querySelector('kbd')).toHaveTextContent('E')
+})
+
+test('pressing e rerolls when charges remain', () => {
+  const sendAction = renderScreen(rerollState(true))
+
+  fireEvent.keyDown(window, { key: 'e' })
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
+})
+
+test('pressing e does nothing once charges are exhausted', () => {
+  const sendAction = renderScreen(rerollState(false))
+
+  fireEvent.keyDown(window, { key: 'e' })
+
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test("appends each player's reroll charges to their skip streak, comma-joined", () => {
+  const state = rerollState(true)
+  state.game.players['1'].houseRules.reroll = { used: 1, limit: 3 }
+  state.game.players['2'].houseRules.reroll = { used: 2, limit: 2 }
+  renderScreen(state)
+
+  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
+  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
+  expect(within(p1).getByText('0/5 skips, 2/3 rerolls')).toHaveClass('streak')
+  expect(within(p2).getByText('0/5 skips, 0/2 rerolls')).toHaveClass('streak')
+})
+
+test('the skip streak has no reroll count when the house rule is off', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  expect(screen.getAllByText('0/5 skips')).toHaveLength(2)
+})
+
+test('the key hint names the reroll key, comma-joined, while placing and while skipping', () => {
+  renderScreen(rerollState(true))
+  expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it, E rerolls')).toBeInTheDocument()
+
+  cleanup()
+  renderScreen(rerollState(true, 'skipped'))
+  expect(screen.getByText('S skips this turn, E rerolls')).toBeInTheDocument()
+})
+
+test('the key hint omits the reroll key once charges are exhausted', () => {
+  renderScreen(rerollState(false))
+
+  expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it.')).toBeInTheDocument()
+})
+
+test('the turn status line offers reroll as an alternative to a forced skip', () => {
+  renderScreen(rerollState(true, 'skipped'))
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move — skip, or reroll')
+})
+
+test('the turn status line skips the reroll mention once charges are exhausted', () => {
+  renderScreen(rerollState(false, 'skipped'))
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
 })
