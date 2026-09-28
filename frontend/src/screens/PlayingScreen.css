@@ -37,7 +37,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 24px 12px;
+  padding: 10px 24px 8px;
   border-bottom: 4px solid transparent;
 }
 /* dot+name always sit at the block's outer corner (the screen edge); the scoreline sits at its
@@ -71,7 +71,7 @@
 
 .turn-status {
   grid-column: 1 / -1;
-  padding: 8px 24px;
+  padding: 5px 24px;
   border-top: 1px solid var(--line);
   text-align: center;
   font-size: 14px;
