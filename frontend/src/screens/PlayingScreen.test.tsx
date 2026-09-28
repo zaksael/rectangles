@@ -880,13 +880,11 @@ test('the key hint names the skip key on a dead roll', () => {
   expect(screen.getByText('S skips this turn')).toBeInTheDocument()
 })
 
-test('Roll, Rotate and Skip show their keys, without changing their accessible names', () => {
+test('Roll, Rotate and Skip expose their keyboard shortcut to assistive tech', () => {
   renderScreen(keyboardState())
 
-  for (const [name, key] of [['Roll', 'D'], ['Rotate', 'R'], ['Skip', 'S']]) {
-    const button = screen.getByRole('button', { name })
-    expect(button).toHaveAttribute('aria-keyshortcuts', key.toLowerCase())
-    expect(button.querySelector('kbd')).toHaveTextContent(key)
+  for (const [name, key] of [['Roll', 'd'], ['Rotate', 'r'], ['Skip', 's']]) {
+    expect(screen.getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', key)
   }
 })
 
@@ -981,12 +979,10 @@ test("on the bot's turn the Reroll button is disabled", () => {
   expect(screen.getByRole('button', { name: 'Reroll' })).toBeDisabled()
 })
 
-test('Reroll shows its key, without changing its accessible name', () => {
+test('Reroll exposes its keyboard shortcut to assistive tech', () => {
   renderScreen(rerollState(true))
 
-  const button = screen.getByRole('button', { name: 'Reroll' })
-  expect(button).toHaveAttribute('aria-keyshortcuts', 'e')
-  expect(button.querySelector('kbd')).toHaveTextContent('E')
+  expect(screen.getByRole('button', { name: 'Reroll' })).toHaveAttribute('aria-keyshortcuts', 'e')
 })
 
 test('pressing e rerolls when charges remain', () => {

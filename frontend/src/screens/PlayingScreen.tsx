@@ -194,17 +194,17 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       <div className="toolbar-actions">
         <div className="toolbar-leading">
           <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d" disabled={isBotTurn || turnState !== 'awaitingRoll'}>
-            Roll <kbd aria-hidden="true">D</kbd>
+            Roll
           </button>
           <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r" disabled={isBotTurn || turnState !== 'choosingPlacement'}>
-            Rotate <kbd aria-hidden="true">R</kbd>
+            Rotate
           </button>
           <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s" disabled={isBotTurn || turnState !== 'skipped'}>
-            Skip <kbd aria-hidden="true">S</kbd>
+            Skip
           </button>
           {rerollEnabled && (
             <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e" disabled={!rerollUsable}>
-              Reroll <kbd aria-hidden="true">E</kbd>
+              Reroll
             </button>
           )}
         </div>
