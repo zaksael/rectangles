@@ -195,6 +195,11 @@
   color: color-mix(in srgb, var(--ink) 67%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
+/* Same specificity as .quiet's border-color: transparent (both 3 classes); reasserts it so
+   Surrender doesn't pick up the generic disabled-outline look while it's the bot's turn. */
+.toolbar-actions .btn.quiet:disabled {
+  border-color: transparent;
+}
 .dice-label {
   left: 100%;
   margin-left: 6px;
