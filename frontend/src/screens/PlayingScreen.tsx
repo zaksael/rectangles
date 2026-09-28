@@ -22,9 +22,9 @@ const ERROR_TOAST_MS = 4000
 
 // The key that applies in each of the human's turn states; other states show a blank line.
 const KEY_HINT: Partial<Record<string, string>> = {
-  awaitingRoll: 'D rolls the dice.',
-  choosingPlacement: 'Arrow keys move the piece, Enter places it, R rotates it.',
-  skipped: 'S skips this turn.',
+  awaitingRoll: 'D rolls the dice',
+  choosingPlacement: 'Arrow keys move the piece, Enter places it, R rotates it',
+  skipped: 'S skips this turn',
 }
 
 const ERROR_TEXT: Record<ErrorReason, string> = {
@@ -103,7 +103,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }
 
   const hint = (humanTurnState && KEY_HINT[humanTurnState]) ?? ' '
-  const boardHint = rerollUsable ? `${hint.replace(/\.$/, '')}, E rerolls` : hint
+  const boardHint = rerollUsable ? `${hint}, E rerolls` : hint
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
