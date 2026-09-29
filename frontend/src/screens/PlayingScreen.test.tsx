@@ -877,6 +877,12 @@ test('choosing a wildcard shows the fixed die and a pill for each value 1-6, in 
   expect(screen.queryByRole('img', { name: /rolled/i })).not.toBeInTheDocument()
 })
 
+test('the fixed die is exposed by name so a screen reader hears the number the pills pair with', () => {
+  renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 2, 3] }))
+
+  expect(screen.getByRole('img', { name: 'Fixed die 4' })).toBeInTheDocument()
+})
+
 test('values with no legal placement are disabled, not removed', () => {
   renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 3, 4, 6] }))
 
@@ -1115,4 +1121,13 @@ test('a Comeback charge makes Reroll usable even when the Reroll rule itself is 
   fireEvent.click(screen.getByRole('button', { name: 'Reroll' }))
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
+})
+
+test('player names in the status line and the Comeback notice never wrap mid-name', () => {
+  const { before, after } = comebackStates()
+  const update = renderPlaying(before)
+  update(after)
+
+  expect(screen.getByTestId('turn-status').textContent).toContain('Player 1')
+  expect(screen.getByText(/Comeback!/).textContent).toContain('Player 2')
 })

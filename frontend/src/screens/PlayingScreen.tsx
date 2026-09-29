@@ -6,6 +6,7 @@ import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placement
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
+import { noBreak } from '../noBreak'
 import './PlayingScreen.css'
 
 interface PlayingScreenProps {
@@ -58,7 +59,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     const before = grantedRef.current ?? now
     grantedRef.current = now
     const newly = (['1', '2'] as const).find((id) => now[id] && !before[id])
-    if (newly) setComebackNotice(`Comeback! ${state.game.players[newly].name} gets +1 reroll`)
+    if (newly) setComebackNotice(`Comeback! ${noBreak(state.game.players[newly].name)} gets +1 reroll`)
   }, [state])
 
   useEffect(() => {
@@ -114,14 +115,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     </div>
   )
   const fixedDie = pickIndex !== null && roll && (
-    <span key="die" className="die" data-testid="wildcard-fixed-die">
+    <span key="die" className="die" data-testid="wildcard-fixed-die" role="img" aria-label={`Fixed die ${roll[1 - pickIndex]}`}>
       {roll[1 - pickIndex]}
     </span>
   )
   if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
   const shownRoll = lastRollRef.current
 
-  const currentName = state?.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name
+  const currentName = state && noBreak(state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name)
   let turnStatus: string | null = null
   if (currentName && turnState !== 'gameOver') {
     if (isBotTurn) turnStatus = `${currentName} is playing…`
