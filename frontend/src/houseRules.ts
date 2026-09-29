@@ -49,7 +49,7 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     rules: [
       { key: 'wildcardEnabled', label: 'Wildcard roll', implemented: true },
       { key: 'rerollEnabled', label: 'Reroll', implemented: true },
-      { key: 'comebackNudgeEnabled', label: 'Comeback', implemented: false },
+      { key: 'comebackNudgeEnabled', label: 'Comeback', implemented: true },
     ],
   },
 ]

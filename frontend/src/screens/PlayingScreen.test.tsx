@@ -1043,3 +1043,76 @@ test('the turn status line skips the reroll mention once charges are exhausted',
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
 })
+
+function comebackStates() {
+  const turn = { currentPlayerId: 1, turnState: 'choosingPlacement' as const, lastRoll: [3, 4] as [number, number], legalPlacements: [] }
+  const before = makeState({ turn })
+  const after = makeState({ turn })
+  after.game.players['2'].houseRules.comebackNudge.granted = true
+  return { before, after }
+}
+
+function renderPlaying(state: GameState) {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const view = render(<PlayingScreen state={state} {...props} />)
+  return (next: GameState) => view.rerender(<PlayingScreen state={next} {...props} />)
+}
+
+test('a Comeback grant shows a one-time notice naming the player', () => {
+  const { before, after } = comebackStates()
+  const update = renderPlaying(before)
+  expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
+
+  update(after)
+
+  expect(screen.getByText('Comeback! Player 2 gets +1 reroll')).toBeInTheDocument()
+})
+
+test('the Comeback notice disappears after a few seconds', () => {
+  vi.useFakeTimers()
+  onTestFinished(() => { vi.useRealTimers() })
+  const { before, after } = comebackStates()
+  const update = renderPlaying(before)
+
+  update(after)
+  act(() => vi.advanceTimersByTime(3900))
+  expect(screen.getByText(/Comeback!/)).toBeInTheDocument()
+
+  act(() => vi.advanceTimersByTime(200))
+  expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
+})
+
+test('a flag that was already granted on mount, or stays granted, shows no notice', () => {
+  vi.useFakeTimers()
+  onTestFinished(() => { vi.useRealTimers() })
+  const { after } = comebackStates()
+  const update = renderPlaying(after)
+  expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
+
+  const { after: later } = comebackStates()
+  update(later)
+  act(() => vi.advanceTimersByTime(5000))
+  expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
+})
+
+test('the Comeback notice sits alongside an error toast rather than replacing it', () => {
+  const { before, after } = comebackStates()
+  const props = { sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const error: GameError = { reason: 'illegalPlacement', message: 'nope' }
+  const view = render(<PlayingScreen state={before} error={error} {...props} />)
+
+  view.rerender(<PlayingScreen state={after} error={error} {...props} />)
+
+  expect(screen.getByText('That piece can’t go there — try another spot.')).toBeInTheDocument()
+  expect(screen.getByText('Comeback! Player 2 gets +1 reroll')).toBeInTheDocument()
+})
+
+test('a Comeback charge makes Reroll usable even when the Reroll rule itself is off', () => {
+  const state = rerollState(true)
+  state.game.houseRules.reroll = { enabled: false, canReroll: true }
+  const sendAction = renderScreen(state)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reroll' }))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
+})

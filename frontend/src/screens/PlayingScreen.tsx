@@ -49,6 +49,24 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     return () => clearTimeout(timer)
   }, [error])
 
+  // The wire only carries the current `granted` flag, so a grant is spotted as false -> true between states.
+  const [comebackNotice, setComebackNotice] = useState<string | null>(null)
+  const grantedRef = useRef<Record<'1' | '2', boolean> | null>(null)
+  useEffect(() => {
+    if (!state) return
+    const now = { '1': state.game.players['1'].houseRules.comebackNudge.granted, '2': state.game.players['2'].houseRules.comebackNudge.granted }
+    const before = grantedRef.current ?? now
+    grantedRef.current = now
+    const newly = (['1', '2'] as const).find((id) => now[id] && !before[id])
+    if (newly) setComebackNotice(`Comeback! ${state.game.players[newly].name} gets +1 reroll`)
+  }, [state])
+
+  useEffect(() => {
+    if (!comebackNotice) return
+    const timer = setTimeout(() => setComebackNotice(null), ERROR_TOAST_MS)
+    return () => clearTimeout(timer)
+  }, [comebackNotice])
+
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
 
@@ -172,6 +190,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             ))}
             <div className="toast-anchor" role="status" aria-live="polite">
               {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
+              {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             {turnStatus && (
               <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">

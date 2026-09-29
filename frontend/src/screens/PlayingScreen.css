@@ -262,8 +262,8 @@
   z-index: 3;
   height: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column; /* an error toast and a Comeback notice stack */
+  align-items: center;
 }
 
 .toast {

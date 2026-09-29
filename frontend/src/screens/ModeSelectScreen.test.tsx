@@ -51,6 +51,7 @@ test('Start Game with default settings passes the documented first-launch connec
     selfEnclosedPenaltyEnabled: true,
     wildcardEnabled: true,
     rerollEnabled: true,
+    comebackNudgeEnabled: true,
   })
 })
 
@@ -59,7 +60,7 @@ test('only house rules with implemented UI are shown', () => {
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
-  expect(screen.getAllByRole('checkbox')).toHaveLength(8)
+  expect(screen.getAllByRole('checkbox')).toHaveLength(9)
   expect(screen.getByRole('checkbox', { name: 'Walls' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Obstacles' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Prize' })).toBeInTheDocument()
@@ -68,6 +69,7 @@ test('only house rules with implemented UI are shown', () => {
   expect(screen.getByRole('checkbox', { name: 'Enclosure penalty' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Wildcard roll' })).toBeInTheDocument()
   expect(screen.getByRole('checkbox', { name: 'Reroll' })).toBeInTheDocument()
+  expect(screen.getByRole('checkbox', { name: 'Comeback' })).toBeInTheDocument()
 })
 
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {
