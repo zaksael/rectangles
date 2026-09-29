@@ -31,7 +31,7 @@ function renderScreen(
 
 test('renders nothing game-specific before the first state broadcast arrives', () => {
   renderScreen(null)
-  expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
   expect(screen.queryByRole('grid')).not.toBeInTheDocument()
 })
 
@@ -91,13 +91,13 @@ test.each([
   }
 })
 
-test('the toolbar reads Roll, Rotate, Skip on the left and Surrender, Settings on the right', () => {
+test('the toolbar reads Roll, Rotate, Skip on the left and Menu on the right', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   const names = within(document.querySelector('.toolbar-actions') as HTMLElement)
     .getAllByRole('button')
     .map((b) => b.firstChild!.textContent!.trim())
-  expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Surrender', 'Settings'])
+  expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Menu'])
 })
 
 test('clicking a legal cell while choosing placement sends the place action', () => {
@@ -449,72 +449,6 @@ test('game over shows an Enclosure breakdown row, as a negative deduction of 1 p
   ])
 })
 
-test('Surrender opens a confirm dialog naming the opponent as winner, without sending anything', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
-
-  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
-
-  const dialog = screen.getByRole('dialog')
-  expect(within(dialog).getByText('Surrender the match?')).toBeInTheDocument()
-  expect(within(dialog).getByText(/Player 2 wins immediately/)).toBeInTheDocument()
-  expect(sendAction).not.toHaveBeenCalled()
-})
-
-test('the Surrender confirm shows both current scores', () => {
-  const state = makeState()
-  state.game.players['1'].score.totalScore = 218
-  state.game.players['2'].score.totalScore = 123
-  const { dialog } = openSurrender(state)
-
-  const rows = [...dialog.querySelectorAll('.scores div')].map((row) => [row.querySelector('dt')!.textContent, row.querySelector('dd')!.textContent])
-  expect(rows).toEqual([['Player\u00a01', '218'], ['Player\u00a02', '123']])
-})
-
-function openSurrender(state = makeState()) {
-  const sendAction = renderScreen(state)
-  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
-  return { sendAction, dialog: screen.getByRole('dialog') }
-}
-
-test('confirming Surrender sends the action and closes the dialog', () => {
-  const { sendAction, dialog } = openSurrender()
-
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Surrender' }))
-
-  expect(sendAction).toHaveBeenCalledWith({ type: 'surrender' })
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-})
-
-test('Cancel closes the Surrender dialog without sending anything', () => {
-  const { sendAction, dialog } = openSurrender()
-
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
-
-  expect(sendAction).not.toHaveBeenCalled()
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-})
-
-test('Escape cancels the Surrender dialog', () => {
-  const { sendAction, dialog } = openSurrender()
-
-  fireEvent(dialog, new Event('cancel', { cancelable: true }))
-
-  expect(sendAction).not.toHaveBeenCalled()
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-})
-
-test('Surrender copy says the round, not the match, mid-series', () => {
-  const { dialog } = openSurrender({ ...makeState(), series: { length: 3 } as GameState['series'] })
-
-  expect(within(dialog).getByText('Surrender this round?')).toBeInTheDocument()
-  expect(within(dialog).getByText(/The series continues to the next round/)).toBeInTheDocument()
-})
-
-test('the Surrender button is gone once the game is over', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
-  expect(screen.queryByRole('button', { name: 'Surrender' })).not.toBeInTheDocument()
-})
-
 test('the game-over dialog offers New Game', () => {
   const onNewGame = vi.fn()
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }), vi.fn(), null, onNewGame)
@@ -582,31 +516,24 @@ test('the turn status line is a polite live region that is re-read whole', () =>
   expect(document.querySelector('.turn-announcer')).not.toBeInTheDocument()
 })
 
-test("on the bot's turn Surrender is disabled, since it would make the bot surrender", () => {
-  renderVsBot(makeState({ turn: botPlacementTurn }))
-  expect(screen.getByRole('button', { name: 'Surrender' })).toBeDisabled()
-})
-
 test('there is no Replay button mid-game; Replay is only reachable from the game-over dialog', () => {
   renderScreen(makeState())
   expect(screen.queryByRole('button', { name: 'Replay' })).not.toBeInTheDocument()
 })
 
 test.each(['awaitingRoll', 'choosingPlacement', 'skipped'] as const)(
-  'Surrender and Settings sit together in the trailing toolbar group while %s',
+  'Menu sits in the trailing toolbar group while %s',
   (turnState) => {
     renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
-    const trailing = screen.getByRole('button', { name: 'Settings' }).parentElement
-    expect(trailing).toHaveClass('toolbar-trailing')
-    expect(within(trailing as HTMLElement).getByRole('button', { name: 'Surrender' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Menu' }).parentElement).toHaveClass('toolbar-trailing')
   },
 )
 
-test('Settings stays in the trailing toolbar group once the game is over', () => {
+test('Menu stays in the trailing toolbar group once the game is over', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }))
 
-  expect(screen.getByRole('button', { name: 'Settings' }).parentElement).toHaveClass('toolbar-trailing')
+  expect(screen.getByRole('button', { name: 'Menu' }).parentElement).toHaveClass('toolbar-trailing')
 })
 
 test('the turn status line tells the current player what to do: roll', () => {
@@ -708,13 +635,6 @@ test('the last roll is marked by a dashed border and a one-line owner label, not
   expect(dice().map((c) => c.borderTopStyle)).toEqual(['dashed', 'dashed'])
   expect([...dice(), getComputedStyle(document.querySelector('.dice .dot')!)].map((c) => c.opacity)).toEqual(['1', '1', '1'])
   expect(getComputedStyle(screen.getByText('P1 last')).whiteSpace).toBe('nowrap')
-})
-
-test('Surrender is underlined, so it reads as an action and not a label', () => {
-  injectPlayingCss()
-  renderScreen(rolledState('awaitingRoll', null))
-
-  expect(getComputedStyle(screen.getByRole('button', { name: 'Surrender' })).textDecorationLine).toBe('underline')
 })
 
 test('shows no dice before the first roll of the game', () => {

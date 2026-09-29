@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
 import { GameOverOverlay } from './GameOverOverlay'
-import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 import type { ErrorReason, GameAction } from '../gameTypes'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
@@ -41,7 +40,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
   const humanTurnState = isBotTurn ? undefined : turnState
   const placing = humanTurnState === 'choosingPlacement'
-  const [confirmingSurrender, setConfirmingSurrender] = useState(false)
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
   useEffect(() => {
@@ -179,18 +177,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         </>
       )}
       {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} onNewGame={onNewGame} />}
-      {state && confirmingSurrender && (
-        <SurrenderConfirmDialog
-          opponentName={state.game.players[state.game.turn.currentPlayerId === 1 ? '2' : '1'].name}
-          scores={(['1', '2'] as const).map((id) => ({ name: state.game.players[id].name, score: state.game.players[id].score.totalScore }))}
-          isSeries={state.series !== null}
-          onCancel={() => setConfirmingSurrender(false)}
-          onConfirm={() => {
-            sendAction({ type: 'surrender' })
-            setConfirmingSurrender(false)
-          }}
-        />
-      )}
       <div className="toolbar-actions">
         <div className="toolbar-leading">
           <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d" disabled={isBotTurn || turnState !== 'awaitingRoll'}>
@@ -224,13 +210,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
         )}
         <div className="toolbar-trailing">
-          {state && turnState !== 'gameOver' && (
-            <button className="btn secondary quiet" onClick={() => setConfirmingSurrender(true)} disabled={isBotTurn}>
-              Surrender
-            </button>
-          )}
           <button className="btn secondary" onClick={onOpenSettings}>
-            Settings
+            Menu
           </button>
         </div>
       </div>

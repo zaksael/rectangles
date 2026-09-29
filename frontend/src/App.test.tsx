@@ -53,7 +53,7 @@ describe('App', () => {
 
     startGameAndOpen()
 
-    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
   })
 
   it('shows an inline retry message when the connection fails, and retrying opens a new socket', () => {
@@ -73,18 +73,18 @@ describe('App', () => {
     expect(FakeWebSocket.instances).toHaveLength(2)
   })
 
-  it('opens the Settings overlay from Playing on Settings, and closes it back to Playing', () => {
+  it('opens the Menu overlay from Playing on Menu, and closes it back to Playing', () => {
     render(<App />)
     startGameAndOpen()
     sendState()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    expect(screen.getByRole('heading', { name: 'Menu' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Resume' }))
-    expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Menu' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
   })
 
   it('shows the connection-lost modal when the socket closes unexpectedly during Playing', () => {
@@ -98,18 +98,18 @@ describe('App', () => {
     expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
   })
 
-  it('dismisses an open Settings overlay once the connection-lost modal appears', () => {
+  it('dismisses an open Menu overlay once the connection-lost modal appears', () => {
     render(<App />)
     startGameAndOpen()
     sendState()
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    expect(screen.getByRole('heading', { name: 'Menu' })).toBeInTheDocument()
 
     act(() => {
       FakeWebSocket.instances.at(-1)!.emit('close')
     })
 
-    expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Menu' })).not.toBeInTheDocument()
     expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
   })
 

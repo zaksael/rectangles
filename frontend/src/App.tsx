@@ -76,6 +76,8 @@ function App() {
             game={gameSocket.state.game}
             series={gameSocket.state.series}
             opponentLabel={connectParams.botSeats ? `Bot (${connectParams.botDifficulty})` : 'Local 2P'}
+            sendAction={gameSocket.sendAction}
+            botSeat={connectParams.botSeats}
             onClose={() => setSettingsOpen(false)}
           />
         )}

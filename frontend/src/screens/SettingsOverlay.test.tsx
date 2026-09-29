@@ -1,20 +1,23 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
+import type { SeriesWireState } from '../gameTypes'
 import { makeGame } from '../testUtils/gameFixtures'
 import { SettingsOverlay } from './SettingsOverlay'
 
 function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {}) {
   const onClose = vi.fn()
+  const sendAction = vi.fn()
   render(
     <SettingsOverlay
       game={makeGame({ board: { size: 19, skipLimit: 3 } })}
       series={null}
       opponentLabel="Bot (Greedy)"
+      sendAction={sendAction}
       onClose={onClose}
       {...props}
     />,
   )
-  return onClose
+  return { onClose, sendAction }
 }
 
 test('shows the match info: opponent, board size and skip limit', () => {
@@ -68,7 +71,7 @@ test('lists every house rule as on or off from the match state, read-only', () =
 })
 
 test('Resume closes the overlay', () => {
-  const onClose = renderOverlay()
+  const { onClose } = renderOverlay()
 
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }))
 
@@ -76,7 +79,7 @@ test('Resume closes the overlay', () => {
 })
 
 test('Escape closes the overlay through the same handler', () => {
-  const onClose = renderOverlay()
+  const { onClose } = renderOverlay()
 
   fireEvent(screen.getByRole('dialog', { hidden: true }), new Event('cancel', { cancelable: true }))
 
@@ -85,7 +88,7 @@ test('Escape closes the overlay through the same handler', () => {
 
 test('summarises the house rules: none enabled, or how many are on', () => {
   const base = makeGame()
-  const { unmount } = render(<SettingsOverlay game={base} series={null} opponentLabel="Bot" onClose={vi.fn()} />)
+  const { unmount } = render(<SettingsOverlay game={base} series={null} opponentLabel="Bot" sendAction={vi.fn()} onClose={vi.fn()} />)
   expect(screen.getByText('No house rules in this match')).toBeInTheDocument()
   expect(screen.queryByRole('list')).not.toBeInTheDocument()
   unmount()
@@ -100,4 +103,55 @@ test('summarises the house rules: none enabled, or how many are on', () => {
     }),
   })
   expect(screen.getByText('2 house rules on')).toBeInTheDocument()
+})
+
+test('Surrender opens a confirm dialog naming the opponent as winner, without sending anything', () => {
+  const { sendAction } = renderOverlay()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+
+  const dialog = screen.getByRole('dialog', { name: /Surrender the match/ })
+  expect(within(dialog).getByText(/Player 2 wins immediately/)).toBeInTheDocument()
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+function openSurrender(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {}) {
+  const { sendAction, onClose } = renderOverlay(props)
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+  return { sendAction, onClose, dialog: screen.getByRole('dialog', { name: /Surrender/ }) }
+}
+
+test('confirming Surrender sends the action and closes both dialogs', () => {
+  const { sendAction, onClose, dialog } = openSurrender()
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Surrender' }))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'surrender' })
+  expect(onClose).toHaveBeenCalledTimes(1)
+})
+
+test('Cancel closes the Surrender dialog without sending anything or closing the menu', () => {
+  const { sendAction, onClose, dialog } = openSurrender()
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(onClose).not.toHaveBeenCalled()
+  expect(screen.queryByRole('dialog', { name: /Surrender/ })).not.toBeInTheDocument()
+})
+
+test('Surrender copy says the round, not the match, mid-series', () => {
+  const { dialog } = openSurrender({ series: { length: 3 } as SeriesWireState })
+
+  expect(within(dialog).getByText('Surrender this round?')).toBeInTheDocument()
+})
+
+test('the Surrender button is gone once the game is over', () => {
+  renderOverlay({ game: makeGame({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }) })
+  expect(screen.queryByRole('button', { name: 'Surrender' })).not.toBeInTheDocument()
+})
+
+test("on the bot's turn, Surrender is disabled, since it would make the bot surrender", () => {
+  renderOverlay({ botSeat: 1 })
+  expect(screen.getByRole('button', { name: 'Surrender' })).toBeDisabled()
 })
