@@ -149,13 +149,15 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (document.querySelector('dialog[open]')) return
-      if (event.key === 'd' && humanTurnState === 'awaitingRoll') {
+      if (event.ctrlKey || event.metaKey || event.altKey) return
+      const key = event.key.toLowerCase()
+      if (key === 'd' && humanTurnState === 'awaitingRoll') {
         sendActionRef.current({ type: 'roll' })
-      } else if (event.key === 'r' && humanTurnState === 'choosingPlacement') {
+      } else if (key === 'r' && humanTurnState === 'choosingPlacement') {
         rotateRef.current()
-      } else if (event.key === 's' && humanTurnState === 'skipped') {
+      } else if (key === 's' && humanTurnState === 'skipped') {
         sendActionRef.current({ type: 'skip' })
-      } else if (event.key === 'e' && rerollUsable) {
+      } else if (key === 'e' && rerollUsable) {
         sendActionRef.current({ type: 'reroll' })
       }
     }

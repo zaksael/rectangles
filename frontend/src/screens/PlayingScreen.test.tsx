@@ -1131,3 +1131,19 @@ test('player names in the status line and the Comeback notice never wrap mid-nam
   expect(screen.getByTestId('turn-status').textContent).toContain('Player 1')
   expect(screen.getByText(/Comeback!/).textContent).toContain('Player 2')
 })
+
+test.each(['ctrlKey', 'metaKey', 'altKey'] as const)('a shortcut key held with %s is left to the browser', (modifier) => {
+  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  fireEvent.keyDown(window, { key: 'd', [modifier]: true })
+
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('shortcuts still work with Caps Lock or Shift held', () => {
+  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  fireEvent.keyDown(window, { key: 'D' })
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'roll' })
+})
