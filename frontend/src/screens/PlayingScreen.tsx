@@ -70,7 +70,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false
   const canReroll = state?.game.houseRules.reroll.canReroll ?? false
-  const rerollUsable = canReroll && (humanTurnState === 'choosingPlacement' || humanTurnState === 'skipped')
+  const rerollUsable = canReroll && ['choosingPlacement', 'skipped', 'choosingWildcard'].includes(humanTurnState ?? '')
 
   const lastPlaced = useLastPlaced(state?.game)
 
@@ -100,8 +100,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     }
   }
 
-  const hint = (humanTurnState && KEY_HINT[humanTurnState]) ?? ' '
-  const boardHint = rerollUsable ? `${hint}, E rerolls` : hint
+  const keyHint = humanTurnState && KEY_HINT[humanTurnState]
+  const boardHint = rerollUsable ? (keyHint ? `${keyHint}, E rerolls` : 'E rerolls') : keyHint || ' '
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

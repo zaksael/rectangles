@@ -853,7 +853,7 @@ test('the error toast hangs from the sticky header, so it follows the header hei
   expect(toast.closest('.header')).toBeInTheDocument()
 })
 
-const rerollState = (canReroll: boolean, turnState: 'choosingPlacement' | 'skipped' = 'choosingPlacement') => {
+const rerollState = (canReroll: boolean, turnState: 'choosingPlacement' | 'skipped' | 'choosingWildcard' = 'choosingPlacement') => {
   const state = makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
   state.game.houseRules.reroll = { enabled: true, canReroll }
   return state
@@ -883,6 +883,15 @@ test('Reroll stays enabled alongside a forced Skip', () => {
   renderScreen(rerollState(true, 'skipped'))
 
   expect(screen.getByRole('button', { name: 'Reroll' })).toBeEnabled()
+})
+
+test('Reroll is available while choosing a wildcard value, and E rerolls', () => {
+  const sendAction = renderScreen(rerollState(true, 'choosingWildcard'))
+
+  expect(screen.getByRole('button', { name: 'Reroll' })).toBeEnabled()
+  expect(screen.getByText('E rerolls')).toBeInTheDocument()
+  fireEvent.keyDown(window, { key: 'e' })
+  expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
 })
 
 test("on the bot's turn the Reroll button is hidden", () => {
