@@ -10,6 +10,7 @@
  */
 
 :root {
+  color-scheme: light;
   --ledger: #E7EBDD; /* page background */
   --ink: #23262B;    /* text, borders, outlines */
   --line: #B9C2AE;   /* dividers, secondary borders */
