@@ -853,6 +853,81 @@ test('the error toast hangs from the sticky header, so it follows the header hei
   expect(toast.closest('.header')).toBeInTheDocument()
 })
 
+const wildcardState = ({
+  editableIndex,
+  legalValues,
+  currentPlayerId = 1,
+}: {
+  editableIndex: 0 | 1
+  legalValues: number[]
+  currentPlayerId?: number
+}) => {
+  const state = makeState({ turn: { currentPlayerId, turnState: 'choosingWildcard', lastRoll: [4, 4], legalPlacements: [] } })
+  state.game.houseRules.wildcard = { enabled: true, originalRoll: [4, 4], legalValues, editableIndex }
+  return state
+}
+
+const pillNames = () => within(screen.getByRole('group', { name: 'Wildcard value' })).getAllByRole('button').map((b) => b.textContent)
+
+test('choosing a wildcard shows the fixed die and a pill for each value 1-6, in place of the dice', () => {
+  renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 2, 3, 4, 5, 6] }))
+
+  expect(pillNames()).toEqual(['1', '2', '3', '4', '5', '6'])
+  expect(screen.getByTestId('wildcard-fixed-die')).toHaveTextContent('4')
+  expect(screen.queryByRole('img', { name: /rolled/i })).not.toBeInTheDocument()
+})
+
+test('values with no legal placement are disabled, not removed', () => {
+  renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 3, 4, 6] }))
+
+  const group = screen.getByRole('group', { name: 'Wildcard value' })
+  for (const [name, enabled] of [['1', true], ['2', false], ['3', true], ['4', true], ['5', false], ['6', true]] as const) {
+    const pill = within(group).getByRole('button', { name })
+    if (enabled) expect(pill).toBeEnabled()
+    else expect(pill).toBeDisabled()
+  }
+})
+
+test('clicking a pill sends chooseWildcard with that value straight away', () => {
+  const sendAction = renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 3, 4, 6] }))
+
+  fireEvent.click(screen.getByRole('button', { name: '3' }))
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'chooseWildcard', value: 3 })
+})
+
+test.each([0, 1] as const)('editableIndex %i: the pills take the wildcard die\'s slot', (editableIndex) => {
+  renderScreen(wildcardState({ editableIndex, legalValues: [1, 2, 3, 4, 5, 6] }))
+
+  const picker = screen.getByTestId('wildcard-fixed-die').parentElement!
+  const isPillsFirst = picker.firstElementChild!.getAttribute('role') === 'group'
+  expect(isPillsFirst).toBe(editableIndex === 0)
+})
+
+test('the wildcard turn status and key hint describe the pick', () => {
+  renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 2, 3] }))
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: wildcard roll — pick the other die’s value')
+  expect(screen.getByText('Pick a value for the other die')).toBeInTheDocument()
+})
+
+test('a wildcard roll where no value fits skips the picker and goes straight to Skip', () => {
+  const state = makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [4, 4], legalPlacements: [] } })
+  state.game.houseRules.wildcard = { enabled: true, originalRoll: [4, 4], legalValues: [], editableIndex: null }
+  renderScreen(state)
+
+  expect(screen.queryByRole('group', { name: 'Wildcard value' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled()
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
+})
+
+test("on the bot's turn a pending wildcard shows plain dice and no picker", () => {
+  renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 2, 3], currentPlayerId: 2 }), vi.fn(), null, vi.fn(), 2)
+
+  expect(screen.queryByRole('group', { name: 'Wildcard value' })).not.toBeInTheDocument()
+  expect(screen.getByRole('img', { name: /rolled 4 and 4/i })).toBeInTheDocument()
+})
+
 const rerollState = (canReroll: boolean, turnState: 'choosingPlacement' | 'skipped' | 'choosingWildcard' = 'choosingPlacement') => {
   const state = makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
   state.game.houseRules.reroll = { enabled: true, canReroll }
@@ -886,10 +961,12 @@ test('Reroll stays enabled alongside a forced Skip', () => {
 })
 
 test('Reroll is available while choosing a wildcard value, and E rerolls', () => {
-  const sendAction = renderScreen(rerollState(true, 'choosingWildcard'))
+  const state = wildcardState({ editableIndex: 1, legalValues: [1, 2, 3] })
+  state.game.houseRules.reroll = { enabled: true, canReroll: true }
+  const sendAction = renderScreen(state)
 
   expect(screen.getByRole('button', { name: 'Reroll' })).toBeEnabled()
-  expect(screen.getByText('E rerolls')).toBeInTheDocument()
+  expect(screen.getByText('Pick a value for the other die, E rerolls')).toBeInTheDocument()
   fireEvent.keyDown(window, { key: 'e' })
   expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
 })

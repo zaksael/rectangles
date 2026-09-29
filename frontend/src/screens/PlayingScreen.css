@@ -158,6 +158,46 @@
   grid-column: 3;
   justify-content: flex-end;
 }
+/* The dice and the wildcard picker both hold .die boxes, which inherit these digits. */
+.dice,
+.wildcard-picker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 500;
+}
+/* While a wildcard value is being picked the middle column grows to fit the picker; the outer
+   tracks stay equal 1fr, which is what keeps the picker centered. */
+.toolbar-actions.has-picker {
+  grid-template-columns: 1fr auto 1fr;
+}
+/* Two equal halves, so the seam between the fixed die and the pills sits on the toolbar's true
+   center whichever side the pills are on: each half hugs the seam. */
+.wildcard-picker {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 10px;
+}
+.wildcard-picker > :first-child {
+  justify-self: end;
+}
+.wildcard-picker > :last-child {
+  justify-self: start;
+}
+.wildcard-pills {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: repeat(2, auto);
+  gap: 4px 6px;
+}
+.wildcard-pills .pill:disabled {
+  opacity: 1;
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 25%, transparent);
+  cursor: default;
+}
 .dice {
   grid-column: 2;
   justify-self: center;
@@ -165,10 +205,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 24px;
-  font-weight: 500;
 }
 .toolbar-actions .btn {
   height: var(--control-height);

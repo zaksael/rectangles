@@ -24,6 +24,7 @@ const KEY_HINT: Partial<Record<string, string>> = {
   awaitingRoll: 'D rolls the dice',
   choosingPlacement: 'Arrow keys move the piece, Enter places it, R rotates it',
   skipped: 'S skips this turn',
+  choosingWildcard: 'Pick a value for the other die',
 }
 
 const ERROR_TEXT: Record<ErrorReason, string> = {
@@ -77,6 +78,28 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
   const lastRollRef = useRef<{ values: [number, number]; owner: '1' | '2' } | null>(null)
   const roll = state?.game.turn.lastRoll ?? null
+  const wildcard = state?.game.houseRules.wildcard
+  const pickIndex = humanTurnState === 'choosingWildcard' && roll ? (wildcard?.editableIndex ?? null) : null
+
+  const pills = wildcard && (
+    <div key="pills" role="group" aria-label="Wildcard value" className="wildcard-pills">
+      {[1, 2, 3, 4, 5, 6].map((value) => (
+        <button
+          key={value}
+          className="pill"
+          disabled={!wildcard.legalValues.includes(value)}
+          onClick={() => sendAction({ type: 'chooseWildcard', value })}
+        >
+          {value}
+        </button>
+      ))}
+    </div>
+  )
+  const fixedDie = pickIndex !== null && roll && (
+    <span key="die" className="die" data-testid="wildcard-fixed-die">
+      {roll[1 - pickIndex]}
+    </span>
+  )
   if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
   const shownRoll = lastRollRef.current
 
@@ -95,6 +118,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       if (reason) turnStatus += ` — ${reason}`
       else if (previewKind !== 'legal') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
     }
+    else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value`
     else if (turnState === 'skipped') {
       turnStatus = canReroll ? `${currentName}: no legal move — skip, or reroll` : `${currentName}: no legal move, skip`
     }
@@ -177,7 +201,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         </>
       )}
       {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} onNewGame={onNewGame} />}
-      <div className="toolbar-actions">
+      <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
         <div className="toolbar-leading">
           {/* Only buttons that can be clicked right now are shown. */}
           {humanTurnState === 'awaitingRoll' && (
@@ -201,7 +225,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             </button>
           )}
         </div>
-        {state && shownRoll && (
+        {pickIndex !== null && (
+          <div className="wildcard-picker">
+            {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
+            {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
+          </div>
+        )}
+        {state && shownRoll && pickIndex === null && (
           <div
             className={`dice p${shownRoll.owner}${roll ? '' : ' stale'}`}
             role="img"
