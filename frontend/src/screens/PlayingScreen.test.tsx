@@ -63,12 +63,12 @@ test('pressing d does nothing once a roll is already showing', () => {
   expect(sendAction).not.toHaveBeenCalled()
 })
 
-test('shows the last roll as dice once past awaitingRoll, with Roll still there but disabled', () => {
+test('shows the last roll as dice once past awaitingRoll, with Roll hidden', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 5], legalPlacements: [] } }))
 
   const dice = screen.getByText('2').closest('.dice')
   expect(dice).toContainElement(screen.getByText('5'))
-  expect(screen.getByRole('button', { name: 'Roll' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
 })
 
 test('shows no dice while awaiting a roll', () => {
@@ -78,26 +78,16 @@ test('shows no dice while awaiting a roll', () => {
 })
 
 test.each([
-  ['awaitingRoll', { Roll: true, Rotate: false, Skip: false }],
-  ['choosingPlacement', { Roll: false, Rotate: true, Skip: false }],
-  ['skipped', { Roll: false, Rotate: false, Skip: true }],
-] as const)('Roll, Rotate and Skip are always shown, enabled only when they apply (%s)', (turnState, enabled) => {
+  ['awaitingRoll', ['Roll']],
+  ['choosingPlacement', ['Rotate']],
+  ['skipped', ['Skip']],
+] as const)('only the applicable action button and Menu are shown (%s)', (turnState, shown) => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
-
-  for (const [name, isEnabled] of Object.entries(enabled)) {
-    const button = screen.getByRole('button', { name })
-    if (isEnabled) expect(button).toBeEnabled()
-    else expect(button).toBeDisabled()
-  }
-})
-
-test('the toolbar reads Roll, Rotate, Skip on the left and Menu on the right', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   const names = within(document.querySelector('.toolbar-actions') as HTMLElement)
     .getAllByRole('button')
     .map((b) => b.firstChild!.textContent!.trim())
-  expect(names).toEqual(['Roll', 'Rotate', 'Skip', 'Menu'])
+  expect(names).toEqual([...shown, 'Menu'])
 })
 
 test('clicking a legal cell while choosing placement sends the place action', () => {
@@ -482,21 +472,21 @@ test("on the bot's turn, hovering shows no preview or coverable overlay and tapp
   expect(grid.querySelector('.preview')).not.toBeInTheDocument()
   expect(grid.querySelector('.coverable')).not.toBeInTheDocument()
   expect(sendAction).not.toHaveBeenCalled()
-  expect(screen.getByRole('button', { name: 'Rotate' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Rotate' })).not.toBeInTheDocument()
 })
 
-test("on the bot's turn the Roll button is disabled and d does not roll", () => {
+test("on the bot's turn the Roll button is hidden and d does not roll", () => {
   const sendAction = renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'd' })
 
-  expect(screen.getByRole('button', { name: 'Roll' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
   expect(sendAction).not.toHaveBeenCalled()
 })
 
-test("on the bot's turn the Skip button is disabled", () => {
+test("on the bot's turn the Skip button is hidden", () => {
   renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
-  expect(screen.getByRole('button', { name: 'Skip' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
 })
 
 test("on the human's turn against a bot, placement still works", () => {
@@ -800,12 +790,14 @@ test('the key hint names the skip key on a dead roll', () => {
   expect(screen.getByText('S skips this turn')).toBeInTheDocument()
 })
 
-test('Roll, Rotate and Skip expose their keyboard shortcut to assistive tech', () => {
-  renderScreen(keyboardState())
+test.each([
+  ['awaitingRoll', 'Roll', 'd'],
+  ['choosingPlacement', 'Rotate', 'r'],
+  ['skipped', 'Skip', 's'],
+] as const)('%s: the %s button exposes its keyboard shortcut to assistive tech', (turnState, name, key) => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
-  for (const [name, key] of [['Roll', 'd'], ['Rotate', 'r'], ['Skip', 's']]) {
-    expect(screen.getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', key)
-  }
+  expect(screen.getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', key)
 })
 
 test('pressing s skips a dead roll', () => {
@@ -881,10 +873,10 @@ test('shows an enabled Reroll button with charges remaining, which sends the rer
   expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
 })
 
-test('disables Reroll once charges are exhausted', () => {
+test('hides Reroll once charges are exhausted', () => {
   renderScreen(rerollState(false))
 
-  expect(screen.getByRole('button', { name: 'Reroll' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Reroll' })).not.toBeInTheDocument()
 })
 
 test('Reroll stays enabled alongside a forced Skip', () => {
@@ -893,10 +885,10 @@ test('Reroll stays enabled alongside a forced Skip', () => {
   expect(screen.getByRole('button', { name: 'Reroll' })).toBeEnabled()
 })
 
-test("on the bot's turn the Reroll button is disabled", () => {
+test("on the bot's turn the Reroll button is hidden", () => {
   renderScreen(rerollState(true), vi.fn(), null, vi.fn(), 1)
 
-  expect(screen.getByRole('button', { name: 'Reroll' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Reroll' })).not.toBeInTheDocument()
 })
 
 test('Reroll exposes its keyboard shortcut to assistive tech', () => {

@@ -179,17 +179,24 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} onNewGame={onNewGame} />}
       <div className="toolbar-actions">
         <div className="toolbar-leading">
-          <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d" disabled={isBotTurn || turnState !== 'awaitingRoll'}>
-            Roll
-          </button>
-          <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r" disabled={isBotTurn || turnState !== 'choosingPlacement'}>
-            Rotate
-          </button>
-          <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s" disabled={isBotTurn || turnState !== 'skipped'}>
-            Skip
-          </button>
-          {rerollEnabled && (
-            <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e" disabled={!rerollUsable}>
+          {/* Only buttons that can be clicked right now are shown. */}
+          {humanTurnState === 'awaitingRoll' && (
+            <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">
+              Roll
+            </button>
+          )}
+          {humanTurnState === 'choosingPlacement' && (
+            <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r">
+              Rotate
+            </button>
+          )}
+          {humanTurnState === 'skipped' && (
+            <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s">
+              Skip
+            </button>
+          )}
+          {rerollUsable && (
+            <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e">
               Reroll
             </button>
           )}

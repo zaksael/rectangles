@@ -148,7 +148,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
   })
 
-  it("hands the Vs Bot seat to Playing so the human's Roll button is disabled on the bot turn", () => {
+  it("hands the Vs Bot seat to Playing so the human's Roll button is hidden on the bot turn", () => {
     vi.useFakeTimers()
     render(<App />)
     startGameAndOpen()
@@ -167,7 +167,7 @@ describe('App', () => {
 
     broadcast(2)
     act(() => vi.advanceTimersByTime(500)) // state broadcasts are paced, so the second one lands after the delay
-    expect(screen.getByRole('button', { name: 'Roll' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
     vi.useRealTimers()
   })
 })
