@@ -322,6 +322,35 @@ dialog.modal .reason {
   font-size: 26px;
   margin-bottom: 24px;
 }
+.game-over h2:has(+ .game-over-story) {
+  margin-bottom: 6px;
+}
+.game-over-story {
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.game-over table.breakdown tr:has(.game-over-swing-tag) th:first-child {
+  position: relative;
+}
+/* The rule sits in the gutter so the row label never shifts. */
+.game-over table.breakdown tr:has(.game-over-swing-tag) th:first-child::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  background: var(--ink);
+}
+.game-over-swing-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border: 1px solid var(--ink);
+}
 .game-over .dot {
   display: inline-block;
   width: 12px;

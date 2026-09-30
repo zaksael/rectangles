@@ -47,8 +47,15 @@ function formatSigned(value: number): string | number {
   return value < 0 ? `−${-value}` : value
 }
 
+const key = (id: number) => String(id) as '1' | '2'
+
+interface Swing {
+  label: string
+  size: number
+}
+
 function nameOf(game: GameWireState, id: number) {
-  return noBreak(game.players[String(id) as '1' | '2'].name)
+  return noBreak(game.players[key(id)].name)
 }
 
 function reasonText(game: GameWireState): string | null {
@@ -64,20 +71,66 @@ function reasonText(game: GameWireState): string | null {
   return `${name} surrendered`
 }
 
+function scoreMargin(game: GameWireState): number | null {
+  const { winner, reason } = game.gameOver
+  // A surrendered game's winner can trail on score, so there's no margin to state.
+  if (winner === null || reason === 'surrender') return null
+  const margin = game.players[key(winner)].score.totalScore - game.players[key(3 - winner)].score.totalScore
+  return margin > 0 ? margin : null
+}
+
+// The modifier row whose gap between the players is largest, when it covers at least half the margin.
+function biggestSwing(game: GameWireState, rows: ModifierRow[], margin: number): Swing | null {
+  let best: Swing | null = null
+  for (const row of rows) {
+    const size = Math.abs(row.value(game, '1') - row.value(game, '2'))
+    if (size > 0 && (best === null || size > best.size)) best = { label: row.label, size }
+  }
+  return best && best.size * 2 >= margin ? best : null
+}
+
+// A winner who trailed on territory is explained by the modifiers that went their way, not by the biggest swing.
+function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null {
+  const { winner } = game.gameOver
+  if (winner === null) return null
+  const id = key(winner)
+  const other = key(3 - winner)
+  const trailedBy = game.players[other].score.totalArea - game.players[id].score.totalArea
+  if (trailedBy <= 0) return null
+  const turned = rows.filter((row) => row.value(game, id) > row.value(game, other)).map((row) => row.label)
+  return turned.length ? `Trailed by ${trailedBy} on territory, won on ${new Intl.ListFormat('en-GB').format(turned)}.` : null
+}
+
+function storyText(game: GameWireState, rows: ModifierRow[], margin: number | null, swing: Swing | null): string | null {
+  if (margin === null) return null
+  const comeback = comebackClause(game, rows)
+  if (comeback) return `by ${margin} points. ${comeback}`
+  return swing ? `by ${margin} points. Biggest swing: ${swing.label}, ${swing.size}.` : `by ${margin} points`
+}
+
 export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNewGame: () => void }) {
   const dialogRef = useAutoOpenDialog()
   const { winner, reason: endReason } = game.gameOver
   const detail = reasonText(game)
+  const rows = MODIFIER_ROWS.filter((row) => row.enabled(game))
+  const margin = scoreMargin(game)
+  const swing = margin === null ? null : biggestSwing(game, rows, margin)
+  const story = storyText(game, rows, margin, swing)
   const headline = winner === null ? 'Tied' : `${nameOf(game, winner)} wins${endReason === 'surrender' ? '' : ' on score'}`
 
   return (
     // Escape has no dismiss action here, so cancel is suppressed.
-    <dialog className="modal game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title">
+    <dialog className="modal game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
       {detail && <p className="reason">Game ended: {detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
         {headline}
       </h2>
+      {story && (
+        <p className="game-over-story" id="gameover-story">
+          {story}
+        </p>
+      )}
       <table className="breakdown">
         <thead>
           <tr>
@@ -100,9 +153,12 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
               <td>{game.players['2'].score[key]}</td>
             </tr>
           ))}
-          {MODIFIER_ROWS.filter((row) => row.enabled(game)).map((row) => (
+          {rows.map((row) => (
             <tr key={row.label}>
-              <th scope="row">{row.label}</th>
+              <th scope="row">
+                {row.label}
+                {swing?.label === row.label && <span className="game-over-swing-tag">Biggest swing</span>}
+              </th>
               {(['1', '2'] as const).map((id) => {
                 const value = row.value(game, id)
                 return (
