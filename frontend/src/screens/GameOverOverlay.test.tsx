@@ -162,3 +162,8 @@ test('Escape shows the board instead of closing the result for good', () => {
   expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
   expect(cancel.defaultPrevented).toBe(true)
 })
+
+test('a one-point margin reads "1 point"', () => {
+  const dialog = renderOver({ winner: 1, area: [142, 141] })
+  expect(dialog).toHaveAccessibleDescription('by 1 point')
+})

@@ -104,11 +104,13 @@ function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null
   return turned.length ? `Trailed by ${trailedBy} on territory, won on ${new Intl.ListFormat('en-GB').format(turned)}.` : null
 }
 
+const pointsText = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`
+
 function storyText(game: GameWireState, rows: ModifierRow[], margin: number | null, swing: Swing | null): string | null {
   if (margin === null) return null
   const comeback = comebackClause(game, rows)
-  if (comeback) return `by ${margin} points. ${comeback}`
-  return swing ? `by ${margin} points. Biggest swing: ${swing.label}, ${swing.size}.` : `by ${margin} points`
+  if (comeback) return `by ${pointsText(margin)}. ${comeback}`
+  return swing ? `by ${pointsText(margin)}. Biggest swing: ${swing.label}, ${swing.size}.` : `by ${pointsText(margin)}`
 }
 
 function headlineText(game: GameWireState): string {
@@ -122,7 +124,7 @@ export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireS
   return (
     <div className="game-over-bar" role="region" aria-label="Game result">
       <strong>{headlineText(game)}</strong>
-      {margin !== null && <span>by {margin} points</span>}
+      {margin !== null && <span>by {pointsText(margin)}</span>}
       <button className="btn secondary" onClick={onViewResult}>
         View result
       </button>
