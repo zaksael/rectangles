@@ -2,13 +2,12 @@ import type { GameWireState } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
-const SCORE_ROWS = [['Territory', 'totalArea']] as const
-const FINAL_ROW = ['Final score', 'totalScore'] as const
 
 const SELF_ENCLOSED_PENALTY_PER_CELL = 1 // fixed on the server, not sent on the wire or configurable per-game
 
 interface ModifierRow {
   label: string
+  note: (game: GameWireState) => string
   enabled: (game: GameWireState) => boolean
   value: (game: GameWireState, id: '1' | '2') => number
 }
@@ -16,16 +15,19 @@ interface ModifierRow {
 const MODIFIER_ROWS: ModifierRow[] = [
   {
     label: 'Prize',
+    note: (game) => `+${game.houseRules.prize.points} per captured cell`,
     enabled: (game) => game.houseRules.prize.enabled,
     value: (game, id) => game.players[id].houseRules.prize.captured * game.houseRules.prize.points,
   },
   {
     label: 'Pitfall',
+    note: (game) => `−${game.houseRules.pitfall.points} per captured cell`,
     enabled: (game) => game.houseRules.pitfall.enabled,
     value: (game, id) => -(game.players[id].houseRules.pitfall.captured * game.houseRules.pitfall.points),
   },
   {
     label: 'Steal',
+    note: (game) => `±${game.houseRules.steal.points} per capture, zero-sum`,
     // Zero-sum: each capture adds to the capturer and docks the opponent by the same
     // amount, so a player's net is their own captures minus the opponent's, in points.
     enabled: (game) => game.houseRules.steal.enabled,
@@ -38,6 +40,7 @@ const MODIFIER_ROWS: ModifierRow[] = [
   },
   {
     label: 'Enclosure',
+    note: () => `−${SELF_ENCLOSED_PENALTY_PER_CELL} per sealed-in cell`,
     enabled: (game) => game.houseRules.selfEnclosedPenalty.enabled,
     value: (game, id) => -(game.players[id].houseRules.selfEnclosedPenalty.cells * SELF_ENCLOSED_PENALTY_PER_CELL),
   },
@@ -112,15 +115,17 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
   const dialogRef = useAutoOpenDialog()
   const { winner, reason: endReason } = game.gameOver
   const detail = reasonText(game)
-  const rows = MODIFIER_ROWS.filter((row) => row.enabled(game))
+  // An enabled rule nobody triggered carries no information, so its row is left out.
+  const rows = MODIFIER_ROWS.filter((row) => row.enabled(game) && (row.value(game, '1') !== 0 || row.value(game, '2') !== 0))
   const margin = scoreMargin(game)
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin, swing)
+  const totalLabel = endReason === 'surrender' ? 'Score at surrender' : rows.length === 0 ? 'Final score (territory)' : 'Final score'
   const headline = winner === null ? 'Tied' : `${nameOf(game, winner)} wins${endReason === 'surrender' ? '' : ' on score'}`
 
   return (
     // Escape has no dismiss action here, so cancel is suppressed.
-    <dialog className="modal game-over" ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
+    <dialog className="modal game-over" data-outcome={winner ?? 'tie'} ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
       {detail && <p className="reason">Game ended: {detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
@@ -146,23 +151,24 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
           </tr>
         </thead>
         <tbody>
-          {SCORE_ROWS.map(([label, key]) => (
-            <tr key={key}>
-              <th scope="row">{label}</th>
-              <td>{game.players['1'].score[key]}</td>
-              <td>{game.players['2'].score[key]}</td>
+          {rows.length > 0 && (
+            <tr>
+              <th scope="row">Territory</th>
+              <td>{game.players['1'].score.totalArea}</td>
+              <td>{game.players['2'].score.totalArea}</td>
             </tr>
-          ))}
+          )}
           {rows.map((row) => (
             <tr key={row.label}>
               <th scope="row">
                 {row.label}
                 {swing?.label === row.label && <span className="game-over-swing-tag">Biggest swing</span>}
+                <span className="game-over-row-note">{row.note(game)}</span>
               </th>
               {(['1', '2'] as const).map((id) => {
                 const value = row.value(game, id)
                 return (
-                  <td key={id} className={value < 0 ? 'negative' : undefined}>
+                  <td key={id} className={value < 0 ? 'negative' : value === 0 ? 'zero' : undefined}>
                     {formatSigned(value)}
                   </td>
                 )
@@ -170,9 +176,9 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
             </tr>
           ))}
           <tr className="total">
-            <th scope="row">{FINAL_ROW[0]}</th>
-            <td>{game.players['1'].score[FINAL_ROW[1]]}</td>
-            <td>{game.players['2'].score[FINAL_ROW[1]]}</td>
+            <th scope="row">{totalLabel}</th>
+            <td>{game.players['1'].score.totalScore}</td>
+            <td>{game.players['2'].score.totalScore}</td>
           </tr>
         </tbody>
       </table>

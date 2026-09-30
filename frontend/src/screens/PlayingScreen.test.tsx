@@ -357,7 +357,7 @@ test('game over reads "Tied" when there is no winner', () => {
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Tied' })).toBeInTheDocument()
 })
 
-test('game over shows a per-player territory and final-score breakdown', () => {
+test('a plain game over shows one per-player final-score row', () => {
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: 5, totalScore: 5 }
   game.players['2'].score = { ...game.players['2'].score, totalArea: 4, totalScore: 4 }
@@ -369,8 +369,8 @@ test('game over shows a per-player territory and final-score breakdown', () => {
     within(row(name)).getByRole('rowheader').textContent,
     ...within(row(name)).getAllByRole('cell').map((c) => c.textContent),
   ]
-  expect(rowValues('Territory')).toEqual(['Territory', '5', '4'])
-  expect(rowValues('Final score')).toEqual(['Final score', '5', '4'])
+  expect(within(table).queryByRole('row', { name: /^Territory/ })).not.toBeInTheDocument()
+  expect(rowValues('Final score')).toEqual(['Final score (territory)', '5', '4'])
   expect(within(table).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Score', 'Player\u00a01', 'Player\u00a02'])
   expect(within(table).queryByRole('row', { name: /Prize/ })).not.toBeInTheDocument()
 })
@@ -385,7 +385,7 @@ test('game over shows a Prize breakdown row, in points, when Prize is enabled', 
   const table = within(screen.getByRole('dialog')).getByRole('table')
   const row = within(table).getByRole('row', { name: /Prize/ })
   expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Prize',
+    'Prize+5 per captured cell',
     '10',
     '5',
   ])
@@ -401,7 +401,7 @@ test('game over shows a Pitfall breakdown row, as a negative deduction, when Pit
   const table = within(screen.getByRole('dialog')).getByRole('table')
   const row = within(table).getByRole('row', { name: /Pitfall/ })
   expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Pitfall',
+    'Pitfall−10 per captured cell',
     '−10',
     '0',
   ])
@@ -417,7 +417,7 @@ test('game over shows a Steal breakdown row, as each player\'s net swing, when S
   const table = within(screen.getByRole('dialog')).getByRole('table')
   const row = within(table).getByRole('row', { name: /Steal/ })
   expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Steal',
+    'Steal±10 per capture, zero-sum',
     '10',
     '−10',
   ])
@@ -433,7 +433,7 @@ test('game over shows an Enclosure breakdown row, as a negative deduction of 1 p
   const table = within(screen.getByRole('dialog')).getByRole('table')
   const row = within(table).getByRole('row', { name: /Enclosure/ })
   expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Enclosure',
+    'Enclosure−1 per sealed-in cell',
     '−3',
     '0',
   ])

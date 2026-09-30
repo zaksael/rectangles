@@ -304,8 +304,30 @@ dialog.modal .actions .btn {
 }
 
 dialog.game-over {
-  width: 480px;
-  padding: 32px 32px 24px;
+  width: 420px;
+  padding: 0 28px 20px;
+}
+/* Top rule in the winner's colour; a tie splits it between both players. */
+dialog.game-over[data-outcome='1'] {
+  --outcome: var(--p1);
+}
+dialog.game-over[data-outcome='2'] {
+  --outcome: var(--p2);
+}
+dialog.game-over::before {
+  content: '';
+  display: block;
+  height: 6px;
+  margin: 0 -28px 20px;
+  background: var(--outcome, var(--ink));
+}
+dialog.game-over[data-outcome='tie']::before {
+  background: linear-gradient(to right, var(--p1) 50%, var(--p2) 50%);
+}
+dialog.game-over[data-outcome='1'] table.breakdown tr.total td:nth-child(2),
+dialog.game-over[data-outcome='2'] table.breakdown tr.total td:nth-child(3) {
+  font-size: 15px;
+  color: var(--outcome);
 }
 .game-over .actions {
   margin-top: 24px;
@@ -320,7 +342,7 @@ dialog.modal .reason {
 }
 .game-over h2 {
   font-size: 26px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 .game-over h2:has(+ .game-over-story) {
   margin-bottom: 6px;
@@ -341,6 +363,15 @@ dialog.modal .reason {
   bottom: 3px;
   width: 3px;
   background: var(--ink);
+}
+.game-over-row-note,
+.game-over table.breakdown .zero {
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+.game-over-row-note {
+  display: block;
+  font-size: 11px;
+  margin-top: 1px;
 }
 .game-over-swing-tag {
   font-family: 'IBM Plex Mono', monospace;
