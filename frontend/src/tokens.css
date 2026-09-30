@@ -78,6 +78,7 @@ dialog button:focus,
   letter-spacing: 0.02em;
   border: none;
   cursor: pointer;
+  touch-action: manipulation; /* no double-tap zoom delay */
 }
 
 .btn.primary {
