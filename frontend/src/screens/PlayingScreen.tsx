@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
-import { GameOverOverlay } from './GameOverOverlay'
+import { GameOverBar, GameOverOverlay } from './GameOverOverlay'
 import type { ErrorReason, GameAction } from '../gameTypes'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
@@ -52,6 +52,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   // The wire only carries the current `granted` flag, so a grant is spotted as false -> true between states.
   const [comebackNotice, setComebackNotice] = useState<string | null>(null)
+  // After the game ends, the player can put the result away to look at the final board.
+  const [resultHidden, setResultHidden] = useState(false)
   const grantedRef = useRef<Record<'1' | '2', boolean> | null>(null)
   useEffect(() => {
     if (!state) return
@@ -195,6 +197,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
+            {turnState === 'gameOver' && resultHidden && (
+              <GameOverBar game={state.game} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} />
+            )}
             {turnStatus && (
               <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
                 {turnStatus}
@@ -222,7 +227,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
         </>
       )}
-      {state && turnState === 'gameOver' && <GameOverOverlay game={state.game} onNewGame={onNewGame} />}
+      {state && turnState === 'gameOver' && !resultHidden && (
+        <GameOverOverlay game={state.game} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} />
+      )}
       <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
         <div className="toolbar-leading">
           {/* Only buttons that can be clicked right now are shown. */}

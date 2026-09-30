@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
 import { GameOverOverlay } from './GameOverOverlay'
@@ -13,12 +13,16 @@ interface Result {
   score?: [number, number]
 }
 
-function renderOver({ winner, reason = 'boardFull', playerId = null, area, score = area }: Result, tweak: (game: ReturnType<typeof makeGame>) => void = () => {}) {
+function renderOver(
+  { winner, reason = 'boardFull', playerId = null, area, score = area }: Result,
+  tweak: (game: ReturnType<typeof makeGame>) => void = () => {},
+  handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() },
+) {
   const game = makeGame({ gameOver: { reason, playerId, winner } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: area[0], totalScore: score[0] }
   game.players['2'].score = { ...game.players['2'].score, totalArea: area[1], totalScore: score[1] }
   tweak(game)
-  render(<GameOverOverlay game={game} onNewGame={vi.fn()} />)
+  render(<GameOverOverlay game={game} {...handlers} />)
   return screen.getByRole('dialog')
 }
 
@@ -132,4 +136,29 @@ test.each([
 ] as const)('the dialog marks its outcome for styling (winner %s)', (winner, outcome) => {
   const dialog = renderOver({ winner, area: [158, 141] })
   expect(dialog).toHaveAttribute('data-outcome', outcome)
+})
+
+test('View board comes first and holds focus; New game is second', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  const buttons = within(dialog).getAllByRole('button')
+  expect(buttons.map((b) => b.textContent)).toEqual(['View board', 'New game'])
+  expect(buttons[0]).toHaveFocus()
+})
+
+test('View board and New game call their handlers', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+  fireEvent.click(within(dialog).getByRole('button', { name: 'View board' }))
+  expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
+  fireEvent.click(within(dialog).getByRole('button', { name: 'New game' }))
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('Escape shows the board instead of closing the result for good', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+  const cancel = new Event('cancel', { cancelable: true })
+  fireEvent(dialog, cancel)
+  expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
+  expect(cancel.defaultPrevented).toBe(true)
 })

@@ -111,7 +111,29 @@ function storyText(game: GameWireState, rows: ModifierRow[], margin: number | nu
   return swing ? `by ${margin} points. Biggest swing: ${swing.label}, ${swing.size}.` : `by ${margin} points`
 }
 
-export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNewGame: () => void }) {
+function headlineText(game: GameWireState): string {
+  const { winner, reason } = game.gameOver
+  return winner === null ? 'Tied' : `${nameOf(game, winner)} wins${reason === 'surrender' ? '' : ' on score'}`
+}
+
+// What is left of the result while the player looks at the final board: the outcome, and a way back.
+export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireState; onViewResult: () => void; onNewGame: () => void }) {
+  const margin = scoreMargin(game)
+  return (
+    <div className="game-over-bar" role="region" aria-label="Game result">
+      <strong>{headlineText(game)}</strong>
+      {margin !== null && <span>by {margin} points</span>}
+      <button className="btn secondary" onClick={onViewResult}>
+        View result
+      </button>
+      <button className="btn secondary" onClick={onNewGame}>
+        New game
+      </button>
+    </div>
+  )
+}
+
+export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWireState; onNewGame: () => void; onViewBoard: () => void }) {
   const dialogRef = useAutoOpenDialog()
   const { winner, reason: endReason } = game.gameOver
   const detail = reasonText(game)
@@ -121,15 +143,17 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin, swing)
   const totalLabel = endReason === 'surrender' ? 'Score at surrender' : rows.length === 0 ? 'Final score (territory)' : 'Final score'
-  const headline = winner === null ? 'Tied' : `${nameOf(game, winner)} wins${endReason === 'surrender' ? '' : ' on score'}`
 
   return (
-    // Escape has no dismiss action here, so cancel is suppressed.
-    <dialog className="modal game-over" data-outcome={winner ?? 'tie'} ref={dialogRef} onCancel={(e) => e.preventDefault()} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
+    // Escape shows the board rather than dismissing the result, so the native close is suppressed.
+    <dialog className="modal game-over" data-outcome={winner ?? 'tie'} ref={dialogRef} onCancel={(e) => {
+        e.preventDefault()
+        onViewBoard()
+      }} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
       {detail && <p className="reason">Game ended: {detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
-        {headline}
+        {headlineText(game)}
       </h2>
       {story && (
         <p className="game-over-story" id="gameover-story">
@@ -183,8 +207,11 @@ export function GameOverOverlay({ game, onNewGame }: { game: GameWireState; onNe
         </tbody>
       </table>
       <div className="actions">
-        <button className="btn secondary" onClick={onNewGame} autoFocus>
-          New Game
+        <button className="btn primary" onClick={onViewBoard} autoFocus>
+          View board
+        </button>
+        <button className="btn secondary" onClick={onNewGame}>
+          New game
         </button>
       </div>
     </dialog>

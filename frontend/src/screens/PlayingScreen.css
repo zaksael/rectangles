@@ -606,3 +606,24 @@ dialog.settings {
   outline: 2px solid var(--ink);
   outline-offset: -2px; /* inside the board, so the sticky header and toolbar can't clip it */
 }
+
+/* Slim result bar, a full-width row of the sticky header, shown while the player looks at the final board. */
+.game-over-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.game-over-bar strong {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+}
+.game-over-bar .btn {
+  padding: 7px 12px;
+}
+.game-over-bar .btn:first-of-type {
+  margin-left: auto;
+}
