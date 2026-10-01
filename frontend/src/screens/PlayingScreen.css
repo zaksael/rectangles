@@ -278,6 +278,7 @@
 }
 
 dialog.modal {
+  box-sizing: border-box;
   max-width: calc(100vw - 32px);
   background: var(--ledger);
   color: var(--ink);

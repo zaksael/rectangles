@@ -1178,3 +1178,13 @@ test('shortcuts still work with Caps Lock or Shift held', () => {
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'roll' })
 })
+
+test('every modal dialog is border-box, so its declared width includes the padding', () => {
+  injectPlayingCss()
+  const dialog = document.createElement('dialog')
+  dialog.className = 'modal'
+  document.body.append(dialog)
+  onTestFinished(() => dialog.remove())
+
+  expect(getComputedStyle(dialog).boxSizing).toBe('border-box')
+})
