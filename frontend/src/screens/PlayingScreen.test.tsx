@@ -1243,3 +1243,14 @@ test('a tie puts a half-and-half marker, in both colours, in place of the winner
   expect(bar.querySelector('.dot.tie')).not.toBeNull()
   expect(bar.querySelector('.dot.p1, .dot.p2')).toBeNull()
 })
+
+test('mid-game, the header marks the player whose turn it is', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  expect(document.querySelector('[aria-current]')).toHaveTextContent('Player 2')
+})
+
+test('once the game is over, the header marks no current player', () => {
+  renderScreen(gameOverState())
+  expect(document.querySelector('[aria-current]')).toBeNull()
+  expect(document.querySelector('.header .current')).toBeNull()
+})

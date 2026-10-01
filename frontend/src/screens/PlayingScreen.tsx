@@ -124,6 +124,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
   const shownRoll = lastRollRef.current
 
+  // Once the game is over nobody is to move, so the header stops marking a player.
+  const currentId = turnState === 'gameOver' ? null : state?.game.turn.currentPlayerId
   const currentName = state && noBreak(state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name)
   let turnStatus: string | null = null
   if (currentName && turnState !== 'gameOver') {
@@ -176,8 +178,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             {(['1', '2'] as const).map((id) => (
               <div
                 key={id}
-                className={`player p${id}${state.game.turn.currentPlayerId === Number(id) ? ' current' : ''}`}
-                aria-current={state.game.turn.currentPlayerId === Number(id) ? 'true' : undefined}
+                className={`player p${id}${currentId === Number(id) ? ' current' : ''}`}
+                aria-current={currentId === Number(id) ? 'true' : undefined}
               >
                 <div className="player-id">
                   <span className="dot" aria-hidden="true" />
