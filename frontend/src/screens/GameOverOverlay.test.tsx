@@ -108,25 +108,12 @@ test('a modifier row where both players are at zero is hidden, but a single zero
   expect(theirs).toHaveClass('zero')
 })
 
-test('a game with no modifier rows collapses Territory and Final score into one row', () => {
-  const dialog = renderOver({ winner: 1, area: [158, 141] })
-  expect(within(dialog).queryByRole('row', { name: /^Territory/ })).not.toBeInTheDocument()
-  const row = within(dialog).getByRole('row', { name: /Final score/ })
-  expect(row).toHaveTextContent('Final score (territory)158141')
-})
-
-test('with modifier rows, Territory and Final score stay separate', () => {
+test('with modifier rows, the table keeps a Territory row', () => {
   const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 141] }, (game) => {
     withRules(game)
     game.players['1'].houseRules.prize.captured = 1
   })
   expect(within(dialog).getByRole('row', { name: /^Territory/ })).toHaveTextContent('Territory152141')
-  expect(within(dialog).getByRole('row', { name: /^Final score/ })).toHaveTextContent('Final score162141')
-})
-
-test('a surrender labels the total "Score at surrender"', () => {
-  const dialog = renderOver({ winner: 2, reason: 'surrender', playerId: 1, area: [158, 141] })
-  expect(within(dialog).getByRole('row', { name: /Score at surrender/ })).toHaveTextContent('Score at surrender158141')
 })
 
 test.each([
@@ -166,4 +153,60 @@ test('Escape shows the board instead of closing the result for good', () => {
 test('a one-point margin reads "1 point"', () => {
   const dialog = renderOver({ winner: 1, area: [142, 141] })
   expect(dialog).toHaveAccessibleDescription('by 1 point')
+})
+
+test('the final score is not a row of the table', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  expect(within(dialog).queryByRole('row', { name: /Final score/ })).not.toBeInTheDocument()
+})
+
+const scoreCell = (dialog: HTMLElement, total: string) =>
+  within(within(dialog).getByRole('group', { name: 'Final score' })).getByText(total).closest('.lead, .trail')
+
+test('the winner’s total is at full ink and the other muted', () => {
+  const dialog = renderOver({ winner: 2, area: [141, 158] })
+  expect(scoreCell(dialog, '158')).toHaveClass('lead')
+  expect(scoreCell(dialog, '141')).toHaveClass('trail')
+})
+
+test('a tie leaves both totals at full ink', () => {
+  const dialog = renderOver({ winner: null, area: [150, 149], score: [150, 149] })
+  expect(scoreCell(dialog, '150')).toHaveClass('lead')
+  expect(scoreCell(dialog, '149')).toHaveClass('lead')
+})
+
+test('a surrender captions the score and leaves both totals at full ink, even when the winner trails', () => {
+  const dialog = renderOver({ winner: 2, reason: 'surrender', playerId: 1, area: [158, 141] })
+  expect(within(dialog).getByText('Score at surrender')).toBeInTheDocument()
+  expect(scoreCell(dialog, '158')).toHaveClass('lead')
+  expect(scoreCell(dialog, '141')).toHaveClass('lead')
+})
+
+test('a game with no modifier rows has no table, the scoreboard being the whole breakdown', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  expect(within(dialog).queryByRole('table')).not.toBeInTheDocument()
+})
+
+test('the scoreboard shows total score, not territory, when modifiers apply', () => {
+  const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 141] }, (game) => {
+    withRules(game)
+    game.players['1'].houseRules.prize.captured = 1
+  })
+  const group = within(dialog).getByRole('group', { name: 'Final score' })
+  expect(group).toHaveTextContent('162')
+  expect(group).not.toHaveTextContent('152')
+})
+
+test('no "Score at surrender" caption on a game that was not surrendered', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  expect(within(dialog).queryByText('Score at surrender')).not.toBeInTheDocument()
+})
+
+test('each scoreboard cell names its player', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, (game) => {
+    game.players['1'].name = 'Ada'
+    game.players['2'].name = 'Grace'
+  })
+  expect(within(scoreCell(dialog, '158') as HTMLElement).getByText('Ada')).toBeInTheDocument()
+  expect(within(scoreCell(dialog, '141') as HTMLElement).getByText('Grace')).toBeInTheDocument()
 })

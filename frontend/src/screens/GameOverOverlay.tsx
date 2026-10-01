@@ -144,7 +144,6 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
   const margin = scoreMargin(game)
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin, swing)
-  const totalLabel = endReason === 'surrender' ? 'Score at surrender' : rows.length === 0 ? 'Final score (territory)' : 'Final score'
 
   return (
     // Escape shows the board rather than dismissing the result, so the native close is suppressed.
@@ -162,52 +161,60 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
           {story}
         </p>
       )}
-      <table className="breakdown">
-        <thead>
-          <tr>
-            <th scope="col">
-              <span className="visually-hidden">Score</span>
-            </th>
-            {(['1', '2'] as const).map((id) => (
-              <th key={id} scope="col">
-                <span className={`swatch p${id}`} aria-hidden="true" />
-                {nameOf(game, Number(id))}
+      {endReason === 'surrender' && <p className="game-over-caption">Score at surrender</p>}
+      <div className="game-over-scoreboard" role="group" aria-label="Final score">
+        {(['1', '2'] as const).map((id) => (
+          // The winner of a surrendered game can trail, so muting the lower total would contradict the headline.
+          <div key={id} className={winner === null || endReason === 'surrender' || winner === Number(id) ? 'lead' : 'trail'}>
+            <div className="who">
+              <span className={`swatch p${id}`} aria-hidden="true" />
+              {nameOf(game, Number(id))}
+            </div>
+            <div className="n">{game.players[id].score.totalScore}</div>
+          </div>
+        ))}
+      </div>
+      {rows.length > 0 && (
+        <table className="breakdown">
+          <thead>
+            <tr>
+              <th scope="col">
+                <span className="visually-hidden">Score</span>
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length > 0 && (
+              {(['1', '2'] as const).map((id) => (
+                <th key={id} scope="col">
+                  <span className={`swatch p${id}`} aria-hidden="true" />
+                  {nameOf(game, Number(id))}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
             <tr>
               <th scope="row">Territory</th>
               <td>{game.players['1'].score.totalArea}</td>
               <td>{game.players['2'].score.totalArea}</td>
             </tr>
-          )}
-          {rows.map((row) => (
-            <tr key={row.label}>
-              <th scope="row">
-                {row.label}
-                {swing?.label === row.label && <span className="game-over-swing-tag">Biggest swing</span>}
-                <span className="game-over-row-note">{row.note(game)}</span>
-              </th>
-              {(['1', '2'] as const).map((id) => {
-                const value = row.value(game, id)
-                return (
-                  <td key={id} className={value < 0 ? 'negative' : value === 0 ? 'zero' : undefined}>
-                    {formatSigned(value)}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-          <tr className="total">
-            <th scope="row">{totalLabel}</th>
-            <td>{game.players['1'].score.totalScore}</td>
-            <td>{game.players['2'].score.totalScore}</td>
-          </tr>
-        </tbody>
-      </table>
+            {rows.map((row) => (
+              <tr key={row.label}>
+                <th scope="row">
+                  {row.label}
+                  {swing?.label === row.label && <span className="game-over-swing-tag">Biggest swing</span>}
+                  <span className="game-over-row-note">{row.note(game)}</span>
+                </th>
+                {(['1', '2'] as const).map((id) => {
+                  const value = row.value(game, id)
+                  return (
+                    <td key={id} className={value < 0 ? 'negative' : value === 0 ? 'zero' : undefined}>
+                      {formatSigned(value)}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <div className="actions">
         <button className="btn primary" onClick={onViewBoard} autoFocus>
           View Board

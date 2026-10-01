@@ -324,11 +324,6 @@ dialog.game-over::before {
 dialog.game-over[data-outcome='tie']::before {
   background: linear-gradient(to right, var(--p1) 50%, var(--p2) 50%);
 }
-dialog.game-over[data-outcome='1'] table.breakdown tr.total td:nth-child(2),
-dialog.game-over[data-outcome='2'] table.breakdown tr.total td:nth-child(3) {
-  font-size: 15px;
-  color: var(--outcome);
-}
 .game-over .actions {
   margin-top: 24px;
 }
@@ -436,11 +431,44 @@ dialog.modal .reason {
 .game-over table.breakdown .negative {
   color: var(--danger);
 }
-.game-over table.breakdown tr.total th,
-.game-over table.breakdown tr.total td {
-  font-weight: 600;
-  border-top: 1px solid var(--line);
-  padding-top: 8px;
+.game-over-caption {
+  font: 500 11px 'IBM Plex Sans', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  margin: 0 0 6px;
+}
+.game-over-scoreboard {
+  display: flex;
+  margin: 0 0 16px;
+  border: 1px solid var(--ink);
+}
+.game-over-scoreboard > div {
+  flex: 1;
+  padding: 10px 14px;
+}
+.game-over-scoreboard > div + div {
+  border-left: 1px solid var(--ink);
+  text-align: right;
+}
+.game-over-scoreboard .who {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+.game-over-scoreboard .swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+}
+.game-over-scoreboard .n {
+  font: 500 34px/1.1 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.game-over-scoreboard .trail .n {
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
 }
 
 dialog.connection-lost {

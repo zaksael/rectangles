@@ -357,22 +357,13 @@ test('game over reads "Tied" when there is no winner', () => {
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Tied' })).toBeInTheDocument()
 })
 
-test('a plain game over shows one per-player final-score row', () => {
+test('a plain game over shows the final score as a group of both totals', () => {
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: 5, totalScore: 5 }
   game.players['2'].score = { ...game.players['2'].score, totalArea: 4, totalScore: 4 }
   renderScreen({ game, series: null })
 
-  const table = within(screen.getByRole('dialog')).getByRole('table')
-  const row = (name: string) => within(table).getByRole('row', { name: new RegExp(name) })
-  const rowValues = (name: string) => [
-    within(row(name)).getByRole('rowheader').textContent,
-    ...within(row(name)).getAllByRole('cell').map((c) => c.textContent),
-  ]
-  expect(within(table).queryByRole('row', { name: /^Territory/ })).not.toBeInTheDocument()
-  expect(rowValues('Final score')).toEqual(['Final score (territory)', '5', '4'])
-  expect(within(table).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Score', 'Player\u00a01', 'Player\u00a02'])
-  expect(within(table).queryByRole('row', { name: /Prize/ })).not.toBeInTheDocument()
+  expect(within(screen.getByRole('dialog')).getByRole('group', { name: 'Final score' })).toHaveTextContent('Player 15Player 24')
 })
 
 test('game over shows a Prize breakdown row, in points, when Prize is enabled', () => {
