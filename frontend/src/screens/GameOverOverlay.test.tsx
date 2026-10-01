@@ -138,19 +138,19 @@ test.each([
   expect(dialog).toHaveAttribute('data-outcome', outcome)
 })
 
-test('View board comes first and holds focus; New game is second', () => {
+test('View Board comes first and holds focus; New Game is second', () => {
   const dialog = renderOver({ winner: 1, area: [158, 141] })
   const buttons = within(dialog).getAllByRole('button')
-  expect(buttons.map((b) => b.textContent)).toEqual(['View board', 'New game'])
+  expect(buttons.map((b) => b.textContent)).toEqual(['View Board', 'New Game'])
   expect(buttons[0]).toHaveFocus()
 })
 
-test('View board and New game call their handlers', () => {
+test('View Board and New Game call their handlers', () => {
   const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
   const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
-  fireEvent.click(within(dialog).getByRole('button', { name: 'View board' }))
+  fireEvent.click(within(dialog).getByRole('button', { name: 'View Board' }))
   expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
-  fireEvent.click(within(dialog).getByRole('button', { name: 'New game' }))
+  fireEvent.click(within(dialog).getByRole('button', { name: 'New Game' }))
   expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
 })
 

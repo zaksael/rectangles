@@ -388,7 +388,7 @@ This starts the server (see above) automatically via the Vite dev proxy;
 open the printed `localhost` URL to play.
 
 Current state: a full vanilla match (Mode Select → roll/place/skip → game
-over → New Game) works start to finish, including disconnect handling,
+over → View Board / New Game) works start to finish, including disconnect handling,
 surrender, and a read-only mid-game Settings/pause screen. Walls, Obstacles,
 Prize, Pitfall, Steal, Enclosure Penalty, and Reroll are built and toggleable
 on the picker. Not yet built: Wildcard and Comeback Nudge (still forced off

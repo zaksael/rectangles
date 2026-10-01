@@ -199,7 +199,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             <div className="section-label-row">
               <span className="section-label">Match setup</span>
               <button type="button" className="reset-link" onClick={() => setConfirmingReset(true)}>
-                Reset to defaults
+                Reset to Defaults
               </button>
             </div>
             <div className="field-row">

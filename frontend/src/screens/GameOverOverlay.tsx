@@ -126,10 +126,10 @@ export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireS
       <strong>{headlineText(game)}</strong>
       {margin !== null && <span>by {pointsText(margin)}</span>}
       <button className="btn secondary" onClick={onViewResult}>
-        View result
+        View Result
       </button>
       <button className="btn secondary" onClick={onNewGame}>
-        New game
+        New Game
       </button>
     </div>
   )
@@ -210,10 +210,10 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
       </table>
       <div className="actions">
         <button className="btn primary" onClick={onViewBoard} autoFocus>
-          View board
+          View Board
         </button>
         <button className="btn secondary" onClick={onNewGame}>
-          New game
+          New Game
         </button>
       </div>
     </dialog>

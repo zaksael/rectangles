@@ -439,11 +439,11 @@ test('game over shows an Enclosure breakdown row, as a negative deduction of 1 p
   ])
 })
 
-test('the game-over dialog offers New game', () => {
+test('the game-over dialog offers New Game', () => {
   const onNewGame = vi.fn()
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }), vi.fn(), null, onNewGame)
 
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New game' }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New Game' }))
 
   expect(onNewGame).toHaveBeenCalledTimes(1)
 })
@@ -455,10 +455,10 @@ function gameOverState() {
   return { game, series: null }
 }
 
-test('View board hides the result dialog and pins a slim result bar over the board', () => {
+test('View Board hides the result dialog and pins a slim result bar over the board', () => {
   renderScreen(gameOverState())
 
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View board' }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   const bar = screen.getByRole('region', { name: 'Game result' })
@@ -467,23 +467,23 @@ test('View board hides the result dialog and pins a slim result bar over the boa
   expect(screen.getByRole('grid')).toBeInTheDocument()
 })
 
-test('Escape on the result dialog shows the board, and View result brings the dialog back', () => {
+test('Escape on the result dialog shows the board, and View Result brings the dialog back', () => {
   renderScreen(gameOverState())
 
   fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-  fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View result' }))
+  fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' }))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   expect(screen.queryByRole('region', { name: 'Game result' })).not.toBeInTheDocument()
 })
 
-test('the result bar offers New game', () => {
+test('the result bar offers New Game', () => {
   const onNewGame = vi.fn()
   renderScreen(gameOverState(), vi.fn(), null, onNewGame)
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View board' }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
 
-  fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'New game' }))
+  fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'New Game' }))
 
   expect(onNewGame).toHaveBeenCalledTimes(1)
 })

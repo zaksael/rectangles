@@ -175,13 +175,13 @@ test('while connectFailed, shows an inline retry message and Start Game stays en
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 })
 
-test('Reset to defaults opens a confirm dialog', () => {
+test('Reset to Defaults opens a confirm dialog', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
 
-  expect(screen.getByRole('heading', { name: 'Reset to defaults?' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Reset to Defaults?' })).toBeInTheDocument()
 })
 
 test('confirming the reset dialog restores match setup but keeps the chosen opponent', () => {
@@ -191,10 +191,10 @@ test('confirming the reset dialog restores match setup but keeps the chosen oppo
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
   fireEvent.click(screen.getByRole('radio', { name: 'Blocking' }))
 
-  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
   fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 
-  expect(screen.queryByRole('heading', { name: 'Reset to defaults?' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Reset to Defaults?' })).not.toBeInTheDocument()
   expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: '19×19' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: 'Greedy' })).toHaveAttribute('aria-checked', 'true')
@@ -206,9 +206,9 @@ test('cancelling the reset dialog leaves settings untouched', () => {
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
 
-  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
-  expect(screen.queryByRole('heading', { name: 'Reset to defaults?' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Reset to Defaults?' })).not.toBeInTheDocument()
   expect(screen.getByRole('radio', { name: '23×23' })).toHaveAttribute('aria-checked', 'true')
 })

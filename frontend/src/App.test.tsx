@@ -126,7 +126,7 @@ describe('App', () => {
     expect(screen.queryByText("Couldn't connect — your settings are unchanged, try again")).not.toBeInTheDocument()
   })
 
-  it('returns to Mode Select from the game-over dialog on one New game click, even when the socket closes asynchronously', () => {
+  it('returns to Mode Select from the game-over dialog on one New Game click, even when the socket closes asynchronously', () => {
     render(<App />)
     startGameAndOpen()
     // Real sockets report `close` some time after `close()` is called, not synchronously.
@@ -143,7 +143,7 @@ describe('App', () => {
       })
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'New game' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
 
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
   })

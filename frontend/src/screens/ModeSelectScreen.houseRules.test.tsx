@@ -41,11 +41,11 @@ test('Start Game sends only implemented house rules, and toggling one flips it',
   expect(onStartGame.mock.calls[1][0]).toMatchObject({ pitfallEnabled: false })
 })
 
-test('Reset to defaults restores an implemented house rule', () => {
+test('Reset to Defaults restores an implemented house rule', () => {
   renderWithBot()
 
   fireEvent.click(screen.getByRole('checkbox', { name: 'Pitfall' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
   fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 
   expect(screen.getByRole('checkbox', { name: 'Pitfall' })).toHaveAttribute('aria-checked', 'true')
