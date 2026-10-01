@@ -121,10 +121,15 @@ function headlineText(game: GameWireState): string {
 // What is left of the result while the player looks at the final board: the outcome, and a way back.
 export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireState; onViewResult: () => void; onNewGame: () => void }) {
   const margin = scoreMargin(game)
+  const reason = game.gameOver.reason === 'boardFull' ? null : reasonText(game)
   return (
     <div className="game-over-bar" role="region" aria-label="Game result">
-      <strong>{headlineText(game)}</strong>
+      <strong>
+        <span className={`dot ${game.gameOver.winner === null ? 'tie' : `p${game.gameOver.winner}`}`} aria-hidden="true" />
+        {headlineText(game)}
+      </strong>
       {margin !== null && <span>by {pointsText(margin)}</span>}
+      {reason && <span className="game-over-bar-reason">{reason}</span>}
       <button className="btn secondary" onClick={onViewResult}>
         View Result
       </button>

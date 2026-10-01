@@ -378,17 +378,20 @@ dialog.modal .reason {
   padding: 1px 4px;
   border: 1px solid var(--ink);
 }
-.game-over .dot {
+.game-over .dot,
+.game-over-bar .dot {
   display: inline-block;
   width: 12px;
   height: 12px;
   margin-right: 6px;
   border-radius: 50%;
 }
-.game-over .p1 {
+.game-over .p1,
+.game-over-bar .p1 {
   background: var(--p1);
 }
-.game-over .p2 {
+.game-over .p2,
+.game-over-bar .p2 {
   background: var(--p2);
 }
 .game-over table.breakdown {
@@ -639,6 +642,8 @@ dialog.settings {
 /* Slim result bar, a full-width row of the sticky header, shown while the player looks at the final board. */
 .game-over-bar {
   grid-column: 1 / -1;
+  /* Wrap to the board's width instead of widening the shrink-to-fit frame. */
+  contain: inline-size;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -650,6 +655,15 @@ dialog.settings {
 .game-over-bar strong {
   font-family: 'Source Serif 4', serif;
   font-size: 16px;
+}
+.game-over-bar .dot.tie {
+  background: linear-gradient(to right, var(--p1) 50%, var(--p2) 50%);
+}
+.game-over-bar-reason {
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+.game-over-bar-reason::before {
+  content: '· ';
 }
 .game-over-bar .btn {
   padding: 7px 12px;

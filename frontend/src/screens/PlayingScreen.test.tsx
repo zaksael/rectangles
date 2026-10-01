@@ -1188,3 +1188,58 @@ test('every modal dialog is border-box, so its declared width includes the paddi
 
   expect(getComputedStyle(dialog).boxSizing).toBe('border-box')
 })
+
+type GameOver = GameState['game']['gameOver']
+
+function resultBar(gameOver: GameOver, tweak: (game: GameState['game']) => void = () => {}) {
+  const game = makeGame({ turn: gameOverTurn, gameOver })
+  tweak(game)
+  renderScreen({ game, series: null })
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
+  return screen.getByRole('region', { name: 'Game result' })
+}
+
+test('the result bar names who surrendered', () => {
+  const bar = resultBar({ reason: 'surrender', playerId: 2, winner: 1 })
+  expect(within(bar).getByText('Player 2 surrendered')).toBeInTheDocument()
+})
+
+test('the result bar states no reason when the board simply settled', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
+  expect(within(bar).queryByText(/board settled/)).not.toBeInTheDocument()
+})
+
+test.each([
+  ['playerBlocked', 1, 'Player 1 boxed in'],
+  ['skipLimit', 2, 'Player 2 hit the skip limit (5 of 5)'],
+] as const)('the result bar names the player for a %s ending', (reason, playerId, text) => {
+  const bar = resultBar({ reason, playerId, winner: 3 - playerId })
+  expect(within(bar).getByText(text)).toBeInTheDocument()
+})
+
+test('the result bar shows the margin and then the end reason, when a game has both', () => {
+  const bar = resultBar({ reason: 'playerBlocked', playerId: 1, winner: 2 }, (game) => {
+    game.players['2'].score = { ...game.players['2'].score, totalScore: 20 }
+  })
+  const text = bar.textContent ?? ''
+  expect(text.indexOf('by 20 points')).toBeGreaterThan(-1)
+  expect(text.indexOf('boxed in')).toBeGreaterThan(text.indexOf('by 20 points'))
+})
+
+test('a tie ended by the skip limit still names the reason on the bar', () => {
+  const bar = resultBar({ reason: 'skipLimit', playerId: 1, winner: null })
+  expect(within(bar).getByText('Tied')).toBeInTheDocument()
+  expect(within(bar).getByText('Player 1 hit the skip limit (5 of 5)')).toBeInTheDocument()
+})
+
+test('a win puts the winner’s colour dot beside the outcome on the bar', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 2 })
+  expect(bar.querySelector('.dot.p2')).not.toBeNull()
+  expect(bar.querySelector('.dot.p1')).toBeNull()
+})
+
+test('a tie puts a half-and-half marker, in both colours, in place of the winner dot', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: null })
+  expect(bar.querySelector('.dot.tie')).not.toBeNull()
+  expect(bar.querySelector('.dot.p1, .dot.p2')).toBeNull()
+})
