@@ -454,7 +454,7 @@ test('View Board hides the result dialog and pins a slim result bar over the boa
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   const bar = screen.getByRole('region', { name: 'Game result' })
   expect(bar).toHaveTextContent('Player 1 wins on score')
-  expect(bar).toHaveTextContent('by 17 points')
+  expect(bar).toHaveTextContent('158 – 141')
   expect(screen.getByRole('grid')).toBeInTheDocument()
 })
 
@@ -1217,13 +1217,10 @@ test.each([
   expect(within(bar).getByText(text)).toBeInTheDocument()
 })
 
-test('the result bar shows the margin and then the end reason, when a game has both', () => {
-  const bar = resultBar({ reason: 'playerBlocked', playerId: 1, winner: 2 }, (game) => {
-    game.players['2'].score = { ...game.players['2'].score, totalScore: 20 }
-  })
-  const text = bar.textContent ?? ''
-  expect(text.indexOf('by 20 points')).toBeGreaterThan(-1)
-  expect(text.indexOf('boxed in')).toBeGreaterThan(text.indexOf('by 20 points'))
+test('the end reason sits under the outcome, in the same block', () => {
+  const bar = resultBar({ reason: 'playerBlocked', playerId: 1, winner: 2 })
+  const reason = within(bar).getByText('Player 1 boxed in')
+  expect(reason.previousElementSibling).toHaveTextContent('Player 2 wins on score')
 })
 
 test('a tie ended by the skip limit still names the reason on the bar', () => {
@@ -1238,10 +1235,14 @@ test('a win puts the winner’s colour dot beside the outcome on the bar', () =>
   expect(bar.querySelector('.dot.p1')).toBeNull()
 })
 
-test('a tie puts a half-and-half marker, in both colours, in place of the winner dot', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: null })
+test('a tie puts a half-and-half marker, in both colours, in place of the winner dot, beside equal scores', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: null }, (game) => {
+    game.players['1'].score = { ...game.players['1'].score, totalScore: 150 }
+    game.players['2'].score = { ...game.players['2'].score, totalScore: 150 }
+  })
   expect(bar.querySelector('.dot.tie')).not.toBeNull()
   expect(bar.querySelector('.dot.p1, .dot.p2')).toBeNull()
+  expect(bar).toHaveTextContent('150 – 150')
 })
 
 test('mid-game, the header marks the player whose turn it is', () => {
@@ -1253,4 +1254,57 @@ test('once the game is over, the header marks no current player', () => {
   renderScreen(gameOverState())
   expect(document.querySelector('[aria-current]')).toBeNull()
   expect(document.querySelector('.header .current')).toBeNull()
+})
+
+test('in board view the result bar replaces the player header', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
+  expect(bar).toBeInTheDocument()
+  expect(screen.queryByText(/skips/)).not.toBeInTheDocument()
+})
+
+test('with the result dialog open, the header still shows both players', () => {
+  renderScreen(gameOverState())
+  expect(screen.getAllByText(/skips/)).toHaveLength(2)
+})
+
+test('the header and the dialog come back with View Result, and View Board swaps them for the bar again', () => {
+  renderScreen(gameOverState())
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
+  expect(screen.queryByText(/skips/)).not.toBeInTheDocument()
+
+  fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' }))
+  expect(screen.getAllByText(/skips/)).toHaveLength(2)
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
+  expect(screen.queryByText(/skips/)).not.toBeInTheDocument()
+})
+
+test('the bar shows the real score, Player 1 first, even when the winner trails after a surrender', () => {
+  const bar = resultBar({ reason: 'surrender', playerId: 2, winner: 1 }, (game) => {
+    game.players['1'].score = { ...game.players['1'].score, totalScore: 120 }
+    game.players['2'].score = { ...game.players['2'].score, totalScore: 158 }
+  })
+  expect(bar).toHaveTextContent('120 – 158')
+  expect(within(bar).getByText('Player 1 120, Player 2 158')).toBeInTheDocument()
+  expect(bar).not.toHaveTextContent(/by \d+ point/)
+})
+
+test('focus lands on View Result in the bar after View Board', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
+  expect(within(bar).getByRole('button', { name: 'View Result' })).toHaveFocus()
+})
+
+test('focus lands on View Result in the bar after Escape', () => {
+  renderScreen(gameOverState())
+  fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }))
+  expect(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' })).toHaveFocus()
+})
+
+test('the bar shows total score, not territory, when modifiers make them differ', () => {
+  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 }, (game) => {
+    game.players['1'].score = { ...game.players['1'].score, totalArea: 152, totalScore: 162 }
+    game.players['2'].score = { ...game.players['2'].score, totalArea: 141, totalScore: 141 }
+  })
+  expect(bar).toHaveTextContent('162 – 141')
 })

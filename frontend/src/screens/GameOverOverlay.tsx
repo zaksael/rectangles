@@ -120,22 +120,32 @@ function headlineText(game: GameWireState): string {
 
 // What is left of the result while the player looks at the final board: the outcome, and a way back.
 export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireState; onViewResult: () => void; onNewGame: () => void }) {
-  const margin = scoreMargin(game)
   const reason = game.gameOver.reason === 'boardFull' ? null : reasonText(game)
+  const score1 = game.players['1'].score.totalScore
+  const score2 = game.players['2'].score.totalScore
   return (
     <div className="game-over-bar" role="region" aria-label="Game result">
-      <strong>
-        <span className={`dot ${game.gameOver.winner === null ? 'tie' : `p${game.gameOver.winner}`}`} aria-hidden="true" />
-        {headlineText(game)}
-      </strong>
-      {margin !== null && <span>by {pointsText(margin)}</span>}
-      {reason && <span className="game-over-bar-reason">{reason}</span>}
-      <button className="btn secondary" onClick={onViewResult}>
-        View Result
-      </button>
-      <button className="btn secondary" onClick={onNewGame}>
-        New Game
-      </button>
+      <div className="game-over-bar-text">
+        <strong>
+          <span className={`dot ${game.gameOver.winner === null ? 'tie' : `p${game.gameOver.winner}`}`} aria-hidden="true" />
+          {headlineText(game)}
+        </strong>
+        {reason && <span className="game-over-bar-reason">{reason}</span>}
+      </div>
+      <span className="game-over-bar-score">
+        <span aria-hidden="true">
+          {score1} – {score2}
+        </span>
+        <span className="visually-hidden">{`${nameOf(game, 1)} ${score1}, ${nameOf(game, 2)} ${score2}`}</span>
+      </span>
+      <div className="game-over-bar-actions">
+        <button className="btn secondary" onClick={onViewResult} autoFocus>
+          View Result
+        </button>
+        <button className="btn secondary" onClick={onNewGame}>
+          New Game
+        </button>
+      </div>
     </div>
   )
 }

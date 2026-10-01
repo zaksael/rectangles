@@ -124,6 +124,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
   const shownRoll = lastRollRef.current
 
+  // In board view the result bar takes the header's place, so the player cells are not rendered.
+  const showResultBar = turnState === 'gameOver' && resultHidden
   // Once the game is over nobody is to move, so the header stops marking a player.
   const currentId = turnState === 'gameOver' ? null : state?.game.turn.currentPlayerId
   const currentName = state && noBreak(state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name)
@@ -175,7 +177,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       {state && (
         <>
           <div className="header">
-            {(['1', '2'] as const).map((id) => (
+            {!showResultBar && (['1', '2'] as const).map((id) => (
               <div
                 key={id}
                 className={`player p${id}${currentId === Number(id) ? ' current' : ''}`}
@@ -199,7 +201,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
-            {turnState === 'gameOver' && resultHidden && (
+            {showResultBar && (
               <GameOverBar game={state.game} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} />
             )}
             {turnStatus && (
