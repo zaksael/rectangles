@@ -166,7 +166,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
         e.preventDefault()
         onViewBoard()
       }} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
-      {detail && <p className="reason">Game ended: {detail}</p>}
+      {detail && <p className="reason">{detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
         {headlineText(game)}

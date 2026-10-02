@@ -329,7 +329,7 @@ test('game over shows a dialog with the end reason and the winner', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const dialog = screen.getByRole('dialog')
-  expect(within(dialog).getByText('Game ended: board settled')).toBeInTheDocument()
+  expect(within(dialog).getByText('board settled')).toBeInTheDocument()
   expect(within(dialog).getByRole('heading', { name: 'Player\u00a01 wins on score' })).toBeInTheDocument()
 })
 
@@ -339,9 +339,9 @@ test('no game-over dialog while the game is in progress', () => {
 })
 
 test.each([
-  ['playerBlocked', 2, 'Game ended: Player 2 boxed in'],
-  ['skipLimit', 1, 'Game ended: Player 1 hit the skip limit (5 of 5)'],
-  ['surrender', 2, 'Game ended: Player 2 surrendered'],
+  ['playerBlocked', 2, 'Player 2 boxed in'],
+  ['skipLimit', 1, 'Player 1 hit the skip limit (5 of 5)'],
+  ['surrender', 2, 'Player 2 surrendered'],
 ] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason, playerId, winner: 1 } }))
   expect(within(screen.getByRole('dialog')).getByText(text)).toBeInTheDocument()
