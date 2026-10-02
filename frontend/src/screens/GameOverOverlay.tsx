@@ -217,7 +217,12 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
               <tr key={row.label}>
                 <th scope="row">
                   {row.label}
-                  {swing?.label === row.label && <span className="game-over-swing-tag">Biggest swing</span>}
+                  {swing?.label === row.label && (
+                    <>
+                      <span className="visually-hidden">,</span>{' '}
+                      <span className="game-over-swing-tag">Biggest swing</span>
+                    </>
+                  )}
                   <span className="game-over-row-note">{row.note(game)}</span>
                 </th>
                 {(['1', '2'] as const).map((id) => {

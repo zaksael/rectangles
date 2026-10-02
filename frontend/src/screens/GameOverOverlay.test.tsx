@@ -56,6 +56,9 @@ test('the modifier with the biggest swing is named in the story and tagged in th
   expect(dialog).toHaveAccessibleDescription('by 14 points. Biggest swing: Steal, 20.')
   expect(within(dialog).getByRole('row', { name: /Steal/ })).toHaveTextContent('Biggest swing')
   expect(within(dialog).getByRole('row', { name: /Prize/ })).not.toHaveTextContent('Biggest swing')
+  // The tag is separated from the label in the row header's accessible name; other rows get no separator.
+  expect(within(dialog).getByRole('rowheader', { name: /^Steal, Biggest swing/ })).toBeInTheDocument()
+  expect(within(dialog).getByRole('rowheader', { name: /^Prize\+/ })).toBeInTheDocument()
 })
 
 test('a swing under half the margin is neither tagged nor named', () => {

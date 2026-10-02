@@ -374,7 +374,7 @@ dialog.modal .reason {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-left: 6px;
+  margin-left: 3px; /* the rest of the 6px gap is the space that separates it from the label in the accessible name */
   padding: 1px 4px;
   border: 1px solid var(--ink);
 }
