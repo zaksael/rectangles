@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { ModeSelectScreen } from './ModeSelectScreen'
 
@@ -121,6 +121,18 @@ test('Enter activates a non-native radio/checkbox widget', () => {
   fireEvent.keyDown(screen.getByRole('radio', { name: 'Local 2P' }), { key: 'Enter' })
 
   expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAttribute('aria-checked', 'true')
+})
+
+test('the segmented groups are named by their visible label and their options are plain buttons', () => {
+  const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+
+  for (const name of ['Board size', 'Skip limit']) {
+    const group = screen.getByRole('radiogroup', { name })
+    expect(group).not.toHaveAttribute('aria-label')
+    for (const option of within(group).getAllByRole('radio')) expect(option).toHaveAttribute('type', 'button')
+  }
+  expect(container.querySelector('label')).toBeNull()
 })
 
 // Series play needs the round-transition screen, so the Games picker stays hidden until it lands.

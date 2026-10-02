@@ -204,12 +204,13 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             </div>
             <div className="field-row">
               <div className="field">
-                <label>Board size</label>
-                <div className="segmented" role="radiogroup" aria-label="Board size">
+                <span className="field-label" id="board-size-label">Board size</span>
+                <div className="segmented" role="radiogroup" aria-labelledby="board-size-label">
                   {BOARD_SIZES.map((size) => (
                     <button
                       key={size}
                       className={settings.boardSize === size ? 'active' : undefined}
+                      type="button"
                       role="radio"
                       aria-checked={settings.boardSize === size}
                       onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
@@ -220,12 +221,13 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                 </div>
               </div>
               <div className="field">
-                <label>Skip limit</label>
-                <div className="segmented" role="radiogroup" aria-label="Skip limit">
+                <span className="field-label" id="skip-limit-label">Skip limit</span>
+                <div className="segmented" role="radiogroup" aria-labelledby="skip-limit-label">
                   {SKIP_LIMITS.map((limit) => (
                     <button
                       key={limit}
                       className={settings.skipLimit === limit ? 'active' : undefined}
+                      type="button"
                       role="radio"
                       aria-checked={settings.skipLimit === limit}
                       onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
@@ -237,12 +239,13 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
               </div>
               {SERIES_IMPLEMENTED && (
                 <div className="field">
-                  <label>Games</label>
-                  <div className="segmented" role="radiogroup" aria-label="Games">
+                  <span className="field-label" id="games-label">Games</span>
+                  <div className="segmented" role="radiogroup" aria-labelledby="games-label">
                     {GAMES_OPTIONS.map((option) => (
                       <button
                         key={option.label}
                         className={settings.seriesLength === option.value ? 'active' : undefined}
+                        type="button"
                         role="radio"
                         aria-checked={settings.seriesLength === option.value}
                         onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
