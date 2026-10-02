@@ -347,6 +347,9 @@ dialog.modal .reason {
   font-size: 14px;
   margin: 0 0 18px;
 }
+.game-over-story b {
+  font-weight: 600;
+}
 .game-over table.breakdown tr:has(.game-over-swing-tag) th:first-child {
   position: relative;
 }

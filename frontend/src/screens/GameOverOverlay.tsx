@@ -106,11 +106,17 @@ function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null
 
 const pointsText = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`
 
-function storyText(game: GameWireState, rows: ModifierRow[], margin: number | null, swing: Swing | null): string | null {
+// The margin is shown bold; `detail` is the comeback or biggest-swing sentence that follows it, when there is one.
+interface Story {
+  margin: string
+  detail: string | null
+}
+
+function storyText(game: GameWireState, rows: ModifierRow[], margin: number | null, swing: Swing | null): Story | null {
   if (margin === null) return null
   const comeback = comebackClause(game, rows)
-  if (comeback) return `by ${pointsText(margin)}. ${comeback}`
-  return swing ? `by ${pointsText(margin)}. Biggest swing: ${swing.label}, ${swing.size}.` : `by ${pointsText(margin)}`
+  const detail = comeback ?? (swing ? `Biggest swing: ${swing.label}, ${swing.size}.` : null)
+  return { margin: pointsText(margin), detail }
 }
 
 function headlineText(game: GameWireState): string {
@@ -173,7 +179,8 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
       </h2>
       {story && (
         <p className="game-over-story" id="gameover-story">
-          {story}
+          by <b>{story.margin}</b>
+          {story.detail && `. ${story.detail}`}
         </p>
       )}
       {endReason === 'surrender' && <p className="game-over-caption">Score at surrender</p>}

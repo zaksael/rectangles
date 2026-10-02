@@ -668,7 +668,7 @@ test('the winner’s score cell has a 4px top border and 4px less top padding, s
   expect([other.borderTopWidth, other.paddingTop]).toEqual(['0px', '10px'])
 })
 
-test('the breakdown row note is 12px and the biggest-swing tag 11px, clear of the overlay detector’s tiny-text floor', () => {
+test('the breakdown row note is 12px, the biggest-swing tag 11px, and the story bolds only its margin', () => {
   injectPlayingCss()
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.prize = { enabled: true, cells: [], points: 5 }
@@ -681,6 +681,8 @@ test('the breakdown row note is 12px and the biggest-swing tag 11px, clear of th
 
   expect(getComputedStyle(screen.getByText('+5 per captured cell')).fontSize).toBe('12px')
   expect(getComputedStyle(screen.getByText('Biggest swing')).fontSize).toBe('11px')
+  expect(getComputedStyle(screen.getByText('20 points')).fontWeight).toBe('600')
+  expect(getComputedStyle(document.querySelector('.game-over-story')!).fontWeight).not.toBe('600')
 })
 
 test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the lower number', () => {
