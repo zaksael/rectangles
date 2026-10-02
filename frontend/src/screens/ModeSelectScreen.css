@@ -29,6 +29,7 @@
      a width change here would shift the shared grid row by a sub-pixel. */
   border: 2px solid color-mix(in srgb, var(--ink) 55%, transparent);
   padding: 16px;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -58,8 +59,37 @@
 .mode-card:active {
   background: color-mix(in srgb, var(--ink) 14%, transparent);
 }
+/* Declared after :hover and :active on purpose: a chosen card keeps its tint instead of reacting to the pointer. */
 .mode-card.selected {
   border-color: var(--ink);
+  background-color: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+/* Radio marker: hollow when off, a ring-in-square when on, so the choice never rests on border colour alone.
+   Its own element (not a pseudo-element) and absolutely positioned, so the card's size is unchanged. */
+.mode-marker {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  border-style: solid;
+  border-top-color: color-mix(in srgb, var(--ink) 55%, transparent);
+  border-right-color: color-mix(in srgb, var(--ink) 55%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--ink) 55%, transparent);
+  border-left-color: color-mix(in srgb, var(--ink) 55%, transparent);
+  background-color: transparent;
+}
+.mode-card.selected .mode-marker {
+  border-color: var(--ink);
+  background-color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ledger);
+}
+/* Forced colors drop the fill and the inset ring but keep borders, so the chosen marker reads as a thick square there. */
+@media (forced-colors: active) {
+  .mode-card.selected .mode-marker {
+    border-width: 5px;
+  }
 }
 .mode-card .mode-name {
   font-weight: 600;
@@ -106,12 +136,11 @@
   background: color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
-/* .mode-card-select is the real radio for Vs Bot (see comment above) —
-   :focus-within so the ring still wraps the whole card, not just that
-   inner element; also covers Local 2P, whose role="radio" is .mode-card
-   itself. Neither is a native <button>, so this repeats the app-wide focus
-   treatment here. */
-.mode-card:focus-within {
+/* Keyboard focus only (:focus-visible), so a mouse click leaves no ring and the selection cue stays unambiguous.
+   Vs Bot's radio is the inner .mode-card-select, so its ring still wraps the whole card via :has(); Local 2P's
+   role="radio" is .mode-card itself. Neither is a native <button>, so this repeats the app-wide focus treatment. */
+.mode-card:focus-visible,
+.mode-card:has(.mode-card-select:focus-visible) {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }

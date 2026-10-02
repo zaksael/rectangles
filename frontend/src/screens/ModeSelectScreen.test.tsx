@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest'
 import { ModeSelectScreen } from './ModeSelectScreen'
 
 beforeEach(() => {
@@ -211,6 +212,61 @@ describe('Opponent cards', () => {
     fireEvent.keyDown(local, { key: 'ArrowRight' })
     expect(bot).toHaveAttribute('aria-checked', 'true')
     expect(bot).toHaveFocus()
+  })
+})
+
+// jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
+function injectModeSelectCss() {
+  const style = document.createElement('style')
+  style.textContent = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
+  document.head.append(style)
+  onTestFinished(() => style.remove())
+}
+
+describe('selection cue on the opponent cards', () => {
+  const renderCards = () => {
+    injectModeSelectCss()
+    const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    return [...container.querySelectorAll<HTMLElement>('.mode-card')]
+  }
+  const cssRules = () => [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules])
+
+  test('the selected card is marked by a filled marker and a light tint, the other by neither', () => {
+    const [bot, local] = renderCards()
+    const marker = (card: HTMLElement) => card.querySelector('.mode-marker')!
+    const tint = 'color-mix(in srgb, var(--ink) 6%, transparent)'
+
+    expect(marker(bot)).toHaveAttribute('aria-hidden', 'true')
+    expect(marker(local)).toHaveAttribute('aria-hidden', 'true')
+    fireEvent.click(local)
+    expect(getComputedStyle(marker(local)).backgroundColor).toBe('var(--ink)')
+    expect(getComputedStyle(local).backgroundColor).toBe(tint)
+    expect(getComputedStyle(marker(bot)).backgroundColor).not.toBe('var(--ink)')
+    expect(getComputedStyle(bot).backgroundColor).not.toBe(tint)
+    // The hollow marker's border is 55% ink like the card's, which clears the 3:1 floor for a control boundary.
+    expect(getComputedStyle(marker(bot)).borderTopColor).toBe('color-mix(in srgb, var(--ink) 55%, transparent)')
+  })
+
+  // jsdom can't evaluate :focus-visible or :has, so the keyboard-only ring is asserted on the stylesheet's selectors.
+  test('the focus ring is keyboard-only: it never follows :focus-within, which a mouse click also sets', () => {
+    renderCards()
+    const selectors = cssRules()
+      .flatMap((rule) => ((rule as CSSStyleRule).selectorText ?? '').split(',').map((selector) => selector.trim()))
+
+    expect(selectors.some((selector) => selector.includes(':focus-within'))).toBe(false)
+    expect(selectors).toContain('.mode-card:focus-visible')
+    expect(selectors).toContain('.mode-card:has(.mode-card-select:focus-visible)')
+  })
+
+  // Forced-colors mode drops backgrounds and shadows but keeps borders, so the selected marker thickens its border there.
+  test('the selected marker has a thicker border in forced-colors mode, where its fill is dropped', () => {
+    renderCards()
+    const forced = cssRules()
+      .filter((rule) => rule instanceof CSSMediaRule && rule.conditionText.includes('forced-colors: active'))
+      .flatMap((rule) => [...(rule as CSSMediaRule).cssRules] as CSSStyleRule[])
+    const marker = forced.find((rule) => rule.selectorText === '.mode-card.selected .mode-marker')
+
+    expect(marker?.style.borderWidth).toBe('5px')
   })
 })
 

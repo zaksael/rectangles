@@ -158,6 +158,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           className={settings.opponent === 'bot' ? 'mode-card selected' : 'mode-card'}
           onClick={() => setSettings((s) => ({ ...s, opponent: 'bot' }))}
         >
+          <span className="mode-marker" aria-hidden="true" />
           <div
             className="mode-card-select"
             role="radio"
@@ -209,6 +210,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             handleRadioArrowKey(e)
           }}
         >
+          <span className="mode-marker" aria-hidden="true" />
           <span className="mode-name">Local 2P</span>
           <span className="mode-desc">Two players share this device</span>
         </div>
