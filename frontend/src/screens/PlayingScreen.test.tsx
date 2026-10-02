@@ -693,6 +693,13 @@ test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the l
   expect(getComputedStyle(total).color).toBe('color-mix(in srgb, var(--ink) 70%, transparent)')
 })
 
+test('a headline followed straight by the scoreboard keeps 18px below it', () => {
+  injectPlayingCss()
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: null } }))
+
+  expect(getComputedStyle(screen.getByRole('heading', { name: 'Tied' })).marginBottom).toBe('18px')
+})
+
 test('shows no dice before the first roll of the game', () => {
   renderScreen(rolledState('awaitingRoll', null))
 
