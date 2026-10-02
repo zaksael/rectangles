@@ -138,7 +138,8 @@ test('the segmented groups are named by their visible label and their options ar
 function renderRadios(group: string) {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
-  return within(screen.getByRole('radiogroup', { name: group })).getAllByRole('radio')
+  // Difficulty is a plain labelled group, so it is not a second radiogroup nested inside Opponent.
+  return within(screen.getByRole(group === 'Difficulty' ? 'group' : 'radiogroup', { name: group })).getAllByRole('radio')
 }
 
 describe.each(['Board size', 'Skip limit', 'Difficulty'])('%s radio options', (group) => {
@@ -185,6 +186,19 @@ describe('Opponent cards', () => {
     fireEvent.click(local)
 
     expect([bot.tabIndex, local.tabIndex]).toEqual([-1, 0])
+  })
+
+  test('the Difficulty pills sit in a labelled group, not a second radiogroup nested in Opponent, and state their own position', () => {
+    const [bot] = renderCards()
+    fireEvent.click(bot)
+
+    expect(screen.queryByRole('radiogroup', { name: 'Difficulty' })).not.toBeInTheDocument()
+    const pills = within(screen.getByRole('group', { name: 'Difficulty' })).getAllByRole('radio')
+    expect(pills.map((p) => [p.getAttribute('aria-posinset'), p.getAttribute('aria-setsize')])).toEqual([
+      ['1', '3'],
+      ['2', '3'],
+      ['3', '3'],
+    ])
   })
 
   test('an arrow from the first card selects and focuses the other, and wraps back', () => {

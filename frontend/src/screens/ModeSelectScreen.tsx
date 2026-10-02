@@ -108,6 +108,8 @@ function handleActivateKey(e: KeyboardEvent, onActivate: () => void): void {
   }
 }
 
+// Difficulty is a plain `group`, so a group boundary is either role.
+const RADIO_GROUP = '[role="radiogroup"], [role="group"]'
 const ARROW_STEP: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
 
 // Radio pattern: an arrow key moves the selection, and focus, to the neighbouring radio of the same group, wrapping.
@@ -115,8 +117,8 @@ const ARROW_STEP: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowL
 function handleRadioArrowKey(e: KeyboardEvent<HTMLElement>): void {
   const step = ARROW_STEP[e.key]
   if (!step) return
-  const group = e.currentTarget.closest('[role="radiogroup"]')!
-  const radios = [...group.querySelectorAll<HTMLElement>('[role="radio"]')].filter((r) => r.closest('[role="radiogroup"]') === group)
+  const group = e.currentTarget.closest(RADIO_GROUP)!
+  const radios = [...group.querySelectorAll<HTMLElement>('[role="radio"]')].filter((r) => r.closest(RADIO_GROUP) === group)
   const next = radios[(radios.indexOf(e.currentTarget) + step + radios.length) % radios.length]
   e.preventDefault()
   next.click()
@@ -172,18 +174,20 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           </div>
           <div
             className={settings.opponent === 'bot' ? 'difficulty-pills' : 'difficulty-pills hidden'}
-            role="radiogroup"
+            role="group"
             aria-label="Difficulty"
             aria-hidden={settings.opponent !== 'bot'}
             inert={settings.opponent !== 'bot'}
           >
-            {DIFFICULTIES.map((difficulty) => (
+            {DIFFICULTIES.map((difficulty, index) => (
               <button
                 key={difficulty}
                 type="button"
                 className={settings.botDifficulty === difficulty ? 'pill active' : 'pill'}
                 role="radio"
                 aria-checked={settings.botDifficulty === difficulty}
+                aria-posinset={index + 1}
+                aria-setsize={DIFFICULTIES.length}
                 tabIndex={settings.botDifficulty === difficulty ? 0 : -1}
                 onKeyDown={handleRadioArrowKey}
                 onClick={() => setSettings((s) => ({ ...s, botDifficulty: difficulty }))}

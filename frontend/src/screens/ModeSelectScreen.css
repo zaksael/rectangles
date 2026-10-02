@@ -36,7 +36,7 @@
   text-align: left;
 }
 /* Vs Bot's role="radio"/keyboard handling live on this inner wrapper, not
-   .mode-card itself — it nests the difficulty-pills radiogroup as a sibling,
+   .mode-card itself — it nests the difficulty-pills group (a plain labelled group, not a second radiogroup) as a sibling,
    and a "radio" role can't contain further interactive content. .mode-card's
    own onClick (no role, so it isn't itself exposed as interactive) still
    covers the whole card for mouse users. Local
