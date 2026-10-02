@@ -683,6 +683,14 @@ test('the breakdown row note is 12px and the biggest-swing tag 11px, clear of th
   expect(getComputedStyle(screen.getByText('Biggest swing')).fontSize).toBe('11px')
 })
 
+test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the lower number', () => {
+  injectPlayingCss()
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+
+  const total = document.querySelector('.game-over-scoreboard .trail .n')!
+  expect(getComputedStyle(total).color).toBe('color-mix(in srgb, var(--ink) 70%, transparent)')
+})
+
 test('shows no dice before the first roll of the game', () => {
   renderScreen(rolledState('awaitingRoll', null))
 

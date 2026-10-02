@@ -479,7 +479,7 @@ dialog.modal .reason {
   font-variant-numeric: tabular-nums;
 }
 .game-over-scoreboard .trail .n {
-  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
 dialog.connection-lost {
