@@ -668,6 +668,21 @@ test('the winner’s score cell has a 4px top border and 4px less top padding, s
   expect([other.borderTopWidth, other.paddingTop]).toEqual(['0px', '10px'])
 })
 
+test('the breakdown row note is 12px and the biggest-swing tag 11px, clear of the overlay detector’s tiny-text floor', () => {
+  injectPlayingCss()
+  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  game.houseRules.prize = { enabled: true, cells: [], points: 5 }
+  game.houseRules.steal = { enabled: true, cells: [], points: 10 }
+  game.players['1'].houseRules.prize.captured = 2
+  game.players['1'].houseRules.steal.captured = 2
+  game.players['1'].score = { ...game.players['1'].score, totalArea: 120, totalScore: 140 }
+  game.players['2'].score = { ...game.players['2'].score, totalArea: 120, totalScore: 120 }
+  renderScreen({ game, series: null })
+
+  expect(getComputedStyle(screen.getByText('+5 per captured cell')).fontSize).toBe('12px')
+  expect(getComputedStyle(screen.getByText('Biggest swing')).fontSize).toBe('11px')
+})
+
 test('shows no dice before the first roll of the game', () => {
   renderScreen(rolledState('awaitingRoll', null))
 

@@ -366,12 +366,12 @@ dialog.modal .reason {
 }
 .game-over-row-note {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   margin-top: 1px;
 }
 .game-over-swing-tag {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-left: 6px;
