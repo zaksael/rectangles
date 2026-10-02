@@ -455,6 +455,13 @@ dialog.modal .reason {
   border-left: 1px solid var(--ink);
   text-align: right;
 }
+/* The winner's cell wears a top border in the outcome colour; padding gives back its 4px so the scoreboard keeps its height. */
+.game-over-scoreboard > .winner {
+  padding-top: 6px;
+  border-top-width: 4px;
+  border-top-style: solid;
+  border-top-color: var(--outcome);
+}
 .game-over-scoreboard .who {
   font-size: 11px;
   text-transform: uppercase;

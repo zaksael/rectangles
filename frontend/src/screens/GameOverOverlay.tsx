@@ -178,16 +178,19 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
       )}
       {endReason === 'surrender' && <p className="game-over-caption">Score at surrender</p>}
       <div className="game-over-scoreboard" role="group" aria-label="Final score">
-        {(['1', '2'] as const).map((id) => (
+        {(['1', '2'] as const).map((id) => {
+          const won = winner === Number(id)
           // The winner of a surrendered game can trail, so muting the lower total would contradict the headline.
-          <div key={id} className={winner === null || endReason === 'surrender' || winner === Number(id) ? 'lead' : 'trail'}>
-            <div className="who">
-              <span className={`swatch p${id}`} aria-hidden="true" />
-              {nameOf(game, Number(id))}
+          return (
+            <div key={id} className={`${winner === null || endReason === 'surrender' || won ? 'lead' : 'trail'}${won ? ' winner' : ''}`}>
+              <div className="who">
+                <span className={`swatch p${id}`} aria-hidden="true" />
+                {nameOf(game, Number(id))}
+              </div>
+              <div className="n">{game.players[id].score.totalScore}</div>
             </div>
-            <div className="n">{game.players[id].score.totalScore}</div>
-          </div>
-        ))}
+          )
+        })}
       </div>
       {rows.length > 0 && (
         <table className="breakdown">

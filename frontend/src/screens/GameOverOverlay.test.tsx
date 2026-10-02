@@ -182,6 +182,26 @@ test('a surrender captions the score and leaves both totals at full ink, even wh
   expect(scoreCell(dialog, '141')).toHaveClass('lead')
 })
 
+const winnerCell = (dialog: HTMLElement) =>
+  within(within(dialog).getByRole('group', { name: 'Final score' })).getAllByText(/^\d+$/).map((n) => n.closest('.winner'))
+
+test('only the winner’s score cell is marked', () => {
+  const dialog = renderOver({ winner: 2, area: [141, 158] })
+  const [first, second] = winnerCell(dialog)
+  expect(first).toBeNull()
+  expect(second).toHaveClass('winner')
+})
+
+test('a winner who trails on score is still marked after a surrender', () => {
+  const dialog = renderOver({ winner: 2, reason: 'surrender', playerId: 1, area: [158, 141] })
+  expect(winnerCell(dialog)[1]).toHaveClass('winner')
+})
+
+test('a tie marks neither score cell', () => {
+  const dialog = renderOver({ winner: null, area: [150, 149], score: [150, 149] })
+  expect(winnerCell(dialog)).toEqual([null, null])
+})
+
 test('a game with no modifier rows has no table, the scoreboard being the whole breakdown', () => {
   const dialog = renderOver({ winner: 1, area: [158, 141] })
   expect(within(dialog).queryByRole('table')).not.toBeInTheDocument()

@@ -658,6 +658,16 @@ test('the last roll is marked by a dashed border and a one-line owner label, not
   expect(getComputedStyle(screen.getByText('P1 last')).whiteSpace).toBe('nowrap')
 })
 
+test('the winner’s score cell has a 4px top border and 4px less top padding, so the scoreboard keeps its height', () => {
+  injectPlayingCss()
+
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+
+  const [winner, other] = [...document.querySelectorAll('.game-over-scoreboard > div')].map((d) => getComputedStyle(d))
+  expect([winner.borderTopWidth, winner.borderTopStyle, winner.paddingTop]).toEqual(['4px', 'solid', '6px'])
+  expect([other.borderTopWidth, other.paddingTop]).toEqual(['0px', '10px'])
+})
+
 test('shows no dice before the first roll of the game', () => {
   renderScreen(rolledState('awaitingRoll', null))
 
