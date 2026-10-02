@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { ModeSelectScreen } from './ModeSelectScreen'
 
 beforeEach(() => {
@@ -133,6 +133,71 @@ test('the segmented groups are named by their visible label and their options ar
     for (const option of within(group).getAllByRole('radio')) expect(option).toHaveAttribute('type', 'button')
   }
   expect(container.querySelector('label')).toBeNull()
+})
+
+function renderRadios(group: string) {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  return within(screen.getByRole('radiogroup', { name: group })).getAllByRole('radio')
+}
+
+describe.each(['Board size', 'Skip limit', 'Difficulty'])('%s radio options', (group) => {
+  test.each([
+    ['ArrowRight', 0, 1],
+    ['ArrowDown', 0, 1],
+    ['ArrowLeft', 1, 0],
+    ['ArrowUp', 1, 0],
+    ['ArrowRight', -1, 0], // wraps from the last
+    ['ArrowLeft', 0, -1], // wraps from the first
+  ])('%s from option %i moves the selection and focus to option %i', (key, from, to) => {
+    const radios = renderRadios(group)
+    const [start, end] = [radios.at(from)!, radios.at(to)!]
+    fireEvent.click(start)
+
+    fireEvent.keyDown(start, { key })
+
+    expect(end).toHaveAttribute('aria-checked', 'true')
+    expect(end).toHaveFocus()
+  })
+
+  test('have one tab stop, on the selected option', () => {
+    const radios = renderRadios(group)
+    const tabStops = () => radios.filter((r) => r.tabIndex === 0)
+
+    fireEvent.click(radios[1])
+    expect(tabStops()).toEqual([radios[1]])
+
+    fireEvent.click(radios[0])
+    expect(tabStops()).toEqual([radios[0]])
+  })
+})
+
+describe('Opponent cards', () => {
+  const renderCards = () => {
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    return [screen.getByRole('radio', { name: 'Vs Bot' }), screen.getByRole('radio', { name: 'Local 2P' })]
+  }
+
+  test('the tab stop starts on the first card and follows the selected one', () => {
+    const [bot, local] = renderCards()
+    expect([bot.tabIndex, local.tabIndex]).toEqual([0, -1])
+
+    fireEvent.click(local)
+
+    expect([bot.tabIndex, local.tabIndex]).toEqual([-1, 0])
+  })
+
+  test('an arrow from the first card selects and focuses the other, and wraps back', () => {
+    const [bot, local] = renderCards()
+
+    fireEvent.keyDown(bot, { key: 'ArrowRight' })
+    expect(local).toHaveAttribute('aria-checked', 'true')
+    expect(local).toHaveFocus()
+
+    fireEvent.keyDown(local, { key: 'ArrowRight' })
+    expect(bot).toHaveAttribute('aria-checked', 'true')
+    expect(bot).toHaveFocus()
+  })
 })
 
 // Series play needs the round-transition screen, so the Games picker stays hidden until it lands.

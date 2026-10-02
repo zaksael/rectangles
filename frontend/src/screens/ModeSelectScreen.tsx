@@ -108,6 +108,21 @@ function handleActivateKey(e: KeyboardEvent, onActivate: () => void): void {
   }
 }
 
+const ARROW_STEP: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
+
+// Radio pattern: an arrow key moves the selection, and focus, to the neighbouring radio of the same group, wrapping.
+// Clicking the neighbour reuses its own onClick, so no group needs its own arrow handling.
+function handleRadioArrowKey(e: KeyboardEvent<HTMLElement>): void {
+  const step = ARROW_STEP[e.key]
+  if (!step) return
+  const group = e.currentTarget.closest('[role="radiogroup"]')!
+  const radios = [...group.querySelectorAll<HTMLElement>('[role="radio"]')].filter((r) => r.closest('[role="radiogroup"]') === group)
+  const next = radios[(radios.indexOf(e.currentTarget) + step + radios.length) % radios.length]
+  e.preventDefault()
+  next.click()
+  next.focus()
+}
+
 interface ModeSelectScreenProps {
   isConnecting: boolean
   connectFailed: boolean
@@ -146,8 +161,11 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             role="radio"
             aria-checked={settings.opponent === 'bot'}
             aria-label="Vs Bot"
-            tabIndex={0}
-            onKeyDown={(e) => handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'bot' })))}
+            tabIndex={settings.opponent === 'local2p' ? -1 : 0}
+            onKeyDown={(e) => {
+              handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'bot' })))
+              handleRadioArrowKey(e)
+            }}
           >
             <span className="mode-name">Vs Bot</span>
             <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
@@ -166,6 +184,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                 className={settings.botDifficulty === difficulty ? 'pill active' : 'pill'}
                 role="radio"
                 aria-checked={settings.botDifficulty === difficulty}
+                tabIndex={settings.botDifficulty === difficulty ? 0 : -1}
+                onKeyDown={handleRadioArrowKey}
                 onClick={() => setSettings((s) => ({ ...s, botDifficulty: difficulty }))}
               >
                 {difficulty}
@@ -178,9 +198,12 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           role="radio"
           aria-checked={settings.opponent === 'local2p'}
           aria-label="Local 2P"
-          tabIndex={0}
+          tabIndex={settings.opponent === 'local2p' ? 0 : -1}
           onClick={() => setSettings((s) => ({ ...s, opponent: 'local2p' }))}
-          onKeyDown={(e) => handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'local2p' })))}
+          onKeyDown={(e) => {
+            handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'local2p' })))
+            handleRadioArrowKey(e)
+          }}
         >
           <span className="mode-name">Local 2P</span>
           <span className="mode-desc">Two players share this device</span>
@@ -213,6 +236,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                       type="button"
                       role="radio"
                       aria-checked={settings.boardSize === size}
+                      tabIndex={settings.boardSize === size ? 0 : -1}
+                      onKeyDown={handleRadioArrowKey}
                       onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
                     >
                       {size}×{size}
@@ -230,6 +255,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                       type="button"
                       role="radio"
                       aria-checked={settings.skipLimit === limit}
+                      tabIndex={settings.skipLimit === limit ? 0 : -1}
+                      onKeyDown={handleRadioArrowKey}
                       onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
                     >
                       {limit}
@@ -248,6 +275,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                         type="button"
                         role="radio"
                         aria-checked={settings.seriesLength === option.value}
+                        tabIndex={settings.seriesLength === option.value ? 0 : -1}
+                        onKeyDown={handleRadioArrowKey}
                         onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
                       >
                         {option.label}
