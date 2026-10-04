@@ -194,3 +194,15 @@ test("when the bot's turn ends with the menu open, Surrender becomes available a
   expect(screen.queryByText('Available on your turn')).not.toBeInTheDocument()
   expect(screen.getByRole('dialog', { name: /Surrender/ })).toBeInTheDocument()
 })
+
+test("the Menu's Surrender is the quiet outlined style, not the solid red", () => {
+  renderOverlay()
+  expect(screen.getByRole('button', { name: 'Surrender' })).toHaveClass('destructive', 'quiet')
+})
+
+test("the Surrender confirm dialog keeps the solid red button, where the action is committed", () => {
+  const { dialog } = openSurrender()
+  const confirm = within(dialog).getByRole('button', { name: 'Surrender' })
+  expect(confirm).toHaveClass('destructive')
+  expect(confirm).not.toHaveClass('quiet')
+})

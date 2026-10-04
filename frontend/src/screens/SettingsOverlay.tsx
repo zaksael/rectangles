@@ -88,7 +88,7 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
               Resume
             </button>
             {game.turn.turnState !== 'gameOver' && (
-              <button className="btn destructive" onClick={() => !isBotTurn && setConfirmingSurrender(true)} aria-disabled={isBotTurn || undefined} aria-describedby={isBotTurn ? 'surrender-note' : undefined}>
+              <button className="btn destructive quiet" onClick={() => !isBotTurn && setConfirmingSurrender(true)} aria-disabled={isBotTurn || undefined} aria-describedby={isBotTurn ? 'surrender-note' : undefined}>
                 Surrender
               </button>
             )}

@@ -35,10 +35,38 @@ test('the Menu note explaining the unavailable Surrender keeps AA contrast (4.5:
   expect(textContrast(css, /\.settings-footer-note/)).toBeGreaterThanOrEqual(4.5)
 })
 
-test('an unavailable but focusable Surrender is dimmed by colour, not opacity, so its focus ring stays full ink', () => {
-  const tokens = readFileSync('src/tokens.css', 'utf8')
-  const rule = tokens.match(/\.btn\.destructive\[aria-disabled="true"\][^{]*\{[^}]*\}/)![0]
+const tokensCss = readFileSync('src/tokens.css', 'utf8')
+const ruleFor = (selector: string) => {
+  const i = tokensCss.indexOf(selector)
+  return tokensCss.slice(tokensCss.indexOf('{', i), tokensCss.indexOf('}', i))
+}
+const danger = token(tokensCss, '--danger')
+const ledgerRgb = token(tokensCss, '--ledger')
 
-  expect(rule).toMatch(/background:\s*color-mix\(/)
+test('the quiet Surrender is an outline, a transparent fill with a danger-coloured label that keeps AA contrast (4.5:1) on the ledger', () => {
+  const rule = ruleFor('.btn.destructive.quiet')
+
+  expect(rule).toMatch(/background:\s*transparent/)
+  expect(rule).toMatch(/color:\s*var\(--danger\)/)
+  expect(contrast(danger, ledgerRgb)).toBeGreaterThanOrEqual(4.5)
+})
+
+test('the quiet Surrender hovers to a light danger tint, not the solid button\'s black-mixed darkening, with its label still AA', () => {
+  const rule = ruleFor('.btn.destructive.quiet:hover')
+  const share = Number(rule.match(/background:\s*color-mix\(in srgb, var\(--danger\) (\d+)%, transparent\)/)![1]) / 100
+  const tint = danger.map((v, i) => v * share + ledgerRgb[i] * (1 - share))
+
+  expect(rule).not.toMatch(/black/)
+  expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
+})
+
+test('an unavailable but focusable quiet Surrender is dimmed by colour, not opacity, so its focus ring stays full ink, and shows no hover tint', () => {
+  const selector = '.btn.destructive.quiet[aria-disabled="true"]'
+  const rule = ruleFor(selector)
+
+  expect(rule).toMatch(/color:\s*color-mix\(/)
+  expect(rule).toMatch(/background:\s*transparent/)
   expect(rule).not.toMatch(/opacity/)
+  // Same specificity as the hover rule, so it must come later to win while hovered.
+  expect(tokensCss.indexOf(selector)).toBeGreaterThan(tokensCss.indexOf('.btn.destructive.quiet:hover'))
 })
