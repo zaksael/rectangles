@@ -219,7 +219,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       {noModeSelected ? (
         <div className="empty-hint-box">
           <p id="start-game-hint" className="empty-hint">
-            Choose a mode to configure the match
+            Choose a mode to enable Start Game
           </p>
         </div>
       ) : (

@@ -20,7 +20,7 @@ test('on first launch, no mode is selected and Start Game is disabled with a hin
   expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAttribute('aria-checked', 'false')
   const startButton = screen.getByRole('button', { name: 'Start Game' })
   expect(startButton).toBeDisabled()
-  expect(startButton).toHaveAccessibleDescription('Choose a mode to configure the match')
+  expect(startButton).toHaveAccessibleDescription('Choose a mode to enable Start Game')
 })
 
 test('selecting a mode enables Start Game and clears the hint', () => {
@@ -29,7 +29,7 @@ test('selecting a mode enables Start Game and clears the hint', () => {
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
-  expect(screen.queryByText('Choose a mode to configure the match')).not.toBeInTheDocument()
+  expect(screen.queryByText('Choose a mode to enable Start Game')).not.toBeInTheDocument()
 })
 
 test('Start Game with default settings passes the documented first-launch connect params, plus implemented house-rule flags', () => {
