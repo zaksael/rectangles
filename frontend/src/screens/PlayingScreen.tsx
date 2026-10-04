@@ -147,7 +147,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }
 
   const keyHint = humanTurnState && KEY_HINT[humanTurnState]
-  const boardHint = keyHint ? (rerollUsable ? `${keyHint}, E rerolls` : keyHint) : ' '
+  const boardHint = keyHint ? (rerollUsable ? `${keyHint}, E rerolls` : keyHint) : '\u00A0'
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

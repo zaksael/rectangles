@@ -855,6 +855,12 @@ test('the key hint under the board is blank on the roll turn and on the bot\'s t
   expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
 })
 
+test('a blank key hint holds a non-breaking space, so the line keeps its height and the board never jumps', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(document.getElementById('board-help')!.textContent).toBe('\u00A0')
+})
+
 test('the key hint under the board is blank on a dead roll, the status line carries the key', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
