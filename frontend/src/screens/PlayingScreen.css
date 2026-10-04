@@ -131,6 +131,11 @@
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
+/* One skip from the limit: the next skip ends the game. Bold as well as red, so it is not colour-only. */
+.streak.last-skip {
+  color: var(--danger);
+  font-weight: 600;
+}
 
 .toolbar-actions {
   /* Left: Roll/Rotate/Skip/Reroll (only the ones usable right now).

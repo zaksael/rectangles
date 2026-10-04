@@ -188,7 +188,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                   <span className="name">{state.game.players[id].name}</span>
                 </div>
                 <span className="scoreline">
-                  <span className="streak">
+                  <span className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'streak last-skip' : 'streak'}>
                     {state.game.players[id].board.consecutiveSkips}/{state.game.board.skipLimit} skips
                     {rerollEnabled &&
                       `, ${state.game.players[id].houseRules.reroll.limit - state.game.players[id].houseRules.reroll.used}/${state.game.players[id].houseRules.reroll.limit} rerolls`}

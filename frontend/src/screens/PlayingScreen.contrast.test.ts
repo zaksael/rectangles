@@ -111,3 +111,16 @@ test('on touch screens the Wildcard pills are 44px targets and the toolbar row r
 test('on touch screens --chrome grows with the taller toolbar, so the board still fits the window', () => {
   expect(Number(coarse![3].match(/--chrome:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(257)
 })
+
+test('a streak one skip from the limit is danger-coloured and bold, and stays AA (4.5:1) on the ledger and both current-player tints', () => {
+  const rule = css.match(/\.streak\.last-skip \{([^}]*)\}/)![1]
+
+  expect(rule).toMatch(/color:\s*var\(--danger\)/)
+  expect(rule).toMatch(/font-weight:\s*600/)
+  expect(contrast(danger, ledgerRgb)).toBeGreaterThanOrEqual(4.5)
+  for (const player of ['--p1', '--p2']) {
+    const p = token(tokensCss, player)
+    const tint = p.map((v, i) => v * 0.14 + ledgerRgb[i] * 0.86)
+    expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
+  }
+})

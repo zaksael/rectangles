@@ -231,6 +231,18 @@ test("shows both players' skip streaks against the skip limit at the same time",
   expect(within(p2).getByText('0/5 skips')).toHaveClass('streak')
 })
 
+test('a player one skip from the limit gets the last-skip mark on their streak, the other does not', () => {
+  const game = makeGame({ board: { size: 3, skipLimit: 5 } })
+  game.players['1'].board.consecutiveSkips = 4
+  game.players['2'].board.consecutiveSkips = 2
+  renderScreen({ game, series: null })
+
+  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
+  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
+  expect(within(p1).getByText('4/5 skips')).toHaveClass('last-skip')
+  expect(within(p2).getByText('2/5 skips')).not.toHaveClass('last-skip')
+})
+
 test("groups each player's dot with their name, and orders the scoreline skips before score", () => {
   const game = makeGame()
   game.players['1'].score.totalScore = 12
