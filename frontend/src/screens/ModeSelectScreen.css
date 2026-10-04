@@ -129,6 +129,10 @@
   color: var(--ledger);
   border-color: var(--ink);
 }
+/* The difficulty pills are 12px, the text baseline; the shared .pill above stays 11px for the Wildcard pills. */
+.difficulty-pills .pill {
+  font-size: 12px;
+}
 .pill:hover:not(.active) {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }

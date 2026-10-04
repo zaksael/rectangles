@@ -154,3 +154,12 @@ test('game-over capitals are for structural labels only: the reason and table he
   expect(rule('dialog.modal .reason')).toMatch(/text-transform:\s*uppercase/)
   expect(rule('.game-over table.breakdown thead th')).toMatch(/text-transform:\s*uppercase/)
 })
+
+test('the difficulty pills are at least 12px, scoped so the shared .pill (the Wildcard pills) is unchanged', () => {
+  const modeSelectCss = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
+  const difficulty = modeSelectCss.match(/\.difficulty-pills \.pill \{([^}]*)\}/)![1]
+  const shared = modeSelectCss.match(/\n\.pill \{([^}]*)\}/)![1]
+
+  expect(Number(difficulty.match(/font-size:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(12)
+  expect(shared).toMatch(/font-size:\s*11px/)
+})
