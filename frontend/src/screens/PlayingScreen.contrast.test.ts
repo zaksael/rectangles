@@ -85,3 +85,16 @@ test('Reroll sits apart from the action button before it: a margin on the second
 
   expect(margin).toBeGreaterThan(0)
 })
+
+test('the toolbar row always reserves the Wildcard picker height, so the frame does not grow on a wildcard roll', () => {
+  const toolbar = css.match(/\.toolbar-actions \{([^}]*)\}/)![1]
+
+  expect(toolbar).toMatch(/--picker-height:\s*52px/)
+  expect(toolbar).toMatch(/grid-auto-rows:\s*minmax\(var\(--picker-height\),\s*auto\)/)
+})
+
+test('--chrome on the frame is at least what the header, status, hint and the reserved toolbar need', () => {
+  const chrome = Number(css.match(/\.frame \{[^}]*--chrome:\s*(\d+)px/)![1])
+
+  expect(chrome).toBeGreaterThanOrEqual(218)
+})
