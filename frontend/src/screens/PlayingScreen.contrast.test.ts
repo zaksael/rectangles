@@ -22,10 +22,6 @@ function textContrast(css: string, selector: RegExp) {
 
 const css = readFileSync('src/screens/PlayingScreen.css', 'utf8')
 
-test('disabled toolbar buttons keep their text at AA contrast (4.5:1) on the ledger', () => {
-  expect(textContrast(css, /\.toolbar-actions \.btn:disabled/)).toBeGreaterThanOrEqual(4.5)
-})
-
 test('off house-rule labels in the Menu keep AA contrast (4.5:1) on the ledger, dimmer than on rules', () => {
   expect(textContrast(css, /\.settings-rule/)).toBeGreaterThanOrEqual(4.5)
   expect(css).toMatch(/\.settings-rule\.on \{[^}]*color: var\(--ink\)/)

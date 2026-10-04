@@ -133,7 +133,7 @@
 }
 
 .toolbar-actions {
-  /* Left: Roll/Rotate/Skip (always shown, disabled when they don't apply).
+  /* Left: Roll/Rotate/Skip/Reroll (only the ones usable right now).
      Center: the rolled dice, or nothing. Right: Menu. Buttons and
      dice share one height so the row doesn't jump when the dice appear. */
   --control-height: 34px;
@@ -210,14 +210,6 @@
 .toolbar-actions .btn {
   height: var(--control-height);
   padding: 0 16px;
-}
-/* Roll, Rotate and Skip are always shown. When one doesn't apply it drops its fill and its color
-   and reads as a plain outline, so only the enabled control looks pressable. */
-.toolbar-actions .btn:disabled {
-  opacity: 1;
-  background: transparent;
-  color: color-mix(in srgb, var(--ink) 67%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
 }
 .dice-label {
   left: 100%;
