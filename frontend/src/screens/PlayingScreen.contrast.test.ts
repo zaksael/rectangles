@@ -163,3 +163,9 @@ test('the difficulty pills are at least 12px, scoped so the shared .pill (the Wi
   expect(Number(difficulty.match(/font-size:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(12)
   expect(shared).toMatch(/font-size:\s*11px/)
 })
+
+test('the difficulty pills start at the left edge of their left-aligned card: the row is not centred', () => {
+  const rule = readFileSync('src/screens/ModeSelectScreen.css', 'utf8').match(/\n\.difficulty-pills \{([^}]*)\}/)![1]
+
+  expect(rule).not.toMatch(/justify-content:\s*center/)
+})
