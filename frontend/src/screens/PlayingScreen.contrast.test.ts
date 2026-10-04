@@ -124,3 +124,9 @@ test('a streak one skip from the limit is danger-coloured and bold, and stays AA
     expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
   }
 })
+
+test('the Menu header holds a lone title, so it declares no flex layout or gap for it', () => {
+  const rule = css.match(/\.settings-header \{([^}]*)\}/)![1]
+
+  expect(rule).not.toMatch(/display|align-items|gap/)
+})
