@@ -265,3 +265,57 @@ test('falls back to the (b, a) orientation when only that one is legal', () => {
 
   expect(result.current.dims).toEqual([3, 2])
 })
+
+// Three legal spots for a 2-wide, 1-tall piece, in row-major order.
+const jumpGame = () =>
+  makeGame({
+    board: { size: 6, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 1],
+      legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0], [2, 3], [4, 1]] }],
+    },
+  })
+const pressN = (shiftKey = false) => ({ key: shiftKey ? 'N' : 'n', shiftKey, preventDefault: vi.fn() }) as unknown as React.KeyboardEvent
+
+test('keyboard: N jumps the piece to the next legal spot, and it previews as legal', () => {
+  const { result } = renderHook(() => usePlacementInput(jumpGame(), vi.fn()))
+  act(() => result.current.handleCellHover([0, 1]))
+  expect(result.current.previewTopLeft).toEqual([0, 0])
+
+  act(() => result.current.handleBoardKeyDown(pressN()))
+
+  expect(result.current.previewTopLeft).toEqual([2, 3])
+  expect(result.current.previewKind).toBe('legal')
+})
+
+test('keyboard: N wraps from the last legal spot to the first', () => {
+  const { result } = renderHook(() => usePlacementInput(jumpGame(), vi.fn()))
+  act(() => result.current.handleCellHover([4, 2]))
+  expect(result.current.previewTopLeft).toEqual([4, 1])
+
+  act(() => result.current.handleBoardKeyDown(pressN()))
+
+  expect(result.current.previewTopLeft).toEqual([0, 0])
+})
+
+test('keyboard: N with no cursor yet goes to the first legal spot', () => {
+  const { result } = renderHook(() => usePlacementInput(jumpGame(), vi.fn()))
+
+  act(() => result.current.handleBoardKeyDown(pressN()))
+
+  expect(result.current.previewTopLeft).toEqual([0, 0])
+})
+
+test('keyboard: Shift+N goes back to the previous legal spot, and wraps from the first to the last', () => {
+  const { result } = renderHook(() => usePlacementInput(jumpGame(), vi.fn()))
+  act(() => result.current.handleCellHover([2, 4]))
+  expect(result.current.previewTopLeft).toEqual([2, 3])
+
+  act(() => result.current.handleBoardKeyDown(pressN(true)))
+  expect(result.current.previewTopLeft).toEqual([0, 0])
+
+  act(() => result.current.handleBoardKeyDown(pressN(true)))
+  expect(result.current.previewTopLeft).toEqual([4, 1])
+})

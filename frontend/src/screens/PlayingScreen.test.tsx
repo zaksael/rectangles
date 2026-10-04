@@ -845,13 +845,13 @@ test('the board explains its keys to assistive tech', () => {
   renderScreen(keyboardState())
 
   const help = document.getElementById(screen.getByRole('grid').getAttribute('aria-describedby')!)
-  expect(help).toHaveTextContent('Arrow keys move the piece, Enter places it, R rotates it')
+  expect(help).toHaveTextContent('Arrows move, N next legal spot, Enter places, R rotates')
 })
 
 test('the placement keys are visible under the board, not only announced', () => {
   renderScreen(keyboardState())
 
-  expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it')).not.toHaveClass('visually-hidden')
+  expect(screen.getByText('Arrows move, N next legal spot, Enter places, R rotates')).not.toHaveClass('visually-hidden')
 })
 
 test('the key hint under the board is blank on the roll turn and on the bot\'s turn', () => {
@@ -1112,7 +1112,7 @@ test('the skip streak has no reroll count when the house rule is off', () => {
 
 test('the key hint names the reroll key, comma-joined, while placing, and is blank while skipping', () => {
   renderScreen(rerollState(true))
-  expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it, E rerolls')).toBeInTheDocument()
+  expect(screen.getByText('Arrows move, N next legal spot, Enter places, R rotates, E rerolls')).toBeInTheDocument()
 
   cleanup()
   renderScreen(rerollState(true, 'skipped'))
@@ -1122,7 +1122,7 @@ test('the key hint names the reroll key, comma-joined, while placing, and is bla
 test('the key hint omits the reroll key once charges are exhausted', () => {
   renderScreen(rerollState(false))
 
-  expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it')).toBeInTheDocument()
+  expect(screen.getByText('Arrows move, N next legal spot, Enter places, R rotates')).toBeInTheDocument()
 })
 
 test('the turn status line offers reroll as an alternative to a forced skip', () => {

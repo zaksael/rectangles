@@ -22,7 +22,7 @@ const ERROR_TOAST_MS = 4000
 
 // The key that applies in each of the human's turn states; other states show a blank line.
 const KEY_HINT: Partial<Record<string, string>> = {
-  choosingPlacement: 'Arrow keys move the piece, Enter places it, R rotates it',
+  choosingPlacement: 'Arrows move, N next legal spot, Enter places, R rotates',
 }
 
 const ERROR_TEXT: Record<ErrorReason, string> = {

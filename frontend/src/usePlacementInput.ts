@@ -18,6 +18,11 @@ function computeTopLeft(cell: [number, number], dims: [number, number], boardSiz
   return [r, c]
 }
 
+// The cell under the middle of a piece: where the keyboard cursor sits when the piece is at topLeft.
+function centerCell(topLeft: [number, number], dims: [number, number]): [number, number] {
+  return [topLeft[0] + Math.floor(dims[1] / 2), topLeft[1] + Math.floor(dims[0] / 2)]
+}
+
 function findLegalEntry(
   dims: [number, number],
   legalPlacements: GameWireState['turn']['legalPlacements'],
@@ -136,7 +141,7 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
     if (!game || !dims || hoveredCell) return
     const first = findLegalEntry(dims, game.turn.legalPlacements)?.topLefts[0]
     if (!first) return
-    setHoveredCell([first[0] + Math.floor(dims[1] / 2), first[1] + Math.floor(dims[0] / 2)])
+    setHoveredCell(centerCell(first, dims))
     setPreviewSource('hover')
   }
 
@@ -149,6 +154,17 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
       const last = game.board.size - 1
       setHoveredCell([Math.max(0, Math.min(row + step[0], last)), Math.max(0, Math.min(col + step[1], last))])
       setPreviewSource('hover')
+    } else if (event.key.toLowerCase() === 'n') {
+      event.preventDefault()
+      const spots = findLegalEntry(dims, game.turn.legalPlacements)?.topLefts ?? []
+      const [row, col] = previewTopLeft ?? [-1, -1]
+      const after = ([r, c]: [number, number]) => r > row || (r === row && c > col)
+      const before = ([r, c]: [number, number]) => r < row || (r === row && c < col)
+      const next = event.shiftKey ? spots.findLast(before) ?? spots.at(-1) : spots.find(after) ?? spots[0]
+      if (next) {
+        setHoveredCell(centerCell(next, dims))
+        setPreviewSource('hover')
+      }
     } else if ((event.key === 'Enter' || event.key === ' ') && hoveredCell) {
       event.preventDefault()
       place(hoveredCell)
