@@ -47,13 +47,13 @@ function withRules(game: ReturnType<typeof makeGame>) {
   game.houseRules.selfEnclosedPenalty = { enabled: true }
 }
 
-test('the modifier with the biggest swing is named in the story and tagged in the table', () => {
+test('the modifier with the biggest swing is tagged in the table, and not repeated in the story', () => {
   const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 148] }, (game) => {
     withRules(game)
     game.players['1'].houseRules.prize.captured = 1 // swing 10 (prize 1 vs 0)
     game.players['1'].houseRules.steal.captured = 1 // swing 20 (+10 vs -10)
   })
-  expect(dialog).toHaveAccessibleDescription('by 14 points. Biggest swing: Steal, 20.')
+  expect(dialog).toHaveAccessibleDescription('by 14 points')
   expect(within(dialog).getByRole('row', { name: /Steal/ })).toHaveTextContent('Biggest swing')
   expect(within(dialog).getByRole('row', { name: /Prize/ })).not.toHaveTextContent('Biggest swing')
   // The tag is separated from the label in the row header's accessible name; other rows get no separator.
@@ -61,7 +61,7 @@ test('the modifier with the biggest swing is named in the story and tagged in th
   expect(within(dialog).getByRole('rowheader', { name: /^Prize\+/ })).toBeInTheDocument()
 })
 
-test('a swing under half the margin is neither tagged nor named', () => {
+test('a swing under half the margin is not tagged', () => {
   const dialog = renderOver({ winner: 1, area: [200, 150], score: [200, 147] }, (game) => {
     withRules(game)
     game.players['2'].houseRules.selfEnclosedPenalty.cells = 3 // swing 3 of a 53-point margin

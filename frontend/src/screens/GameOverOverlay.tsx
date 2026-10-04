@@ -52,11 +52,6 @@ function formatSigned(value: number): string | number {
 
 const key = (id: number) => String(id) as '1' | '2'
 
-interface Swing {
-  label: string
-  size: number
-}
-
 function nameOf(game: GameWireState, id: number) {
   return noBreak(game.players[key(id)].name)
 }
@@ -82,14 +77,14 @@ function scoreMargin(game: GameWireState): number | null {
   return margin > 0 ? margin : null
 }
 
-// The modifier row whose gap between the players is largest, when it covers at least half the margin.
-function biggestSwing(game: GameWireState, rows: ModifierRow[], margin: number): Swing | null {
-  let best: Swing | null = null
+// The label of the modifier row whose gap between the players is largest, when it covers at least half the margin.
+function biggestSwing(game: GameWireState, rows: ModifierRow[], margin: number): string | null {
+  let best: { label: string; size: number } | null = null
   for (const row of rows) {
     const size = Math.abs(row.value(game, '1') - row.value(game, '2'))
     if (size > 0 && (best === null || size > best.size)) best = { label: row.label, size }
   }
-  return best && best.size * 2 >= margin ? best : null
+  return best && best.size * 2 >= margin ? best.label : null
 }
 
 // A winner who trailed on territory is explained by the modifiers that went their way, not by the biggest swing.
@@ -106,17 +101,15 @@ function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null
 
 const pointsText = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`
 
-// The margin is shown bold; `detail` is the comeback or biggest-swing sentence that follows it, when there is one.
+// The margin is shown bold; `detail` is the comeback sentence that follows it, when there is one.
 interface Story {
   margin: string
   detail: string | null
 }
 
-function storyText(game: GameWireState, rows: ModifierRow[], margin: number | null, swing: Swing | null): Story | null {
+function storyText(game: GameWireState, rows: ModifierRow[], margin: number | null): Story | null {
   if (margin === null) return null
-  const comeback = comebackClause(game, rows)
-  const detail = comeback ?? (swing ? `Biggest swing: ${swing.label}, ${swing.size}.` : null)
-  return { margin: pointsText(margin), detail }
+  return { margin: pointsText(margin), detail: comebackClause(game, rows) }
 }
 
 function headlineText(game: GameWireState): string {
@@ -164,7 +157,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
   const rows = MODIFIER_ROWS.filter((row) => row.enabled(game) && (row.value(game, '1') !== 0 || row.value(game, '2') !== 0))
   const margin = scoreMargin(game)
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
-  const story = storyText(game, rows, margin, swing)
+  const story = storyText(game, rows, margin)
 
   return (
     // Escape shows the board rather than dismissing the result, so the native close is suppressed.
@@ -224,7 +217,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
               <tr key={row.label}>
                 <th scope="row">
                   {row.label}
-                  {swing?.label === row.label && (
+                  {swing === row.label && (
                     <>
                       <span className="visually-hidden">,</span>{' '}
                       <span className="game-over-swing-tag">Biggest swing</span>
