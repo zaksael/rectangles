@@ -397,9 +397,7 @@ dialog.game-over h2 {
 }
 .game-over-swing-tag {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 12px;
   margin-left: 3px; /* the rest of the 6px gap is the space that separates it from the label in the accessible name */
   padding: 1px 4px;
   border: 1px solid var(--ink);
@@ -462,9 +460,7 @@ dialog.game-over h2 {
   color: var(--danger);
 }
 .game-over-caption {
-  font: 500 11px 'IBM Plex Sans', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font: 500 12px 'IBM Plex Sans', sans-serif;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
   margin: 0 0 6px;
 }
@@ -489,9 +485,7 @@ dialog.game-over h2 {
   border-top-color: var(--outcome);
 }
 .game-over-scoreboard .who {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 .game-over-scoreboard .swatch {

@@ -141,3 +141,16 @@ test('the failed-connect line is a status block: 13px bold-ish text, a danger ru
   expect(rule).toMatch(/border-left:\s*3px solid var\(--danger\)/)
   expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
 })
+
+test('game-over capitals are for structural labels only: the reason and table headers keep them, the swing tag, caption and player labels are normal case at 12px+', () => {
+  const rule = (selector: string) => css.match(new RegExp(`${selector.replace(/[.\s]/g, (c) => `\\${c}`)} \\{([^}]*)\\}`))![1]
+
+  for (const selector of ['.game-over-swing-tag', '.game-over-caption', '.game-over-scoreboard .who']) {
+    const block = rule(selector)
+    expect(block, selector).not.toMatch(/text-transform/)
+    expect(block, selector).not.toMatch(/letter-spacing/)
+    expect(Number(block.match(/font(?:-size)?:\s*(?:\d+ )?(\d+)px/)![1]), selector).toBeGreaterThanOrEqual(12)
+  }
+  expect(rule('dialog.modal .reason')).toMatch(/text-transform:\s*uppercase/)
+  expect(rule('.game-over table.breakdown thead th')).toMatch(/text-transform:\s*uppercase/)
+})
