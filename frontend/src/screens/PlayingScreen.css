@@ -244,6 +244,12 @@
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
+/* Touch players have no keyboard: blank the hint by colour, so its height stays reserved and the board's aria-describedby text stays in the DOM. */
+@media (pointer: coarse) {
+  .board-help {
+    color: transparent;
+  }
+}
 
 .toast-anchor {
   /* Hangs from the bottom of the sticky header (which is positioned), so it stays in view

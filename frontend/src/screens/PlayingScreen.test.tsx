@@ -560,7 +560,7 @@ test('Menu stays in the trailing toolbar group once the game is over', () => {
 test('the turn status line tells the current player what to do: roll', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 2: roll')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 2: roll (D)')
 })
 
 test('the turn status line names the rectangle to place, following Rotate', () => {
@@ -587,7 +587,7 @@ test('the turn status line names the rectangle to place, following Rotate', () =
 test('the turn status line says when a dead roll must be skipped', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
 })
 
 test("the turn status line shows the bot is playing on the bot's turn", () => {
@@ -845,22 +845,20 @@ test('the placement keys are visible under the board, not only announced', () =>
   expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it')).not.toHaveClass('visually-hidden')
 })
 
-test('the key hint under the board follows the turn: roll key, then placement keys, blank when nothing applies', () => {
+test('the key hint under the board is blank on the roll turn and on the bot\'s turn', () => {
   const roll = makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const { unmount } = render(<PlayingScreen state={roll} error={null} sendAction={vi.fn()} onOpenSettings={vi.fn()} onNewGame={vi.fn()} />)
-  expect(screen.getByText('D rolls the dice')).toBeInTheDocument()
-  expect(screen.queryByText(/Arrow keys/)).not.toBeInTheDocument()
+  expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
   unmount()
 
   renderScreen(roll, vi.fn(), null, vi.fn(), 1)
-  expect(screen.queryByText('D rolls the dice')).not.toBeInTheDocument()
-  expect(screen.queryByText(/Arrow keys/)).not.toBeInTheDocument()
+  expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
 })
 
-test('the key hint names the skip key on a dead roll', () => {
+test('the key hint under the board is blank on a dead roll, the status line carries the key', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  expect(screen.getByText('S skips this turn')).toBeInTheDocument()
+  expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
 })
 
 test.each([
@@ -983,11 +981,11 @@ test.each([0, 1] as const)('editableIndex %i: the pills take the wildcard die\'s
   expect(isPillsFirst).toBe(editableIndex === 0)
 })
 
-test('the wildcard turn status and key hint describe the pick', () => {
+test('the wildcard turn status describes the pick and the key hint stays blank', () => {
   renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 2, 3] }))
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: wildcard roll — pick the other die’s value')
-  expect(screen.getByText('Pick a value for the other die')).toBeInTheDocument()
+  expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
 })
 
 test('a wildcard roll where no value fits skips the picker and goes straight to Skip', () => {
@@ -997,7 +995,7 @@ test('a wildcard roll where no value fits skips the picker and goes straight to 
 
   expect(screen.queryByRole('group', { name: 'Wildcard value' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled()
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
 })
 
 test("on the bot's turn a pending wildcard shows plain dice and no picker", () => {
@@ -1045,7 +1043,8 @@ test('Reroll is available while choosing a wildcard value, and E rerolls', () =>
   const sendAction = renderScreen(state)
 
   expect(screen.getByRole('button', { name: 'Reroll' })).toBeEnabled()
-  expect(screen.getByText('Pick a value for the other die, E rerolls')).toBeInTheDocument()
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: wildcard roll — pick the other die’s value, or reroll (E)')
+  expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
   fireEvent.keyDown(window, { key: 'e' })
   expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
 })
@@ -1096,13 +1095,13 @@ test('the skip streak has no reroll count when the house rule is off', () => {
   expect(screen.getAllByText('0/5 skips')).toHaveLength(2)
 })
 
-test('the key hint names the reroll key, comma-joined, while placing and while skipping', () => {
+test('the key hint names the reroll key, comma-joined, while placing, and is blank while skipping', () => {
   renderScreen(rerollState(true))
   expect(screen.getByText('Arrow keys move the piece, Enter places it, R rotates it, E rerolls')).toBeInTheDocument()
 
   cleanup()
   renderScreen(rerollState(true, 'skipped'))
-  expect(screen.getByText('S skips this turn, E rerolls')).toBeInTheDocument()
+  expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
 })
 
 test('the key hint omits the reroll key once charges are exhausted', () => {
@@ -1114,13 +1113,13 @@ test('the key hint omits the reroll key once charges are exhausted', () => {
 test('the turn status line offers reroll as an alternative to a forced skip', () => {
   renderScreen(rerollState(true, 'skipped'))
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move — skip, or reroll')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move — skip (S), or reroll (E)')
 })
 
 test('the turn status line skips the reroll mention once charges are exhausted', () => {
   renderScreen(rerollState(false, 'skipped'))
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
 })
 
 function comebackStates() {

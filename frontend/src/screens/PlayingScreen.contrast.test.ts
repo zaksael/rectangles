@@ -71,3 +71,10 @@ test('the Mode Select changed-from-defaults cue keeps AA contrast (4.5:1) on the
   const modeSelectCss = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
   expect(textContrast(modeSelectCss, /\.changed-count/)).toBeGreaterThanOrEqual(4.5)
 })
+
+test('on touch screens the key hint is blanked by colour, so its height stays reserved and the board keeps its description', () => {
+  const block = css.match(/@media \(pointer: coarse\) \{\s*\.board-help \{([^}]*)\}/)![1]
+
+  expect(block).toMatch(/color:\s*transparent/)
+  expect(block).not.toMatch(/display|visibility|height/)
+})

@@ -22,10 +22,7 @@ const ERROR_TOAST_MS = 4000
 
 // The key that applies in each of the human's turn states; other states show a blank line.
 const KEY_HINT: Partial<Record<string, string>> = {
-  awaitingRoll: 'D rolls the dice',
   choosingPlacement: 'Arrow keys move the piece, Enter places it, R rotates it',
-  skipped: 'S skips this turn',
-  choosingWildcard: 'Pick a value for the other die',
 }
 
 const ERROR_TEXT: Record<ErrorReason, string> = {
@@ -132,7 +129,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   let turnStatus: string | null = null
   if (currentName && turnState !== 'gameOver') {
     if (isBotTurn) turnStatus = `${currentName} is playing…`
-    else if (turnState === 'awaitingRoll') turnStatus = `${currentName}: roll`
+    else if (turnState === 'awaitingRoll') turnStatus = `${currentName}: roll (D)`
     else if (turnState === 'choosingPlacement') {
       turnStatus = `${currentName}: place ${dims ? `${dims[0]} wide × ${dims[1]} tall` : 'a rectangle'}`
       const reason =
@@ -143,14 +140,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       if (reason) turnStatus += ` — ${reason}`
       else if (previewKind !== 'legal') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
     }
-    else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value`
+    else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value${canReroll ? ', or reroll (E)' : ''}`
     else if (turnState === 'skipped') {
-      turnStatus = canReroll ? `${currentName}: no legal move — skip, or reroll` : `${currentName}: no legal move, skip`
+      turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : `${currentName}: no legal move, skip (S)`
     }
   }
 
   const keyHint = humanTurnState && KEY_HINT[humanTurnState]
-  const boardHint = rerollUsable ? (keyHint ? `${keyHint}, E rerolls` : 'E rerolls') : keyHint || ' '
+  const boardHint = keyHint ? (rerollUsable ? `${keyHint}, E rerolls` : keyHint) : ' '
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
