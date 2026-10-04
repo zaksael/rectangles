@@ -326,6 +326,7 @@ test('Reset to Defaults opens a confirm dialog', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
   fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
 
   expect(screen.getByRole('heading', { name: 'Reset to Defaults?' })).toBeInTheDocument()
@@ -396,6 +397,7 @@ describe('changed-from-defaults cue', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Obstacles' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Reroll' }))
     expect(cue()).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reset to Defaults' })).not.toBeInTheDocument()
   })
 
   test('counts a non-default bot difficulty only while Vs Bot is chosen', () => {
@@ -426,6 +428,7 @@ describe('changed-from-defaults cue', () => {
     renderScreen()
 
     expect(cue()).toHaveTextContent('2 changed from defaults')
+    expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toBeInTheDocument()
   })
 
   test('Reset restores every counted kind', () => {
@@ -442,12 +445,36 @@ describe('changed-from-defaults cue', () => {
     expect(cue()).not.toBeInTheDocument()
   })
 
-  test('Reset to Defaults is described by the cue while there is one', () => {
+  test('Reset to Defaults is described by the cue', () => {
     renderScreen()
     pick('Local 2P')
-    expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toHaveAccessibleDescription('')
 
     pick('23×23')
     expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toHaveAccessibleDescription('1 changed from defaults')
+  })
+
+  test('shows no Reset to Defaults while every setting is at its default', () => {
+    renderScreen()
+    pick('Local 2P')
+
+    expect(screen.queryByRole('button', { name: 'Reset to Defaults' })).not.toBeInTheDocument()
+  })
+
+  test('after a confirmed reset, focus moves to the checked Board size option', () => {
+    renderScreen()
+    pick('Local 2P')
+    pick('27×27')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset' }))
+
+    expect(screen.getByRole('radio', { name: '19×19' })).toHaveFocus()
+  })
+
+  test('Reset stays available while a connection is in progress', () => {
+    localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'local2p', boardSize: 27 }))
+    render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toBeEnabled()
   })
 })

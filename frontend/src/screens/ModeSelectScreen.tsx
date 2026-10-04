@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { implementedGroups, implementedHouseRules, type HouseRules } from '../houseRules'
 import { ResetConfirmDialog } from './ResetConfirmDialog'
 import './ModeSelectScreen.css'
@@ -146,6 +146,15 @@ interface ModeSelectScreenProps {
 export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: ModeSelectScreenProps) {
   const [settings, setSettings] = useState<ModeSelectSettings>(loadSettings)
   const [confirmingReset, setConfirmingReset] = useState(false)
+  const focusAfterReset = useRef(false)
+  const checkedBoardSize = useRef<HTMLButtonElement>(null)
+
+  // The Reset link is gone once reset, so the dialog has no opener to hand focus back to: land it on the first reset control.
+  useEffect(() => {
+    if (!focusAfterReset.current) return
+    focusAfterReset.current = false
+    checkedBoardSize.current?.focus()
+  })
 
   function updateHouseRule(key: keyof HouseRules, value: boolean): void {
     setSettings((s) => ({ ...s, houseRules: { ...s.houseRules, [key]: value } }))
@@ -242,18 +251,20 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
               <span className="section-label">Match setup</span>
               <div className="reset-group">
                 {changed > 0 && (
-                  <span id="changed-count" className="changed-count">
-                    {changed} changed from defaults
-                  </span>
+                  <>
+                    <span id="changed-count" className="changed-count">
+                      {changed} changed from defaults
+                    </span>
+                    <button
+                      type="button"
+                      className="reset-link"
+                      onClick={() => setConfirmingReset(true)}
+                      aria-describedby="changed-count"
+                    >
+                      Reset to Defaults
+                    </button>
+                  </>
                 )}
-                <button
-                  type="button"
-                  className="reset-link"
-                  onClick={() => setConfirmingReset(true)}
-                  aria-describedby={changed > 0 ? 'changed-count' : undefined}
-                >
-                  Reset to Defaults
-                </button>
               </div>
             </div>
             <div className="field-row">
@@ -266,6 +277,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                       className={settings.boardSize === size ? 'active' : undefined}
                       type="button"
                       role="radio"
+                      ref={settings.boardSize === size ? checkedBoardSize : undefined}
                       aria-checked={settings.boardSize === size}
                       tabIndex={settings.boardSize === size ? 0 : -1}
                       onKeyDown={handleRadioArrowKey}
@@ -368,6 +380,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           onConfirm={() => {
             setSettings((s) => ({ ...DEFAULT_SETTINGS, opponent: s.opponent }))
             setConfirmingReset(false)
+            focusAfterReset.current = true
           }}
         />
       )}
