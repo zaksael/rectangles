@@ -143,6 +143,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value${canReroll ? ', or reroll (E)' : ''}`
     else if (turnState === 'skipped') {
       turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : `${currentName}: no legal move, skip (S)`
+      const { skipLimit } = state.game.board
+      const nextSkip = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.consecutiveSkips + 1
+      turnStatus += nextSkip >= skipLimit ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${nextSkip} of ${skipLimit}`
     }
   }
 

@@ -593,6 +593,31 @@ test('the turn status line names the rectangle to place, following Rotate', () =
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 1 wide × 2 tall')
 })
 
+const deadRoll = (consecutiveSkips: number) => {
+  const game = makeGame({ board: { size: 3, skipLimit: 5 }, turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } })
+  game.players['1'].board.consecutiveSkips = consecutiveSkips
+  return game
+}
+
+test('a dead roll names which skip this would be, against the limit', () => {
+  renderScreen({ game: deadRoll(1), series: null })
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S) · skip 2 of 5')
+})
+
+test('the skip cue follows the reroll wording, and the skip that reaches the limit says it ends the game', () => {
+  const withReroll = (game: ReturnType<typeof deadRoll>) => {
+    game.houseRules.reroll = { enabled: true, canReroll: true }
+    return game
+  }
+  renderScreen({ game: withReroll(deadRoll(1)), series: null })
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move — skip (S), or reroll (E) · skip 2 of 5')
+
+  cleanup()
+  renderScreen({ game: withReroll(deadRoll(4)), series: null })
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('· skip 5 of 5 ends the game')
+})
+
 test('the turn status line says when a dead roll must be skipped', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
