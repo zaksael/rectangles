@@ -11,14 +11,22 @@ function luminance(color: number[]) {
 }
 const contrast = (a: number[], b: number[]) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05)
 
-test('disabled toolbar buttons keep their text at AA contrast (4.5:1) on the ledger', () => {
+// Contrast of a rule's `color-mix(in srgb, var(--ink) N%, transparent)` text on the ledger.
+function textContrast(css: string, selector: RegExp) {
   const tokens = readFileSync('src/tokens.css', 'utf8')
-  const css = readFileSync('src/screens/PlayingScreen.css', 'utf8')
-  const rule = css.match(/\.toolbar-actions \.btn:disabled \{[^}]*\}/)![0]
-  const share = Number(rule.match(/color:\s*color-mix\(in srgb, var\(--ink\) (\d+)%/)![1]) / 100
+  const share = Number(css.match(new RegExp(`${selector.source} \\{[^}]*color:\\s*color-mix\\(in srgb, var\\(--ink\\) (\\d+)%`))![1]) / 100
   const ink = token(tokens, '--ink')
   const ledger = token(tokens, '--ledger')
-  const text = ink.map((v, i) => v * share + ledger[i] * (1 - share))
+  return contrast(ink.map((v, i) => v * share + ledger[i] * (1 - share)), ledger)
+}
 
-  expect(contrast(text, ledger)).toBeGreaterThanOrEqual(4.5)
+const css = readFileSync('src/screens/PlayingScreen.css', 'utf8')
+
+test('disabled toolbar buttons keep their text at AA contrast (4.5:1) on the ledger', () => {
+  expect(textContrast(css, /\.toolbar-actions \.btn:disabled/)).toBeGreaterThanOrEqual(4.5)
+})
+
+test('off house-rule labels in the Menu keep AA contrast (4.5:1) on the ledger, dimmer than on rules', () => {
+  expect(textContrast(css, /\.settings-rule/)).toBeGreaterThanOrEqual(4.5)
+  expect(css).toMatch(/\.settings-rule\.on \{[^}]*color: var\(--ink\)/)
 })

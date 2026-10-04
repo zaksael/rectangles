@@ -620,7 +620,7 @@ dialog.settings {
   gap: 8px;
   min-height: 23px;
   font-size: 14px;
-  color: color-mix(in srgb, var(--ink) 60%, transparent);
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 .settings-rule.on {
   color: var(--ink);
