@@ -19,6 +19,8 @@ interface PlayingScreenProps {
 }
 
 const ERROR_TOAST_MS = 4000
+// A Comeback grant is easy to miss, so its notice stays twice as long as an error toast.
+const COMEBACK_TOAST_MS = 8000
 
 // The key that applies in each of the human's turn states; other states show a blank line.
 const KEY_HINT: Partial<Record<string, string>> = {
@@ -63,7 +65,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   useEffect(() => {
     if (!comebackNotice) return
-    const timer = setTimeout(() => setComebackNotice(null), ERROR_TOAST_MS)
+    const timer = setTimeout(() => setComebackNotice(null), COMEBACK_TOAST_MS)
     return () => clearTimeout(timer)
   }, [comebackNotice])
 

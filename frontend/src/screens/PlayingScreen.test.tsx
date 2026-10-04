@@ -1198,17 +1198,17 @@ test('a Comeback grant shows a one-time notice naming the player', () => {
   expect(screen.getByText('Comeback! Player 2 gets +1 reroll')).toBeInTheDocument()
 })
 
-test('the Comeback notice disappears after a few seconds', () => {
+test('the Comeback notice stays for 8 seconds, longer than an error toast, then disappears', () => {
   vi.useFakeTimers()
   onTestFinished(() => { vi.useRealTimers() })
   const { before, after } = comebackStates()
   const update = renderPlaying(before)
 
   update(after)
-  act(() => vi.advanceTimersByTime(3900))
+  act(() => vi.advanceTimersByTime(7999))
   expect(screen.getByText(/Comeback!/)).toBeInTheDocument()
 
-  act(() => vi.advanceTimersByTime(200))
+  act(() => vi.advanceTimersByTime(1))
   expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
 })
 
