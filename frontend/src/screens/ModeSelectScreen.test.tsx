@@ -359,3 +359,95 @@ test('cancelling the reset dialog leaves settings untouched', () => {
   expect(screen.queryByRole('heading', { name: 'Reset to Defaults?' })).not.toBeInTheDocument()
   expect(screen.getByRole('radio', { name: '23×23' })).toHaveAttribute('aria-checked', 'true')
 })
+
+describe('changed-from-defaults cue', () => {
+  const renderScreen = () => render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  const pick = (name: string) => fireEvent.click(screen.getByRole('radio', { name }))
+  const cue = () => screen.queryByText(/changed from defaults/)
+
+  test('shows nothing while every setting is at its default', () => {
+    renderScreen()
+    pick('Local 2P')
+
+    expect(cue()).not.toBeInTheDocument()
+  })
+
+  test('counts a changed board size, then a changed skip limit', () => {
+    renderScreen()
+    pick('Local 2P')
+
+    pick('23×23')
+    expect(cue()).toHaveTextContent('1 changed from defaults')
+
+    pick('3')
+    expect(cue()).toHaveTextContent('2 changed from defaults')
+  })
+
+  test('counts each house rule that is off, and drops the count when it is turned back on', () => {
+    renderScreen()
+    pick('Local 2P')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Obstacles' }))
+    expect(cue()).toHaveTextContent('1 changed from defaults')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Reroll' }))
+    expect(cue()).toHaveTextContent('2 changed from defaults')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Obstacles' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Reroll' }))
+    expect(cue()).not.toBeInTheDocument()
+  })
+
+  test('counts a non-default bot difficulty only while Vs Bot is chosen', () => {
+    renderScreen()
+    pick('Vs Bot')
+
+    pick('Blocking')
+    expect(cue()).toHaveTextContent('1 changed from defaults')
+
+    pick('Local 2P')
+    expect(cue()).not.toBeInTheDocument()
+  })
+
+  test('does not count the opponent or a saved series length, which the player cannot see', () => {
+    localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'local2p', seriesLength: 3 }))
+    renderScreen()
+    expect(cue()).not.toBeInTheDocument()
+
+    pick('Vs Bot')
+    expect(cue()).not.toBeInTheDocument()
+  })
+
+  test('shows the cue straight away for saved settings that differ from the defaults', () => {
+    localStorage.setItem(
+      'rectangles.modeSelectSettings:v1',
+      JSON.stringify({ opponent: 'local2p', boardSize: 27, houseRules: { prizeEnabled: false } }),
+    )
+    renderScreen()
+
+    expect(cue()).toHaveTextContent('2 changed from defaults')
+  })
+
+  test('Reset restores every counted kind', () => {
+    renderScreen()
+    pick('Vs Bot')
+    pick('Blocking')
+    pick('27×27')
+    pick('3')
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Walls' }))
+    expect(cue()).toHaveTextContent('4 changed from defaults')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset' }))
+    expect(cue()).not.toBeInTheDocument()
+  })
+
+  test('Reset to Defaults is described by the cue while there is one', () => {
+    renderScreen()
+    pick('Local 2P')
+    expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toHaveAccessibleDescription('')
+
+    pick('23×23')
+    expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toHaveAccessibleDescription('1 changed from defaults')
+  })
+})

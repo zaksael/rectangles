@@ -160,6 +160,15 @@
   align-items: baseline;
   justify-content: space-between;
 }
+.reset-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.changed-count {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
 .reset-link {
   background: none;
   border: none;

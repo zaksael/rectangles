@@ -70,3 +70,8 @@ test('an unavailable but focusable quiet Surrender is dimmed by colour, not opac
   // Same specificity as the hover rule, so it must come later to win while hovered.
   expect(tokensCss.indexOf(selector)).toBeGreaterThan(tokensCss.indexOf('.btn.destructive.quiet:hover'))
 })
+
+test('the Mode Select changed-from-defaults cue keeps AA contrast (4.5:1) on the ledger', () => {
+  const modeSelectCss = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
+  expect(textContrast(modeSelectCss, /\.changed-count/)).toBeGreaterThanOrEqual(4.5)
+})

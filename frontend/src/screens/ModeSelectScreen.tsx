@@ -48,6 +48,18 @@ const DEFAULT_SETTINGS: ModeSelectSettings = {
   },
 }
 
+// How many visible settings differ from DEFAULT_SETTINGS: what Reset to Defaults would change (the opponent is kept).
+function changedCount(s: ModeSelectSettings): number {
+  return [
+    s.boardSize !== DEFAULT_SETTINGS.boardSize,
+    s.skipLimit !== DEFAULT_SETTINGS.skipLimit,
+    s.opponent === 'bot' && s.botDifficulty !== DEFAULT_SETTINGS.botDifficulty,
+    ...implementedGroups()
+      .flatMap((g) => g.rules)
+      .map((r) => s.houseRules[r.key] !== DEFAULT_SETTINGS.houseRules[r.key]),
+  ].filter(Boolean).length
+}
+
 // Flip to true when the round-transition screen lands; until then the Games picker is hidden and seriesLength isn't sent.
 const SERIES_IMPLEMENTED = false
 
@@ -145,6 +157,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
   }
 
   const noModeSelected = settings.opponent === null
+  const changed = changedCount(settings)
   const visibleGroups = implementedGroups()
 
   return (
@@ -227,9 +240,21 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           <div className="config-section">
             <div className="section-label-row">
               <span className="section-label">Match setup</span>
-              <button type="button" className="reset-link" onClick={() => setConfirmingReset(true)}>
-                Reset to Defaults
-              </button>
+              <div className="reset-group">
+                {changed > 0 && (
+                  <span id="changed-count" className="changed-count">
+                    {changed} changed from defaults
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="reset-link"
+                  onClick={() => setConfirmingReset(true)}
+                  aria-describedby={changed > 0 ? 'changed-count' : undefined}
+                >
+                  Reset to Defaults
+                </button>
+              </div>
             </div>
             <div className="field-row">
               <div className="field">
