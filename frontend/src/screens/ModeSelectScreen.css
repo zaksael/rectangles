@@ -330,10 +330,14 @@
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 .start-error {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--danger);
   text-align: center;
   margin-top: -2px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
 }
 
 /* Desktop/laptop is the only supported viewport — no mobile breakpoints —

@@ -130,3 +130,14 @@ test('the Menu header holds a lone title, so it declares no flex layout or gap f
 
   expect(rule).not.toMatch(/display|align-items|gap/)
 })
+
+test('the failed-connect line is a status block: 13px bold-ish text, a danger rule and tint, and AA (4.5:1) on that tint', () => {
+  const rule = readFileSync('src/screens/ModeSelectScreen.css', 'utf8').match(/\.start-error \{([^}]*)\}/)![1]
+  const share = Number(rule.match(/background:\s*color-mix\(in srgb, var\(--danger\) (\d+)%, transparent\)/)![1]) / 100
+  const tint = danger.map((v, i) => v * share + ledgerRgb[i] * (1 - share))
+
+  expect(rule).toMatch(/font-size:\s*13px/)
+  expect(rule).toMatch(/font-weight:\s*500/)
+  expect(rule).toMatch(/border-left:\s*3px solid var\(--danger\)/)
+  expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
+})
