@@ -210,6 +210,15 @@ test("shows each player's total score in their header slot", () => {
   expect(within(p2).getByText('7')).toHaveClass('score')
 })
 
+test("each header score is read out as points, not a bare number", () => {
+  const game = makeGame()
+  game.players['1'].score.totalScore = 12
+  renderScreen({ game, series: null })
+
+  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
+  expect(p1).toHaveTextContent('12 points')
+})
+
 test("shows both players' skip streaks against the skip limit at the same time", () => {
   const game = makeGame({ board: { size: 3, skipLimit: 5 } })
   game.players['1'].board.consecutiveSkips = 2

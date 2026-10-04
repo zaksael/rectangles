@@ -190,7 +190,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                     {rerollEnabled &&
                       `, ${state.game.players[id].houseRules.reroll.limit - state.game.players[id].houseRules.reroll.used}/${state.game.players[id].houseRules.reroll.limit} rerolls`}
                   </span>
-                  <span className="score">{state.game.players[id].score.totalScore}</span>
+                  <span className="score">
+                    {state.game.players[id].score.totalScore}
+                    <span className="visually-hidden"> points</span>
+                  </span>
                 </span>
               </div>
             ))}
