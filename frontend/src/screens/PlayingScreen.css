@@ -155,6 +155,10 @@
   display: flex;
   gap: 16px;
 }
+/* Reroll spends a limited charge, so it sits apart from the Rotate/Skip before it (the only button that can precede it). */
+.toolbar-leading .btn + .btn {
+  margin-left: 24px;
+}
 .toolbar-trailing {
   grid-column: 3;
   justify-content: flex-end;

@@ -78,3 +78,10 @@ test('on touch screens the key hint is blanked by colour, so its height stays re
   expect(block).toMatch(/color:\s*transparent/)
   expect(block).not.toMatch(/display|visibility|height/)
 })
+
+test('Reroll sits apart from the action button before it: a margin on the second button, not the shared gap', () => {
+  const block = css.match(/\.toolbar-leading \.btn \+ \.btn \{([^}]*)\}/)![1]
+  const margin = Number(block.match(/margin-left:\s*(\d+)px/)![1])
+
+  expect(margin).toBeGreaterThan(0)
+})
