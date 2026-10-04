@@ -169,3 +169,10 @@ test('the difficulty pills start at the left edge of their left-aligned card: th
 
   expect(rule).not.toMatch(/justify-content:\s*center/)
 })
+
+test('the Mode Select title is a 24px screen title whose weight comes from .title, not an inherited override', () => {
+  const rule = readFileSync('src/screens/ModeSelectScreen.css', 'utf8').match(/\.mode-select \.title \{([^}]*)\}/)![1]
+
+  expect(rule).toMatch(/font-size:\s*24px/)
+  expect(rule).not.toMatch(/font-weight/)
+})
