@@ -30,3 +30,15 @@ test('off house-rule labels in the Menu keep AA contrast (4.5:1) on the ledger, 
   expect(textContrast(css, /\.settings-rule/)).toBeGreaterThanOrEqual(4.5)
   expect(css).toMatch(/\.settings-rule\.on \{[^}]*color: var\(--ink\)/)
 })
+
+test('the Menu note explaining the unavailable Surrender keeps AA contrast (4.5:1) on the ledger', () => {
+  expect(textContrast(css, /\.settings-footer-note/)).toBeGreaterThanOrEqual(4.5)
+})
+
+test('an unavailable but focusable Surrender is dimmed by colour, not opacity, so its focus ring stays full ink', () => {
+  const tokens = readFileSync('src/tokens.css', 'utf8')
+  const rule = tokens.match(/\.btn\.destructive\[aria-disabled="true"\][^{]*\{[^}]*\}/)![0]
+
+  expect(rule).toMatch(/background:\s*color-mix\(/)
+  expect(rule).not.toMatch(/opacity/)
+})

@@ -643,6 +643,13 @@ dialog.settings {
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
+/* Why Surrender is unavailable, right-aligned under its column of the actions row. */
+.settings-footer-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  text-align: right;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
 
 .board:focus {
   outline: 2px solid var(--ink);

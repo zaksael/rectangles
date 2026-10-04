@@ -107,6 +107,12 @@ dialog button:focus,
 .btn.destructive:hover {
   background: color-mix(in srgb, var(--danger) 85%, black);
 }
+/* Unavailable but still focusable (aria-disabled): dimmed by colour, not opacity, so the focus ring stays full ink. */
+.btn.destructive[aria-disabled="true"] {
+  background: color-mix(in srgb, var(--danger) 45%, var(--ledger));
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--ledger));
+  cursor: default;
+}
 
 .btn:disabled,
 .segmented button:disabled {

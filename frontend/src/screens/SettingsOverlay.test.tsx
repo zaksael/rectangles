@@ -151,7 +151,46 @@ test('the Surrender button is gone once the game is over', () => {
   expect(screen.queryByRole('button', { name: 'Surrender' })).not.toBeInTheDocument()
 })
 
-test("on the bot's turn, Surrender is disabled, since it would make the bot surrender", () => {
+test("on the bot's turn, Surrender is unavailable but still focusable, and says why", () => {
   renderOverlay({ botSeat: 1 })
-  expect(screen.getByRole('button', { name: 'Surrender' })).toBeDisabled()
+  const surrender = screen.getByRole('button', { name: 'Surrender' })
+  expect(surrender).toHaveAttribute('aria-disabled', 'true')
+  expect(surrender).not.toBeDisabled()
+  expect(surrender).toHaveAccessibleDescription('Available on your turn')
+})
+
+test("on the human's turn, Surrender has no note and no stale description", () => {
+  renderOverlay({ botSeat: 2 })
+  expect(screen.queryByText('Available on your turn')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Surrender' })).toHaveAccessibleDescription('')
+})
+
+test('at game over there is no Surrender and no note, even if the bot was due to move', () => {
+  renderOverlay({ botSeat: 1, game: makeGame({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }) })
+  expect(screen.queryByText('Available on your turn')).not.toBeInTheDocument()
+})
+
+test("clicking Surrender on the bot's turn opens no dialog and sends nothing", () => {
+  const { sendAction } = renderOverlay({ botSeat: 1 })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+
+  expect(screen.queryByRole('dialog', { name: /Surrender/ })).not.toBeInTheDocument()
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test("when the bot's turn ends with the menu open, Surrender becomes available at once", () => {
+  const props = { series: null, opponentLabel: 'Bot (Greedy)', sendAction: vi.fn(), onClose: vi.fn(), botSeat: 1 }
+  const botTurn = makeGame({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const humanTurn = makeGame({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const { rerender } = render(<SettingsOverlay game={botTurn} {...props} />)
+  expect(screen.getByRole('button', { name: 'Surrender' })).toHaveAttribute('aria-disabled', 'true')
+
+  rerender(<SettingsOverlay game={humanTurn} {...props} />)
+  const surrender = screen.getByRole('button', { name: 'Surrender' })
+  fireEvent.click(surrender)
+
+  expect(surrender).not.toHaveAttribute('aria-disabled')
+  expect(screen.queryByText('Available on your turn')).not.toBeInTheDocument()
+  expect(screen.getByRole('dialog', { name: /Surrender/ })).toBeInTheDocument()
 })
