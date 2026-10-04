@@ -98,3 +98,16 @@ test('--chrome on the frame is at least what the header, status, hint and the re
 
   expect(chrome).toBeGreaterThanOrEqual(218)
 })
+
+const coarse = css.match(/@media \(pointer: coarse\) \{\s*\.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame \{([^}]*)\}/)
+
+test('on touch screens the Wildcard pills are 44px targets and the toolbar row reserves their taller picker', () => {
+  expect(coarse).not.toBeNull()
+  expect(coarse![1]).toMatch(/--picker-height:\s*92px/)
+  expect(coarse![2]).toMatch(/min-width:\s*44px/)
+  expect(coarse![2]).toMatch(/min-height:\s*44px/)
+})
+
+test('on touch screens --chrome grows with the taller toolbar, so the board still fits the window', () => {
+  expect(Number(coarse![3].match(/--chrome:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(257)
+})
