@@ -955,6 +955,12 @@ test('the Menu button exposes its keyboard shortcut to assistive tech', () => {
   expect(screen.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-keyshortcuts', 'm')
 })
 
+test('Roll sits in the toolbar\'s leading group, which is where its heavier border is scoped', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(screen.getByRole('button', { name: 'Roll' }).parentElement).toHaveClass('toolbar-leading')
+})
+
 test('the dice carry a dot in the color of the player who rolled them', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [4, 2], legalPlacements: [] } }))
 

@@ -249,6 +249,10 @@
   height: var(--control-height);
   padding: 0 16px;
 }
+/* Roll is the toolbar's only primary button; a heavier outline sets it apart from Menu without a solid fill. */
+.toolbar-leading .btn.primary {
+  border-width: 2px;
+}
 .dice-label {
   left: 100%;
   margin-left: 6px;

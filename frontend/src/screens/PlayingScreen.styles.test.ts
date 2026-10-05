@@ -11,6 +11,18 @@ test('on touch screens the key hint is blanked by colour (also under forced colo
   expect(block).not.toMatch(/display|visibility|height/)
 })
 
+test('Roll, the toolbar\'s one primary button, gets a 2px border to set it apart from Menu', () => {
+  const block = ruleFor(css, '.toolbar-leading .btn.primary')
+
+  expect(block).toMatch(/border-width:\s*2px/)
+})
+
+test('the heavier Roll border is scoped to the toolbar: primary and secondary buttons stay 1px everywhere else', () => {
+  expect(ruleFor(tokensCss, '.btn.primary')).toMatch(/border:\s*1px solid/)
+  expect(ruleFor(tokensCss, '.btn.secondary')).toMatch(/border:\s*1px solid/)
+  expect(css).not.toMatch(/^\.btn\.primary\s*\{/m)
+})
+
 test('Reroll sits apart from the action button before it: a margin on the second button, not the shared gap', () => {
   const block = ruleFor(css, '.toolbar-leading .btn + .btn')
   const margin = Number(block.match(/margin-left:\s*(\d+)px/)![1])
