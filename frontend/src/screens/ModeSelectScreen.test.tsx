@@ -322,6 +322,15 @@ test('while connectFailed, shows an inline retry message and Start Game stays en
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 })
 
+test('the failed-connect message is an alert, which screen readers announce when it appears with its text', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed onStartGame={vi.fn()} />)
+
+  const alert = screen.getByRole('alert')
+
+  expect(alert).toHaveTextContent('Couldn’t connect — your settings are unchanged, try again')
+  expect(alert).not.toHaveAttribute('aria-live') // an alert is already assertive
+})
+
 test('Reset to Defaults opens a confirm dialog', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 

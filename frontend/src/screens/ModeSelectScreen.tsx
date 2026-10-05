@@ -370,7 +370,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
       {connectFailed && (
-        <div className="start-error" aria-live="polite">
+        <div className="start-error" role="alert">
           Couldn’t connect — your settings are unchanged, try again
         </div>
       )}
