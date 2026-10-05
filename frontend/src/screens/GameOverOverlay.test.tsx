@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import { makeGame } from '../testUtils/gameFixtures'
-import { GameOverOverlay } from './GameOverOverlay'
+import { GameOverBar, GameOverOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)
 
@@ -142,6 +142,65 @@ test('View Board and New Game call their handlers', () => {
   expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
   fireEvent.click(within(dialog).getByRole('button', { name: 'New Game' }))
   expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('on the overlay, v shows the board and n starts a new game', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+
+  fireEvent.keyDown(dialog, { key: 'v' })
+  expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
+  fireEvent.keyDown(dialog, { key: 'n' })
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('a browser combo such as Ctrl+N is left alone on the overlay', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+
+  fireEvent.keyDown(dialog, { key: 'n', ctrlKey: true })
+
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
+})
+
+function renderBar() {
+  const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn() }
+  render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} {...handlers} />)
+  return handlers
+}
+
+test('on the result bar, v shows the result and n starts a new game', () => {
+  const handlers = renderBar()
+
+  fireEvent.keyDown(window, { key: 'v' })
+  expect(handlers.onViewResult).toHaveBeenCalledTimes(1)
+  fireEvent.keyDown(window, { key: 'n' })
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('the result bar ignores n and v while another dialog, such as the Menu, is open', () => {
+  const handlers = renderBar()
+  const menu = document.createElement('dialog')
+  menu.setAttribute('open', '')
+  document.body.append(menu)
+
+  fireEvent.keyDown(window, { key: 'n' })
+  fireEvent.keyDown(window, { key: 'v' })
+  menu.remove()
+
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
+  expect(handlers.onViewResult).not.toHaveBeenCalled()
+})
+
+test('the game-over buttons expose their keyboard shortcuts to assistive tech', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  expect(within(dialog).getByRole('button', { name: 'View Board' })).toHaveAttribute('aria-keyshortcuts', 'v')
+  expect(within(dialog).getByRole('button', { name: 'New Game' })).toHaveAttribute('aria-keyshortcuts', 'n')
+  cleanup()
+
+  renderBar()
+  expect(screen.getByRole('button', { name: 'View Result' })).toHaveAttribute('aria-keyshortcuts', 'v')
+  expect(screen.getByRole('button', { name: 'New Game' })).toHaveAttribute('aria-keyshortcuts', 'n')
 })
 
 test('Escape shows the board instead of closing the result for good', () => {

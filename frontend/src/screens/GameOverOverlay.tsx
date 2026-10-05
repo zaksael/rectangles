@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { GameWireState } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
@@ -117,11 +118,27 @@ function headlineText(game: GameWireState): string {
   return winner === null ? 'Tied' : `${nameOf(game, winner)} wins${reason === 'surrender' ? '' : ' on score'}`
 }
 
+// V goes back to the board or the result, N starts a new game; Ctrl, Cmd and Alt combos belong to the browser.
+function handleResultKey(event: { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, onView: () => void, onNewGame: () => void) {
+  if (event.ctrlKey || event.metaKey || event.altKey) return
+  const key = event.key.toLowerCase()
+  if (key === 'v') onView()
+  else if (key === 'n') onNewGame()
+}
+
 // What is left of the result while the player looks at the final board: the outcome, and a way back.
 export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireState; onViewResult: () => void; onNewGame: () => void }) {
   const reason = game.gameOver.reason === 'boardFull' ? null : reasonText(game)
   const score1 = game.players['1'].score.totalScore
   const score2 = game.players['2'].score.totalScore
+  // The bar is not a dialog, so it listens on the window and stands down while the Menu (or any dialog) is open.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!document.querySelector('dialog[open]')) handleResultKey(event, onViewResult, onNewGame)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onViewResult, onNewGame])
   return (
     <div className="game-over-bar" role="region" aria-label="Game result">
       <div className="game-over-bar-text">
@@ -138,10 +155,10 @@ export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireS
         <span className="visually-hidden">{`${nameOf(game, 1)} ${score1}, ${nameOf(game, 2)} ${score2}`}</span>
       </span>
       <div className="game-over-bar-actions">
-        <button className="btn secondary" onClick={onViewResult} autoFocus>
+        <button className="btn secondary" onClick={onViewResult} aria-keyshortcuts="v" autoFocus>
           View Result
         </button>
-        <button className="btn secondary" onClick={onNewGame}>
+        <button className="btn secondary" onClick={onNewGame} aria-keyshortcuts="n">
           New Game
         </button>
       </div>
@@ -164,7 +181,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
     <dialog className="modal game-over" data-outcome={winner ?? 'tie'} ref={dialogRef} onCancel={(e) => {
         e.preventDefault()
         onViewBoard()
-      }} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
+      }} onKeyDown={(e) => handleResultKey(e, onViewBoard, onNewGame)} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
       {detail && <p className="reason">{detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
@@ -239,10 +256,10 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
         </table>
       )}
       <div className="actions">
-        <button className="btn primary" onClick={onViewBoard} autoFocus>
+        <button className="btn primary" onClick={onViewBoard} aria-keyshortcuts="v" autoFocus>
           View Board
         </button>
-        <button className="btn secondary" onClick={onNewGame}>
+        <button className="btn secondary" onClick={onNewGame} aria-keyshortcuts="n">
           New Game
         </button>
       </div>
