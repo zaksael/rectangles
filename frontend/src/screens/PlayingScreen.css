@@ -83,6 +83,11 @@
   text-wrap: pretty;
 }
 
+/* Player colour is a background, which forced colors would turn white: the dots and swatches opt out. */
+.dot,
+.swatch {
+  forced-color-adjust: none;
+}
 .dot {
   width: 11px;
   height: 11px;
@@ -353,6 +358,7 @@ dialog.game-over::before {
   height: 6px;
   margin: 0 -28px 20px;
   background: var(--outcome, var(--ink));
+  forced-color-adjust: none; /* the winner's colour is a background, which forced colors would drop */
 }
 dialog.game-over[data-outcome='tie']::before {
   background: linear-gradient(to right, var(--p1) 50%, var(--p2) 50%);

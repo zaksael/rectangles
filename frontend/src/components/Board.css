@@ -13,6 +13,8 @@
     linear-gradient(90deg, var(--line) 1px, transparent 1px);
   background-size: var(--cell) var(--cell);
   border: 1px solid var(--ink);
+  /* Territory, walls, obstacles and the special marks are backgrounds, which forced colors would drop (leaving empty outlines); every child inherits this. */
+  forced-color-adjust: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }

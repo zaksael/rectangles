@@ -180,3 +180,11 @@ test('the Mode Select title is a 24px screen title whose weight comes from .titl
   expect(rule).toMatch(/font-size:\s*24px/)
   expect(rule).not.toMatch(/font-weight/)
 })
+
+test('the board, player dots and swatches, and the game-over outcome rule keep their colours under forced colors (they are backgrounds that mode would drop)', () => {
+  const board = readFileSync('src/components/Board.css', 'utf8').match(/(?:^|\n)\.board \{([^}]*)\}/)![1]
+  const dots = css.match(/(?:^|\n)\.dot,\s*\.swatch \{([^}]*)\}/)![1]
+  const outcome = css.match(/\ndialog\.game-over::before \{([^}]*)\}/)![1]
+
+  for (const rule of [board, dots, outcome]) expect(rule).toMatch(/forced-color-adjust:\s*none/)
+})
