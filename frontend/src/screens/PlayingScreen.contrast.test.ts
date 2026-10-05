@@ -89,14 +89,14 @@ test('Reroll sits apart from the action button before it: a margin on the second
 test('the toolbar row always reserves the Wildcard picker height, so the frame does not grow on a wildcard roll', () => {
   const toolbar = css.match(/\.toolbar-actions \{([^}]*)\}/)![1]
 
-  expect(toolbar).toMatch(/--picker-height:\s*52px/)
+  expect(toolbar).toMatch(/--picker-height:\s*54px/)
   expect(toolbar).toMatch(/grid-auto-rows:\s*minmax\(var\(--picker-height\),\s*auto\)/)
 })
 
 test('--chrome on the frame is at least what the header, status, hint and the reserved toolbar need', () => {
   const chrome = Number(css.match(/\.frame \{[^}]*--chrome:\s*(\d+)px/)![1])
 
-  expect(chrome).toBeGreaterThanOrEqual(218)
+  expect(chrome).toBeGreaterThanOrEqual(220)
 })
 
 const coarse = css.match(/@media \(pointer: coarse\) \{\s*\.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame \{([^}]*)\}/)
@@ -155,13 +155,12 @@ test('game-over capitals are for structural labels only: the reason and table he
   expect(rule('.game-over table.breakdown thead th')).toMatch(/text-transform:\s*uppercase/)
 })
 
-test('the difficulty pills are at least 12px, scoped so the shared .pill (the Wildcard pills) is unchanged', () => {
+test('the shared .pill (difficulty and Wildcard pills) is at least 12px, with no per-screen override', () => {
   const modeSelectCss = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
-  const difficulty = modeSelectCss.match(/\.difficulty-pills \.pill \{([^}]*)\}/)![1]
   const shared = modeSelectCss.match(/\n\.pill \{([^}]*)\}/)![1]
 
-  expect(Number(difficulty.match(/font-size:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(12)
-  expect(shared).toMatch(/font-size:\s*11px/)
+  expect(Number(shared.match(/font-size:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(12)
+  expect(modeSelectCss).not.toMatch(/\.difficulty-pills \.pill \{/)
 })
 
 test('the difficulty pills start at the left edge of their left-aligned card: the row is not centred', () => {

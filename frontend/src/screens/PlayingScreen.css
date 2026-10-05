@@ -1,5 +1,5 @@
 .frame {
-  --chrome: 218px; /* header, status line, key hint and toolbar; the board fills the rest */
+  --chrome: 220px; /* header, status line, key hint and toolbar; the board fills the rest */
   position: relative;
   width: fit-content;
   max-width: 100%;
@@ -142,7 +142,7 @@
      Center: the rolled dice, or nothing. Right: Menu. Buttons and
      dice share one height so the row doesn't jump when the dice appear. */
   --control-height: 34px;
-  --picker-height: 52px; /* the Wildcard picker: two 24px pills and the 4px row gap; the row always holds it, so the frame never grows on a wildcard roll */
+  --picker-height: 54px; /* the Wildcard picker: two 25px pills and the 4px row gap; the row always holds it, so the frame never grows on a wildcard roll */
   --dice-slot: 152px; /* reserved even with no dice, so the frame width never changes on the first roll */
   display: grid;
   grid-template-columns: 1fr var(--dice-slot) 1fr;
