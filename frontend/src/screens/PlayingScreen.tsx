@@ -71,6 +71,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
+  const openSettingsRef = useRef(onOpenSettings)
+  openSettingsRef.current = onOpenSettings
 
   const {
     rotate,
@@ -159,7 +161,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       if (document.querySelector('dialog[open]')) return
       if (event.ctrlKey || event.metaKey || event.altKey) return
       const key = event.key.toLowerCase()
-      if (key === 'd' && humanTurnState === 'awaitingRoll') {
+      if (key === 'm') {
+        openSettingsRef.current()
+      } else if (key === 'd' && humanTurnState === 'awaitingRoll') {
         sendActionRef.current({ type: 'roll' })
       } else if (key === 'r' && humanTurnState === 'choosingPlacement') {
         rotateRef.current()
@@ -285,7 +289,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
         )}
         <div className="toolbar-trailing">
-          <button className="btn secondary" onClick={onOpenSettings}>
+          <button className="btn secondary" onClick={onOpenSettings} aria-keyshortcuts="m">
             Menu
           </button>
         </div>

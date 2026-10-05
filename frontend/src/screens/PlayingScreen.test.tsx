@@ -939,6 +939,22 @@ test('pressing s does nothing when the roll is playable', () => {
   expect(sendAction).not.toHaveBeenCalled()
 })
 
+test.each(['awaitingRoll', 'choosingPlacement', 'skipped'] as const)('pressing m opens the Menu in turn state %s', (turnState) => {
+  const onOpenSettings = vi.fn()
+  const state = makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
+  render(<PlayingScreen state={state} error={null} sendAction={vi.fn()} onOpenSettings={onOpenSettings} onNewGame={vi.fn()} />)
+
+  fireEvent.keyDown(window, { key: 'm' })
+
+  expect(onOpenSettings).toHaveBeenCalledTimes(1)
+})
+
+test('the Menu button exposes its keyboard shortcut to assistive tech', () => {
+  renderScreen(makeState())
+
+  expect(screen.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-keyshortcuts', 'm')
+})
+
 test('the dice carry a dot in the color of the player who rolled them', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [4, 2], legalPlacements: [] } }))
 
