@@ -281,7 +281,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 {value}
               </span>
             ))}
-            {!roll && <span className="dice-label">P{shownRoll.owner} last</span>}
+            {!roll && <span className="dice-label">{state.game.players[shownRoll.owner].name} last</span>}
           </div>
         )}
         <div className="toolbar-trailing">

@@ -265,7 +265,7 @@
   justify-content: center;
   border: 1px solid var(--ink);
 }
-/* A past roll reads as one by its dashed border and "P1 last" label, not by fading its digits. */
+/* A past roll reads as one by its dashed border and "Player 1 last" label, not by fading its digits. */
 .dice.stale .die {
   border-style: dashed;
 }

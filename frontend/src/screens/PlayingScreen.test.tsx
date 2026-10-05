@@ -671,7 +671,7 @@ test('keeps the last roll on screen, marked as the last roll, once the next turn
 
   const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
   expect(dice).toHaveClass('stale')
-  expect(dice).toHaveTextContent('P1 last')
+  expect(dice).toHaveTextContent('Player 1 last')
 })
 
 // jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
@@ -701,7 +701,7 @@ test('the last roll is marked by a dashed border and a one-line owner label, not
 
   expect(dice().map((c) => c.borderTopStyle)).toEqual(['dashed', 'dashed'])
   expect([...dice(), getComputedStyle(document.querySelector('.dice .dot')!)].map((c) => c.opacity)).toEqual(['1', '1', '1'])
-  expect(getComputedStyle(screen.getByText('P1 last')).whiteSpace).toBe('nowrap')
+  expect(getComputedStyle(screen.getByText('Player 1 last')).whiteSpace).toBe('nowrap')
 })
 
 test('the winner’s score cell has a 4px top border and 4px less top padding, so the scoreboard keeps its height', () => {
