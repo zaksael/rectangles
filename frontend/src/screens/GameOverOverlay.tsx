@@ -28,7 +28,7 @@ const MODIFIER_ROWS: ModifierRow[] = [
   },
   {
     label: 'Steal',
-    note: (game) => `±${game.houseRules.steal.points} per capture, zero-sum`,
+    note: (game) => `capturer +${game.houseRules.steal.points}, opponent −${game.houseRules.steal.points}, per capture`,
     // Zero-sum: each capture adds to the capturer and docks the opponent by the same
     // amount, so a player's net is their own captures minus the opponent's, in points.
     enabled: (game) => game.houseRules.steal.enabled,
@@ -62,7 +62,7 @@ function reasonText(game: GameWireState): string | null {
   if (reason === 'boardFull') return 'board settled'
   if (reason === null || playerId === null) return null
   const name = nameOf(game, playerId)
-  if (reason === 'playerBlocked') return `${name} boxed in`
+  if (reason === 'playerBlocked') return `${name} had no legal move left`
   if (reason === 'skipLimit') {
     const { skipLimit } = game.board
     return `${name} hit the skip limit (${skipLimit} of ${skipLimit})`

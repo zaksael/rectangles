@@ -360,7 +360,7 @@ test('no game-over dialog while the game is in progress', () => {
 })
 
 test.each([
-  ['playerBlocked', 2, 'Player 2 boxed in'],
+  ['playerBlocked', 2, 'Player 2 had no legal move left'],
   ['skipLimit', 1, 'Player 1 hit the skip limit (5 of 5)'],
   ['surrender', 2, 'Player 2 surrendered'],
 ] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
@@ -429,7 +429,7 @@ test('game over shows a Steal breakdown row, as each player\'s net swing, when S
   const table = within(screen.getByRole('dialog')).getByRole('table')
   const row = within(table).getByRole('row', { name: /Steal/ })
   expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Steal±10 per capture, zero-sum',
+    'Stealcapturer +10, opponent −10, per capture',
     '10',
     '−10',
   ])
@@ -1319,7 +1319,7 @@ test('the result bar states no reason when the board simply settled', () => {
 })
 
 test.each([
-  ['playerBlocked', 1, 'Player 1 boxed in'],
+  ['playerBlocked', 1, 'Player 1 had no legal move left'],
   ['skipLimit', 2, 'Player 2 hit the skip limit (5 of 5)'],
 ] as const)('the result bar names the player for a %s ending', (reason, playerId, text) => {
   const bar = resultBar({ reason, playerId, winner: 3 - playerId })
@@ -1328,7 +1328,7 @@ test.each([
 
 test('the end reason sits under the outcome, in the same block', () => {
   const bar = resultBar({ reason: 'playerBlocked', playerId: 1, winner: 2 })
-  const reason = within(bar).getByText('Player 1 boxed in')
+  const reason = within(bar).getByText('Player 1 had no legal move left')
   expect(reason.previousElementSibling).toHaveTextContent('Player 2 wins on score')
 })
 

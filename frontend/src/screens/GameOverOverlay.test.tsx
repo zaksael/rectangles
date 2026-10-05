@@ -94,7 +94,7 @@ test('each modifier row states its rule with the point value from the game', () 
   const note = (label: RegExp) => within(dialog).getByRole('row', { name: label }).querySelector('th')?.textContent
   expect(note(/^Prize/)).toContain('+10 per captured cell')
   expect(note(/^Pitfall/)).toContain('−7 per captured cell')
-  expect(note(/^Steal/)).toContain('±12 per capture, zero-sum')
+  expect(note(/^Steal/)).toContain('capturer +12, opponent −12, per capture')
   expect(note(/^Enclosure/)).toContain('−1 per sealed-in cell')
 })
 
