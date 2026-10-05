@@ -147,6 +147,8 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
 
   function handleBoardKeyDown(event: KeyboardEvent) {
     if (!game || !dims) return
+    // Ctrl, Cmd and Alt combos (new window, history back) belong to the browser.
+    if (event.ctrlKey || event.metaKey || event.altKey) return
     const step = ARROWS[event.key]
     if (step) {
       event.preventDefault()

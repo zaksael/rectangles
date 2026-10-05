@@ -319,3 +319,24 @@ test('keyboard: Shift+N goes back to the previous legal spot, and wraps from the
   act(() => result.current.handleBoardKeyDown(pressN(true)))
   expect(result.current.previewTopLeft).toEqual([4, 1])
 })
+
+test.each([['ctrlKey'], ['metaKey'], ['altKey']])('keyboard: %s combos are left to the browser (no preventDefault, no move)', (modifier) => {
+  const { result } = renderHook(() => usePlacementInput(jumpGame(), vi.fn()))
+  act(() => result.current.handleCellHover([0, 1]))
+
+  for (const key of ['n', 'ArrowRight', 'Enter']) {
+    const event = { key, shiftKey: false, [modifier]: true, preventDefault: vi.fn() }
+    act(() => result.current.handleBoardKeyDown(event as unknown as React.KeyboardEvent))
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  }
+  expect(result.current.previewTopLeft).toEqual([0, 0])
+})
+
+test('keyboard: plain N still prevents the browser default', () => {
+  const { result } = renderHook(() => usePlacementInput(jumpGame(), vi.fn()))
+  const event = pressN()
+
+  act(() => result.current.handleBoardKeyDown(event))
+
+  expect(event.preventDefault).toHaveBeenCalled()
+})
