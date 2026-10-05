@@ -1,5 +1,5 @@
 .frame {
-  --chrome: 220px; /* header, status line, key hint and toolbar; the board fills the rest */
+  --chrome: 200px; /* header, status line, key hint and toolbar; the board fills the rest */
   position: relative;
   width: fit-content;
   max-width: 100%;
@@ -7,6 +7,10 @@
   border: 1px solid var(--line);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+/* While the Wildcard rule is on the toolbar row also holds the picker (below), and the board gives that height up. */
+.frame.reserves-picker {
+  --chrome: 220px;
 }
 
 .visually-hidden {
@@ -142,7 +146,7 @@
      Center: the rolled dice, or nothing. Right: Menu. Buttons and
      dice share one height so the row doesn't jump when the dice appear. */
   --control-height: 34px;
-  --picker-height: 54px; /* the Wildcard picker: two 25px pills and the 4px row gap; the row always holds it, so the frame never grows on a wildcard roll */
+  --picker-height: 0px; /* held only with the Wildcard rule on, see .reserves-picker below */
   --dice-slot: 152px; /* reserved even with no dice, so the frame width never changes on the first roll */
   display: grid;
   grid-template-columns: 1fr var(--dice-slot) 1fr;
@@ -155,6 +159,10 @@
   bottom: 0;
   z-index: 3;
   background: var(--ledger);
+}
+/* The Wildcard picker: two 25px pills and the 4px row gap. The row holds it whenever the rule is on, so the frame never grows on a wildcard roll. */
+.reserves-picker .toolbar-actions {
+  --picker-height: 54px;
 }
 
 .toolbar-leading,
@@ -213,14 +221,14 @@
 /* Touch: the pills are 44px targets in the same 2x3 grid (two rows of 44px and the 4px gap = 92px), so the
    toolbar row reserves that, and --chrome grows by the same 39px to keep the board fitting the window. */
 @media (pointer: coarse) {
-  .toolbar-actions {
+  .reserves-picker .toolbar-actions {
     --picker-height: 92px;
   }
   .wildcard-pills .pill {
     min-width: 44px;
     min-height: 44px;
   }
-  .frame {
+  .frame.reserves-picker {
     --chrome: 257px;
   }
 }

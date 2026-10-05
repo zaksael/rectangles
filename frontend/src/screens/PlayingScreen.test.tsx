@@ -1401,3 +1401,11 @@ test('the bar shows total score, not territory, when modifiers make them differ'
   })
   expect(bar).toHaveTextContent('162 – 141')
 })
+
+test.each([[true], [false]])('the frame reserves the Wildcard picker height only while the Wildcard rule is on (rule on: %s)', (enabled) => {
+  const state = makeState()
+  state.game.houseRules.wildcard = { ...state.game.houseRules.wildcard, enabled }
+  renderScreen(state)
+
+  expect(document.querySelector('.frame')?.classList.contains('reserves-picker')).toBe(enabled)
+})

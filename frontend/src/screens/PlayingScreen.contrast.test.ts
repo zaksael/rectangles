@@ -86,20 +86,24 @@ test('Reroll sits apart from the action button before it: a margin on the second
   expect(margin).toBeGreaterThan(0)
 })
 
-test('the toolbar row always reserves the Wildcard picker height, so the frame does not grow on a wildcard roll', () => {
-  const toolbar = css.match(/\.toolbar-actions \{([^}]*)\}/)![1]
+test('the toolbar row holds the Wildcard picker height only while the Wildcard rule is on, so the frame does not grow on a wildcard roll', () => {
+  const base = css.match(/\.toolbar-actions \{([^}]*)\}/)![1]
+  const reserved = css.match(/\.reserves-picker \.toolbar-actions \{([^}]*)\}/)![1]
 
-  expect(toolbar).toMatch(/--picker-height:\s*54px/)
-  expect(toolbar).toMatch(/grid-auto-rows:\s*minmax\(var\(--picker-height\),\s*auto\)/)
+  expect(base).toMatch(/--picker-height:\s*0px/)
+  expect(reserved).toMatch(/--picker-height:\s*54px/)
+  expect(base).toMatch(/grid-auto-rows:\s*minmax\(var\(--picker-height\),\s*auto\)/)
 })
 
-test('--chrome on the frame is at least what the header, status, hint and the reserved toolbar need', () => {
+test('--chrome on the frame covers the header, status, hint and toolbar, and grows by the picker only while the rule is on', () => {
   const chrome = Number(css.match(/\.frame \{[^}]*--chrome:\s*(\d+)px/)![1])
+  const reserved = Number(css.match(/\.frame\.reserves-picker \{[^}]*--chrome:\s*(\d+)px/)![1])
 
-  expect(chrome).toBeGreaterThanOrEqual(220)
+  expect(chrome).toBeGreaterThanOrEqual(200)
+  expect(reserved).toBeGreaterThanOrEqual(220)
 })
 
-const coarse = css.match(/@media \(pointer: coarse\) \{\s*\.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame \{([^}]*)\}/)
+const coarse = css.match(/@media \(pointer: coarse\) \{\s*\.reserves-picker \.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame\.reserves-picker \{([^}]*)\}/)
 
 test('on touch screens the Wildcard pills are 44px targets and the toolbar row reserves their taller picker', () => {
   expect(coarse).not.toBeNull()

@@ -174,7 +174,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }, [humanTurnState, rerollUsable])
 
   return (
-    <div className="frame">
+    <div className={wildcard?.enabled ? 'frame reserves-picker' : 'frame'}>
       <h1 className="visually-hidden">Playing</h1>
       {state && (
         <>
