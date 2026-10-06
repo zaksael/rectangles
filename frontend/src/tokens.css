@@ -118,7 +118,7 @@ dialog button:focus,
 /* Unavailable but still focusable (aria-disabled): dimmed by colour, not opacity, so the focus ring stays full ink; no hover tint. */
 .btn.destructive.quiet[aria-disabled="true"] {
   background: transparent;
-  color: color-mix(in srgb, var(--danger) 45%, var(--ledger));
+  color: color-mix(in srgb, var(--danger) 70%, var(--ledger));
   border-color: currentcolor;
   cursor: default;
 }

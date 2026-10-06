@@ -44,3 +44,11 @@ test('the Menu title has no header band or rule, and spaces itself 24px above an
   expect(ruleFor(css, '.settings h2')).toMatch(/padding:\s*24px 24px 0/)
   expect(ruleFor(css, '.settings-body')).toMatch(/padding:\s*16px 24px 24px/)
 })
+
+test('the unavailable Surrender keeps 3:1 against the ledger (it is the button\'s only outline), yet stays dimmer than the enabled one', () => {
+  const rule = ruleFor(tokensCss, '.btn.destructive.quiet[aria-disabled="true"]')
+  const dimmed = mix(danger, mixShare(rule, 'color', '--danger'), ledger)
+
+  expect(contrast(dimmed, ledger)).toBeGreaterThanOrEqual(3)
+  expect(contrast(dimmed, ledger)).toBeLessThan(contrast(danger, ledger))
+})
