@@ -70,6 +70,14 @@ test('lists every house rule as on or off from the match state, read-only', () =
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
 })
 
+test('the Menu title sits directly in the dialog, with no header band, and still names the dialog', () => {
+  renderOverlay()
+
+  const dialog = screen.getByRole('dialog', { name: 'Menu', hidden: true })
+  expect(screen.getByRole('heading', { name: 'Menu', hidden: true }).parentElement).toBe(dialog)
+  expect(dialog.querySelector('.settings-header')).toBeNull()
+})
+
 test('Resume closes the overlay', () => {
   const { onClose } = renderOverlay()
 

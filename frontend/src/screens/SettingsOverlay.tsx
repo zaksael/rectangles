@@ -29,9 +29,7 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
         onClose()
       }}
     >
-      <div className="settings-header">
-        <h2 id="settings-title">Menu</h2>
-      </div>
+      <h2 id="settings-title">Menu</h2>
       <div className="settings-body">
         <dl className="match-info">
           <div>

@@ -39,8 +39,8 @@ test('an unavailable but focusable quiet Surrender is dimmed by colour, not opac
   expect(tokensCss.indexOf(selector)).toBeGreaterThan(tokensCss.indexOf('.btn.destructive.quiet:hover'))
 })
 
-test('the Menu header holds a lone title, so it declares no flex layout or gap for it', () => {
-  const rule = ruleFor(css, '.settings-header')
-
-  expect(rule).not.toMatch(/display|align-items|gap/)
+test('the Menu title has no header band or rule, and spaces itself 24px above and 16px below', () => {
+  expect(css).not.toContain('.settings-header')
+  expect(ruleFor(css, '.settings h2')).toMatch(/padding:\s*24px 24px 0/)
+  expect(ruleFor(css, '.settings-body')).toMatch(/padding:\s*16px 24px 24px/)
 })
