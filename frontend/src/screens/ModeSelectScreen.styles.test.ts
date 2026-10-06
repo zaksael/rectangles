@@ -7,13 +7,14 @@ test('the Mode Select changed-from-defaults cue keeps AA contrast (4.5:1) on the
   expect(textContrast(css, '.changed-count')).toBeGreaterThanOrEqual(4.5)
 })
 
-test('the failed-connect line is a status block: 13px bold-ish text, a danger rule and tint, and AA (4.5:1) on that tint', () => {
+test('the failed-connect line is a status block: 13px bold-ish text, a full danger border and tint, and AA (4.5:1) on that tint', () => {
   const rule = ruleFor(css, '.start-error')
   const tint = mix(danger, mixShare(rule, 'background', '--danger'), ledger)
 
   expect(rule).toMatch(/font-size:\s*13px/)
   expect(rule).toMatch(/font-weight:\s*500/)
-  expect(rule).toMatch(/border-left:\s*3px solid var\(--danger\)/)
+  expect(rule).toMatch(/border:\s*1px solid var\(--danger\)/)
+  expect(rule).not.toMatch(/border-(left|right)/)
   expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
 })
 

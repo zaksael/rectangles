@@ -335,7 +335,7 @@
   text-align: center;
   margin-top: -2px;
   padding: 8px 12px;
-  border-left: 3px solid var(--danger);
+  border: 1px solid var(--danger);
   background: color-mix(in srgb, var(--danger) 6%, transparent);
 }
 
