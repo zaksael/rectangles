@@ -22,6 +22,13 @@ test('Start Game, the screen\'s one primary button, gets a 2px border to set it 
   expect(ruleFor(css, '.mode-select .btn.primary')).toMatch(/border-width:\s*2px/)
 })
 
+test('the touch-target growth applies to any device with a touch input, so touchscreen laptops (whose primary pointer is fine) get it', () => {
+  expect(css).toContain('@media (any-pointer: coarse)')
+  expect(css).not.toContain('@media (pointer: coarse)')
+  const block = css.match(/@media \(any-pointer: coarse\) \{([\s\S]*?)\n\}/)![1]
+  for (const selector of ['.pill', '.rule', '.segmented button', '.reset-link']) expect(block).toContain(`${selector} {`)
+})
+
 test('the shared .pill (difficulty and Wildcard pills) is at least 12px, with no per-screen override', () => {
   const shared = ruleFor(css, '.pill')
 
