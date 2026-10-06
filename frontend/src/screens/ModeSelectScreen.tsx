@@ -290,7 +290,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
               </div>
               <div className="field">
                 <span className="field-label" id="skip-limit-label">Skip limit</span>
-                <div className="segmented" role="radiogroup" aria-labelledby="skip-limit-label">
+                <div className="segmented" role="radiogroup" aria-labelledby="skip-limit-label" aria-describedby="skip-limit-hint">
                   {SKIP_LIMITS.map((limit) => (
                     <button
                       key={limit}
@@ -306,6 +306,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                     </button>
                   ))}
                 </div>
+                <span className="field-hint" id="skip-limit-hint">Skips in a row that end the game</span>
               </div>
               {SERIES_IMPLEMENTED && (
                 <div className="field">

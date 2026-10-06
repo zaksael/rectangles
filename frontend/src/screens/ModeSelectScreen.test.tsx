@@ -136,6 +136,13 @@ test('the segmented groups are named by their visible label and their options ar
   expect(container.querySelector('label')).toBeNull()
 })
 
+test('the skip limit group says what it counts', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+
+  expect(screen.getByRole('radiogroup', { name: 'Skip limit' })).toHaveAccessibleDescription('Skips in a row that end the game')
+})
+
 function renderRadios(group: string) {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
