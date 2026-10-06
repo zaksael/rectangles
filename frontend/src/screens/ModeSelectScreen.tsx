@@ -340,17 +340,24 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                   <div className="rules-group" key={group.label}>
                     <span className="group-label">{group.label}</span>
                     <div className="rules-grid">
-                      {group.rules.map(({ key, label }) => (
+                      {group.rules.map(({ key, label, description }) => (
                         <button
                           key={key}
                           type="button"
                           className={settings.houseRules[key] ? 'rule on' : 'rule'}
                           role="checkbox"
                           aria-checked={settings.houseRules[key]}
+                          aria-labelledby={`rule-name-${key}`}
+                          aria-describedby={`rule-desc-${key}`}
                           onClick={() => updateHouseRule(key, !settings.houseRules[key])}
                         >
                           <span className="checkbox" aria-hidden="true"></span>
-                          {label}
+                          <span className="rule-text">
+                            <span id={`rule-name-${key}`}>{label}</span>
+                            <span id={`rule-desc-${key}`} className="rule-desc">
+                              {description}
+                            </span>
+                          </span>
                         </button>
                       ))}
                     </div>

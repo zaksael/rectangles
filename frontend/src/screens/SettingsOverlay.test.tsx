@@ -20,6 +20,12 @@ function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {
   return { onClose, sendAction }
 }
 
+test('the Menu lists house rules by name only, without the Mode Select descriptions', () => {
+  renderOverlay()
+
+  expect(screen.queryByText(/Cover a prize cell/)).not.toBeInTheDocument()
+})
+
 test('shows the match info: opponent, board size and skip limit', () => {
   renderOverlay()
 

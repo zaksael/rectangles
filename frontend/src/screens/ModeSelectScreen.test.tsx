@@ -73,6 +73,24 @@ test('only house rules with implemented UI are shown', () => {
   expect(screen.getByRole('checkbox', { name: 'Comeback' })).toBeInTheDocument()
 })
 
+test('each house rule is named by its label alone and described by its one-line description', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+  const prize = screen.getByRole('checkbox', { name: 'Prize' })
+  expect(prize).toHaveAccessibleDescription('Cover a prize cell to bank a 10-point bonus.')
+  expect(screen.getByRole('checkbox', { name: 'Comeback' })).toHaveAccessibleDescription('Far behind? You earn one extra reroll.')
+})
+
+test('clicking a rule\'s description toggles the rule, like the rest of its block', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+  fireEvent.click(screen.getByText('Cover a prize cell to bank a 10-point bonus.'))
+
+  expect(screen.getByRole('checkbox', { name: 'Prize' })).toHaveAttribute('aria-checked', 'false')
+})
+
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
