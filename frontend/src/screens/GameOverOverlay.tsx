@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { GameWireState } from '../gameTypes'
+import type { GameWireState, SeriesWireState } from '../gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
@@ -114,38 +114,66 @@ function storyText(game: GameWireState, rows: ModifierRow[], margin: number | nu
   return { margin: pointsText(margin), detail: comebackClause(game, rows) }
 }
 
-function headlineText(game: GameWireState): string {
+function headlineText(game: GameWireState, inSeries = false): string {
   const { winner, reason } = game.gameOver
+  if (inSeries) return winner === null ? 'Round tied' : `${nameOf(game, winner)} wins the round`
   return winner === null ? 'Tied' : `${nameOf(game, winner)} wins${reason === 'surrender' ? '' : ' on score'}`
 }
 
 // V goes back to the board or the result, N starts a new game; Ctrl, Cmd and Alt combos belong to the browser.
-function handleResultKey(event: { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, onView: () => void, onNewGame: () => void) {
+function handleResultKey(event: { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, onView: () => void, onNewGame?: () => void) {
   if (event.ctrlKey || event.metaKey || event.altKey) return
   const key = event.key.toLowerCase()
   if (key === 'v') onView()
-  else if (key === 'n') onNewGame()
+  else if (key === 'n') onNewGame?.()
+}
+
+// Mid-series N advances the round; after the last round there is nothing to advance to.
+function advanceFor(series: SeriesWireState | null, onNewGame: () => void, onNextRound?: () => void) {
+  const nextRound = series !== null && !series.isComplete ? onNextRound : undefined
+  return { nextRound, onN: series === null ? onNewGame : nextRound }
+}
+
+// The result's last button: New Game for a single game, Next Round mid-series, none after the last round.
+function AdvanceButton({ series, onNewGame, nextRound }: { series: SeriesWireState | null; onNewGame: () => void; nextRound?: () => void }) {
+  const onClick = series === null ? onNewGame : nextRound
+  if (!onClick) return null
+  return (
+    <button className="btn secondary" onClick={onClick} aria-keyshortcuts="n">
+      {series === null ? 'New Game' : 'Next Round'}
+      <KeyBadge>N</KeyBadge>
+    </button>
+  )
 }
 
 // What is left of the result while the player looks at the final board: the outcome, and a way back.
-export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireState; onViewResult: () => void; onNewGame: () => void }) {
+interface GameOverBarProps {
+  game: GameWireState
+  series?: SeriesWireState | null
+  onViewResult: () => void
+  onNewGame: () => void
+  onNextRound?: () => void
+}
+
+export function GameOverBar({ game, series = null, onViewResult, onNewGame, onNextRound }: GameOverBarProps) {
+  const { nextRound, onN } = advanceFor(series, onNewGame, onNextRound)
   const reason = game.gameOver.reason === 'boardFull' ? null : reasonText(game)
   const score1 = game.players['1'].score.totalScore
   const score2 = game.players['2'].score.totalScore
   // The bar is not a dialog, so it listens on the window and stands down while the Menu (or any dialog) is open.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!document.querySelector('dialog[open]')) handleResultKey(event, onViewResult, onNewGame)
+      if (!document.querySelector('dialog[open]')) handleResultKey(event, onViewResult, onN)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onViewResult, onNewGame])
+  }, [onViewResult, onN])
   return (
     <div className="game-over-bar" role="region" aria-label="Game result">
       <div className="game-over-bar-text">
         <strong>
           <span className={`dot ${game.gameOver.winner === null ? 'tie' : `p${game.gameOver.winner}`}`} aria-hidden="true" />
-          {headlineText(game)}
+          {headlineText(game, series !== null)}
         </strong>
         {reason && <span className="game-over-bar-reason">{reason}</span>}
       </div>
@@ -160,16 +188,21 @@ export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireS
           View Result
           <KeyBadge>V</KeyBadge>
         </button>
-        <button className="btn secondary" onClick={onNewGame} aria-keyshortcuts="n">
-          New Game
-          <KeyBadge>N</KeyBadge>
-        </button>
+        <AdvanceButton series={series} onNewGame={onNewGame} nextRound={nextRound} />
       </div>
     </div>
   )
 }
 
-export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWireState; onNewGame: () => void; onViewBoard: () => void }) {
+interface GameOverOverlayProps {
+  game: GameWireState
+  series?: SeriesWireState | null
+  onNewGame: () => void
+  onViewBoard: () => void
+  onNextRound?: () => void
+}
+
+export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound }: GameOverOverlayProps) {
   const dialogRef = useAutoOpenDialog()
   const { winner, reason: endReason } = game.gameOver
   const detail = reasonText(game)
@@ -178,17 +211,18 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
   const margin = scoreMargin(game)
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin)
+  const { nextRound, onN } = advanceFor(series, onNewGame, onNextRound)
 
   return (
     // Escape shows the board rather than dismissing the result, so the native close is suppressed.
     <dialog className="modal game-over" data-outcome={winner ?? 'tie'} ref={dialogRef} onCancel={(e) => {
         e.preventDefault()
         onViewBoard()
-      }} onKeyDown={(e) => handleResultKey(e, onViewBoard, onNewGame)} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
+      }} onKeyDown={(e) => handleResultKey(e, onViewBoard, onN)} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
       {detail && <p className="reason">{detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
-        {headlineText(game)}
+        {headlineText(game, series !== null)}
       </h2>
       {story && (
         <p className="game-over-story" id="gameover-story">
@@ -197,7 +231,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
         </p>
       )}
       {endReason === 'surrender' && <p className="game-over-caption">Score at surrender</p>}
-      <div className="game-over-scoreboard" role="group" aria-label="Final score">
+      <div className="game-over-scoreboard" role="group" aria-label={series === null ? 'Final score' : 'Round score'}>
         {(['1', '2'] as const).map((id) => {
           const won = winner === Number(id)
           // The winner of a surrendered game can trail, so muting the lower total would contradict the headline.
@@ -208,6 +242,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
                 {nameOf(game, Number(id))}
               </div>
               <div className="n">{game.players[id].score.totalScore}</div>
+              {series !== null && series.gamesPlayed >= 2 && <div className="series-total">{`Series ${series.scores[id]}`}</div>}
             </div>
           )
         })}
@@ -263,10 +298,7 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
           View Board
           <KeyBadge>V</KeyBadge>
         </button>
-        <button className="btn secondary" onClick={onNewGame} aria-keyshortcuts="n">
-          New Game
-          <KeyBadge>N</KeyBadge>
-        </button>
+        <AdvanceButton series={series} onNewGame={onNewGame} nextRound={nextRound} />
       </div>
     </dialog>
   )

@@ -517,6 +517,11 @@ dialog.game-over h2 {
   font: 500 34px/1.1 'IBM Plex Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
+.game-over-scoreboard .series-total {
+  margin-top: 4px;
+  font: 500 12px 'IBM Plex Mono', monospace;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
 .game-over-scoreboard .trail .n {
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }

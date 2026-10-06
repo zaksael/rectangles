@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
-import type { SeriesWireState } from '../gameTypes'
-import { makeGame } from '../testUtils/gameFixtures'
+import { makeGame, makeSeries } from '../testUtils/gameFixtures'
 import { SettingsOverlay } from './SettingsOverlay'
 
 function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {}) {
@@ -34,19 +33,19 @@ test('shows the match info: opponent, board size and skip limit', () => {
   expect(screen.getByText('Skip limit').nextSibling).toHaveTextContent('3')
 })
 
-const midSeries = {
-  length: 3,
-  scores: { '1': 1, '2': 0 },
-  gamesPlayed: 1,
-  rounds: [],
-  isComplete: false,
-  winner: null,
-}
+const midSeries = makeSeries({ scores: { '1': 301, '2': 299 }, gamesPlayed: 1 })
 
-test('shows the running round progress when reached mid-series', () => {
+test('shows the running round and the series score, Player 1 first, when reached mid-series', () => {
   renderOverlay({ series: midSeries })
 
-  expect(screen.getByText('Series').nextSibling).toHaveTextContent('Round 2 of 3')
+  expect(screen.getByText('Series').nextSibling).toHaveTextContent('Round 2 of 3 — 301–299')
+})
+
+test('once a round has ended, the Menu still names that round, not the next one', () => {
+  const game = makeGame({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } })
+  renderOverlay({ game, series: makeSeries({ gamesPlayed: 3, isComplete: true, scores: { '1': 459, '2': 440 } }) })
+
+  expect(screen.getByText('Series').nextSibling).toHaveTextContent('Round 3 of 3 — 459–440')
 })
 
 test('has no Series row for a single game', () => {
@@ -163,7 +162,7 @@ test('Cancel closes the Surrender dialog without sending anything or closing the
 })
 
 test('Surrender copy says the round, not the match, mid-series', () => {
-  const { dialog } = openSurrender({ series: { length: 3 } as SeriesWireState })
+  const { dialog } = openSurrender({ series: makeSeries() })
 
   expect(within(dialog).getByText('Surrender this round?')).toBeInTheDocument()
 })

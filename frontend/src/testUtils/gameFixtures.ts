@@ -1,4 +1,4 @@
-import type { GameWireState } from '../gameTypes'
+import type { GameWireState, SeriesWireState } from '../gameTypes'
 
 export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState {
   return {
@@ -44,6 +44,19 @@ export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState 
       },
     },
     gameOver: { reason: null, playerId: null, winner: null },
+    ...overrides,
+  }
+}
+
+export function makeSeries(overrides: Partial<SeriesWireState> = {}): SeriesWireState {
+  const zero = { '1': 0, '2': 0 }
+  return {
+    length: 3,
+    scores: { ...zero },
+    gamesPlayed: 1,
+    rounds: [{ area: { ...zero }, prizeCaptured: { ...zero }, pitfallCaptured: { ...zero }, stealCaptured: { ...zero }, total: { ...zero } }],
+    isComplete: false,
+    winner: null,
     ...overrides,
   }
 }

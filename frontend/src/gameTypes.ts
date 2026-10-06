@@ -14,6 +14,7 @@ export type GameAction =
   | { type: 'skip' }
   | { type: 'reroll' }
   | { type: 'surrender' }
+  | { type: 'continueSeries' }
   | { type: 'chooseWildcard'; value: number }
   | { type: 'place'; topLeft: [number, number]; width: number; height: number }
 

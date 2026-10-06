@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
-import { makeGame } from '../testUtils/gameFixtures'
+import { makeGame, makeSeries } from '../testUtils/gameFixtures'
 import { GameOverBar, GameOverOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)
@@ -304,4 +304,73 @@ test('each scoreboard cell names its player', () => {
   })
   expect(within(scoreCell(dialog, '158') as HTMLElement).getByText('Ada')).toBeInTheDocument()
   expect(within(scoreCell(dialog, '141') as HTMLElement).getByText('Grace')).toBeInTheDocument()
+})
+
+function renderRound(
+  { winner, reason = 'boardFull', playerId = null, area, series }: Result & { series: ReturnType<typeof makeSeries> },
+  handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn() },
+) {
+  const game = makeGame({ gameOver: { reason, playerId, winner } })
+  game.players['1'].score = { ...game.players['1'].score, totalArea: area[0], totalScore: area[0] }
+  game.players['2'].score = { ...game.players['2'].score, totalArea: area[1], totalScore: area[1] }
+  render(<GameOverOverlay game={game} series={series} {...handlers} />)
+  return screen.getByRole('dialog')
+}
+
+test('a series round is headlined as the round, not the game', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
+  expect(within(dialog).getByRole('heading', { name: /^Player.1 wins the round$/u })).toBeTruthy()
+})
+
+test('a tied series round is headlined "Round tied"', () => {
+  const dialog = renderRound({ winner: null, area: [120, 120], series: makeSeries() })
+  expect(within(dialog).getByRole('heading', { name: 'Round tied' })).toBeTruthy()
+})
+
+test('round 1 of a series shows no running total, since it would equal the round score', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 1, scores: { '1': 152, '2': 141 } }) })
+  expect(within(dialog).queryByText(/^Series \d/)).toBeNull()
+})
+
+test('from round 2 each scoreboard cell carries its series total', () => {
+  const dialog = renderRound({ winner: 2, area: [129, 131], series: makeSeries({ gamesPlayed: 2, scores: { '1': 301, '2': 299 } }) })
+  const board = within(dialog).getByRole('group', { name: 'Round score' })
+  expect(within(board).getByText('Series 301')).toBeTruthy()
+  expect(within(board).getByText('Series 299')).toBeTruthy()
+})
+
+test('a series round offers View Board then Next Round, and no New Game', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
+  expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Board', 'Next Round'])
+})
+
+test('Next Round and the N key both advance the series', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn() }
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() }, handlers)
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next Round/ }))
+  fireEvent.keyDown(dialog, { key: 'n' })
+  expect(handlers.onNextRound).toHaveBeenCalledTimes(2)
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
+})
+
+test('the last round of a series has no Next Round, since the series is over', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 3, isComplete: true }) })
+  expect(within(dialog).queryByRole('button', { name: /Next Round/ })).toBeNull()
+})
+
+test('the series result bar offers View Result and Next Round, and the headline names the round', () => {
+  const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn() }
+  render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries()} {...handlers} />)
+  const bar = screen.getByRole('region', { name: 'Game result' })
+  expect(within(bar).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Result', 'Next Round'])
+  expect(within(bar).getByText(/^Player.1 wins the round$/u)).toBeTruthy()
+  fireEvent.click(within(bar).getByRole('button', { name: /Next Round/ }))
+  fireEvent.keyDown(window, { key: 'n' })
+  expect(handlers.onNextRound).toHaveBeenCalledTimes(2)
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
+})
+
+test('a series round labels its scoreboard as the round score', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
+  expect(within(dialog).getByRole('group', { name: 'Round score' })).toBeTruthy()
 })

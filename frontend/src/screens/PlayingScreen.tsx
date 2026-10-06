@@ -54,6 +54,11 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const [comebackNotice, setComebackNotice] = useState<string | null>(null)
   // After the game ends, the player can put the result away to look at the final board.
   const [resultHidden, setResultHidden] = useState(false)
+  // A new round is a fresh game, so its result starts out shown.
+  useEffect(() => {
+    if (turnState !== 'gameOver') setResultHidden(false)
+  }, [turnState])
+  const nextRound = () => sendAction({ type: 'continueSeries' })
   const grantedRef = useRef<Record<'1' | '2', boolean> | null>(null)
   useEffect(() => {
     if (!state) return
@@ -212,7 +217,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             {showResultBar && (
-              <GameOverBar game={state.game} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} />
+              <GameOverBar game={state.game} series={state.series} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} />
             )}
             {turnStatus && (
               <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
@@ -242,7 +247,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         </>
       )}
       {state && turnState === 'gameOver' && !resultHidden && (
-        <GameOverOverlay game={state.game} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} />
+        <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} />
       )}
       <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
         <div className="toolbar-leading">

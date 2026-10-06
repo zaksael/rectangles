@@ -50,7 +50,7 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
             <div>
               <dt>Series</dt>
               <dd>
-                Round {series.gamesPlayed + 1} of {series.length}
+                {`Round ${game.turn.turnState === 'gameOver' ? series.gamesPlayed : series.gamesPlayed + 1} of ${series.length} — ${series.scores['1']}–${series.scores['2']}`}
               </dd>
             </div>
           )}

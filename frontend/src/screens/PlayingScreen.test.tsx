@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
-import { makeGame } from '../testUtils/gameFixtures'
+import { makeGame, makeSeries } from '../testUtils/gameFixtures'
 import type { GameError, GameState } from '../useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
 
@@ -1456,4 +1456,31 @@ test.each([[true], [false]])('the frame reserves the Wildcard picker height only
   renderScreen(state)
 
   expect(document.querySelector('.frame')?.classList.contains('reserves-picker')).toBe(enabled)
+})
+
+test('in a series, Next Round on the result dialog and on the bar sends continueSeries', () => {
+  const sendAction = renderScreen({ ...gameOverState(), series: makeSeries() })
+
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Next Round/ }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /View Board/ }))
+  const bar = screen.getByRole('region', { name: 'Game result' })
+  expect(within(bar).queryByRole('button', { name: /New Game/ })).not.toBeInTheDocument()
+  fireEvent.click(within(bar).getByRole('button', { name: /Next Round/ }))
+
+  expect(sendAction).toHaveBeenCalledTimes(2)
+  expect(sendAction).toHaveBeenNthCalledWith(1, { type: 'continueSeries' })
+  expect(sendAction).toHaveBeenNthCalledWith(2, { type: 'continueSeries' })
+})
+
+test('a new round shows its own result dialog even after the last one was put away', () => {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const { rerender } = render(<PlayingScreen {...props} state={{ ...gameOverState(), series: makeSeries() }} />)
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /View Board/ }))
+  expect(screen.getByRole('region', { name: 'Game result' })).toBeInTheDocument()
+
+  rerender(<PlayingScreen {...props} state={{ ...makeState(), series: makeSeries() }} />)
+  rerender(<PlayingScreen {...props} state={{ ...gameOverState(), series: makeSeries({ gamesPlayed: 2 }) }} />)
+
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(screen.queryByRole('region', { name: 'Game result' })).not.toBeInTheDocument()
 })
