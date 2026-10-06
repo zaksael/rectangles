@@ -14,6 +14,14 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+it('shows the key badges while Shift is held, from the first screen on', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'Shift' })
+
+  expect(document.documentElement).toHaveAttribute('data-shift')
+})
+
 function startGameAndOpen() {
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))

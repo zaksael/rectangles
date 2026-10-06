@@ -79,6 +79,31 @@ dialog button:focus,
   border: none;
   cursor: pointer;
   touch-action: manipulation; /* no double-tap zoom delay */
+  position: relative; /* anchors the key chip */
+}
+
+/* Key chip: shown only while Shift is held (useShiftHeld sets data-shift on the root). Overlaid on the
+   button's top-right corner so nothing reflows; hidden where the primary input is touch. */
+.key-badge {
+  position: absolute;
+  top: -9px;
+  right: -7px;
+  padding: 2px 4px;
+  font: 500 12px/1 'IBM Plex Mono', monospace;
+  color: var(--ink);
+  background: var(--ledger);
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  visibility: hidden;
+  pointer-events: none;
+}
+[data-shift] .key-badge {
+  visibility: visible;
+}
+@media (pointer: coarse) {
+  .key-badge {
+    display: none;
+  }
 }
 
 .btn.primary {

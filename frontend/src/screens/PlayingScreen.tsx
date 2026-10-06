@@ -6,6 +6,7 @@ import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placement
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
+import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
 import './PlayingScreen.css'
 
@@ -249,21 +250,25 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           {humanTurnState === 'awaitingRoll' && (
             <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">
               Roll
+              <KeyBadge>D</KeyBadge>
             </button>
           )}
           {humanTurnState === 'choosingPlacement' && (
             <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r">
               Rotate
+              <KeyBadge>R</KeyBadge>
             </button>
           )}
           {humanTurnState === 'skipped' && (
             <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s">
               Skip
+              <KeyBadge>S</KeyBadge>
             </button>
           )}
           {rerollUsable && (
             <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e">
               Reroll
+              <KeyBadge>E</KeyBadge>
             </button>
           )}
         </div>
@@ -291,6 +296,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         <div className="toolbar-trailing">
           <button className="btn secondary" onClick={onOpenSettings} aria-keyshortcuts="m">
             Menu
+            <KeyBadge>M</KeyBadge>
           </button>
         </div>
       </div>

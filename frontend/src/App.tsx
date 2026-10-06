@@ -5,6 +5,7 @@ import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScre
 import { PlayingScreen } from './screens/PlayingScreen'
 import { SettingsOverlay } from './screens/SettingsOverlay'
 import { useGameSocket } from './useGameSocket'
+import { useShiftHeld } from './useShiftHeld'
 
 const PROTOCOL_VERSION = 1
 
@@ -24,6 +25,7 @@ function App() {
   const [connectParams, setConnectParams] = useState(IDLE_CONNECT_PARAMS)
 
   const gameSocket = useGameSocket(connectParams)
+  useShiftHeld()
 
   useEffect(() => {
     if (screen === 'MODE_SELECT' && gameSocket.status === 'open') {

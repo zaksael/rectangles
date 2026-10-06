@@ -923,6 +923,32 @@ test.each([
   expect(screen.getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', key)
 })
 
+test.each([
+  ['awaitingRoll', 'Roll', 'D'],
+  ['choosingPlacement', 'Rotate', 'R'],
+  ['skipped', 'Skip', 'S'],
+] as const)('%s: the %s button carries a hidden %s key chip for the held-Shift cue', (turnState, name, key) => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+
+  const chip = screen.getByRole('button', { name }).querySelector('kbd.key-badge')
+  expect(chip?.textContent).toBe(key)
+  expect(chip).toHaveAttribute('aria-hidden', 'true')
+})
+
+test('Reroll carries an E key chip', () => {
+  const game = deadRoll(1)
+  game.houseRules.reroll = { enabled: true, canReroll: true }
+  renderScreen({ game, series: null })
+
+  expect(screen.getByRole('button', { name: 'Reroll' }).querySelector('kbd.key-badge')?.textContent).toBe('E')
+})
+
+test('Menu carries an M key chip', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  expect(screen.getByRole('button', { name: 'Menu' }).querySelector('kbd.key-badge')?.textContent).toBe('M')
+})
+
 test('pressing s skips a dead roll', () => {
   const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 

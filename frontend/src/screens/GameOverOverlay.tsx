@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { GameWireState } from '../gameTypes'
+import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
@@ -157,9 +158,11 @@ export function GameOverBar({ game, onViewResult, onNewGame }: { game: GameWireS
       <div className="game-over-bar-actions">
         <button className="btn secondary" onClick={onViewResult} aria-keyshortcuts="v" autoFocus>
           View Result
+          <KeyBadge>V</KeyBadge>
         </button>
         <button className="btn secondary" onClick={onNewGame} aria-keyshortcuts="n">
           New Game
+          <KeyBadge>N</KeyBadge>
         </button>
       </div>
     </div>
@@ -258,9 +261,11 @@ export function GameOverOverlay({ game, onNewGame, onViewBoard }: { game: GameWi
       <div className="actions">
         <button className="btn primary" onClick={onViewBoard} aria-keyshortcuts="v" autoFocus>
           View Board
+          <KeyBadge>V</KeyBadge>
         </button>
         <button className="btn secondary" onClick={onNewGame} aria-keyshortcuts="n">
           New Game
+          <KeyBadge>N</KeyBadge>
         </button>
       </div>
     </dialog>

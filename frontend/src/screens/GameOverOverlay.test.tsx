@@ -131,7 +131,7 @@ test.each([
 test('View Board comes first and holds focus; New Game is second', () => {
   const dialog = renderOver({ winner: 1, area: [158, 141] })
   const buttons = within(dialog).getAllByRole('button')
-  expect(buttons.map((b) => b.textContent)).toEqual(['View Board', 'New Game'])
+  expect(buttons.map((b) => b.firstChild?.textContent)).toEqual(['View Board', 'New Game'])
   expect(buttons[0]).toHaveFocus()
 })
 
@@ -201,6 +201,19 @@ test('the game-over buttons expose their keyboard shortcuts to assistive tech', 
   renderBar()
   expect(screen.getByRole('button', { name: 'View Result' })).toHaveAttribute('aria-keyshortcuts', 'v')
   expect(screen.getByRole('button', { name: 'New Game' })).toHaveAttribute('aria-keyshortcuts', 'n')
+})
+
+test('the game-over buttons carry hidden V and N key chips for the held-Shift cue', () => {
+  const chip = (button: HTMLElement) => button.querySelector('kbd.key-badge')
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  expect(chip(within(dialog).getByRole('button', { name: 'View Board' }))?.textContent).toBe('V')
+  expect(chip(within(dialog).getByRole('button', { name: 'New Game' }))?.textContent).toBe('N')
+  cleanup()
+
+  renderBar()
+  expect(chip(screen.getByRole('button', { name: 'View Result' }))?.textContent).toBe('V')
+  expect(chip(screen.getByRole('button', { name: 'New Game' }))?.textContent).toBe('N')
+  expect(screen.getAllByRole('button').flatMap((b) => [...b.querySelectorAll('kbd.key-badge')])).toHaveLength(2)
 })
 
 test('Escape shows the board instead of closing the result for good', () => {
