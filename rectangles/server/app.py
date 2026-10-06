@@ -276,8 +276,8 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                 )
                 continue
             if data.get("type") == "continueSeries":
-                if series is None or series.is_complete():
-                    await _send_error(websocket, ErrorReason.INVALID_ACTION, "no series to continue")
+                if series is None or series.is_complete() or game.state != TurnState.GAME_OVER:
+                    await _send_error(websocket, ErrorReason.INVALID_ACTION, "no series round to continue")
                     continue
                 game = series.new_game()
                 series_game_recorded = await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)

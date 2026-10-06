@@ -282,6 +282,18 @@ def test_ws_continue_series_without_a_series_returns_invalid_action():
         assert reply["reason"] == ErrorReason.INVALID_ACTION.value
 
 
+def test_ws_continue_series_mid_round_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "continueSeries"})
+        reply = ws.receive_json()
+        assert reply["type"] == "error"
+        assert reply["reason"] == ErrorReason.INVALID_ACTION.value
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        assert ws.receive_json()["series"]["gamesPlayed"] == 1
+
+
 def test_ws_continue_series_after_series_complete_returns_invalid_action():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3") as ws:
