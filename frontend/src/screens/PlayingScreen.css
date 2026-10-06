@@ -223,9 +223,9 @@
   border-color: color-mix(in srgb, var(--ink) 25%, transparent);
   cursor: default;
 }
-/* Touch: the pills are 44px targets in the same 2x3 grid (two rows of 44px and the 4px gap = 92px), so the
+/* Any touch input (a touchscreen laptop's primary pointer is fine, so `pointer` alone misses it): the pills are 44px targets in the same 2x3 grid (two rows of 44px and the 4px gap = 92px), so the
    toolbar row reserves that, and --chrome grows by the same 39px to keep the board fitting the window. */
-@media (pointer: coarse) {
+@media (any-pointer: coarse) {
   .reserves-picker .toolbar-actions {
     --picker-height: 92px;
   }

@@ -47,9 +47,9 @@ test('--chrome on the frame covers the header, status, hint and toolbar, and gro
   expect(reserved).toBeGreaterThanOrEqual(220)
 })
 
-const coarse = css.match(/@media \(pointer: coarse\) \{\s*\.reserves-picker \.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame\.reserves-picker \{([^}]*)\}/)
+const coarse = css.match(/@media \(any-pointer: coarse\) \{\s*\.reserves-picker \.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame\.reserves-picker \{([^}]*)\}/)
 
-test('on touch screens the Wildcard pills are 44px targets and the toolbar row reserves their taller picker', () => {
+test('on any touch input (touchscreen laptops too) the Wildcard pills are 44px targets and the toolbar row reserves their taller picker', () => {
   expect(coarse).not.toBeNull()
   expect(coarse![1]).toMatch(/--picker-height:\s*92px/)
   expect(coarse![2]).toMatch(/min-width:\s*44px/)
