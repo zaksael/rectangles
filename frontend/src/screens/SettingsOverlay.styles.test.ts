@@ -52,3 +52,10 @@ test('the unavailable Surrender keeps 3:1 against the ledger (it is the button\'
   expect(contrast(dimmed, ledger)).toBeGreaterThanOrEqual(3)
   expect(contrast(dimmed, ledger)).toBeLessThan(contrast(danger, ledger))
 })
+
+test('an off Menu rule is dimmed and struck through, an on rule is plain ink, and no box is drawn', () => {
+  expect(css).not.toContain('.settings-box')
+  expect(ruleFor(css, '.settings-rule')).toMatch(/text-decoration:\s*line-through/)
+  expect(ruleFor(css, '.settings-rule.on')).toMatch(/color:\s*var\(--ink\)/)
+  expect(ruleFor(css, '.settings-rule.on')).toMatch(/text-decoration:\s*none/)
+})

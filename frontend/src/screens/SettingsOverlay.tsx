@@ -69,7 +69,6 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
                     const on = game.houseRules[wireKey].enabled
                     return (
                       <li key={rule.key} className={on ? 'settings-rule on' : 'settings-rule'}>
-                        <span className="settings-box" aria-hidden="true" />
                         <span>{rule.label}</span>
                         <span className="visually-hidden">{on ? 'On' : 'Off'}</span>
                       </li>

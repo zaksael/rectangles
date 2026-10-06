@@ -78,6 +78,14 @@ test('the Menu title sits directly in the dialog, with no header band, and still
   expect(dialog.querySelector('.settings-header')).toBeNull()
 })
 
+test('the rule rows carry no checkbox-like box, so the read-only list does not look clickable', () => {
+  const base = makeGame()
+  renderOverlay({ game: makeGame({ houseRules: { ...base.houseRules, steal: { ...base.houseRules.steal, enabled: true } } }) })
+
+  expect(document.querySelector('.settings-box')).toBeNull()
+  expect(screen.getAllByRole('listitem')).toHaveLength(9)
+})
+
 test('Resume closes the overlay', () => {
   const { onClose } = renderOverlay()
 
