@@ -18,6 +18,10 @@ test('the failed-connect line is a status block: 13px bold-ish text, a full dang
   expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
 })
 
+test('Start Game, the screen\'s one primary button, gets a 2px border to set it apart from the 1px options', () => {
+  expect(ruleFor(css, '.mode-select .btn.primary')).toMatch(/border-width:\s*2px/)
+})
+
 test('the shared .pill (difficulty and Wildcard pills) is at least 12px, with no per-screen override', () => {
   const shared = ruleFor(css, '.pill')
 

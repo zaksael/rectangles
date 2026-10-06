@@ -305,6 +305,7 @@
 .mode-select .btn.primary {
   padding: 12px 40px;
   align-self: center;
+  border-width: 2px;
 }
 .mode-select .btn.primary.connecting:disabled {
   animation: connecting-pulse 1.1s ease-in-out infinite;
