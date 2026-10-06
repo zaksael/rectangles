@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { implementedGroups, implementedHouseRules, type HouseRules } from '../houseRules'
 import { ResetConfirmDialog } from './ResetConfirmDialog'
 import './ModeSelectScreen.css'
@@ -61,10 +61,10 @@ function changedCount(s: ModeSelectSettings): number {
   ].filter(Boolean).length
 }
 
-const BOARD_SIZES = [19, 23, 27]
-const SKIP_LIMITS = [3, 5]
+const BOARD_SIZE_OPTIONS = [19, 23, 27].map((size) => ({ value: size, label: `${size}×${size}` }))
+const SKIP_LIMIT_OPTIONS = [3, 5].map((limit) => ({ value: limit, label: String(limit) }))
 const DIFFICULTIES: BotDifficulty[] = ['Basic', 'Greedy', 'Blocking']
-const GAMES_OPTIONS: SeriesLength[] = [null, 3, 5]
+const GAMES_OPTIONS = ([null, 3, 5] as SeriesLength[]).map((length) => ({ value: length, label: String(length ?? 1) }))
 function loadSettings(): ModeSelectSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -129,6 +129,44 @@ function handleRadioArrowKey(e: KeyboardEvent<HTMLElement>): void {
   e.preventDefault()
   next.click()
   next.focus()
+}
+
+interface SegmentedFieldProps<T> {
+  id: string
+  label: string
+  hint?: string
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+  // Lands on the checked option, for focus after a reset.
+  checkedRef?: RefObject<HTMLButtonElement | null>
+}
+
+// A labelled radiogroup of segmented buttons; `id` names its label and hint elements.
+function SegmentedField<T>({ id, label, hint, options, value, onChange, checkedRef }: SegmentedFieldProps<T>) {
+  return (
+    <div className="field">
+      <span className="field-label" id={`${id}-label`}>{label}</span>
+      <div className="segmented" role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={hint ? `${id}-hint` : undefined}>
+        {options.map((option) => (
+          <button
+            key={option.label}
+            className={value === option.value ? 'active' : undefined}
+            type="button"
+            role="radio"
+            ref={value === option.value ? checkedRef : undefined}
+            aria-checked={value === option.value}
+            tabIndex={value === option.value ? 0 : -1}
+            onKeyDown={handleRadioArrowKey}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      {hint && <span className="field-hint" id={`${id}-hint`}>{hint}</span>}
+    </div>
+  )
 }
 
 interface ModeSelectScreenProps {
@@ -262,66 +300,30 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
               </div>
             </div>
             <div className="field-row">
-              <div className="field">
-                <span className="field-label" id="board-size-label">Board size</span>
-                <div className="segmented" role="radiogroup" aria-labelledby="board-size-label">
-                  {BOARD_SIZES.map((size) => (
-                    <button
-                      key={size}
-                      className={settings.boardSize === size ? 'active' : undefined}
-                      type="button"
-                      role="radio"
-                      ref={settings.boardSize === size ? checkedBoardSize : undefined}
-                      aria-checked={settings.boardSize === size}
-                      tabIndex={settings.boardSize === size ? 0 : -1}
-                      onKeyDown={handleRadioArrowKey}
-                      onClick={() => setSettings((s) => ({ ...s, boardSize: size }))}
-                    >
-                      {size}×{size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="field">
-                <span className="field-label" id="skip-limit-label">Skip limit</span>
-                <div className="segmented" role="radiogroup" aria-labelledby="skip-limit-label" aria-describedby="skip-limit-hint">
-                  {SKIP_LIMITS.map((limit) => (
-                    <button
-                      key={limit}
-                      className={settings.skipLimit === limit ? 'active' : undefined}
-                      type="button"
-                      role="radio"
-                      aria-checked={settings.skipLimit === limit}
-                      tabIndex={settings.skipLimit === limit ? 0 : -1}
-                      onKeyDown={handleRadioArrowKey}
-                      onClick={() => setSettings((s) => ({ ...s, skipLimit: limit }))}
-                    >
-                      {limit}
-                    </button>
-                  ))}
-                </div>
-                <span className="field-hint" id="skip-limit-hint">Skips in a row that end the game</span>
-              </div>
-              <div className="field">
-                <span className="field-label" id="games-label">Games</span>
-                <div className="segmented" role="radiogroup" aria-labelledby="games-label" aria-describedby="games-hint">
-                  {GAMES_OPTIONS.map((length) => (
-                    <button
-                      key={length ?? 1}
-                      className={settings.seriesLength === length ? 'active' : undefined}
-                      type="button"
-                      role="radio"
-                      aria-checked={settings.seriesLength === length}
-                      tabIndex={settings.seriesLength === length ? 0 : -1}
-                      onKeyDown={handleRadioArrowKey}
-                      onClick={() => setSettings((s) => ({ ...s, seriesLength: length }))}
-                    >
-                      {length ?? 1}
-                    </button>
-                  ))}
-                </div>
-                <span className="field-hint" id="games-hint">1 game, or a best of 3 or 5</span>
-              </div>
+              <SegmentedField
+                id="board-size"
+                label="Board size"
+                options={BOARD_SIZE_OPTIONS}
+                value={settings.boardSize}
+                onChange={(boardSize) => setSettings((s) => ({ ...s, boardSize }))}
+                checkedRef={checkedBoardSize}
+              />
+              <SegmentedField
+                id="skip-limit"
+                label="Skip limit"
+                hint="Skips in a row that end the game"
+                options={SKIP_LIMIT_OPTIONS}
+                value={settings.skipLimit}
+                onChange={(skipLimit) => setSettings((s) => ({ ...s, skipLimit }))}
+              />
+              <SegmentedField
+                id="games"
+                label="Games"
+                hint="1 game, or a best of 3 or 5"
+                options={GAMES_OPTIONS}
+                value={settings.seriesLength}
+                onChange={(seriesLength) => setSettings((s) => ({ ...s, seriesLength }))}
+              />
             </div>
           </div>
 
