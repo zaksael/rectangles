@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
@@ -128,19 +128,66 @@ function handleResultKey(event: { key: string; ctrlKey: boolean; metaKey: boolea
   else if (key === 'n') onNewGame?.()
 }
 
-// Mid-series N advances the round; after the last round there is nothing to advance to.
-function advanceFor(series: SeriesWireState | null, onNewGame: () => void, onNextRound?: () => void) {
-  const nextRound = series !== null && !series.isComplete ? onNextRound : undefined
-  return { nextRound, onN: series === null ? onNewGame : nextRound }
+// The breakdown tables' header: a hidden label for the row-title column, then one column per player.
+function ScoreTableHead({ game, label }: { game: GameWireState; label: string }) {
+  return (
+    <thead>
+      <tr>
+        <th scope="col">
+          <span className="visually-hidden">{label}</span>
+        </th>
+        {(['1', '2'] as const).map((id) => (
+          <th key={id} scope="col">
+            <span className={`swatch p${id}`} aria-hidden="true" />
+            {nameOf(game, Number(id))}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  )
 }
 
-// The result's last button: New Game for a single game, Next Round mid-series, none after the last round.
-function AdvanceButton({ series, onNewGame, nextRound }: { series: SeriesWireState | null; onNewGame: () => void; nextRound?: () => void }) {
-  const onClick = series === null ? onNewGame : nextRound
-  if (!onClick) return null
+interface ResultDialogProps {
+  winner: number | null
+  describedBy?: string
+  onViewBoard: () => void
+  onAdvance?: () => void
+  children: ReactNode
+}
+
+// The dialog shell both result cards share. Escape shows the board rather than dismissing the result, so the native close is suppressed.
+function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, children }: ResultDialogProps) {
+  const dialogRef = useAutoOpenDialog()
   return (
-    <button className="btn secondary" onClick={onClick} aria-keyshortcuts="n">
-      {series === null ? 'New Game' : 'Next Round'}
+    <dialog
+      className="modal game-over"
+      data-outcome={winner ?? 'tie'}
+      ref={dialogRef}
+      onCancel={(e) => {
+        e.preventDefault()
+        onViewBoard()
+      }}
+      onKeyDown={(e) => handleResultKey(e, onViewBoard, onAdvance)}
+      aria-labelledby="gameover-title"
+      aria-describedby={describedBy}
+    >
+      {children}
+    </dialog>
+  )
+}
+
+// The result's last button, and the action N shares with it: New Game for a single game, Next Round mid-series,
+// Series Result after the last round. A button whose handler wasn't given isn't shown.
+function advanceFor(series: SeriesWireState | null, handlers: { onNewGame: () => void; onNextRound?: () => void; onSeriesResult?: () => void }) {
+  if (series === null) return { label: 'New Game', onAdvance: handlers.onNewGame }
+  return series.isComplete ? { label: 'Series Result', onAdvance: handlers.onSeriesResult } : { label: 'Next Round', onAdvance: handlers.onNextRound }
+}
+
+function AdvanceButton({ label, onAdvance }: { label: string; onAdvance?: () => void }) {
+  if (!onAdvance) return null
+  return (
+    <button className="btn secondary" onClick={onAdvance} aria-keyshortcuts="n">
+      {label}
       <KeyBadge>N</KeyBadge>
     </button>
   )
@@ -153,27 +200,39 @@ interface GameOverBarProps {
   onViewResult: () => void
   onNewGame: () => void
   onNextRound?: () => void
+  onSeriesResult?: () => void
+  // The bar for the series card's board view: the series outcome and totals, and no way forward but a new game.
+  seriesResult?: boolean
 }
 
-export function GameOverBar({ game, series = null, onViewResult, onNewGame, onNextRound }: GameOverBarProps) {
-  const { nextRound, onN } = advanceFor(series, onNewGame, onNextRound)
-  const reason = game.gameOver.reason === 'boardFull' ? null : reasonText(game)
-  const score1 = game.players['1'].score.totalScore
-  const score2 = game.players['2'].score.totalScore
+export function GameOverBar({ game, series = null, seriesResult = false, onViewResult, onNewGame, onNextRound, onSeriesResult }: GameOverBarProps) {
+  const advance = advanceFor(seriesResult ? null : series, { onNewGame, onNextRound, onSeriesResult })
+  const outcome =
+    seriesResult && series
+      ? { winner: series.winner, headline: seriesHeadline(game, series), reason: null, scores: [series.scores['1'], series.scores['2']], label: 'Series result' }
+      : {
+          winner: game.gameOver.winner,
+          headline: headlineText(game, series !== null),
+          reason: game.gameOver.reason === 'boardFull' ? null : reasonText(game),
+          scores: [game.players['1'].score.totalScore, game.players['2'].score.totalScore],
+          label: 'Game result',
+        }
+  const [score1, score2] = outcome.scores
+  const { reason } = outcome
   // The bar is not a dialog, so it listens on the window and stands down while the Menu (or any dialog) is open.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!document.querySelector('dialog[open]')) handleResultKey(event, onViewResult, onN)
+      if (!document.querySelector('dialog[open]')) handleResultKey(event, onViewResult, advance.onAdvance)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onViewResult, onN])
+  }, [onViewResult, advance.onAdvance])
   return (
-    <div className="game-over-bar" role="region" aria-label="Game result">
+    <div className="game-over-bar" role="region" aria-label={outcome.label}>
       <div className="game-over-bar-text">
         <strong>
-          <span className={`dot ${game.gameOver.winner === null ? 'tie' : `p${game.gameOver.winner}`}`} aria-hidden="true" />
-          {headlineText(game, series !== null)}
+          <span className={`dot ${outcome.winner === null ? 'tie' : `p${outcome.winner}`}`} aria-hidden="true" />
+          {outcome.headline}
         </strong>
         {reason && <span className="game-over-bar-reason">{reason}</span>}
       </div>
@@ -188,7 +247,7 @@ export function GameOverBar({ game, series = null, onViewResult, onNewGame, onNe
           View Result
           <KeyBadge>V</KeyBadge>
         </button>
-        <AdvanceButton series={series} onNewGame={onNewGame} nextRound={nextRound} />
+        <AdvanceButton {...advance} />
       </div>
     </div>
   )
@@ -200,10 +259,10 @@ interface GameOverOverlayProps {
   onNewGame: () => void
   onViewBoard: () => void
   onNextRound?: () => void
+  onSeriesResult?: () => void
 }
 
-export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound }: GameOverOverlayProps) {
-  const dialogRef = useAutoOpenDialog()
+export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound, onSeriesResult }: GameOverOverlayProps) {
   const { winner, reason: endReason } = game.gameOver
   const detail = reasonText(game)
   // An enabled rule nobody triggered carries no information, so its row is left out.
@@ -211,14 +270,10 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
   const margin = scoreMargin(game)
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin)
-  const { nextRound, onN } = advanceFor(series, onNewGame, onNextRound)
+  const advance = advanceFor(series, { onNewGame, onNextRound, onSeriesResult })
 
   return (
-    // Escape shows the board rather than dismissing the result, so the native close is suppressed.
-    <dialog className="modal game-over" data-outcome={winner ?? 'tie'} ref={dialogRef} onCancel={(e) => {
-        e.preventDefault()
-        onViewBoard()
-      }} onKeyDown={(e) => handleResultKey(e, onViewBoard, onN)} aria-labelledby="gameover-title" aria-describedby={story ? 'gameover-story' : undefined}>
+    <ResultDialog winner={winner} describedBy={story ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={advance.onAdvance}>
       {detail && <p className="reason">{detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
@@ -249,19 +304,7 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
       </div>
       {rows.length > 0 && (
         <table className="breakdown">
-          <thead>
-            <tr>
-              <th scope="col">
-                <span className="visually-hidden">Score</span>
-              </th>
-              {(['1', '2'] as const).map((id) => (
-                <th key={id} scope="col">
-                  <span className={`swatch p${id}`} aria-hidden="true" />
-                  {nameOf(game, Number(id))}
-                </th>
-              ))}
-            </tr>
-          </thead>
+          <ScoreTableHead game={game} label="Score" />
           <tbody>
             <tr>
               <th scope="row">Territory</th>
@@ -298,8 +341,57 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
           View Board
           <KeyBadge>V</KeyBadge>
         </button>
-        <AdvanceButton series={series} onNewGame={onNewGame} nextRound={nextRound} />
+        <AdvanceButton {...advance} />
       </div>
-    </dialog>
+    </ResultDialog>
+  )
+}
+
+const seriesHeadline = (game: GameWireState, series: SeriesWireState) =>
+  series.winner === null ? 'Series tied' : `${nameOf(game, series.winner)} wins the series`
+
+// The series' result: a per-round ledger ending in the total that decided it.
+export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard }: { game: GameWireState; series: SeriesWireState; onNewGame: () => void; onViewBoard: () => void }) {
+  const { winner } = series
+  return (
+    <ResultDialog winner={winner} describedBy={winner !== null ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={onNewGame}>
+      <p className="reason">{`Best of ${series.length}`}</p>
+      <h2 id="gameover-title">
+        {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
+        {seriesHeadline(game, series)}
+      </h2>
+      {winner !== null && (
+        <p className="game-over-story" id="gameover-story">
+          by <b>{pointsText(Math.abs(series.scores['1'] - series.scores['2']))}</b>
+        </p>
+      )}
+      <table className="breakdown">
+        <ScoreTableHead game={game} label="Round" />
+        <tbody>
+          {series.rounds.map((round, index) => (
+            <tr key={index}>
+              <th scope="row">{`Round ${index + 1}`}</th>
+              <td>{round.total['1']}</td>
+              <td>{round.total['2']}</td>
+            </tr>
+          ))}
+          <tr className="total">
+            <th scope="row">Series total</th>
+            {(['1', '2'] as const).map((id) => (
+              <td key={id} className={winner === Number(id) ? 'win' : undefined}>
+                {series.scores[id]}
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+      <div className="actions">
+        <button className="btn primary" onClick={onViewBoard} aria-keyshortcuts="v" autoFocus>
+          View Board
+          <KeyBadge>V</KeyBadge>
+        </button>
+        <AdvanceButton label="New Game" onAdvance={onNewGame} />
+      </div>
+    </ResultDialog>
   )
 }

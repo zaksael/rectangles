@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
-import { GameOverBar, GameOverOverlay } from './GameOverOverlay'
+import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 import type { ErrorReason, GameAction } from '../gameTypes'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
@@ -54,10 +54,16 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const [comebackNotice, setComebackNotice] = useState<string | null>(null)
   // After the game ends, the player can put the result away to look at the final board.
   const [resultHidden, setResultHidden] = useState(false)
+  // After the last round, the series card sits on top of the round card until the next game.
+  const [seriesResultOpen, setSeriesResultOpen] = useState(false)
   // A new round is a fresh game, so its result starts out shown.
   useEffect(() => {
-    if (turnState !== 'gameOver') setResultHidden(false)
+    if (turnState !== 'gameOver') {
+      setResultHidden(false)
+      setSeriesResultOpen(false)
+    }
   }, [turnState])
+  const openSeriesResult = () => setSeriesResultOpen(true)
   const nextRound = () => sendAction({ type: 'continueSeries' })
   const grantedRef = useRef<Record<'1' | '2', boolean> | null>(null)
   useEffect(() => {
@@ -217,7 +223,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             {showResultBar && (
-              <GameOverBar game={state.game} series={state.series} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} />
+              <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
             )}
             {turnStatus && (
               <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
@@ -246,9 +252,12 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
         </>
       )}
-      {state && turnState === 'gameOver' && !resultHidden && (
-        <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} />
-      )}
+      {state && turnState === 'gameOver' && !resultHidden &&
+        (seriesResultOpen && state.series ? (
+          <SeriesResultOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} />
+        ) : (
+          <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
+        ))}
       <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
         <div className="toolbar-leading">
           {/* Only buttons that can be clicked right now are shown. */}

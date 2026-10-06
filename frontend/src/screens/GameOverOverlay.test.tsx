@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import { makeGame, makeSeries } from '../testUtils/gameFixtures'
-import { GameOverBar, GameOverOverlay } from './GameOverOverlay'
+import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)
 
@@ -373,4 +373,94 @@ test('the series result bar offers View Result and Next Round, and the headline 
 test('a series round labels its scoreboard as the round score', () => {
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
   expect(within(dialog).getByRole('group', { name: 'Round score' })).toBeTruthy()
+})
+
+test('the last round of a series offers Series Result, which opens the series card instead of sending anything', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 3, isComplete: true }) }, handlers)
+  expect(within(dialog).queryByRole('button', { name: /Next Round/ })).toBeNull()
+  fireEvent.click(within(dialog).getByRole('button', { name: /Series Result/ }))
+  fireEvent.keyDown(dialog, { key: 'n' })
+  expect(handlers.onSeriesResult).toHaveBeenCalledTimes(2)
+  expect(handlers.onNextRound).not.toHaveBeenCalled()
+})
+
+test('after the last round, the round bar offers Series Result in place of Next Round', () => {
+  const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
+  render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries({ gamesPlayed: 3, isComplete: true })} {...handlers} />)
+  const bar = screen.getByRole('region', { name: 'Game result' })
+  fireEvent.click(within(bar).getByRole('button', { name: /Series Result/ }))
+  fireEvent.keyDown(window, { key: 'n' })
+  expect(within(bar).queryByRole('button', { name: /Next Round/ })).toBeNull()
+  expect(handlers.onSeriesResult).toHaveBeenCalledTimes(2)
+})
+
+function roundTotals(...totals: [number, number][]) {
+  const zero = { '1': 0, '2': 0 }
+  return totals.map(([a, b]) => ({ area: zero, prizeCaptured: zero, pitfallCaptured: zero, stealCaptured: zero, total: { '1': a, '2': b } }))
+}
+
+function renderSeriesResult(series: ReturnType<typeof makeSeries>, handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }) {
+  render(<SeriesResultOverlay game={makeGame()} series={series} {...handlers} />)
+  return screen.getByRole('dialog')
+}
+
+const wonSeries = makeSeries({
+  gamesPlayed: 3,
+  isComplete: true,
+  winner: 1,
+  scores: { '1': 459, '2': 440 },
+  rounds: roundTotals([162, 148], [139, 151], [158, 141]),
+})
+
+test('the series card names the winner, the margin and the format', () => {
+  const dialog = renderSeriesResult(wonSeries)
+  expect(within(dialog).getByRole('heading', { name: /^Player.1 wins the series$/u })).toBeTruthy()
+  expect(dialog).toHaveAccessibleDescription('by 19 points')
+  expect(within(dialog).getByText('Best of 3')).toBeTruthy()
+})
+
+test('the series card lists each round and ends on the series total', () => {
+  const dialog = renderSeriesResult(wonSeries)
+  const rows = within(dialog).getAllByRole('row').slice(1).map((row) => Array.from(row.children).map((c) => c.textContent))
+  expect(rows).toEqual([
+    ['Round 1', '162', '148'],
+    ['Round 2', '139', '151'],
+    ['Round 3', '158', '141'],
+    ['Series total', '459', '440'],
+  ])
+})
+
+test('a tied series reads "Series tied" with no margin line', () => {
+  const dialog = renderSeriesResult(makeSeries({ gamesPlayed: 3, isComplete: true, winner: null, scores: { '1': 465, '2': 465 }, rounds: roundTotals([150, 160], [160, 150], [155, 155]) }))
+  expect(within(dialog).getByRole('heading', { name: 'Series tied' })).toBeTruthy()
+  expect(dialog).not.toHaveAccessibleDescription()
+})
+
+test('the series card offers View Board and New Game, with V and N as shortcuts', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderSeriesResult(wonSeries, handlers)
+  expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Board', 'New Game'])
+  fireEvent.keyDown(dialog, { key: 'v' })
+  fireEvent.keyDown(dialog, { key: 'n' })
+  fireEvent.click(within(dialog).getByRole('button', { name: /View Board/ }))
+  expect(handlers.onViewBoard).toHaveBeenCalledTimes(2)
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('the series bar shows the series outcome and totals, with View Result and New Game but no Next Round or Series Result', () => {
+  const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
+  render(<GameOverBar game={makeGame()} series={wonSeries} seriesResult {...handlers} />)
+  const bar = screen.getByRole('region', { name: 'Series result' })
+  expect(within(bar).getByText(/^Player.1 wins the series$/u)).toBeTruthy()
+  expect(bar).toHaveTextContent('459 – 440')
+  expect(within(bar).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Result', 'New Game'])
+  fireEvent.keyDown(window, { key: 'n' })
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+  expect(handlers.onSeriesResult).not.toHaveBeenCalled()
+})
+
+test('a tied series bar reads "Series tied"', () => {
+  render(<GameOverBar game={makeGame()} series={makeSeries({ isComplete: true, winner: null, scores: { '1': 465, '2': 465 } })} seriesResult onViewResult={vi.fn()} onNewGame={vi.fn()} />)
+  expect(within(screen.getByRole('region', { name: 'Series result' })).getByText('Series tied')).toBeTruthy()
 })

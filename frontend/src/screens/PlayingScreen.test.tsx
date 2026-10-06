@@ -1484,3 +1484,35 @@ test('a new round shows its own result dialog even after the last one was put aw
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   expect(screen.queryByRole('region', { name: 'Game result' })).not.toBeInTheDocument()
 })
+
+function lastRoundState() {
+  const zero = { '1': 0, '2': 0 }
+  const round = { area: zero, prizeCaptured: zero, pitfallCaptured: zero, stealCaptured: zero, total: { '1': 158, '2': 141 } }
+  const series = makeSeries({ gamesPlayed: 3, isComplete: true, winner: 1, scores: { '1': 459, '2': 440 }, rounds: [round, round, round] })
+  return { ...gameOverState(), series }
+}
+
+test('Series Result on the last round opens the series card without sending anything, and New Game there starts over', () => {
+  const onNewGame = vi.fn()
+  const sendAction = renderScreen(lastRoundState(), vi.fn(), null, onNewGame)
+
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Series Result/ }))
+  const dialog = screen.getByRole('dialog')
+  expect(within(dialog).getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
+  fireEvent.click(within(dialog).getByRole('button', { name: /New Game/ }))
+
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('View Board on the series card pins the series bar, and View Result brings the series card back', () => {
+  renderScreen(lastRoundState())
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Series Result/ }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /View Board/ }))
+
+  const bar = screen.getByRole('region', { name: 'Series result' })
+  expect(bar).toHaveTextContent('459 – 440')
+  fireEvent.click(within(bar).getByRole('button', { name: /View Result/ }))
+
+  expect(within(screen.getByRole('dialog')).getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
+})

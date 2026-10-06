@@ -20,3 +20,10 @@ test('the series total under a round score is a muted 12px+ mono line', () => {
   expect(block).toMatch(/IBM Plex Mono/)
   expect(block).toMatch(/color-mix/)
 })
+
+test('the series ledger sets its total row apart: bold, ruled above, winner total larger', () => {
+  const total = ruleFor(css, '.game-over table.breakdown tr.total th,\n.game-over table.breakdown tr.total td')
+  expect(total).toMatch(/font-weight:\s*600/)
+  expect(total).toMatch(/border-top:/)
+  expect(ruleFor(css, '.game-over table.breakdown td.win')).toMatch(/font-size:\s*15px/)
+})

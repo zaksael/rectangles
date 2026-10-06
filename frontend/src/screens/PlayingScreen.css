@@ -457,6 +457,16 @@ dialog.game-over h2 {
 .game-over table.breakdown tbody th {
   font-weight: 400;
 }
+/* The series ledger's last row: the total that decided the series. */
+.game-over table.breakdown tr.total th,
+.game-over table.breakdown tr.total td {
+  font-weight: 600;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.game-over table.breakdown td.win {
+  font-size: 15px;
+}
 .game-over table.breakdown thead th {
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 11px;
