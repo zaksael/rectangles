@@ -146,7 +146,7 @@ test('the segmented groups are named by their visible label and their options ar
   const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
 
-  for (const name of ['Board size', 'Skip limit']) {
+  for (const name of ['Board size', 'Skip limit', 'Games']) {
     const group = screen.getByRole('radiogroup', { name })
     expect(group).not.toHaveAttribute('aria-label')
     for (const option of within(group).getAllByRole('radio')) expect(option).toHaveAttribute('type', 'button')
@@ -168,7 +168,7 @@ function renderRadios(group: string) {
   return within(screen.getByRole(group === 'Difficulty' ? 'group' : 'radiogroup', { name: group })).getAllByRole('radio')
 }
 
-describe.each(['Board size', 'Skip limit', 'Difficulty'])('%s radio options', (group) => {
+describe.each(['Board size', 'Skip limit', 'Games', 'Difficulty'])('%s radio options', (group) => {
   test.each([
     ['ArrowRight', 0, 1],
     ['ArrowDown', 0, 1],
@@ -295,18 +295,21 @@ describe('selection cue on the opponent cards', () => {
   })
 })
 
-// Series play needs the round-transition screen, so the Games picker stays hidden until it lands.
-test('hides the Games picker while series play is not implemented', () => {
+const gamesGroup = () => screen.getByRole('radiogroup', { name: 'Games' })
+
+test('shows the Games picker with a single game selected by default', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
-  expect(screen.getByRole('radiogroup', { name: 'Skip limit' })).toBeInTheDocument()
-  expect(screen.queryByRole('radiogroup', { name: 'Games' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('radio', { name: 'Best of 3' })).not.toBeInTheDocument()
+  expect(within(gamesGroup()).getAllByRole('radio').map((r) => [r.textContent, r.getAttribute('aria-checked')])).toEqual([
+    ['1', 'true'],
+    ['3', 'false'],
+    ['5', 'false'],
+  ])
+  expect(gamesGroup()).toHaveAccessibleDescription('1 game, or a best of 3 or 5')
 })
 
-test('does not send seriesLength even when a stored setting has one', () => {
-  localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ seriesLength: 3 }))
+test('a single game sends no seriesLength', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
@@ -314,6 +317,17 @@ test('does not send seriesLength even when a stored setting has one', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
   expect(onStartGame.mock.calls[0][0]).not.toHaveProperty('seriesLength')
+})
+
+test.each([3, 5])('choosing %i games sends seriesLength', (length) => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.click(within(gamesGroup()).getByRole('radio', { name: String(length) }))
+  fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+
+  expect(onStartGame.mock.calls[0][0]).toMatchObject({ seriesLength: length })
 })
 
 test('persists settings to localStorage on Start Game and pre-fills them on the next mount', () => {
@@ -397,7 +411,8 @@ test('cancelling the reset dialog leaves settings untouched', () => {
 
 describe('changed-from-defaults cue', () => {
   const renderScreen = () => render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
-  const pick = (name: string) => fireEvent.click(screen.getByRole('radio', { name }))
+  const pick = (name: string, group?: string) =>
+    fireEvent.click((group ? within(screen.getByRole('radiogroup', { name: group })) : screen).getByRole('radio', { name }))
   const cue = () => screen.queryByText(/changed from defaults/)
 
   test('shows nothing while every setting is at its default', () => {
@@ -414,7 +429,7 @@ describe('changed-from-defaults cue', () => {
     pick('23×23')
     expect(cue()).toHaveTextContent('1 changed from defaults')
 
-    pick('3')
+    pick('3', 'Skip limit')
     expect(cue()).toHaveTextContent('2 changed from defaults')
   })
 
@@ -445,8 +460,21 @@ describe('changed-from-defaults cue', () => {
     expect(cue()).not.toBeInTheDocument()
   })
 
-  test('does not count the opponent or a saved series length, which the player cannot see', () => {
-    localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'local2p', seriesLength: 3 }))
+  test('counts a non-default Games choice, which Reset puts back to a single game', () => {
+    renderScreen()
+    pick('Local 2P')
+
+    fireEvent.click(within(gamesGroup()).getByRole('radio', { name: '3' }))
+    expect(cue()).toHaveTextContent('1 changed from defaults')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reset' }))
+    expect(cue()).not.toBeInTheDocument()
+    expect(within(gamesGroup()).getByRole('radio', { name: '1' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('does not count the opponent, which the player cannot see change', () => {
+    localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'local2p' }))
     renderScreen()
     expect(cue()).not.toBeInTheDocument()
 
@@ -470,7 +498,7 @@ describe('changed-from-defaults cue', () => {
     pick('Vs Bot')
     pick('Blocking')
     pick('27×27')
-    pick('3')
+    pick('3', 'Skip limit')
     fireEvent.click(screen.getByRole('checkbox', { name: 'Walls' }))
     expect(cue()).toHaveTextContent('4 changed from defaults')
 

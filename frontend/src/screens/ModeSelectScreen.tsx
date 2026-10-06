@@ -53,6 +53,7 @@ function changedCount(s: ModeSelectSettings): number {
   return [
     s.boardSize !== DEFAULT_SETTINGS.boardSize,
     s.skipLimit !== DEFAULT_SETTINGS.skipLimit,
+    s.seriesLength !== DEFAULT_SETTINGS.seriesLength,
     s.opponent === 'bot' && s.botDifficulty !== DEFAULT_SETTINGS.botDifficulty,
     ...implementedGroups()
       .flatMap((g) => g.rules)
@@ -60,17 +61,10 @@ function changedCount(s: ModeSelectSettings): number {
   ].filter(Boolean).length
 }
 
-// Flip to true when the round-transition screen lands; until then the Games picker is hidden and seriesLength isn't sent.
-const SERIES_IMPLEMENTED = false
-
 const BOARD_SIZES = [19, 23, 27]
 const SKIP_LIMITS = [3, 5]
 const DIFFICULTIES: BotDifficulty[] = ['Basic', 'Greedy', 'Blocking']
-const GAMES_OPTIONS: { label: string; value: SeriesLength }[] = [
-  { label: 'Single game', value: null },
-  { label: 'Best of 3', value: 3 },
-  { label: 'Best of 5', value: 5 },
-]
+const GAMES_OPTIONS: SeriesLength[] = [null, 3, 5]
 function loadSettings(): ModeSelectSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -102,7 +96,7 @@ function buildStartGameParams(settings: ModeSelectSettings): StartGameParams {
   return {
     boardSize: settings.boardSize,
     skipLimit: settings.skipLimit,
-    ...(SERIES_IMPLEMENTED && settings.seriesLength !== null ? { seriesLength: settings.seriesLength } : {}),
+    ...(settings.seriesLength !== null ? { seriesLength: settings.seriesLength } : {}),
     ...(settings.opponent === 'bot'
       ? { botSeats: BOT_SEATS, botDifficulty: settings.botDifficulty }
       : {}),
@@ -308,27 +302,26 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                 </div>
                 <span className="field-hint" id="skip-limit-hint">Skips in a row that end the game</span>
               </div>
-              {SERIES_IMPLEMENTED && (
-                <div className="field">
-                  <span className="field-label" id="games-label">Games</span>
-                  <div className="segmented" role="radiogroup" aria-labelledby="games-label">
-                    {GAMES_OPTIONS.map((option) => (
-                      <button
-                        key={option.label}
-                        className={settings.seriesLength === option.value ? 'active' : undefined}
-                        type="button"
-                        role="radio"
-                        aria-checked={settings.seriesLength === option.value}
-                        tabIndex={settings.seriesLength === option.value ? 0 : -1}
-                        onKeyDown={handleRadioArrowKey}
-                        onClick={() => setSettings((s) => ({ ...s, seriesLength: option.value }))}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+              <div className="field">
+                <span className="field-label" id="games-label">Games</span>
+                <div className="segmented" role="radiogroup" aria-labelledby="games-label" aria-describedby="games-hint">
+                  {GAMES_OPTIONS.map((length) => (
+                    <button
+                      key={length ?? 1}
+                      className={settings.seriesLength === length ? 'active' : undefined}
+                      type="button"
+                      role="radio"
+                      aria-checked={settings.seriesLength === length}
+                      tabIndex={settings.seriesLength === length ? 0 : -1}
+                      onKeyDown={handleRadioArrowKey}
+                      onClick={() => setSettings((s) => ({ ...s, seriesLength: length }))}
+                    >
+                      {length ?? 1}
+                    </button>
+                  ))}
                 </div>
-              )}
+                <span className="field-hint" id="games-hint">1 game, or a best of 3 or 5</span>
+              </div>
             </div>
           </div>
 
