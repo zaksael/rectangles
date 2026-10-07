@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
-import { makeGame } from './testUtils/gameFixtures'
+import { makeGame } from './fixtures/gameFixtures'
 import { usePlacementInput } from './usePlacementInput'
 
 test('returns inert values when there is no game yet', () => {

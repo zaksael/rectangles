@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
-import { makeGame } from '../testUtils/gameFixtures'
+import { makeGame } from '../fixtures/gameFixtures'
 import { Board } from './Board'
 
 test('renders one cell per board square', () => {

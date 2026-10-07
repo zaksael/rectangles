@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
-import { makeGame, makeSeries } from '../testUtils/gameFixtures'
+import { makeGame, makeSeries } from '../fixtures/gameFixtures'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)

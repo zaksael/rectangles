@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
-import { makeGame } from './testUtils/gameFixtures'
+import { makeGame } from './fixtures/gameFixtures'
 
 beforeEach(() => {
   localStorage.clear()

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
-import { makeGame, makeSeries } from '../testUtils/gameFixtures'
+import { makeGame, makeSeries } from '../fixtures/gameFixtures'
 import { SettingsOverlay } from './SettingsOverlay'
 
 function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {}) {
