@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { makeGame, makeSeries } from '../fixtures/gameFixtures'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 
@@ -145,13 +145,61 @@ test('View Board and New Game call their handlers', () => {
 })
 
 test('on the overlay, v shows the board and n starts a new game', () => {
+  useGuardClock()
   const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
   const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
 
   fireEvent.keyDown(dialog, { key: 'v' })
   expect(handlers.onViewBoard).toHaveBeenCalledTimes(1)
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(dialog, { key: 'n' })
   expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+// A stray N from placement (the shortcut for the next legal spot) must not start a new game the moment the card appears.
+const KEY_GUARD_MS = 500
+
+function useGuardClock() {
+  vi.useFakeTimers()
+  onTestFinished(() => vi.useRealTimers())
+}
+
+test('on the overlay, n is ignored until the guard window has passed', () => {
+  useGuardClock()
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+
+  fireEvent.keyDown(dialog, { key: 'n' })
+  vi.advanceTimersByTime(KEY_GUARD_MS - 1)
+  fireEvent.keyDown(dialog, { key: 'n' })
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
+
+  vi.advanceTimersByTime(1)
+  fireEvent.keyDown(dialog, { key: 'n' })
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('on the result bar, n is ignored until the guard window has passed', () => {
+  useGuardClock()
+  const handlers = renderBar()
+
+  fireEvent.keyDown(window, { key: 'n' })
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
+
+  vi.advanceTimersByTime(KEY_GUARD_MS)
+  fireEvent.keyDown(window, { key: 'n' })
+  expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
+})
+
+test('a held n (auto-repeat) never starts a new game, even after the guard window', () => {
+  useGuardClock()
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+
+  vi.advanceTimersByTime(KEY_GUARD_MS)
+  fireEvent.keyDown(dialog, { key: 'n', repeat: true })
+
+  expect(handlers.onNewGame).not.toHaveBeenCalled()
 })
 
 test('a browser combo such as Ctrl+N is left alone on the overlay', () => {
@@ -170,10 +218,12 @@ function renderBar() {
 }
 
 test('on the result bar, v shows the result and n starts a new game', () => {
+  useGuardClock()
   const handlers = renderBar()
 
   fireEvent.keyDown(window, { key: 'v' })
   expect(handlers.onViewResult).toHaveBeenCalledTimes(1)
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(window, { key: 'n' })
   expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
 })
@@ -345,9 +395,11 @@ test('a series round offers View Board then Next Round, and no New Game', () => 
 })
 
 test('Next Round and the N key both advance the series', () => {
+  useGuardClock()
   const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn() }
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() }, handlers)
   fireEvent.click(within(dialog).getByRole('button', { name: /Next Round/ }))
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(dialog, { key: 'n' })
   expect(handlers.onNextRound).toHaveBeenCalledTimes(2)
   expect(handlers.onNewGame).not.toHaveBeenCalled()
@@ -359,12 +411,14 @@ test('the last round of a series has no Next Round, since the series is over', (
 })
 
 test('the series result bar offers View Result and Next Round, and the headline names the round', () => {
+  useGuardClock()
   const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn() }
   render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries()} {...handlers} />)
   const bar = screen.getByRole('region', { name: 'Game result' })
   expect(within(bar).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Result', 'Next Round'])
   expect(within(bar).getByText(/^Player.1 wins the round$/u)).toBeTruthy()
   fireEvent.click(within(bar).getByRole('button', { name: /Next Round/ }))
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(window, { key: 'n' })
   expect(handlers.onNextRound).toHaveBeenCalledTimes(2)
   expect(handlers.onNewGame).not.toHaveBeenCalled()
@@ -376,20 +430,24 @@ test('a series round labels its scoreboard as the round score', () => {
 })
 
 test('the last round of a series offers Series Result, which opens the series card instead of sending anything', () => {
+  useGuardClock()
   const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 3, isComplete: true }) }, handlers)
   expect(within(dialog).queryByRole('button', { name: /Next Round/ })).toBeNull()
   fireEvent.click(within(dialog).getByRole('button', { name: /Series Result/ }))
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(dialog, { key: 'n' })
   expect(handlers.onSeriesResult).toHaveBeenCalledTimes(2)
   expect(handlers.onNextRound).not.toHaveBeenCalled()
 })
 
 test('after the last round, the round bar offers Series Result in place of Next Round', () => {
+  useGuardClock()
   const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
   render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries({ gamesPlayed: 3, isComplete: true })} {...handlers} />)
   const bar = screen.getByRole('region', { name: 'Game result' })
   fireEvent.click(within(bar).getByRole('button', { name: /Series Result/ }))
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(window, { key: 'n' })
   expect(within(bar).queryByRole('button', { name: /Next Round/ })).toBeNull()
   expect(handlers.onSeriesResult).toHaveBeenCalledTimes(2)
@@ -438,10 +496,12 @@ test('a tied series reads "Series tied" with no margin line', () => {
 })
 
 test('the series card offers View Board and New Game, with V and N as shortcuts', () => {
+  useGuardClock()
   const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
   const dialog = renderSeriesResult(wonSeries, handlers)
   expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Board', 'New Game'])
   fireEvent.keyDown(dialog, { key: 'v' })
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(dialog, { key: 'n' })
   fireEvent.click(within(dialog).getByRole('button', { name: /View Board/ }))
   expect(handlers.onViewBoard).toHaveBeenCalledTimes(2)
@@ -449,12 +509,14 @@ test('the series card offers View Board and New Game, with V and N as shortcuts'
 })
 
 test('the series bar shows the series outcome and totals, with View Result and New Game but no Next Round or Series Result', () => {
+  useGuardClock()
   const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
   render(<GameOverBar game={makeGame()} series={wonSeries} seriesResult {...handlers} />)
   const bar = screen.getByRole('region', { name: 'Series result' })
   expect(within(bar).getByText(/^Player.1 wins the series$/u)).toBeTruthy()
   expect(bar).toHaveTextContent('459 – 440')
   expect(within(bar).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Result', 'New Game'])
+  vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(window, { key: 'n' })
   expect(handlers.onNewGame).toHaveBeenCalledTimes(1)
   expect(handlers.onSeriesResult).not.toHaveBeenCalled()

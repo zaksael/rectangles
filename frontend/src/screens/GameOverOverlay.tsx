@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
@@ -120,12 +120,16 @@ function headlineText(game: GameWireState, inSeries = false): string {
   return winner === null ? 'Tied' : `${nameOf(game, winner)} wins${reason === 'surrender' ? '' : ' on score'}`
 }
 
+// N is also the placement shortcut for the next legal spot, so for this long after the result appears (and while the key is held) it
+// is ignored rather than starting something new from a stray press.
+const ADVANCE_KEY_GUARD_MS = 500
+
 // V goes back to the board or the result, N starts a new game; Ctrl, Cmd and Alt combos belong to the browser.
-function handleResultKey(event: { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, onView: () => void, onNewGame?: () => void) {
+function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void) {
   if (event.ctrlKey || event.metaKey || event.altKey) return
   const key = event.key.toLowerCase()
   if (key === 'v') onView()
-  else if (key === 'n') onNewGame?.()
+  else if (key === 'n' && !event.repeat && Date.now() >= armedAt) onNewGame?.()
 }
 
 // The breakdown tables' header: a hidden label for the row-title column, then one column per player.
@@ -158,6 +162,7 @@ interface ResultDialogProps {
 // The dialog shell both result cards share. Escape shows the board rather than dismissing the result, so the native close is suppressed.
 function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, children }: ResultDialogProps) {
   const dialogRef = useAutoOpenDialog()
+  const armedAt = useRef(Date.now() + ADVANCE_KEY_GUARD_MS)
   return (
     <dialog
       className="modal game-over"
@@ -167,7 +172,7 @@ function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, children }:
         e.preventDefault()
         onViewBoard()
       }}
-      onKeyDown={(e) => handleResultKey(e, onViewBoard, onAdvance)}
+      onKeyDown={(e) => handleResultKey(e, armedAt.current, onViewBoard, onAdvance)}
       aria-labelledby="gameover-title"
       aria-describedby={describedBy}
     >
@@ -207,6 +212,7 @@ interface GameOverBarProps {
 
 export function GameOverBar({ game, series = null, seriesResult = false, onViewResult, onNewGame, onNextRound, onSeriesResult }: GameOverBarProps) {
   const advance = advanceFor(seriesResult ? null : series, { onNewGame, onNextRound, onSeriesResult })
+  const armedAt = useRef(Date.now() + ADVANCE_KEY_GUARD_MS)
   const outcome =
     seriesResult && series
       ? { winner: series.winner, headline: seriesHeadline(game, series), reason: null, scores: [series.scores['1'], series.scores['2']], label: 'Series result' }
@@ -222,7 +228,7 @@ export function GameOverBar({ game, series = null, seriesResult = false, onViewR
   // The bar is not a dialog, so it listens on the window and stands down while the Menu (or any dialog) is open.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!document.querySelector('dialog[open]')) handleResultKey(event, onViewResult, advance.onAdvance)
+      if (!document.querySelector('dialog[open]')) handleResultKey(event, armedAt.current, onViewResult, advance.onAdvance)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
