@@ -361,7 +361,7 @@ export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard }: { 
   const { winner } = series
   return (
     <ResultDialog winner={winner} describedBy={winner !== null ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={onNewGame}>
-      <p className="reason">{`Best of ${series.length}`}</p>
+      <p className="reason">{`${series.length} rounds · most points wins`}</p>
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
         {seriesHeadline(game, series)}

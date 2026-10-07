@@ -475,7 +475,7 @@ test('the series card names the winner, the margin and the format', () => {
   const dialog = renderSeriesResult(wonSeries)
   expect(within(dialog).getByRole('heading', { name: /^Player.1 wins the series$/u })).toBeTruthy()
   expect(dialog).toHaveAccessibleDescription('by 19 points')
-  expect(within(dialog).getByText('Best of 3')).toBeTruthy()
+  expect(within(dialog).getByText('3 rounds · most points wins')).toBeTruthy()
 })
 
 test('the series card lists each round and ends on the series total', () => {
