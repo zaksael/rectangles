@@ -31,6 +31,14 @@ describe('buildFixture', () => {
     expect(state?.series?.length).toBe(3)
   })
 
+  it('seriesplay: round two of a best-of-three in progress, awaiting a roll', () => {
+    const state = buildFixture('seriesplay')
+    expect(state?.game.turn.turnState).toBe('awaitingRoll')
+    expect(state?.series?.isComplete).toBe(false)
+    expect(state?.series?.gamesPlayed).toBe(1)
+    expect(state?.series?.scores).toEqual({ '1': 18, '2': 14 })
+  })
+
   it('series-final: a completed series with a winner', () => {
     const state = buildFixture('series-final')
     expect(state?.series?.isComplete).toBe(true)
