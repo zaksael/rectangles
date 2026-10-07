@@ -390,11 +390,12 @@ open the printed `localhost` URL to play.
 Current state: a full vanilla match (Mode Select → roll/place/skip → game
 over → View Board / New Game) works start to finish, including disconnect handling,
 surrender, and a read-only mid-game Settings/pause screen. Series play (1, 3
-or 5 games, picked on Mode Select) runs round by round to a series result. Walls, Obstacles,
-Prize, Pitfall, Steal, Enclosure Penalty, and Reroll are built and toggleable
-on the picker. Not yet built: Wildcard and Comeback Nudge (still forced off
-and hidden from the picker until each lands), Replay, Tournament
-flows, and production serving from the FastAPI backend.
+or 5 games, picked on Mode Select) runs round by round to a series result.
+All nine house rules (Walls, Obstacles, Prize, Pitfall, Steal, Enclosure
+Penalty, Reroll, Wildcard and Comeback Nudge) are built and toggleable on the
+picker; a first launch starts with all nine on, and later launches keep the
+last choice. Not yet built: Replay, Tournament flows, and production serving
+from the FastAPI backend.
 
 ## Tests
 
