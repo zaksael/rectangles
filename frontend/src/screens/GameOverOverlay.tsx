@@ -304,7 +304,7 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
                 {nameOf(game, Number(id))}
               </div>
               <div className="n">{game.players[id].score.totalScore}</div>
-              {series !== null && series.gamesPlayed >= 2 && <div className="series-total">{`Series ${series.scores[id]}`}</div>}
+              {series !== null && series.gamesPlayed >= 2 && <div className="series-total">{`Series ${series.scores[id]}${series.scores[id] > series.scores[key(3 - Number(id))] ? ' · leads' : ''}`}</div>}
             </div>
           )
         })}

@@ -384,6 +384,18 @@ test('a single game keeps its end reason and gains no round line', () => {
   expect(within(dialog).queryByText(/Round \d/u)).not.toBeInTheDocument()
 })
 
+test('a round loser who leads the series is marked as leading', () => {
+  const dialog = renderRound({ winner: 2, area: [129, 131], series: makeSeries({ gamesPlayed: 2, scores: { '1': 301, '2': 299 } }) })
+  expect(within(dialog).getByText('Series 301 · leads')).toBeInTheDocument()
+  expect(within(dialog).getByText('Series 299')).toBeInTheDocument()
+})
+
+test('equal series totals mark nobody as leading', () => {
+  const tied = renderRound({ winner: 1, area: [140, 120], series: makeSeries({ gamesPlayed: 2, scores: { '1': 280, '2': 280 } }) })
+  expect(within(tied).getAllByText('Series 280')).toHaveLength(2)
+  expect(within(tied).queryByText(/leads/u)).not.toBeInTheDocument()
+})
+
 test('a series round is headlined as the round, not the game', () => {
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
   expect(within(dialog).getByRole('heading', { name: /^Player.1 wins the round$/u })).toBeTruthy()
@@ -402,7 +414,7 @@ test('round 1 of a series shows no running total, since it would equal the round
 test('from round 2 each scoreboard cell carries its series total', () => {
   const dialog = renderRound({ winner: 2, area: [129, 131], series: makeSeries({ gamesPlayed: 2, scores: { '1': 301, '2': 299 } }) })
   const board = within(dialog).getByRole('group', { name: 'Round score' })
-  expect(within(board).getByText('Series 301')).toBeTruthy()
+  expect(within(board).getByText('Series 301 · leads')).toBeTruthy()
   expect(within(board).getByText('Series 299')).toBeTruthy()
 })
 
