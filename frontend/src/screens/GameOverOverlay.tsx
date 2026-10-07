@@ -270,7 +270,8 @@ interface GameOverOverlayProps {
 
 export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound, onSeriesResult }: GameOverOverlayProps) {
   const { winner, reason: endReason } = game.gameOver
-  const detail = reasonText(game)
+  // A series round says where it falls in the series; a settled board adds nothing to that.
+  const detail = series === null ? reasonText(game) : [`Round ${series.gamesPlayed} of ${series.length}`, endReason !== 'boardFull' && reasonText(game)].filter(Boolean).join(' · ')
   // An enabled rule nobody triggered carries no information, so its row is left out.
   const rows = MODIFIER_ROWS.filter((row) => row.enabled(game) && (row.value(game, '1') !== 0 || row.value(game, '2') !== 0))
   const margin = scoreMargin(game)

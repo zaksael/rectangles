@@ -367,6 +367,23 @@ function renderRound(
   return screen.getByRole('dialog')
 }
 
+test('a settled series round names its position instead of the end reason', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 2 }) })
+  expect(within(dialog).getByText('Round 2 of 3')).toBeInTheDocument()
+  expect(within(dialog).queryByText('board settled')).not.toBeInTheDocument()
+})
+
+test('a series round that did not settle joins its end reason to the round', () => {
+  const dialog = renderRound({ winner: 2, reason: 'surrender', playerId: 1, area: [120, 108], series: makeSeries({ gamesPlayed: 2 }) })
+  expect(within(dialog).getByText(/^Round 2 of 3 · Player.1 surrendered$/u)).toBeInTheDocument()
+})
+
+test('a single game keeps its end reason and gains no round line', () => {
+  const dialog = renderOver({ winner: 1, area: [152, 141] })
+  expect(within(dialog).getByText('board settled')).toBeInTheDocument()
+  expect(within(dialog).queryByText(/Round \d/u)).not.toBeInTheDocument()
+})
+
 test('a series round is headlined as the round, not the game', () => {
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
   expect(within(dialog).getByRole('heading', { name: /^Player.1 wins the round$/u })).toBeTruthy()

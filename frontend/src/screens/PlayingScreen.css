@@ -377,6 +377,7 @@ dialog.modal .reason {
   letter-spacing: 0.06em;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
   margin: 0 0 6px;
+  text-wrap: balance;
 }
 dialog.game-over h2 {
   font-size: 26px;
