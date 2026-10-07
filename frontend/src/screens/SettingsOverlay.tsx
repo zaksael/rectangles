@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { GameAction, GameWireState, SeriesWireState } from '../gameTypes'
 import { HOUSE_RULE_GROUPS } from '../houseRules'
+import { seriesRound } from '../seriesRound'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 
@@ -50,7 +51,7 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
             <div>
               <dt>Series</dt>
               <dd>
-                {`Round ${game.turn.turnState === 'gameOver' ? series.gamesPlayed : series.gamesPlayed + 1} of ${series.length} — ${series.scores['1']}–${series.scores['2']}`}
+                {`Round ${seriesRound(game, series)} of ${series.length} — ${series.scores['1']}–${series.scores['2']}`}
               </dd>
             </div>
           )}

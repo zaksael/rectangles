@@ -1458,6 +1458,30 @@ test.each([[true], [false]])('the frame reserves the Wildcard picker height only
   expect(document.querySelector('.frame')?.classList.contains('reserves-picker')).toBe(enabled)
 })
 
+test('in series play a caption gives the round and the running series score', () => {
+  renderScreen({ ...makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }), series: makeSeries({ gamesPlayed: 1, scores: { '1': 18, '2': 14 } }) })
+
+  const caption = document.querySelector('.series-line') as HTMLElement
+  expect(caption).not.toBeNull()
+  expect(within(caption).getByText('Round 2 of 3')).toBeInTheDocument()
+  expect(within(caption).getByText('Series 18 – 14')).toBeInTheDocument()
+})
+
+test('after a round ends the caption counts that round and includes its points', () => {
+  renderScreen({ ...gameOverState(), series: makeSeries({ gamesPlayed: 2, scores: { '1': 31, '2': 29 } }) })
+
+  const caption = document.querySelector('.series-line') as HTMLElement
+  expect(caption).not.toBeNull()
+  expect(within(caption).getByText('Round 2 of 3')).toBeInTheDocument()
+  expect(within(caption).getByText('Series 31 – 29')).toBeInTheDocument()
+})
+
+test('a single game has no series caption', () => {
+  renderScreen(makeState())
+
+  expect(document.querySelector('.series-line')).toBeNull()
+})
+
 test('in a series, Next Round on the result dialog and on the bar sends continueSeries', () => {
   const sendAction = renderScreen({ ...gameOverState(), series: makeSeries() })
 

@@ -8,6 +8,7 @@ import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
+import { seriesRound } from '../seriesRound'
 import './PlayingScreen.css'
 
 interface PlayingScreenProps {
@@ -224,6 +225,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             </div>
             {showResultBar && (
               <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
+            )}
+            {state.series && (
+              <div className="series-line">
+                <span className="series-round">{`Round ${seriesRound(state.game, state.series)} of ${state.series.length}`}</span>
+                <span aria-hidden="true">·</span>
+                <span className="series-total">{`Series ${state.series.scores['1']} – ${state.series.scores['2']}`}</span>
+              </div>
             )}
             {turnStatus && (
               <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
