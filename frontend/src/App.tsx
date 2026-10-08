@@ -60,6 +60,7 @@ function App() {
   }
 
   if (screen === 'PLAYING') {
+    const botLabel = connectParams.botSeats ? `Bot (${connectParams.botDifficulty})` : undefined
     if (gameSocket.status === 'closed-unexpected') {
       return <ConnectionLostModal isSeries={gameSocket.state?.series !== null} onNewGame={handleNewGame} />
     }
@@ -72,12 +73,13 @@ function App() {
           onOpenSettings={() => setSettingsOpen(true)}
           onNewGame={handleNewGame}
           botSeat={connectParams.botSeats}
+          botLabel={botLabel}
         />
         {settingsOpen && gameSocket.state && (
           <SettingsOverlay
             game={gameSocket.state.game}
             series={gameSocket.state.series}
-            opponentLabel={connectParams.botSeats ? `Bot (${connectParams.botDifficulty})` : 'Local 2P'}
+            opponentLabel={botLabel ?? 'Local 2P'}
             sendAction={gameSocket.sendAction}
             botSeat={connectParams.botSeats}
             onClose={() => setSettingsOpen(false)}

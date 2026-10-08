@@ -16,6 +16,7 @@ function renderScreen(
   error: GameError | null = null,
   onNewGame = vi.fn(),
   botSeat?: number,
+  botLabel?: string,
 ) {
   render(
     <PlayingScreen
@@ -25,6 +26,7 @@ function renderScreen(
       onOpenSettings={vi.fn()}
       onNewGame={onNewGame}
       botSeat={botSeat}
+      botLabel={botLabel}
     />,
   )
   return sendAction
@@ -644,9 +646,127 @@ test("the turn status line shows the bot is playing on the bot's turn", () => {
     null,
     vi.fn(),
     2,
+    'Bot (Greedy)',
   )
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 2 is playing…')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Bot (Greedy) is playing…')
+})
+
+test('Vs Bot names the bot seat after its difficulty in the header and leaves the human seat alone', () => {
+  renderScreen(makeState(), vi.fn(), null, vi.fn(), 2, 'Bot (Blocking)')
+
+  expect(screen.getByText('Bot (Blocking)').closest('.player')).toHaveClass('p2')
+  expect(screen.getByText('Player 1').closest('.player')).toHaveClass('p1')
+  expect(screen.queryByText('Player 2')).not.toBeInTheDocument()
+})
+
+interface BotTurn {
+  current: 1 | 2
+  turnState: GameWireState['turn']['turnState']
+  lastRoll?: [number, number] | null
+  botPieces?: [number, number][]
+  botRerollsUsed?: number
+  botSkips?: number
+  editableIndex?: number | null
+}
+
+function botGame({ current, turnState, lastRoll = null, botPieces = [], botRerollsUsed = 0, botSkips = 0, editableIndex = null }: BotTurn): GameState {
+  const base = makeGame().players
+  const pieces = botPieces.map(([width, height], i) => ({ topLeft: [0, i] as [number, number], width, height, owner: 2 }))
+  const bot = {
+    ...base['2'],
+    board: { ...base['2'].board, pieces, consecutiveSkips: botSkips },
+    houseRules: { ...base['2'].houseRules, reroll: { used: botRerollsUsed, limit: 2 } },
+  }
+  const wildcard = { enabled: true, originalRoll: null, legalValues: [], editableIndex }
+  return makeState({
+    turn: { currentPlayerId: current, turnState, lastRoll, legalPlacements: [] },
+    players: { ...base, '2': bot },
+    houseRules: { ...makeGame().houseRules, wildcard },
+  })
+}
+
+// Feeds the screen one state per bot step, the way the socket's paced queue does.
+function renderBotGame(first: GameState) {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn(), botSeat: 2, botLabel: 'Bot (Greedy)' }
+  const view = render(<PlayingScreen state={first} {...props} />)
+  return (next: GameState) => view.rerender(<PlayingScreen state={next} {...props} />)
+}
+
+test("after the bot places a piece, the human's roll prompt recaps it", () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] }))
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: roll (D) · Bot (Greedy) placed 5 × 4')
+})
+
+const recapStatus = () => screen.getByTestId('turn-status')
+
+test('the recap says the bot rerolled', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [6, 6] }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 3], botRerollsUsed: 1 }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[3, 3]], botRerollsUsed: 1 }))
+  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) rerolled, placed 3 × 3')
+})
+
+test('the recap says "rerolled twice" when the bot spent two rerolls', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [6, 6] }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 3], botRerollsUsed: 1 }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [2, 2], botRerollsUsed: 2 }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[2, 2]], botRerollsUsed: 2 }))
+  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) rerolled twice, placed 2 × 2')
+})
+
+test('the recap names the wildcard value the bot chose, even if the roll then has no legal move', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingWildcard', lastRoll: [4, 2], editableIndex: 1 }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [4, 6] }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[4, 6]] }))
+  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) chose 6, placed 4 × 6')
+})
+
+test('a reroll out of a wildcard pick is not counted as a pick', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingWildcard', lastRoll: [4, 2], editableIndex: 1 }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 5], botRerollsUsed: 1 }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 5]], botRerollsUsed: 1 }))
+  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) rerolled, placed 5 × 5')
+  expect(recapStatus()).not.toHaveTextContent('chose')
+})
+
+test('the recap says the bot skipped', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'skipped', lastRoll: [6, 6] }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botSkips: 1 }))
+  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) skipped')
+})
+
+test('the recap goes away once the human rolls', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] }))
+  update(botGame({ current: 1, turnState: 'choosingPlacement', lastRoll: [1, 2], botPieces: [[5, 4]] }))
+  expect(recapStatus()).not.toHaveTextContent('Bot (Greedy) placed')
+})
+
+test('the recap does not carry into the next round after the bot ends a game', () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
+  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] }))
+  update(botGame({ current: 2, turnState: 'gameOver', botPieces: [[5, 4]] }))
+  update(botGame({ current: 1, turnState: 'awaitingRoll' }))
+  expect(recapStatus()).toHaveTextContent('Player 1: roll (D)')
+  expect(recapStatus()).not.toHaveTextContent('·')
+})
+
+test('Local 2P never shows a recap', () => {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const view = render(<PlayingScreen state={botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] })} {...props} />)
+  view.rerender(<PlayingScreen state={botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] })} {...props} />)
+  expect(recapStatus()).toHaveTextContent('Player 1: roll (D)')
+  expect(recapStatus()).not.toHaveTextContent('·')
 })
 
 test('there is no turn status line once the game is over', () => {
