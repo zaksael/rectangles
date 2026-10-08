@@ -302,6 +302,34 @@
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
+/* One line under the board naming each special-cell rule that is on; the marks are the board's own .board-cell.<kind> rules. */
+.playing-legend {
+  list-style: none;
+  margin: 0;
+  padding: 2px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+.playing-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+.playing-legend-mark {
+  --cell: 18px;
+  flex: none;
+  forced-color-adjust: none; /* the marks are backgrounds, and only .board opts out of forced colors */
+}
+/* The row takes 24px (20px line + 4px padding) of the window height, which the board gives up. */
+.frame.has-legend {
+  --legend-height: 24px;
+}
 /* Touch players have no keyboard: blank the hint by colour, so its height stays reserved and the board's aria-describedby text stays in the DOM. */
 @media (pointer: coarse) {
   .board-help {

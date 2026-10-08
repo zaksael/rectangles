@@ -1,5 +1,6 @@
 import { memo, type CSSProperties, type FocusEventHandler, type KeyboardEventHandler, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
 import type { GameWireState } from '../gameTypes'
+import { specialCellKinds } from '../specialCells'
 import './Board.css'
 
 // A grid box, in cells. The stylesheet turns it into pixels from --cell, which fits the viewport.
@@ -103,7 +104,7 @@ const BoardLayers = memo(function BoardLayers({
   lastPlaced?: BoardProps['lastPlaced']
 }) {
   const { size } = game.board
-  const { obstacles, prize, pitfall, steal, walls, selfEnclosedPenalty } = game.houseRules
+  const { obstacles, walls, selfEnclosedPenalty } = game.houseRules
   const coverableSet = new Set((coverableCells ?? []).map(([r, c]) => cellKey(r, c)))
 
   const owners = new Map<string, number>()
@@ -136,18 +137,7 @@ const BoardLayers = memo(function BoardLayers({
     ? selfEnclosedOwners(size, owners, obstacleCells, walls.enabled ? walls.edges : [])
     : []
 
-  const specialCells = new Map<string, 'prize' | 'pitfall' | 'steal'>()
-  for (const [kind, rule] of [
-    ['prize', prize],
-    ['pitfall', pitfall],
-    ['steal', steal],
-  ] as const) {
-    if (rule.enabled) {
-      for (const [r, c] of rule.cells) {
-        specialCells.set(cellKey(r, c), kind)
-      }
-    }
-  }
+  const specialCells = specialCellKinds(game)
 
   // The most recent placement briefly rings whichever special cell(s) it just captured,
   // mirroring the Pygame renderer's last-move prize highlight - a marker alone isn't

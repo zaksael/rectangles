@@ -67,6 +67,16 @@ const BUILDERS: Record<string, () => GameState> = {
       series: null,
     }
   },
+  placing: () => {
+    const game = midGame()
+    return {
+      game: {
+        ...game,
+        turn: { ...game.turn, turnState: 'choosingPlacement', lastRoll: [2, 2], legalPlacements: [{ width: 2, height: 2, topLefts: [[0, 4], [4, 5]] }] },
+      },
+      series: null,
+    }
+  },
   deadroll: () => {
     const game = midGame()
     return { game: { ...game, turn: { ...game.turn, turnState: 'skipped', lastRoll: [6, 6] } }, series: null }

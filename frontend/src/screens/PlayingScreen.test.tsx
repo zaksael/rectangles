@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { makeGame, makeSeries } from '../fixtures/gameFixtures'
+import type { GameWireState } from '../gameTypes'
 import type { GameError, GameState } from '../useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
 
@@ -1539,4 +1540,95 @@ test('View Board on the series card pins the series bar, and View Result brings 
   fireEvent.click(within(bar).getByRole('button', { name: /View Result/ }))
 
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
+})
+
+function specialRules(rules: Partial<Pick<GameWireState['houseRules'], 'prize' | 'pitfall' | 'steal'>>) {
+  return { ...makeGame().houseRules, ...rules }
+}
+
+test('the special-cell legend names each enabled rule, in rule order, with its point value', () => {
+  renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      houseRules: specialRules({
+        steal: { enabled: true, cells: [[4, 0]], points: 10 },
+        prize: { enabled: true, cells: [[0, 4]], points: 10 },
+        pitfall: { enabled: true, cells: [[2, 2]], points: 10 },
+      }),
+    }),
+  )
+
+  const items = within(screen.getByRole('list', { name: 'Special cells' })).getAllByRole('listitem')
+  expect(items.map((item) => item.textContent)).toEqual(['Prize +10', 'Pitfall −10', 'Steal ±10'])
+})
+
+test('the legend reads each rule\'s own point value and lists only the rules that are on', () => {
+  renderScreen(
+    makeState({
+      houseRules: specialRules({
+        prize: { enabled: true, cells: [[0, 2]], points: 7 },
+        pitfall: { enabled: false, cells: [[1, 1]], points: 3 },
+      }),
+    }),
+  )
+
+  const items = within(screen.getByRole('list', { name: 'Special cells' })).getAllByRole('listitem')
+  expect(items.map((item) => item.textContent)).toEqual(['Prize +7'])
+})
+
+test('with no special-cell rule on there is no legend and the frame reserves no room for one', () => {
+  renderScreen(makeState())
+
+  expect(screen.queryByRole('list', { name: 'Special cells' })).not.toBeInTheDocument()
+  expect(document.querySelector('.frame')).not.toHaveClass('has-legend')
+})
+
+test('the frame carries has-legend while the legend shows, so the board leaves room for it', () => {
+  renderScreen(makeState({ houseRules: specialRules({ steal: { enabled: true, cells: [[0, 2]], points: 10 } }) }))
+
+  expect(document.querySelector('.frame')).toHaveClass('has-legend')
+})
+
+function placingOnSpecialBoard(rules: Parameters<typeof specialRules>[0]) {
+  renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: {
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 2],
+        legalPlacements: [{ width: 2, height: 2, topLefts: [[0, 0]] }],
+      },
+      houseRules: specialRules(rules),
+    }),
+  )
+  fireEvent.mouseEnter(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
+}
+
+test('a legal preview over a special cell ends the status line with what it would trigger', () => {
+  placingOnSpecialBoard({ pitfall: { enabled: true, cells: [[1, 1]], points: 10 } })
+
+  expect(screen.getByTestId('turn-status').textContent).toMatch(/ place 2 wide × 2 tall — covers Pitfall \(−10\)$/)
+})
+
+test('a preview over several special cells lists the kinds in rule order, not in board order', () => {
+  // The Steal cell comes first when scanning the board row by row, the Pitfall cell second.
+  placingOnSpecialBoard({
+    steal: { enabled: true, cells: [[0, 1]], points: 10 },
+    pitfall: { enabled: true, cells: [[1, 1]], points: 10 },
+  })
+
+  expect(screen.getByTestId('turn-status').textContent).toMatch(/ — covers Pitfall \(−10\), Steal \(±10\)$/)
+})
+
+test('a legal preview that covers no special cell adds nothing to the status line', () => {
+  placingOnSpecialBoard({ pitfall: { enabled: true, cells: [[4, 4]], points: 10 } })
+
+  expect(screen.getByTestId('turn-status').textContent).not.toMatch(/covers/)
+})
+
+test('a special cell of a rule that is off is not named', () => {
+  placingOnSpecialBoard({ pitfall: { enabled: false, cells: [[1, 1]], points: 10 } })
+
+  expect(screen.getByTestId('turn-status').textContent).not.toMatch(/covers/)
 })

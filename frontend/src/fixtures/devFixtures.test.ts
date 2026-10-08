@@ -10,6 +10,13 @@ describe('buildFixture', () => {
     expect(state?.game.houseRules.wildcard.legalValues.length).toBeGreaterThan(0)
   })
 
+  it('placing: a 2x2 roll to place, with a legal spot that covers the fixture\'s Prize cell', () => {
+    const state = buildFixture('placing')
+    expect(state?.game.turn.turnState).toBe('choosingPlacement')
+    expect(state?.game.turn.lastRoll).toEqual([2, 2])
+    expect(state?.game.turn.legalPlacements).toEqual([{ width: 2, height: 2, topLefts: [[0, 4], [4, 5]] }])
+  })
+
   it('deadroll: a skipped turn with a roll and no legal placement', () => {
     const state = buildFixture('deadroll')
     expect(state?.game.turn.turnState).toBe('skipped')

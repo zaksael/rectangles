@@ -1,7 +1,7 @@
 .board {
   /* Cells shrink so the whole board fits the window height (--chrome is what the screen
      spends on its header and toolbar), never above 44px or below 20px. --n is set inline. */
-  --cell: clamp(20px, calc((100dvh - var(--chrome, 176px)) / var(--n)), 44px);
+  --cell: clamp(20px, calc((100dvh - var(--chrome, 176px) - var(--legend-height, 0px)) / var(--n)), 44px);
   position: relative;
   display: grid;
   margin-inline: auto; /* the toolbar can be wider than a shrunken board */

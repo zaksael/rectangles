@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
+import { SpecialCellLegend } from '../components/SpecialCellLegend'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 import type { ErrorReason, GameAction } from '../gameTypes'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
@@ -9,6 +10,7 @@ import type { GameError, GameState } from '../useGameSocket'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
 import { seriesRound } from '../seriesRound'
+import { coveredSpecialRules, enabledSpecialRules } from '../specialCells'
 import './PlayingScreen.css'
 
 interface PlayingScreenProps {
@@ -156,6 +158,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       const firstMove = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.pieces.length === 0
       if (reason) turnStatus += ` — ${reason}`
       else if (previewKind !== 'legal') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
+      else if (previewTopLeft && dims) {
+        const covered = coveredSpecialRules(state.game, previewTopLeft, dims)
+        if (covered.length > 0) turnStatus += ` — covers ${covered.join(', ')}`
+      }
     }
     else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value${canReroll ? ', or reroll (E)' : ''}`
     else if (turnState === 'skipped') {
@@ -191,7 +197,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }, [humanTurnState, rerollUsable])
 
   return (
-    <div className={wildcard?.enabled ? 'frame reserves-picker' : 'frame'}>
+    <div className={['frame', wildcard?.enabled && 'reserves-picker', state && enabledSpecialRules(state.game).length > 0 && 'has-legend'].filter(Boolean).join(' ')}>
       <h1 className="visually-hidden">Playing</h1>
       {state && (
         <>
@@ -253,6 +259,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               onFocus={placing ? handleBoardFocus : undefined}
               describedBy={placing ? 'board-help' : undefined}
             />
+            <SpecialCellLegend game={state.game} />
             {/* Always rendered (blank when no key applies) so the board doesn't shift vertically. */}
             <p id="board-help" className="board-help">
               {boardHint}

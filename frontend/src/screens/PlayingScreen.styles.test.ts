@@ -71,3 +71,13 @@ test('a streak one skip from the limit is danger-coloured and bold, and stays AA
     expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
   }
 })
+
+test('the special-cell legend is a 12px line whose marks keep their ink under forced colors', () => {
+  expect(ruleFor(css, '.playing-legend')).toMatch(/font-size:\s*12px/)
+  expect(ruleFor(css, '.playing-legend-mark')).toMatch(/forced-color-adjust:\s*none/) // only .board opts out, and the legend sits outside it
+})
+
+test('a frame with a legend gives the board 24px less height, whichever --chrome it has (plain, Wildcard picker, touch)', () => {
+  expect(ruleFor(css, '.frame.has-legend')).toMatch(/--legend-height:\s*24px/)
+  expect(ruleFor(readCss('components/Board.css'), '.board')).toMatch(/var\(--chrome, 176px\) - var\(--legend-height, 0px\)/)
+})
