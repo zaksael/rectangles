@@ -39,6 +39,14 @@ describe('buildFixture', () => {
     expect(state?.series?.scores).toEqual({ '1': 18, '2': 14 })
   })
 
+  it('series-loserlead: round two won by player 1 while player 2 leads the series', () => {
+    const state = buildFixture('series-loserlead')
+    expect(state?.game.turn.turnState).toBe('gameOver')
+    expect(state?.game.gameOver.winner).toBe(1)
+    expect(state?.series?.gamesPlayed).toBe(2)
+    expect(state?.series?.scores).toEqual({ '1': 30, '2': 33 })
+  })
+
   it('series-final: a completed series with a winner', () => {
     const state = buildFixture('series-final')
     expect(state?.series?.isComplete).toBe(true)

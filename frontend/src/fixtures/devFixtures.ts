@@ -80,6 +80,10 @@ const BUILDERS: Record<string, () => GameState> = {
     game: midGame(),
     series: makeSeries({ scores: { '1': 18, '2': 14 }, gamesPlayed: 1, rounds: [round(18, 14)] }),
   }),
+  'series-loserlead': () => ({
+    game: gameOver(),
+    series: makeSeries({ scores: { '1': 30, '2': 33 }, gamesPlayed: 2, rounds: [round(12, 19), round(18, 14)] }),
+  }),
   'series-final': () => ({
     game: gameOver(),
     series: makeSeries({
