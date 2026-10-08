@@ -54,6 +54,8 @@ type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'c
 
 const STATE_PACING_DELAY_MS = 500
 
+export const botName = (difficulty?: string) => `Bot (${difficulty})`
+
 function connectParamsToQuery(params: GameSocketParams): string {
   const query = new URLSearchParams()
   for (const key of QUERY_PARAM_KEYS) {
@@ -119,7 +121,12 @@ export function useGameSocket(params: GameSocketParams) {
     socket.addEventListener('message', (event) => {
       const data = JSON.parse(event.data)
       if (data.type === 'state') {
-        stateQueueRef.current.push({ game: data.game, series: data.series })
+        const botSeat = params.botSeats
+        const game: GameWireState =
+          botSeat === undefined
+            ? data.game
+            : { ...data.game, players: { ...data.game.players, [botSeat]: { ...data.game.players[botSeat], name: botName(params.botDifficulty) } } }
+        stateQueueRef.current.push({ game, series: data.series })
         if (drainTimeoutRef.current === null) {
           drainNext()
         }

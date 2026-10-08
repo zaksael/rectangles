@@ -21,7 +21,6 @@ interface PlayingScreenProps {
   onOpenSettings: () => void
   onNewGame: () => void
   botSeat?: number
-  botLabel?: string
 }
 
 const ERROR_TOAST_MS = 4000
@@ -41,7 +40,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, botSeat, botLabel }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, botSeat }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
@@ -54,8 +53,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     if (botSeat === undefined || !prev || !state) return
     setBotRecap((recap) => stepBotRecap(recap, prev, state.game, botSeat as 1 | 2))
   }, [state, botSeat])
-  const seatName = (id: '1' | '2') =>
-    Number(id) === botSeat ? (botLabel ?? 'Bot') : (state?.game.players[id].name ?? '')
   const placing = humanTurnState === 'choosingPlacement'
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
@@ -156,13 +153,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const showResultBar = turnState === 'gameOver' && resultHidden
   // Once the game is over nobody is to move, so the header stops marking a player.
   const currentId = turnState === 'gameOver' ? null : state?.game.turn.currentPlayerId
-  const currentName = state && noBreak(seatName(String(state.game.turn.currentPlayerId) as '1' | '2'))
+  const currentName = state && noBreak(state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name)
   let turnStatus: string | null = null
   if (currentName && turnState !== 'gameOver') {
     if (isBotTurn) turnStatus = `${currentName} is playing…`
     else if (turnState === 'awaitingRoll') {
       turnStatus = `${currentName}: roll (D)`
-      const recap = botRecap && botSeat !== undefined && describeBotRecap(noBreak(seatName(String(botSeat) as '1' | '2')), botRecap)
+      const recap = botRecap && botSeat !== undefined && describeBotRecap(noBreak(state.game.players[String(botSeat) as '1' | '2'].name), botRecap)
       if (recap) turnStatus += ` · ${recap}`
     }
     else if (turnState === 'choosingPlacement') {
@@ -226,7 +223,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               >
                 <div className="player-id">
                   <span className="dot" aria-hidden="true" />
-                  <span className="name">{seatName(id)}</span>
+                  <span className="name">{state.game.players[id].name}</span>
                 </div>
                 <span className="scoreline">
                   <span className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'streak last-skip' : 'streak'}>

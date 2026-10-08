@@ -104,6 +104,17 @@ test('exposes the parsed game/series payload from a received state message', () 
   expect(result.current.state).toEqual({ game: fakeGame, series: null })
 })
 
+test('names the bot seat after its difficulty in the state it exposes, leaving the human seat alone', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1, botSeats: 2, botDifficulty: 'Greedy' }))
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+  })
+
+  expect(result.current.state?.game.players['2'].name).toBe('Bot (Greedy)')
+  expect(result.current.state?.game.players['1'].name).toBe('Player 1')
+})
+
 test('exposes the parsed reason/message from a received error message', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
 

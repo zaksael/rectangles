@@ -16,7 +16,6 @@ function renderScreen(
   error: GameError | null = null,
   onNewGame = vi.fn(),
   botSeat?: number,
-  botLabel?: string,
 ) {
   render(
     <PlayingScreen
@@ -26,7 +25,6 @@ function renderScreen(
       onOpenSettings={vi.fn()}
       onNewGame={onNewGame}
       botSeat={botSeat}
-      botLabel={botLabel}
     />,
   )
   return sendAction
@@ -641,23 +639,14 @@ test('the turn status line says when a dead roll must be skipped', () => {
 
 test("the turn status line shows the bot is playing on the bot's turn", () => {
   renderScreen(
-    makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
+    botGame({ current: 2, turnState: 'awaitingRoll' }),
     vi.fn(),
     null,
     vi.fn(),
     2,
-    'Bot (Greedy)',
   )
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Bot (Greedy) is playing…')
-})
-
-test('Vs Bot names the bot seat after its difficulty in the header and leaves the human seat alone', () => {
-  renderScreen(makeState(), vi.fn(), null, vi.fn(), 2, 'Bot (Blocking)')
-
-  expect(screen.getByText('Bot (Blocking)').closest('.player')).toHaveClass('p2')
-  expect(screen.getByText('Player 1').closest('.player')).toHaveClass('p1')
-  expect(screen.queryByText('Player 2')).not.toBeInTheDocument()
 })
 
 interface BotTurn {
@@ -675,6 +664,7 @@ function botGame({ current, turnState, lastRoll = null, botPieces = [], botRerol
   const pieces = botPieces.map(([width, height], i) => ({ topLeft: [0, i] as [number, number], width, height, owner: 2 }))
   const bot = {
     ...base['2'],
+    name: 'Bot (Greedy)',
     board: { ...base['2'].board, pieces, consecutiveSkips: botSkips },
     houseRules: { ...base['2'].houseRules, reroll: { used: botRerollsUsed, limit: 2 } },
   }
@@ -688,7 +678,7 @@ function botGame({ current, turnState, lastRoll = null, botPieces = [], botRerol
 
 // Feeds the screen one state per bot step, the way the socket's paced queue does.
 function renderBotGame(first: GameState) {
-  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn(), botSeat: 2, botLabel: 'Bot (Greedy)' }
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn(), botSeat: 2 }
   const view = render(<PlayingScreen state={first} {...props} />)
   return (next: GameState) => view.rerender(<PlayingScreen state={next} {...props} />)
 }
@@ -767,6 +757,15 @@ test('Local 2P never shows a recap', () => {
   view.rerender(<PlayingScreen state={botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] })} {...props} />)
   expect(recapStatus()).toHaveTextContent('Player 1: roll (D)')
   expect(recapStatus()).not.toHaveTextContent('·')
+})
+
+test("the bot's last roll is captioned and labelled with the bot's name", () => {
+  const update = renderBotGame(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 5] }))
+  expect(screen.getByRole('img', { name: 'Bot (Greedy) rolled 3 and 5' })).toBeInTheDocument()
+
+  update(botGame({ current: 1, turnState: 'awaitingRoll' }))
+
+  expect(screen.getByRole('img', { name: 'Bot (Greedy)’s last roll 3 and 5' })).toHaveTextContent('Bot (Greedy) last')
 })
 
 test('there is no turn status line once the game is over', () => {
