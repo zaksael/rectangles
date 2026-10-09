@@ -1,4 +1,4 @@
-from rectangles.engine.constants import PLAYER_1, PLAYER_2, CellKind
+from rectangles.engine.constants import PLAYER_1, PLAYER_2, STEAL_POINTS, CellKind
 from rectangles.engine.game import Game, TurnState
 from rectangles.engine.models import Cell, SpecialCell
 from rectangles.engine.series import Series
@@ -350,5 +350,25 @@ def test_serialize_game_history_is_null_while_playing_and_a_step_list_at_game_ov
             "placed": {"topLeft": [0, 0], "width": 2, "height": 3},
             "wildcardOriginalRoll": None,
             "score": {"1": 6, "2": 0},
+            "breakdown": {
+                "1": {"area": 6, "prize": 0, "pitfall": 0, "steal": 0, "enclosure": 0},
+                "2": {"area": 0, "prize": 0, "pitfall": 0, "steal": 0, "enclosure": 0},
+            },
         }
     ]
+
+
+def test_serialize_game_history_breakdown_carries_a_steal_and_its_parts_sum_to_the_score():
+    game = Game(board_size=11, steal_enabled=True)
+    game.board.special_cells = frozenset({SpecialCell(CellKind.STEAL, Cell(0, 0), pair_id=0)})
+    game.last_roll = (2, 2)
+    game.state = TurnState.CHOOSING_PLACEMENT
+    game.legal_cache = {(2, 2): {(0, 0)}}
+    assert game.attempt_place((0, 0), 2, 2) is True
+    game.surrender()
+
+    entry = serialize_game(game)["gameOver"]["history"][0]
+
+    assert entry["breakdown"]["1"]["steal"] == STEAL_POINTS
+    assert entry["breakdown"]["2"]["steal"] == -STEAL_POINTS
+    assert {pid: sum(parts.values()) for pid, parts in entry["breakdown"].items()} == entry["score"]

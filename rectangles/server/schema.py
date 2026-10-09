@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import ClassVar
 
@@ -127,9 +127,10 @@ def _serialize_history(game: Game) -> list[dict]:
                 else {"topLeft": list(record.placed.top_left), "width": record.placed.width, "height": record.placed.height}
             ),
             "wildcardOriginalRoll": list(record.wildcard_original_roll) if record.wildcard_original_roll else None,
-            "score": _by_player(scores),
+            "score": _by_player({pid: parts.total for pid, parts in breakdown.items()}),
+            "breakdown": _by_player({pid: asdict(parts) for pid, parts in breakdown.items()}),
         }
-        for record, scores in zip(game.history, game.score_history())
+        for record, breakdown in zip(game.history, game.score_breakdown_history())
     ]
 
 

@@ -38,7 +38,7 @@ from .constants import (
     CellEffect,
     CellKind,
 )
-from .models import Cell, Player, SpecialCell, TurnRecord
+from .models import Cell, Player, ScoreBreakdown, SpecialCell, TurnRecord
 
 
 class TurnState(Enum):
@@ -511,18 +511,25 @@ class Game:
 
     def total_score(self, player: Player) -> int:
         enclosed = self.board.self_enclosed_cell_counts() if self.self_enclosed_penalty_enabled else {}
-        return self._score(player, self._other_player(player), enclosed.get(player.id, 0))
+        return self._breakdown(player, self._other_player(player), enclosed.get(player.id, 0)).total
 
-    def _score(self, player: Player, other: Player, enclosed_cells: int) -> int:
-        score = player.total_area
+    def _breakdown(self, player: Player, other: Player, enclosed_cells: int) -> ScoreBreakdown:
+        points = {}
         for kind, effect in SPECIAL_CELL_KINDS.items():
-            points = self.points_for(kind)
-            score += effect.capturer_sign * player.special_captures.get(kind, 0) * points
-            score += effect.opponent_sign * other.special_captures.get(kind, 0) * points
-        return score - enclosed_cells * SELF_ENCLOSED_PENALTY_PER_CELL
+            points[kind] = (
+                effect.capturer_sign * player.special_captures.get(kind, 0)
+                + effect.opponent_sign * other.special_captures.get(kind, 0)
+            ) * self.points_for(kind)
+        return ScoreBreakdown(
+            area=player.total_area,
+            prize=points[CellKind.PRIZE],
+            pitfall=points[CellKind.PITFALL],
+            steal=points[CellKind.STEAL],
+            enclosure=-enclosed_cells * SELF_ENCLOSED_PENALTY_PER_CELL,
+        )
 
-    def score_history(self) -> list[dict[int, int]]:
-        """Both players' total score after each history record, replayed on a scratch board."""
+    def score_breakdown_history(self) -> list[dict[int, ScoreBreakdown]]:
+        """Both players' score parts after each history record, replayed on a scratch board."""
         board = Board(
             self.board.size,
             special_cells=self.board.special_cells,
@@ -530,7 +537,7 @@ class Game:
             obstacle_cells=self.board.obstacle_cells,
         )
         scratch = {pid: Player(pid, "", p.start_corner) for pid, p in self.players.items()}
-        scores = []
+        steps = []
         for record in self.history:
             if record.placed is not None:
                 rect = record.placed
@@ -541,10 +548,10 @@ class Game:
                     if sc.location in cells:
                         owner.special_captures[sc.kind] = owner.special_captures.get(sc.kind, 0) + 1
             enclosed = board.self_enclosed_cell_counts() if self.self_enclosed_penalty_enabled else {}
-            scores.append(
-                {pid: self._score(p, scratch[PLAYER_2 if pid == PLAYER_1 else PLAYER_1], enclosed.get(pid, 0)) for pid, p in scratch.items()}
+            steps.append(
+                {pid: self._breakdown(p, scratch[PLAYER_2 if pid == PLAYER_1 else PLAYER_1], enclosed.get(pid, 0)) for pid, p in scratch.items()}
             )
-        return scores
+        return steps
 
     def potential_stats(self, player: Player) -> dict[str, int]:
         reachable = self.board.reachable_empty_cells(player)

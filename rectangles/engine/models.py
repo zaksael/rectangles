@@ -53,6 +53,21 @@ class TurnRecord:
     wildcard_original_roll: tuple[int, int] | None = None  # set only if this turn's wildcard number was edited
 
 
+@dataclass(frozen=True)
+class ScoreBreakdown:
+    """What each scoring rule adds to one player's total; the parts sum to the total."""
+
+    area: int = 0
+    prize: int = 0
+    pitfall: int = 0
+    steal: int = 0
+    enclosure: int = 0
+
+    @property
+    def total(self) -> int:
+        return self.area + self.prize + self.pitfall + self.steal + self.enclosure
+
+
 @dataclass
 class Player:
     id: int

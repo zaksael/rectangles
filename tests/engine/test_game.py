@@ -16,7 +16,7 @@ from rectangles.engine.constants import (
     CellKind,
 )
 from rectangles.engine.game import Game, GameOverReason, TurnState
-from rectangles.engine.models import Cell, Rectangle, SpecialCell, TurnRecord
+from rectangles.engine.models import Cell, Rectangle, ScoreBreakdown, SpecialCell, TurnRecord
 
 
 class ScriptedRandom:
@@ -1132,6 +1132,10 @@ def test_self_enclosed_penalty_drops_once_the_hole_is_filled():
     assert game.total_score(p1) == p1.total_area  # hole filled - live penalty drops immediately
 
 
+def _totals(game: Game) -> list[dict[int, int]]:
+    return [{pid: parts.total for pid, parts in step.items()} for step in game.score_breakdown_history()]
+
+
 def test_score_history_tracks_steal_per_step_and_ends_at_total_score():
     # Steal moves STEAL_POINTS between players, so the per-step score must carry
     # the capturer's gain and the opponent's loss, not just area.
@@ -1146,11 +1150,11 @@ def test_score_history_tracks_steal_per_step_and_ends_at_total_score():
     game.roll_dice()
     assert game.attempt_place((9, 9), 2, 2) is True
 
-    assert game.score_history() == [
+    assert _totals(game) == [
         {PLAYER_1: 36 + STEAL_POINTS, PLAYER_2: -STEAL_POINTS},
         {PLAYER_1: 36 + STEAL_POINTS, PLAYER_2: 4 - STEAL_POINTS},
     ]
-    assert game.score_history()[-1] == {PLAYER_1: game.total_score(p1), PLAYER_2: game.total_score(p2)}
+    assert _totals(game)[-1] == {PLAYER_1: game.total_score(p1), PLAYER_2: game.total_score(p2)}
 
 
 def test_score_history_applies_the_self_enclosed_penalty_at_the_step_it_appears_and_repeats_on_a_skip():
@@ -1163,7 +1167,62 @@ def test_score_history_applies_the_self_enclosed_penalty_at_the_step_it_appears_
         for step in one
     ]
 
-    scores = game.score_history()
+    scores = _totals(game)
 
     assert [s[PLAYER_1] for s in scores] == [1, 1, 2, 2, 3, 4 - SELF_ENCLOSED_PENALTY_PER_CELL]
     assert [s[PLAYER_2] for s in scores] == [0, 1, 1, 1, 1, 1]
+
+
+def test_score_breakdown_history_of_a_plain_placement_is_all_area():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3]))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 3) is True
+
+    assert game.score_breakdown_history() == [
+        {PLAYER_1: ScoreBreakdown(area=6), PLAYER_2: ScoreBreakdown()},
+    ]
+
+
+def test_score_breakdown_history_credits_a_prize_to_the_capturer_only():
+    game = Game(board_size=11, rng=ScriptedRandom([2, 2]))
+    game.board.special_cells = _special(CellKind.PRIZE, (0, 0))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    prize = game.points_for(CellKind.PRIZE)
+    assert game.score_breakdown_history() == [
+        {PLAYER_1: ScoreBreakdown(area=4, prize=prize), PLAYER_2: ScoreBreakdown()},
+    ]
+
+
+def test_score_breakdown_history_charges_a_pitfall_to_the_capturer_only():
+    game = Game(board_size=11, rng=ScriptedRandom([2, 2]))
+    game.board.special_cells = _special(CellKind.PITFALL, (0, 0))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    assert game.score_breakdown_history() == [
+        {PLAYER_1: ScoreBreakdown(area=4, pitfall=-PITFALL_PENALTY_POINTS), PLAYER_2: ScoreBreakdown()},
+    ]
+
+
+def test_score_breakdown_history_moves_a_steal_from_the_opponent_to_the_capturer():
+    game = Game(board_size=11, rng=ScriptedRandom([2, 2]))
+    game.board.special_cells = _special(CellKind.STEAL, (0, 0))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    assert game.score_breakdown_history() == [
+        {PLAYER_1: ScoreBreakdown(area=4, steal=STEAL_POINTS), PLAYER_2: ScoreBreakdown(steal=-STEAL_POINTS)},
+    ]
+
+
+def test_score_breakdown_history_shows_the_enclosure_penalty_from_the_step_it_appears():
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    ring = [(1, 2), (3, 2), (2, 1), (2, 3)]
+    game.history = [TurnRecord(PLAYER_1, (1, 1), placed=Rectangle(cell, 1, 1, PLAYER_1)) for cell in ring]
+
+    steps = game.score_breakdown_history()
+
+    assert [s[PLAYER_1].enclosure for s in steps] == [0, 0, 0, -SELF_ENCLOSED_PENALTY_PER_CELL]
+    assert [s[PLAYER_1].area for s in steps] == [1, 2, 3, 4]
