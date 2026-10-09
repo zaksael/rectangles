@@ -63,12 +63,22 @@ interface SpecialCellHouseRule {
   points: number
 }
 
+// What each scoring rule adds to one player's total at a step (signed); the parts sum to that player's score.
+export interface ScoreParts {
+  area: number
+  prize: number
+  pitfall: number
+  steal: number
+  enclosure: number
+}
+
 export interface HistoryEntry {
   playerId: number
   roll: [number, number]
   placed: { topLeft: [number, number]; width: number; height: number } | null
   wildcardOriginalRoll: [number, number] | null
   score: { '1': number; '2': number }
+  breakdown: { '1': ScoreParts; '2': ScoreParts }
 }
 
 export interface GameWireState {

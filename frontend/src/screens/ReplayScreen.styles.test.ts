@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor } from '../testUtils/styles'
+import { readCss, ruleFor, textContrast } from '../testUtils/styles'
 
 const css = readCss('screens/ReplayScreen.css')
 
@@ -19,4 +19,16 @@ test('on Replay the piece just placed gets a 3px ink outline and a light tint, h
 
   expect(block).toMatch(/border-width:\s*3px/)
   expect(block).toMatch(/background:\s*color-mix\(in srgb, white 30%, transparent\)/)
+})
+
+test('the Total is the table\'s strongest figure', () => {
+  const block = ruleFor(css, '.replay .breakdown tfoot td')
+
+  expect(block).toMatch(/font-size:\s*20px/)
+  expect(block).toMatch(/font-weight:\s*600/)
+})
+
+test('muted zeros and the caption\'s step label stay AA (4.5:1) on the ledger', () => {
+  expect(textContrast(css, '.replay .breakdown td.zero')).toBeGreaterThanOrEqual(4.5)
+  expect(textContrast(css, '.replay .caption .step')).toBeGreaterThanOrEqual(4.5)
 })

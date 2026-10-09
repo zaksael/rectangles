@@ -5,7 +5,7 @@ import { noBreak } from '../noBreak'
 import { useAutoOpenDialog } from '../useAutoOpenDialog'
 
 
-const SELF_ENCLOSED_PENALTY_PER_CELL = 1 // fixed on the server, not sent on the wire or configurable per-game
+export const SELF_ENCLOSED_PENALTY_PER_CELL = 1 // fixed on the server, not sent on the wire or configurable per-game
 
 interface ModifierRow {
   label: string
@@ -48,7 +48,7 @@ const MODIFIER_ROWS: ModifierRow[] = [
   },
 ]
 
-function formatSigned(value: number): string | number {
+export function formatSigned(value: number): string | number {
   return value < 0 ? `−${-value}` : value
 }
 
@@ -58,7 +58,7 @@ function nameOf(game: GameWireState, id: number) {
   return noBreak(game.players[key(id)].name)
 }
 
-function reasonText(game: GameWireState): string | null {
+export function reasonText(game: GameWireState): string | null {
   const { reason, playerId } = game.gameOver
   if (reason === 'boardFull') return 'board settled'
   if (reason === null || playerId === null) return null

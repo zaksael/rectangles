@@ -40,9 +40,78 @@
   line-height: 1.2;
 }
 
-.replay .turn-line {
+.replay .caption {
   margin: 0;
   font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+}
+
+.replay .caption .step {
+  display: block;
+  margin-bottom: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+/* The score table: one row per rule that is on, the Total set apart under a rule in ink. */
+.replay .breakdown {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.replay .breakdown th,
+.replay .breakdown td {
+  padding: 5px 12px;
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.replay .breakdown tbody th,
+.replay .breakdown tfoot th,
+.replay .breakdown td:first-child {
+  text-align: left;
+  font-family: inherit;
+}
+
+.replay .breakdown thead th,
+.replay .breakdown thead td {
+  padding: 10px 12px;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.replay .breakdown thead .dot {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.replay .breakdown td.zero {
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+
+.replay .breakdown tfoot td,
+.replay .breakdown tfoot th {
+  border-top: 1px solid var(--ink);
+  padding: 8px 12px;
+}
+
+.replay .breakdown tfoot td {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.replay .breakdown tfoot th {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .replay .rail .btn {
