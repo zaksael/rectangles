@@ -161,7 +161,9 @@ const KEY_GUARD_MS = 500
 
 function useGuardClock() {
   vi.useFakeTimers()
-  onTestFinished(() => vi.useRealTimers())
+  onTestFinished(() => {
+    vi.useRealTimers()
+  })
 }
 
 test('on the overlay, n is ignored until the guard window has passed', () => {
@@ -576,7 +578,7 @@ test('a series round offers Replay for the round just played, by button and by t
 
 test('the last round of a series, which offers Series Result, offers Replay as well', () => {
   const onReplay = vi.fn()
-  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onSeriesResult: vi.fn(), onReplay }
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn(), onReplay }
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 3, isComplete: true }) }, handlers)
   expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VNR]$/, ''))).toEqual(['View Board', 'Series Result', 'Replay'])
   fireEvent.click(within(dialog).getByRole('button', { name: /^Replay/ }))
