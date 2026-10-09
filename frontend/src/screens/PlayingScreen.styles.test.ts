@@ -88,3 +88,11 @@ test('the turn instruction is as large as the 16px player names it sits under, a
   expect(block).toMatch(/font-size:\s*16px/)
   expect(block).toMatch(/font-weight:\s*500/)
 })
+
+const touchControls = css.match(/@media \(any-pointer: coarse\) \{[\s\S]*?\.toolbar-actions \{([^}]*)\}\s*\.frame \{([^}]*)\}/)
+
+test('on any touch input the toolbar buttons and dice are 44px tall, and --chrome grows by the same 10px so the board still fits', () => {
+  expect(touchControls).not.toBeNull()
+  expect(touchControls![1]).toMatch(/--control-height:\s*44px/)
+  expect(touchControls![2]).toMatch(/--chrome:\s*210px/) // 200px at 34px controls, plus the 10px the controls grow
+})

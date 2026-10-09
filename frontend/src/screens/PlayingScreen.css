@@ -252,6 +252,13 @@
   .frame.reserves-picker {
     --chrome: 257px;
   }
+  /* The toolbar buttons and dice are 44px too; the picker row already holds 92px, so only a frame without it grows (by the same 10px). */
+  .toolbar-actions {
+    --control-height: 44px;
+  }
+  .frame {
+    --chrome: 210px;
+  }
 }
 .dice {
   grid-column: 2;
