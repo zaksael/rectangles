@@ -190,12 +190,13 @@ function advanceFor(series: SeriesWireState | null, handlers: { onNewGame: () =>
   return series.isComplete ? { label: 'Series Result', onAdvance: handlers.onSeriesResult } : { label: 'Next Round', onAdvance: handlers.onNextRound }
 }
 
-function AdvanceButton({ label, onAdvance }: { label: string; onAdvance?: () => void }) {
+// A result button with its key chip (N by default; Replay uses R).
+function AdvanceButton({ label, onAdvance, keyName = 'N' }: { label: string; onAdvance?: () => void; keyName?: string }) {
   if (!onAdvance) return null
   return (
-    <button className="btn secondary" onClick={onAdvance} aria-keyshortcuts="n">
+    <button className="btn secondary" onClick={onAdvance} aria-keyshortcuts={keyName.toLowerCase()}>
       {label}
-      <KeyBadge>N</KeyBadge>
+      <KeyBadge>{keyName}</KeyBadge>
     </button>
   )
 }
@@ -281,11 +282,9 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin)
   const advance = advanceFor(series, { onNewGame, onNextRound, onSeriesResult })
-  // A series round gets its Replay with the series cards.
-  const replay = series === null ? onReplay : undefined
 
   return (
-    <ResultDialog winner={winner} describedBy={story ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={advance.onAdvance} onReplay={replay}>
+    <ResultDialog winner={winner} describedBy={story ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={advance.onAdvance} onReplay={onReplay}>
       {detail && <p className="reason">{detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
@@ -354,12 +353,7 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
           <KeyBadge>V</KeyBadge>
         </button>
         <AdvanceButton {...advance} />
-        {replay && (
-          <button className="btn secondary" onClick={replay} aria-keyshortcuts="r">
-            Replay
-            <KeyBadge>R</KeyBadge>
-          </button>
-        )}
+        <AdvanceButton label="Replay" onAdvance={onReplay} keyName="R" />
       </div>
     </ResultDialog>
   )
@@ -369,10 +363,10 @@ const seriesHeadline = (game: GameWireState, series: SeriesWireState) =>
   series.winner === null ? 'Series tied' : `${nameOf(game, series.winner)} wins the series`
 
 // The series' result: a per-round ledger ending in the total that decided it.
-export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard }: { game: GameWireState; series: SeriesWireState; onNewGame: () => void; onViewBoard: () => void }) {
+export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onReplay }: { game: GameWireState; series: SeriesWireState; onNewGame: () => void; onViewBoard: () => void; onReplay?: () => void }) {
   const { winner } = series
   return (
-    <ResultDialog winner={winner} describedBy={winner !== null ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={onNewGame}>
+    <ResultDialog winner={winner} describedBy={winner !== null ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={onNewGame} onReplay={onReplay}>
       <p className="reason">{`${series.length} rounds · most points wins`}</p>
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
@@ -409,6 +403,7 @@ export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard }: { 
           <KeyBadge>V</KeyBadge>
         </button>
         <AdvanceButton label="New Game" onAdvance={onNewGame} />
+        <AdvanceButton label="Replay Last Round" onAdvance={onReplay} keyName="R" />
       </div>
     </ResultDialog>
   )

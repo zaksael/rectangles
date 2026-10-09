@@ -96,3 +96,14 @@ test('on any touch input the toolbar buttons and dice are 44px tall, and --chrom
   expect(touchControls![1]).toMatch(/--control-height:\s*44px/)
   expect(touchControls![2]).toMatch(/--chrome:\s*210px/) // 200px at 34px controls, plus the 10px the controls grow
 })
+
+test('the game-over buttons share the row equally but are never narrower than their label, so Series Result and Replay Last Round stay on one line', () => {
+  expect(ruleFor(css, '.game-over .actions .btn')).toMatch(/min-width:\s*max-content/)
+})
+
+test('under 480px the game-over actions stack full width, since three buttons side by side wrap their labels in the narrow dialog', () => {
+  const media = css.match(/@media \(max-width: 480px\) \{([\s\S]*?)\n\}/)![1]
+
+  expect(media).toMatch(/\.game-over \.actions \{[^}]*flex-direction:\s*column/)
+  expect(media).toMatch(/\.game-over \.actions \.btn \{[^}]*min-width:\s*0/)
+})

@@ -23,6 +23,8 @@ const IDLE_CONNECT_PARAMS: Pick<StartGameParams, 'botSeats' | 'botDifficulty'> &
 function App() {
   const [screen, setScreen] = useState<Screen>('MODE_SELECT')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // Back from Replay shows the card Replay was opened from; only the series card differs from the default.
+  const [replayFromSeriesResult, setReplayFromSeriesResult] = useState(false)
   const [connectParams, setConnectParams] = useState(IDLE_CONNECT_PARAMS)
 
   const gameSocket = useGameSocket(connectParams)
@@ -47,6 +49,7 @@ function App() {
     gameSocket.disconnect()
     setConnectParams(IDLE_CONNECT_PARAMS)
     setSettingsOpen(false)
+    setReplayFromSeriesResult(false)
     setScreen('MODE_SELECT')
   }
 
@@ -72,7 +75,11 @@ function App() {
           sendAction={gameSocket.sendAction}
           onOpenSettings={() => setSettingsOpen(true)}
           onNewGame={handleNewGame}
-          onReplay={() => setScreen('REPLAY')}
+          onReplay={(fromSeriesResult) => {
+            setReplayFromSeriesResult(fromSeriesResult)
+            setScreen('REPLAY')
+          }}
+          initialSeriesResultOpen={replayFromSeriesResult}
           botSeat={connectParams.botSeats}
         />
         {settingsOpen && gameSocket.state && (

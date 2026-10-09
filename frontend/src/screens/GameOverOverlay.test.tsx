@@ -565,8 +565,39 @@ test('a standalone game offers Replay, by button and by the r key', () => {
   expect(onReplay).toHaveBeenCalledTimes(2)
 })
 
-test('a series round offers no Replay yet', () => {
-  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] } })
-  render(<GameOverOverlay game={game} series={makeSeries()} onNewGame={vi.fn()} onViewBoard={vi.fn()} onReplay={vi.fn()} />)
+test('a series round offers Replay for the round just played, by button and by the r key', () => {
+  const onReplay = vi.fn()
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn(), onReplay }
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() }, handlers)
+  fireEvent.click(within(dialog).getByRole('button', { name: /^Replay/ }))
+  fireEvent.keyDown(dialog, { key: 'r' })
+  expect(onReplay).toHaveBeenCalledTimes(2)
+})
+
+test('the last round of a series, which offers Series Result, offers Replay as well', () => {
+  const onReplay = vi.fn()
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onSeriesResult: vi.fn(), onReplay }
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries({ gamesPlayed: 3, isComplete: true }) }, handlers)
+  expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VNR]$/, ''))).toEqual(['View Board', 'Series Result', 'Replay'])
+  fireEvent.click(within(dialog).getByRole('button', { name: /^Replay/ }))
+  expect(onReplay).toHaveBeenCalledOnce()
+})
+
+test('the series result replays only the last round, and says so', () => {
+  const onReplay = vi.fn()
+  const series = makeSeries({ gamesPlayed: 3, isComplete: true, winner: 1, scores: { '1': 459, '2': 440 } })
+  render(<SeriesResultOverlay game={makeGame()} series={series} onNewGame={vi.fn()} onViewBoard={vi.fn()} onReplay={onReplay} />)
+  const dialog = screen.getByRole('dialog')
+  expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VNR]$/, ''))).toEqual(['View Board', 'New Game', 'Replay Last Round'])
+  fireEvent.click(within(dialog).getByRole('button', { name: /^Replay Last Round/ }))
+  fireEvent.keyDown(dialog, { key: 'r' })
+  expect(onReplay).toHaveBeenCalledTimes(2)
+})
+
+test('with no replay handler neither series card shows a Replay button', () => {
+  const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
+  expect(within(dialog).queryByRole('button', { name: /^Replay/ })).toBeNull()
+  cleanup()
+  render(<SeriesResultOverlay game={makeGame()} series={makeSeries({ isComplete: true, winner: 1 })} onNewGame={vi.fn()} onViewBoard={vi.fn()} />)
   expect(screen.queryByRole('button', { name: /^Replay/ })).toBeNull()
 })

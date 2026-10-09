@@ -7,6 +7,7 @@ import { ReplayScreen } from './screens/ReplayScreen'
 export function FixtureApp({ name }: { name: string }) {
   const state = buildFixture(name)
   const [replaying, setReplaying] = useState(false)
+  const [fromSeriesResult, setFromSeriesResult] = useState(false)
   useEffect(() => {
     console.info(`fixture "${name}" is active: actions are ignored`)
   }, [name])
@@ -19,7 +20,11 @@ export function FixtureApp({ name }: { name: string }) {
       sendAction={(action) => console.info('fixture ignored action', JSON.stringify(action))}
       onOpenSettings={() => {}}
       onNewGame={() => {}}
-      onReplay={() => setReplaying(true)}
+      onReplay={(fromResult) => {
+        setFromSeriesResult(fromResult)
+        setReplaying(true)
+      }}
+      initialSeriesResultOpen={fromSeriesResult}
     />
   )
 }

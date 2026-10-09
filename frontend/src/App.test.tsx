@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
-import { makeGame } from './fixtures/gameFixtures'
+import { makeGame, makeSeries } from './fixtures/gameFixtures'
 
 beforeEach(() => {
   localStorage.clear()
@@ -154,6 +154,43 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
 
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
+  })
+
+  function finishedSeries(isComplete: boolean) {
+    render(<App />)
+    startGameAndOpen()
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series: makeSeries({ gamesPlayed: 3, isComplete, winner: isComplete ? 1 : null }),
+      })
+    })
+  }
+
+  it('comes back from a round card\'s Replay to that round card', () => {
+    finishedSeries(false)
+
+    fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+    expect(screen.getByRole('heading', { name: 'Replay' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(screen.getByRole('button', { name: /Next Round/ })).toBeInTheDocument()
+  })
+
+  it('comes back from the series result\'s Replay Last Round to the series result, not the last round', () => {
+    finishedSeries(true)
+
+    fireEvent.click(screen.getByRole('button', { name: /Series Result/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Replay Last Round/ }))
+    expect(screen.getByRole('heading', { name: 'Replay' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(screen.getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
   })
 
   it('opens Replay from the game-over dialog, and Back returns to that dialog', () => {

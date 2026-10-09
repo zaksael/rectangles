@@ -20,7 +20,10 @@ interface PlayingScreenProps {
   sendAction: (action: GameAction) => void
   onOpenSettings: () => void
   onNewGame: () => void
-  onReplay?: () => void
+  // Says which card Replay was opened from, so Back can show that card again.
+  onReplay?: (fromSeriesResult: boolean) => void
+  // Back from Replay on a finished series: open the series card rather than the last round's.
+  initialSeriesResultOpen?: boolean
   botSeat?: number
 }
 
@@ -41,7 +44,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, onReplay, botSeat }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, onReplay, initialSeriesResultOpen = false, botSeat }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
@@ -68,7 +71,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // After the game ends, the player can put the result away to look at the final board.
   const [resultHidden, setResultHidden] = useState(false)
   // After the last round, the series card sits on top of the round card until the next game.
-  const [seriesResultOpen, setSeriesResultOpen] = useState(false)
+  const [seriesResultOpen, setSeriesResultOpen] = useState(initialSeriesResultOpen)
   // A new round is a fresh game, so its result starts out shown.
   useEffect(() => {
     if (turnState !== 'gameOver') {
@@ -283,9 +286,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       )}
       {state && turnState === 'gameOver' && !resultHidden &&
         (seriesResultOpen && state.series ? (
-          <SeriesResultOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} />
+          <SeriesResultOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onReplay={onReplay && (() => onReplay(true))} />
         ) : (
-          <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} onReplay={onReplay} />
+          <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} onReplay={onReplay && (() => onReplay(false))} />
         ))}
       <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
         <div className="toolbar-leading">

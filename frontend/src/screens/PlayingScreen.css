@@ -421,6 +421,19 @@ dialog.game-over[data-outcome='tie']::before {
 .game-over .actions {
   margin-top: 24px;
 }
+/* Equal widths, but a button never gets narrower than its label (Series Result, Replay Last Round). */
+.game-over .actions .btn {
+  min-width: max-content;
+}
+/* The dialog is the viewport less 32px, too narrow for three buttons in a row: stack them. */
+@media (max-width: 480px) {
+  .game-over .actions {
+    flex-direction: column;
+  }
+  .game-over .actions .btn {
+    min-width: 0;
+  }
+}
 dialog.modal .reason {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;

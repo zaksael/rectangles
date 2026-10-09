@@ -1661,6 +1661,28 @@ test('View Board on the series card pins the series bar, and View Result brings 
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
 })
 
+const replayProps = (onReplay = vi.fn()) => ({ error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn(), onReplay })
+
+test('Replay on a series round card says it was opened from the round card', () => {
+  const onReplay = vi.fn()
+  render(<PlayingScreen {...replayProps(onReplay)} state={{ ...gameOverState(), series: makeSeries() }} />)
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Replay/ }))
+  expect(onReplay).toHaveBeenCalledWith(false)
+})
+
+test('Replay Last Round on the series card says it was opened from the series card', () => {
+  const onReplay = vi.fn()
+  render(<PlayingScreen {...replayProps(onReplay)} state={lastRoundState()} />)
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Series Result/ }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^Replay Last Round/ }))
+  expect(onReplay).toHaveBeenCalledWith(true)
+})
+
+test('coming back from Replay to a finished series, the series card can open straight away', () => {
+  render(<PlayingScreen {...replayProps()} state={lastRoundState()} initialSeriesResultOpen />)
+  expect(within(screen.getByRole('dialog')).getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
+})
+
 function specialRules(rules: Partial<Pick<GameWireState['houseRules'], 'prize' | 'pitfall' | 'steal'>>) {
   return { ...makeGame().houseRules, ...rules }
 }
