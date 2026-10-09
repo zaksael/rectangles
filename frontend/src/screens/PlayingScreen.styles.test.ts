@@ -81,3 +81,10 @@ test('a frame with a legend gives the board 24px less height, whichever --chrome
   expect(ruleFor(css, '.frame.has-legend')).toMatch(/--legend-height:\s*24px/)
   expect(ruleFor(readCss('components/Board.css'), '.board')).toMatch(/var\(--chrome, 176px\) - var\(--legend-height, 0px\)/)
 })
+
+test('the turn instruction is as large as the 16px player names it sits under, at the same 500 weight', () => {
+  const block = ruleFor(css, '.turn-status')
+
+  expect(block).toMatch(/font-size:\s*16px/)
+  expect(block).toMatch(/font-weight:\s*500/)
+})
