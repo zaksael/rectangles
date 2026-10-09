@@ -96,7 +96,8 @@
   border-bottom: 1px solid var(--line);
 }
 
-.replay .breakdown thead .dot {
+.replay .breakdown thead .dot,
+.replay .chart-readout .dot {
   display: inline-block;
   vertical-align: middle;
   margin-right: 6px;
@@ -168,6 +169,10 @@
     background: var(--ink);
     color: var(--ledger);
   }
+
+  .replay .chart-hit:hover {
+    fill: color-mix(in srgb, var(--ink) 6%, transparent);
+  }
 }
 
 .replay .chart-wrap {
@@ -196,6 +201,56 @@
 
 .replay .chart {
   display: block;
+}
+
+.replay .chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.replay .chart-readout {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.replay .chart-hint {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+/* The dots sit on the element itself here, not under a .p1 / .p2 ancestor as on Playing. */
+.replay .dot.p1 {
+  background: var(--p1);
+}
+
+.replay .dot.p2 {
+  background: var(--p2);
+}
+
+/* One full-height target per turn, drawn under the lines. Its tint on hover and its ring on keyboard focus are the whole cue. */
+.replay .chart-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.replay .chart-hit:focus-visible {
+  outline: none;
+  fill: color-mix(in srgb, var(--ink) 6%, transparent);
+  stroke: var(--ink);
+  stroke-width: 2px;
+}
+
+.replay .chart-line,
+.replay .chart-dot,
+.replay .chart-marker {
+  pointer-events: none;
 }
 
 .replay .chart-axis {

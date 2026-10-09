@@ -96,3 +96,38 @@ test('the caption keeps room for three lines of text, so a longer or shorter cap
   expect(step).toMatch(/margin-bottom:\s*4px/)
   expect(block).toMatch(/min-height:\s*71px/) // the step label's 13px + 4px, then 3 lines of 18px
 })
+
+test('the player dots in the table header and the readout carry their player colour', () => {
+  expect(ruleFor(css, '.replay .dot.p1')).toMatch(/background:\s*var\(--p1\)/)
+  expect(ruleFor(css, '.replay .dot.p2')).toMatch(/background:\s*var\(--p2\)/)
+})
+
+test('a jump target is invisible until hovered (where there is a hover) or keyboard-focused', () => {
+  const target = ruleFor(css, '.replay .chart-hit')
+  const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]
+  const focus = ruleFor(css, '.replay .chart-hit:focus-visible')
+
+  expect(target).toMatch(/fill:\s*transparent/)
+  expect(target).toMatch(/cursor:\s*pointer/)
+  expect(media).toMatch(/\.replay \.chart-hit:hover\s*\{[^}]*fill:\s*color-mix\(in srgb, var\(--ink\) 6%, transparent\)/)
+  expect(focus).toMatch(/fill:\s*color-mix\(in srgb, var\(--ink\) 6%, transparent\)/)
+  expect(focus).toMatch(/stroke:\s*var\(--ink\)/)
+  expect(focus).toMatch(/stroke-width:\s*2px/)
+  expect(focus).toMatch(/outline:\s*none/) // the stroke is the focus ring
+})
+
+test('lines, dots and the marker let the pointer through to the jump targets under them', () => {
+  expect(css).toMatch(/\.replay \.chart-line,\s*\.replay \.chart-dot,\s*\.replay \.chart-marker \{[^}]*pointer-events:\s*none/)
+})
+
+test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.5:1) on its own row', () => {
+  const readout = ruleFor(css, '.replay .chart-readout')
+  const hint = ruleFor(css, '.replay .chart-hint')
+
+  expect(readout).toMatch(/font-family:\s*'IBM Plex Mono'/)
+  expect(readout).toMatch(/font-size:\s*12px/)
+  expect(readout).toMatch(/margin-left:\s*auto/)
+  expect(hint).toMatch(/font-size:\s*12px/)
+  expect(hint).toMatch(/flex-basis:\s*100%/)
+  expect(textContrast(css, '.replay .chart-hint')).toBeGreaterThanOrEqual(4.5)
+})

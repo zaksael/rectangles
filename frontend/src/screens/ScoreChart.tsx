@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import type { HistoryEntry } from '../gameTypes'
 import { formatSigned } from './GameOverOverlay'
 
@@ -28,8 +28,18 @@ function useBoxSize() {
   return [ref, size] as const
 }
 
-export function ScoreChart({ history, step }: { history: HistoryEntry[]; step: number }) {
+interface ScoreChartProps {
+  history: HistoryEntry[]
+  step: number
+  names: { '1': string; '2': string }
+  onJump: (turn: number) => void
+}
+
+export function ScoreChart({ history, step, names, onJump }: ScoreChartProps) {
   const [ref, { width, height }] = useBoxSize()
+  // The one tab stop: the turn that last had focus inside the chart, else the current turn.
+  const [roving, setRoving] = useState<number | null>(null)
+  const targets = useRef<(SVGRectElement | null)[]>([])
   const turns = history.length
   const series = { '1': seriesFor(history, '1'), '2': seriesFor(history, '2') }
   const all = [...series['1'], ...series['2']]
@@ -39,18 +49,49 @@ export function ScoreChart({ history, step }: { history: HistoryEntry[]; step: n
   const y = (score: number) => height - BOTTOM - ((score - bottom) / (top - bottom)) * (height - TOP - BOTTOM)
   const linePoints = (id: '1' | '2', from: number, to: number) =>
     series[id].slice(from, to + 1).map((score, i) => `${x(from + i)},${y(score)}`).join(' ')
+  const tabStop = roving ?? step
+  const targetWidth = (width - LEFT - RIGHT) / turns
+
+  // Arrows, Home and End move focus (not the step); Enter and Space jump. They are the chart's own while it has focus.
+  const onKeyDown = (e: KeyboardEvent<SVGRectElement>, turn: number) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return
+    const to: Record<string, number> = { ArrowRight: turn + 1, ArrowDown: turn + 1, ArrowLeft: turn - 1, ArrowUp: turn - 1, Home: 0, End: turns }
+    if (e.key in to) targets.current[Math.max(0, Math.min(turns, to[e.key]))]?.focus()
+    else if (e.key === 'Enter' || e.key === ' ') onJump(turn)
+    else return
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  const onBlur = (e: FocusEvent<SVGSVGElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setRoving(null)
+  }
   const gridValues = Array.from({ length: (top - bottom) / GRID_STEP + 1 }, (_, i) => bottom + i * GRID_STEP)
 
   return (
     <div className="chart-wrap">
       <div className="chart-head">
         <span className="chart-label">Score history</span>
+        {turns > 0 && (
+          <>
+            <span className="chart-readout">
+              {IDS.map((id) => (
+                <span key={id}>
+                  <span className={`dot p${id}`} aria-hidden="true" />
+                  <span className="visually-hidden">{`${names[id]} `}</span>
+                  {formatSigned(series[id][step])}
+                </span>
+              ))}
+              <span>{`Turn ${step}`}</span>
+            </span>
+            <span className="chart-hint">Select a turn to jump to it</span>
+          </>
+        )}
       </div>
       <div className="chart-body" ref={ref}>
         {turns === 0 ? (
           <div className="chart-empty">Nothing to chart: no moves were played</div>
         ) : (
-          <svg className="chart" role="group" aria-label="Score history" viewBox={`0 0 ${width} ${height}`} width={width} height={height}>
+          <svg className="chart" role="group" aria-label={`Score history, ${names['1']} and ${names['2']}`} onBlur={onBlur} viewBox={`0 0 ${width} ${height}`} width={width} height={height}>
             {gridValues.map((value) => (
               <g key={value}>
                 <line x1={LEFT} x2={width - RIGHT} y1={y(value)} y2={y(value)} stroke={value === 0 && bottom < 0 ? 'var(--ink)' : 'var(--line)'} strokeWidth={1} />
@@ -66,6 +107,24 @@ export function ScoreChart({ history, step }: { history: HistoryEntry[]; step: n
                   {turn}
                 </text>
               ))}
+            {series['1'].map((_, turn) => (
+              <rect
+                key={turn}
+                ref={(el) => void (targets.current[turn] = el)}
+                className="chart-hit"
+                x={x(turn) - targetWidth / 2}
+                y={TOP}
+                width={targetWidth}
+                height={height - TOP - BOTTOM}
+                role="button"
+                tabIndex={turn === tabStop ? 0 : -1}
+                aria-current={turn === step ? 'true' : undefined}
+                aria-label={`Jump to turn ${turn}, ${names['1']} ${formatSigned(series['1'][turn])}, ${names['2']} ${formatSigned(series['2'][turn])}`}
+                onClick={() => onJump(turn)}
+                onFocus={() => setRoving(turn)}
+                onKeyDown={(e) => onKeyDown(e, turn)}
+              />
+            ))}
             <line className="chart-marker" x1={x(step)} x2={x(step)} y1={TOP} y2={height - BOTTOM} stroke="var(--ink)" strokeWidth={1} />
             {IDS.map((id) => (
               <g key={id}>

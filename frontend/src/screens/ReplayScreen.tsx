@@ -203,7 +203,7 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
         </div>
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} />
-        <ScoreChart history={history} step={step} />
+        <ScoreChart history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
         <div className="controls">
           <div className="transport">
             <button className="btn secondary" disabled={step === 0} onClick={() => goTo(() => 0)}>First</button>

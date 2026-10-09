@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { HistoryEntry } from '../gameTypes'
 import { ScoreChart } from './ScoreChart'
@@ -19,7 +19,9 @@ const entry = (one: number, two: number): HistoryEntry => ({
 })
 
 // Scores per turn after turn 0; the chart is 320x300 here, so the plot runs x 36..310 and y 274 (bottom) to 10 (top).
-const draw = (scores: [number, number][], step = 0) => render(<ScoreChart history={scores.map(([a, b]) => entry(a, b))} step={step} />)
+const NAMES = { '1': 'Player 1', '2': 'Player 2' }
+const draw = (scores: [number, number][], step = 0, onJump: (turn: number) => void = () => {}, names = NAMES) =>
+  render(<ScoreChart history={scores.map(([a, b]) => entry(a, b))} step={step} names={names} onJump={onJump} />)
 // Y labels sit right-aligned at x=24 (12px left of the plot), turn numbers along y=292 (8px above the bottom).
 const yLabels = (container: HTMLElement) => [...container.querySelectorAll('svg text[x="24"]')].map((t) => t.textContent)
 const turnLabels = (container: HTMLElement) => [...container.querySelectorAll('svg text[y="292"]')].map((t) => t.textContent)
@@ -99,9 +101,9 @@ test('a vertical ink marker stands on the current turn', () => {
   expect(marker).toHaveAttribute('stroke', 'var(--ink)')
 })
 
-test('the chart is a labelled group and its axis numbers are hidden from screen readers', () => {
+test('the chart is a group that names both players, and its axis numbers are hidden from screen readers', () => {
   const { container } = draw(CLIMB)
-  expect(screen.getByRole('group', { name: 'Score history' })).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Score history, Player 1 and Player 2' })).toBeTruthy()
   expect(container.querySelectorAll('svg text:not([aria-hidden="true"])')).toHaveLength(0)
 })
 
@@ -111,4 +113,97 @@ test('the chart is drawn at the size its box reports', () => {
   const { container } = draw(CLIMB, 1)
   act(() => report([{ contentRect: { width: 280, height: 200 } } as ResizeObserverEntry], {} as ResizeObserver))
   expect(container.querySelector('svg')).toHaveAttribute('viewBox', '0 0 280 200')
+})
+
+const targets = () => screen.getAllByRole('button', { name: /^Jump to turn/ })
+const key = (target: Element, name: string) => fireEvent.keyDown(target, { key: name })
+
+test('every turn, the start included, has a jump target that says both scores', () => {
+  draw(CLIMB)
+  expect(targets().map((t) => t.getAttribute('aria-label'))).toEqual([
+    'Jump to turn 0, Player 1 0, Player 2 0',
+    'Jump to turn 1, Player 1 25, Player 2 0',
+    'Jump to turn 2, Player 1 50, Player 2 25',
+  ])
+})
+
+test('a bot is named in the jump targets and the group', () => {
+  draw(CLIMB, 0, () => {}, { '1': 'Player 1', '2': 'Bot (hard)' })
+  expect(targets()[1]).toHaveAccessibleName('Jump to turn 1, Player 1 25, Bot (hard) 0')
+  expect(screen.getByRole('group', { name: 'Score history, Player 1 and Bot (hard)' })).toBeTruthy()
+})
+
+test('clicking a turn jumps to it', () => {
+  const onJump = vi.fn()
+  draw(CLIMB, 0, onJump)
+  fireEvent.click(targets()[2])
+  expect(onJump).toHaveBeenCalledWith(2)
+})
+
+test('the chart is one tab stop, on the current turn', () => {
+  draw(CLIMB, 1)
+  expect(targets().map((t) => t.getAttribute('tabindex'))).toEqual(['-1', '0', '-1'])
+  expect(targets()[1]).toHaveAttribute('aria-current', 'true')
+  expect(targets()[0]).not.toHaveAttribute('aria-current')
+})
+
+test('arrow keys move focus between turns without jumping, and the tab stop goes with the focus', () => {
+  const onJump = vi.fn()
+  draw(CLIMB, 1, onJump)
+  targets()[1].focus()
+  key(targets()[1], 'ArrowRight')
+  expect(targets()[2]).toHaveFocus()
+  expect(targets().map((t) => t.getAttribute('tabindex'))).toEqual(['-1', '-1', '0'])
+  key(targets()[2], 'ArrowLeft')
+  key(targets()[1], 'ArrowUp')
+  expect(targets()[0]).toHaveFocus()
+  key(targets()[0], 'ArrowDown')
+  expect(targets()[1]).toHaveFocus()
+  key(targets()[1], 'End')
+  expect(targets()[2]).toHaveFocus()
+  key(targets()[2], 'Home')
+  expect(targets()[0]).toHaveFocus()
+  expect(onJump).not.toHaveBeenCalled()
+})
+
+test('the arrows stop at either end', () => {
+  draw(CLIMB, 0)
+  targets()[0].focus()
+  key(targets()[0], 'ArrowLeft')
+  expect(targets()[0]).toHaveFocus()
+  key(targets()[0], 'End')
+  key(targets()[2], 'ArrowRight')
+  expect(targets()[2]).toHaveFocus()
+})
+
+test('Enter and Space jump to the focused turn', () => {
+  const onJump = vi.fn()
+  draw(CLIMB, 0, onJump)
+  targets()[2].focus()
+  key(targets()[2], 'Enter')
+  key(targets()[2], ' ')
+  expect(onJump.mock.calls).toEqual([[2], [2]])
+})
+
+test('leaving the chart gives the tab stop back to the current turn', () => {
+  draw(CLIMB, 1)
+  targets()[1].focus()
+  key(targets()[1], 'ArrowRight')
+  act(() => targets()[2].blur())
+  expect(targets().map((t) => t.getAttribute('tabindex'))).toEqual(['-1', '0', '-1'])
+})
+
+test('the header carries the hint and a readout of both scores and the turn', () => {
+  const { container } = draw(CLIMB, 1)
+  expect(screen.getByText('Select a turn to jump to it')).toBeTruthy()
+  const readout = container.querySelector('.chart-readout')!
+  expect(readout).toHaveTextContent('Player 1 25')
+  expect(readout).toHaveTextContent('Player 2 0')
+  expect(readout).toHaveTextContent('Turn 1')
+})
+
+test('a game with no moves has neither the hint nor the readout', () => {
+  const { container } = draw([])
+  expect(screen.queryByText('Select a turn to jump to it')).toBeNull()
+  expect(container.querySelector('.chart-readout')).toBeNull()
 })
