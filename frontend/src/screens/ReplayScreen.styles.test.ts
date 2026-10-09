@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor, textContrast } from '../testUtils/styles'
+import { contrast, ledger, mix, mixShare, readCss, ruleFor, textContrast, token, tokensCss } from '../testUtils/styles'
 
 const css = readCss('screens/ReplayScreen.css')
 
@@ -48,4 +48,41 @@ test('Pause and the chosen speed are shown inverted, in ink on the ledger', () =
 
 test('nothing on Replay animates, so autoplay has no motion to reduce', () => {
   expect(css).not.toMatch(/transition|animation|@keyframes/)
+})
+
+test('the rail never outgrows the window: it stops at the window height and scrolls by itself beyond that', () => {
+  const block = ruleFor(css, '.replay .rail')
+
+  expect(block).toMatch(/max-height:\s*calc\(100dvh - 2px\)/)
+  expect(block).toMatch(/overflow-y:\s*auto/)
+})
+
+test('the chart is 300px tall but is the one thing that gives up height, down to 160px', () => {
+  const block = ruleFor(css, '.replay .chart-body')
+
+  expect(block).toMatch(/flex:\s*1 1 300px/)
+  expect(block).toMatch(/min-height:\s*160px/)
+  expect(block).toMatch(/max-height:\s*300px/)
+  expect(block).toMatch(/overflow:\s*hidden/) // so the drawing never props the box open
+})
+
+test('chart axis numbers are 12px mono and stay AA (4.5:1) on the ledger', () => {
+  const block = ruleFor(css, '.replay .chart-axis')
+  const ink = token(tokensCss, '--ink')
+
+  expect(block).toMatch(/font-size:\s*12px/)
+  expect(block).toMatch(/font-family:\s*'IBM Plex Mono'/)
+  expect(contrast(mix(ink, mixShare(block, 'fill', '--ink'), ledger), ledger)).toBeGreaterThanOrEqual(4.5)
+})
+
+test('the chart label and the empty-chart text stay AA (4.5:1) on the ledger', () => {
+  expect(textContrast(css, '.replay .chart-label')).toBeGreaterThanOrEqual(4.5)
+  expect(textContrast(css, '.replay .chart-empty')).toBeGreaterThanOrEqual(4.5)
+})
+
+test('the rail is 360px wide in all, padding included, so the chart gets a 320px box', () => {
+  const block = ruleFor(css, '.replay .rail')
+
+  expect(block).toMatch(/box-sizing:\s*border-box/)
+  expect(block).toMatch(/width:\s*360px/)
 })

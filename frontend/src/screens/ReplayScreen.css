@@ -18,6 +18,7 @@
 }
 
 .replay .rail {
+  box-sizing: border-box;
   width: 360px;
   flex: none;
   display: flex;
@@ -25,6 +26,9 @@
   gap: 16px;
   padding: 20px;
   border-left: 1px solid var(--line);
+  /* The frame never outgrows the window: past this the chart has given up its height and the rail scrolls by itself. */
+  max-height: calc(100dvh - 2px);
+  overflow-y: auto;
 }
 
 .replay .rail-head {
@@ -160,4 +164,49 @@
     background: var(--ink);
     color: var(--ledger);
   }
+}
+
+.replay .chart-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.replay .chart-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+/* The one flexible thing in the rail: 300px when there is room, down to 160px in a short window. */
+.replay .chart-body {
+  flex: 1 1 300px;
+  min-height: 160px;
+  max-height: 300px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.replay .chart {
+  display: block;
+}
+
+.replay .chart-axis {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  fill: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+.replay .chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 24px;
+  text-align: center;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
 }

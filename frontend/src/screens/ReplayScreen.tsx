@@ -3,6 +3,7 @@ import { Board } from '../components/Board'
 import type { GameWireState, HistoryEntry, PieceState, ScoreParts } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { formatSigned, reasonText, SELF_ENCLOSED_PENALTY_PER_CELL } from './GameOverOverlay'
+import { ScoreChart } from './ScoreChart'
 import './ReplayScreen.css'
 
 // The board as it stood after the first `step` moves: the final game's rules and special cells, with only those pieces on it.
@@ -202,6 +203,7 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
         </div>
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} />
+        <ScoreChart history={history} step={step} />
         <div className="controls">
           <div className="transport">
             <button className="btn secondary" disabled={step === 0} onClick={() => goTo(() => 0)}>First</button>

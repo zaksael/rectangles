@@ -434,3 +434,17 @@ test('Space does nothing in a game with no moves', () => {
   press(' ')
   expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
 })
+
+test('the rail charts the score history, and the chart marker follows the step', () => {
+  const { container } = render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  expect(screen.getByText('Score history', { selector: '.chart-label' })).toBeTruthy()
+  const marker = () => container.querySelector('line.chart-marker')!.getAttribute('x1')
+  expect(marker()).toBe('36')
+  next()
+  expect(marker()).toBe('173')
+})
+
+test('a game with no moves charts nothing', () => {
+  render(<ReplayScreen game={replayGame([])} onBack={vi.fn()} />)
+  expect(screen.getByText('Nothing to chart: no moves were played')).toBeTruthy()
+})
