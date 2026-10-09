@@ -155,7 +155,7 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
   // Stepping by hand takes over from autoplay.
   const goTo = (to: (step: number) => number) => {
     setPlaying(false)
-    setStep(to)
+    setStep((s) => Math.max(0, Math.min(history.length, to(s))))
   }
   const togglePlay = () => {
     if (!playing && atEnd) setStep(0)
@@ -165,12 +165,11 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
   // Keys work from anywhere on the screen (the chart's own arrows come with the chart). Space is swallowed even on a focused
   // button, so it plays instead of also pressing that button; Enter keeps its native action.
   useEffect(() => {
-    const clamped = (to: number) => Math.max(0, Math.min(history.length, to))
     const actions: Record<string, () => void> = {
-      ArrowRight: () => goTo((s) => clamped(s + 1)),
-      ArrowDown: () => goTo((s) => clamped(s + 1)),
-      ArrowLeft: () => goTo((s) => clamped(s - 1)),
-      ArrowUp: () => goTo((s) => clamped(s - 1)),
+      ArrowRight: () => goTo((s) => s + 1),
+      ArrowDown: () => goTo((s) => s + 1),
+      ArrowLeft: () => goTo((s) => s - 1),
+      ArrowUp: () => goTo((s) => s - 1),
       Home: () => goTo(() => 0),
       End: () => goTo(() => history.length),
       ' ': () => history.length > 0 && togglePlay(),

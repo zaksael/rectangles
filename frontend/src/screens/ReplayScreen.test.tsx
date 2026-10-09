@@ -97,6 +97,24 @@ test('hatching follows the step: a pocket the first move seals shows only from t
   expect(container.querySelectorAll('.enclosed-hatch')).toHaveLength(0)
 })
 
+test('clicks queued in one batch stop at the last turn and back at the start', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
+  act(() => {
+    click('Next')
+    click('Next')
+    click('Next')
+  })
+  expect(screen.getByText('Turn 2 of 2')).toBeTruthy()
+  act(() => {
+    click('Prev')
+    click('Prev')
+    click('Prev')
+    click('Prev')
+  })
+  expect(screen.getByText('Start of game')).toBeTruthy()
+})
+
 test('Back calls onBack', () => {
   const onBack = vi.fn()
   render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={onBack} />)
