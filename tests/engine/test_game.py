@@ -16,7 +16,7 @@ from rectangles.engine.constants import (
     CellKind,
 )
 from rectangles.engine.game import Game, GameOverReason, TurnState
-from rectangles.engine.models import Cell, SpecialCell
+from rectangles.engine.models import Cell, Rectangle, SpecialCell, TurnRecord
 
 
 class ScriptedRandom:
@@ -1130,3 +1130,40 @@ def test_self_enclosed_penalty_drops_once_the_hole_is_filled():
 
     game.board.place(p1, (2, 2), w=1, h=1)
     assert game.total_score(p1) == p1.total_area  # hole filled - live penalty drops immediately
+
+
+def test_score_history_tracks_steal_per_step_and_ends_at_total_score():
+    # Steal moves STEAL_POINTS between players, so the per-step score must carry
+    # the capturer's gain and the opponent's loss, not just area.
+    game = Game(board_size=11, rng=ScriptedRandom([6, 6, 2, 2]))
+    game.steal_enabled = True
+    game.board.special_cells = _special(CellKind.STEAL, (5, 5))
+    p1, p2 = game.players[PLAYER_1], game.players[PLAYER_2]
+
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 6, 6) is True
+    game.end_turn()
+    game.roll_dice()
+    assert game.attempt_place((9, 9), 2, 2) is True
+
+    assert game.score_history() == [
+        {PLAYER_1: 36 + STEAL_POINTS, PLAYER_2: -STEAL_POINTS},
+        {PLAYER_1: 36 + STEAL_POINTS, PLAYER_2: 4 - STEAL_POINTS},
+    ]
+    assert game.score_history()[-1] == {PLAYER_1: game.total_score(p1), PLAYER_2: game.total_score(p2)}
+
+
+def test_score_history_applies_the_self_enclosed_penalty_at_the_step_it_appears_and_repeats_on_a_skip():
+    game = Game(board_size=6, self_enclosed_penalty_enabled=True)
+    one = [(PLAYER_1, (1, 2)), (PLAYER_2, (5, 5)), (PLAYER_1, (3, 2)), None, (PLAYER_1, (2, 1)), (PLAYER_1, (2, 3))]
+    game.history = [
+        TurnRecord(PLAYER_2, (1, 1), placed=None)
+        if step is None
+        else TurnRecord(step[0], (1, 1), placed=Rectangle(step[1], 1, 1, step[0]))
+        for step in one
+    ]
+
+    scores = game.score_history()
+
+    assert [s[PLAYER_1] for s in scores] == [1, 1, 2, 2, 3, 4 - SELF_ENCLOSED_PENALTY_PER_CELL]
+    assert [s[PLAYER_2] for s in scores] == [0, 1, 1, 1, 1, 1]

@@ -111,8 +111,26 @@ def serialize_game(game: Game) -> dict:
             "reason": _GAME_OVER_REASON_NAMES.get(game.game_over_reason),
             "playerId": game.blocked_player_id or game.skipped_out_player_id or game.surrendered_player_id,
             "winner": winner,
+            "history": _serialize_history(game) if game.state == TurnState.GAME_OVER else None,
         },
     }
+
+
+def _serialize_history(game: Game) -> list[dict]:
+    return [
+        {
+            "playerId": record.player_id,
+            "roll": list(record.roll),
+            "placed": (
+                None
+                if record.placed is None
+                else {"topLeft": list(record.placed.top_left), "width": record.placed.width, "height": record.placed.height}
+            ),
+            "wildcardOriginalRoll": list(record.wildcard_original_roll) if record.wildcard_original_roll else None,
+            "score": _by_player(scores),
+        }
+        for record, scores in zip(game.history, game.score_history())
+    ]
 
 
 def _by_player(values: dict[int, object]) -> dict:

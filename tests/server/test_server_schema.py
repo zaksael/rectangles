@@ -331,3 +331,24 @@ def test_state_msg_with_series():
         "series": {"length": 3},
     }
     assert StateMsg.from_json(msg.to_json()) == msg
+
+
+def test_serialize_game_history_is_null_while_playing_and_a_step_list_at_game_over():
+    game = Game(board_size=11)
+    game.last_roll = (2, 3)
+    game.state = TurnState.CHOOSING_PLACEMENT
+    game.legal_cache = {(2, 3): {(0, 0)}}
+    assert game.attempt_place((0, 0), 2, 3) is True
+    assert serialize_game(game)["gameOver"]["history"] is None
+
+    game.surrender()
+
+    assert serialize_game(game)["gameOver"]["history"] == [
+        {
+            "playerId": 1,
+            "roll": [2, 3],
+            "placed": {"topLeft": [0, 0], "width": 2, "height": 3},
+            "wildcardOriginalRoll": None,
+            "score": {"1": 6, "2": 0},
+        }
+    ]

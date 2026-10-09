@@ -510,16 +510,41 @@ class Game:
         return self.players[other_id]
 
     def total_score(self, player: Player) -> int:
-        other = self._other_player(player)
+        enclosed = self.board.self_enclosed_cell_counts() if self.self_enclosed_penalty_enabled else {}
+        return self._score(player, self._other_player(player), enclosed.get(player.id, 0))
+
+    def _score(self, player: Player, other: Player, enclosed_cells: int) -> int:
         score = player.total_area
         for kind, effect in SPECIAL_CELL_KINDS.items():
             points = self.points_for(kind)
             score += effect.capturer_sign * player.special_captures.get(kind, 0) * points
             score += effect.opponent_sign * other.special_captures.get(kind, 0) * points
-        if self.self_enclosed_penalty_enabled:
-            penalty = self.board.self_enclosed_cell_counts().get(player.id, 0)
-            score -= penalty * SELF_ENCLOSED_PENALTY_PER_CELL
-        return score
+        return score - enclosed_cells * SELF_ENCLOSED_PENALTY_PER_CELL
+
+    def score_history(self) -> list[dict[int, int]]:
+        """Both players' total score after each history record, replayed on a scratch board."""
+        board = Board(
+            self.board.size,
+            special_cells=self.board.special_cells,
+            wall_edges=self.board.wall_edges,
+            obstacle_cells=self.board.obstacle_cells,
+        )
+        scratch = {pid: Player(pid, "", p.start_corner) for pid, p in self.players.items()}
+        scores = []
+        for record in self.history:
+            if record.placed is not None:
+                rect = record.placed
+                owner = scratch[rect.owner]
+                board.place(owner, rect.top_left, rect.width, rect.height)
+                cells = set(rect.cells())
+                for sc in board.special_cells:
+                    if sc.location in cells:
+                        owner.special_captures[sc.kind] = owner.special_captures.get(sc.kind, 0) + 1
+            enclosed = board.self_enclosed_cell_counts() if self.self_enclosed_penalty_enabled else {}
+            scores.append(
+                {pid: self._score(p, scratch[PLAYER_2 if pid == PLAYER_1 else PLAYER_1], enclosed.get(pid, 0)) for pid, p in scratch.items()}
+            )
+        return scores
 
     def potential_stats(self, player: Player) -> dict[str, int]:
         reachable = self.board.reachable_empty_cells(player)
