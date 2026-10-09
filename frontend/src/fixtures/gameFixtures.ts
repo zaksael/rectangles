@@ -43,7 +43,7 @@ export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState 
         },
       },
     },
-    gameOver: { reason: null, playerId: null, winner: null },
+    gameOver: { reason: null, playerId: null, winner: null, history: null },
     ...overrides,
   }
 }

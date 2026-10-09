@@ -1,4 +1,4 @@
-import type { GameWireState } from '../gameTypes'
+import type { GameWireState, HistoryEntry } from '../gameTypes'
 import type { GameState } from '../useGameSocket'
 import { makeGame, makeSeries } from './gameFixtures'
 
@@ -35,12 +35,28 @@ function midGame(): GameWireState {
   })
 }
 
+// The mid-game position's four pieces in play order, then a skip; a real game can't be driven to a given step in a browser.
+const move = (playerId: number, topLeft: [number, number], width: number, height: number, score: [number, number]): HistoryEntry => ({
+  playerId,
+  roll: [width, height],
+  placed: { topLeft, width, height },
+  wildcardOriginalRoll: null,
+  score: { '1': score[0], '2': score[1] },
+})
+const HISTORY: HistoryEntry[] = [
+  move(1, [0, 0], 4, 3, [12, 0]),
+  move(2, [8, 6], 4, 2, [12, 8]),
+  move(1, [3, 0], 2, 3, [18, 8]),
+  move(2, [5, 8], 2, 3, [18, 14]),
+  { playerId: 1, roll: [6, 6], placed: null, wildcardOriginalRoll: null, score: { '1': 18, '2': 14 } },
+]
+
 function gameOver(): GameWireState {
   const game = midGame()
   return {
     ...game,
     turn: { ...game.turn, turnState: 'gameOver' },
-    gameOver: { reason: 'boardFull', playerId: null, winner: 1 },
+    gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: HISTORY },
   }
 }
 

@@ -1,0 +1,71 @@
+.replay {
+  --chrome: 50px; /* the board fills the window height less the frame's own padding */
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  width: fit-content;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+}
+
+.replay .board-wrap {
+  padding: 24px;
+}
+
+.replay .piece-outline.last {
+  border-width: 3px;
+  background: color-mix(in srgb, white 30%, transparent);
+}
+
+.replay .rail {
+  width: 360px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-left: 1px solid var(--line);
+}
+
+.replay .rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.replay .rail-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.replay .turn-line {
+  margin: 0;
+  font-size: 13px;
+}
+
+.replay .rail .btn {
+  font-weight: 500;
+  padding: 8px 16px;
+}
+
+.replay .transport {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: auto;
+}
+
+.replay .transport .btn {
+  padding: 8px 0;
+  min-width: 0;
+}
+
+/* The stepping buttons are clicked over and over while scrubbing, so they invert on hover, but only where there is a hover. */
+@media (hover: hover) {
+  .rail .btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--ledger);
+  }
+}

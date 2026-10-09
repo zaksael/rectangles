@@ -124,11 +124,12 @@ function headlineText(game: GameWireState, inSeries = false): string {
 // is ignored rather than starting something new from a stray press.
 const ADVANCE_KEY_GUARD_MS = 500
 
-// V goes back to the board or the result, N starts a new game; Ctrl, Cmd and Alt combos belong to the browser.
-function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void) {
+// V goes back to the board or the result, N starts a new game, R opens the replay; Ctrl, Cmd and Alt combos belong to the browser.
+function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void, onReplay?: () => void) {
   if (event.ctrlKey || event.metaKey || event.altKey) return
   const key = event.key.toLowerCase()
   if (key === 'v') onView()
+  else if (key === 'r') onReplay?.()
   else if (key === 'n' && !event.repeat && Date.now() >= armedAt) onNewGame?.()
 }
 
@@ -156,11 +157,12 @@ interface ResultDialogProps {
   describedBy?: string
   onViewBoard: () => void
   onAdvance?: () => void
+  onReplay?: () => void
   children: ReactNode
 }
 
 // The dialog shell both result cards share. Escape shows the board rather than dismissing the result, so the native close is suppressed.
-function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, children }: ResultDialogProps) {
+function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, onReplay, children }: ResultDialogProps) {
   const dialogRef = useAutoOpenDialog()
   const armedAt = useRef(Date.now() + ADVANCE_KEY_GUARD_MS)
   return (
@@ -172,7 +174,7 @@ function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, children }:
         e.preventDefault()
         onViewBoard()
       }}
-      onKeyDown={(e) => handleResultKey(e, armedAt.current, onViewBoard, onAdvance)}
+      onKeyDown={(e) => handleResultKey(e, armedAt.current, onViewBoard, onAdvance, onReplay)}
       aria-labelledby="gameover-title"
       aria-describedby={describedBy}
     >
@@ -266,9 +268,10 @@ interface GameOverOverlayProps {
   onViewBoard: () => void
   onNextRound?: () => void
   onSeriesResult?: () => void
+  onReplay?: () => void
 }
 
-export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound, onSeriesResult }: GameOverOverlayProps) {
+export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound, onSeriesResult, onReplay }: GameOverOverlayProps) {
   const { winner, reason: endReason } = game.gameOver
   // A series round says where it falls in the series; a settled board adds nothing to that.
   const detail = series === null ? reasonText(game) : [`Round ${series.gamesPlayed} of ${series.length}`, endReason !== 'boardFull' && reasonText(game)].filter(Boolean).join(' · ')
@@ -278,9 +281,11 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin)
   const advance = advanceFor(series, { onNewGame, onNextRound, onSeriesResult })
+  // A series round gets its Replay with the series cards.
+  const replay = series === null ? onReplay : undefined
 
   return (
-    <ResultDialog winner={winner} describedBy={story ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={advance.onAdvance}>
+    <ResultDialog winner={winner} describedBy={story ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={advance.onAdvance} onReplay={replay}>
       {detail && <p className="reason">{detail}</p>}
       <h2 id="gameover-title">
         {winner !== null && <span className={`dot p${winner}`} aria-hidden="true" />}
@@ -349,6 +354,12 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
           <KeyBadge>V</KeyBadge>
         </button>
         <AdvanceButton {...advance} />
+        {replay && (
+          <button className="btn secondary" onClick={replay} aria-keyshortcuts="r">
+            Replay
+            <KeyBadge>R</KeyBadge>
+          </button>
+        )}
       </div>
     </ResultDialog>
   )

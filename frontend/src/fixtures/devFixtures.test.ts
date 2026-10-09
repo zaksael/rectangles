@@ -27,7 +27,8 @@ describe('buildFixture', () => {
   it('gameover: a finished game with a reason and a winner, no series', () => {
     const state = buildFixture('gameover')
     expect(state?.game.turn.turnState).toBe('gameOver')
-    expect(state?.game.gameOver).toEqual({ reason: 'boardFull', playerId: null, winner: 1 })
+    expect(state?.game.gameOver).toMatchObject({ reason: 'boardFull', playerId: null, winner: 1 })
+    expect(state?.game.gameOver.history).toHaveLength(5) // so Replay has something to step through
     expect(state?.series).toBeNull()
   })
 

@@ -145,7 +145,7 @@ describe('App', () => {
         type: 'state',
         game: makeGame({
           turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
-          gameOver: { reason: 'boardFull', playerId: null, winner: 1 },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: null,
       })
@@ -154,6 +154,29 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
 
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
+  })
+
+  it('opens Replay from the game-over dialog, and Back returns to that dialog', () => {
+    render(<App />)
+    startGameAndOpen()
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series: null,
+      })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+    expect(screen.getByRole('heading', { name: 'Replay' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Replay/ })).toBeInTheDocument()
   })
 
   it("hands the Vs Bot seat to Playing so the human's Roll button is hidden on the bot turn", () => {

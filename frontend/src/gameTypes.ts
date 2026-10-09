@@ -63,6 +63,14 @@ interface SpecialCellHouseRule {
   points: number
 }
 
+export interface HistoryEntry {
+  playerId: number
+  roll: [number, number]
+  placed: { topLeft: [number, number]; width: number; height: number } | null
+  wildcardOriginalRoll: [number, number] | null
+  score: { '1': number; '2': number }
+}
+
 export interface GameWireState {
   board: { size: number; skipLimit: number }
   turn: {
@@ -92,6 +100,8 @@ export interface GameWireState {
     reason: GameOverReasonName | null
     playerId: number | null
     winner: number | null
+    // One entry per move, sent only once the game is over.
+    history?: HistoryEntry[] | null
   }
 }
 

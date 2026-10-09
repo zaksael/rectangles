@@ -3,6 +3,7 @@ import type { Screen } from './screens'
 import { ConnectionLostModal } from './screens/ConnectionLostModal'
 import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScreen'
 import { PlayingScreen } from './screens/PlayingScreen'
+import { ReplayScreen } from './screens/ReplayScreen'
 import { SettingsOverlay } from './screens/SettingsOverlay'
 import { botName, useGameSocket } from './useGameSocket'
 import { useShiftHeld } from './useShiftHeld'
@@ -71,6 +72,7 @@ function App() {
           sendAction={gameSocket.sendAction}
           onOpenSettings={() => setSettingsOpen(true)}
           onNewGame={handleNewGame}
+          onReplay={() => setScreen('REPLAY')}
           botSeat={connectParams.botSeats}
         />
         {settingsOpen && gameSocket.state && (
@@ -85,6 +87,10 @@ function App() {
         )}
       </>
     )
+  }
+
+  if (screen === 'REPLAY' && gameSocket.state) {
+    return <ReplayScreen game={gameSocket.state.game} onBack={() => setScreen('PLAYING')} />
   }
 }
 

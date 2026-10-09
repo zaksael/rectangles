@@ -555,3 +555,18 @@ test('a tied series bar reads "Series tied"', () => {
   render(<GameOverBar game={makeGame()} series={makeSeries({ isComplete: true, winner: null, scores: { '1': 465, '2': 465 } })} seriesResult onViewResult={vi.fn()} onNewGame={vi.fn()} />)
   expect(within(screen.getByRole('region', { name: 'Series result' })).getByText('Series tied')).toBeTruthy()
 })
+
+test('a standalone game offers Replay, by button and by the r key', () => {
+  const onReplay = vi.fn()
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] } })
+  render(<GameOverOverlay game={game} onNewGame={vi.fn()} onViewBoard={vi.fn()} onReplay={onReplay} />)
+  fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'r' })
+  expect(onReplay).toHaveBeenCalledTimes(2)
+})
+
+test('a series round offers no Replay yet', () => {
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] } })
+  render(<GameOverOverlay game={game} series={makeSeries()} onNewGame={vi.fn()} onViewBoard={vi.fn()} onReplay={vi.fn()} />)
+  expect(screen.queryByRole('button', { name: /^Replay/ })).toBeNull()
+})

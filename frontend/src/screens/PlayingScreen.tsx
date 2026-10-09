@@ -20,6 +20,7 @@ interface PlayingScreenProps {
   sendAction: (action: GameAction) => void
   onOpenSettings: () => void
   onNewGame: () => void
+  onReplay?: () => void
   botSeat?: number
 }
 
@@ -40,7 +41,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, botSeat }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, onReplay, botSeat }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
@@ -284,7 +285,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         (seriesResultOpen && state.series ? (
           <SeriesResultOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} />
         ) : (
-          <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
+          <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} onReplay={onReplay} />
         ))}
       <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
         <div className="toolbar-leading">
