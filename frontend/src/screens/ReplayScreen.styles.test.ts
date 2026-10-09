@@ -3,8 +3,8 @@ import { contrast, ledger, mix, mixShare, readCss, ruleFor, textContrast, token,
 
 const css = readCss('screens/ReplayScreen.css')
 
-test('the board is fitted to the window with the rail beside it, leaving 50px of chrome', () => {
-  expect(ruleFor(css, '.replay')).toMatch(/--chrome:\s*50px/)
+test('the board is fitted to the window with the rail beside it, leaving 52px of chrome: the frame\'s 24px padding and 1px border, and the board\'s own 1px border, each twice', () => {
+  expect(ruleFor(css, '.replay')).toMatch(/--chrome:\s*52px/)
 })
 
 test('the stepping buttons invert on hover only where there is a hover, and a disabled one does not', () => {

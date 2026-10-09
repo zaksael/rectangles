@@ -1,5 +1,5 @@
 .replay {
-  --chrome: 50px; /* the board fills the window height less the frame's own padding */
+  --chrome: 52px; /* the board fills the window height less the frame's padding and border and the board's own border */
   display: flex;
   justify-content: center;
   align-items: stretch;
