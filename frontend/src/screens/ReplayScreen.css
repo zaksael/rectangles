@@ -47,6 +47,9 @@
 .replay .caption {
   margin: 0;
   font-size: 13px;
+  line-height: 18px;
+  /* Room for the step label and three lines: a caption that wraps differently from step to step must not resize the chart. */
+  min-height: 71px;
   color: color-mix(in srgb, var(--ink) 82%, transparent);
 }
 
@@ -55,6 +58,7 @@
   margin-bottom: 4px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
+  line-height: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 75%, transparent);

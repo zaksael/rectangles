@@ -86,3 +86,13 @@ test('the rail is 360px wide in all, padding included, so the chart gets a 320px
   expect(block).toMatch(/box-sizing:\s*border-box/)
   expect(block).toMatch(/width:\s*360px/)
 })
+
+test('the caption keeps room for three lines of text, so a longer or shorter caption does not resize the chart', () => {
+  const block = ruleFor(css, '.replay .caption')
+  const step = ruleFor(css, '.replay .caption .step')
+
+  expect(block).toMatch(/line-height:\s*18px/)
+  expect(step).toMatch(/line-height:\s*13px/)
+  expect(step).toMatch(/margin-bottom:\s*4px/)
+  expect(block).toMatch(/min-height:\s*71px/) // the step label's 13px + 4px, then 3 lines of 18px
+})
