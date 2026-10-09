@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Board } from '../components/Board'
 import type { GameWireState, HistoryEntry, PieceState, ScoreParts } from '../gameTypes'
 import { noBreak } from '../noBreak'
@@ -127,10 +127,68 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
   )
 }
 
+// One step every this many milliseconds (the Pygame replay's values), the same for a skip as for a placement.
+const SPEEDS = [
+  { label: 'Slow', ms: 1200 },
+  { label: 'Normal', ms: 600 },
+  { label: 'Fast', ms: 250 },
+] as const
+
 export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: () => void }) {
   const history = game.gameOver.history ?? []
   const [step, setStep] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(SPEEDS[1])
   const lastPlaced = history[step - 1]?.placed?.topLeft ?? null
+  const atEnd = step === history.length
+
+  useEffect(() => {
+    if (!playing) return
+    const timer = setTimeout(() => {
+      setStep(step + 1)
+      if (step + 1 === history.length) setPlaying(false)
+    }, speed.ms)
+    return () => clearTimeout(timer)
+  }, [playing, step, speed, history.length])
+
+  // Stepping by hand takes over from autoplay.
+  const goTo = (to: (step: number) => number) => {
+    setPlaying(false)
+    setStep(to)
+  }
+  const togglePlay = () => {
+    if (!playing && atEnd) setStep(0)
+    setPlaying(!playing)
+  }
+
+  // Keys work from anywhere on the screen (the chart's own arrows come with the chart). Space is swallowed even on a focused
+  // button, so it plays instead of also pressing that button; Enter keeps its native action.
+  useEffect(() => {
+    const clamped = (to: number) => Math.max(0, Math.min(history.length, to))
+    const actions: Record<string, () => void> = {
+      ArrowRight: () => goTo((s) => clamped(s + 1)),
+      ArrowDown: () => goTo((s) => clamped(s + 1)),
+      ArrowLeft: () => goTo((s) => clamped(s - 1)),
+      ArrowUp: () => goTo((s) => clamped(s - 1)),
+      Home: () => goTo(() => 0),
+      End: () => goTo(() => history.length),
+      ' ': () => history.length > 0 && togglePlay(),
+      Escape: onBack,
+    }
+    const handled = (e: KeyboardEvent) => !(e.ctrlKey || e.metaKey || e.altKey) && e.key in actions
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!handled(e)) return
+      e.preventDefault()
+      actions[e.key]()
+    }
+    const onKeyUp = (e: KeyboardEvent) => e.key === ' ' && handled(e) && e.preventDefault()
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+  })
 
   return (
     <div className="replay">
@@ -144,11 +202,21 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
         </div>
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} />
-        <div className="transport">
-          <button className="btn secondary" disabled={step === 0} onClick={() => setStep(0)}>First</button>
-          <button className="btn secondary" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>Prev</button>
-          <button className="btn secondary" disabled={step === history.length} onClick={() => setStep((s) => s + 1)}>Next</button>
-          <button className="btn secondary" disabled={step === history.length} onClick={() => setStep(history.length)}>Last</button>
+        <div className="controls">
+          <div className="transport">
+            <button className="btn secondary" disabled={step === 0} onClick={() => goTo(() => 0)}>First</button>
+            <button className="btn secondary" disabled={step === 0} onClick={() => goTo((s) => s - 1)}>Prev</button>
+            <button className={`btn secondary play${playing ? ' playing' : ''}`} disabled={history.length === 0} onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
+            <button className="btn secondary" disabled={atEnd} onClick={() => goTo((s) => s + 1)}>Next</button>
+            <button className="btn secondary" disabled={atEnd} onClick={() => goTo(() => history.length)}>Last</button>
+          </div>
+          <div className="speed" role="group" aria-label="Playback speed">
+            {SPEEDS.map((option) => (
+              <button key={option.label} className="btn secondary" aria-pressed={option === speed} onClick={() => setSpeed(option)}>
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

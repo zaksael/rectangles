@@ -1,10 +1,13 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { GameWireState, HistoryEntry, ScoreParts } from '../gameTypes'
 import { makeGame } from '../fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 const parts = (overrides: Partial<ScoreParts> = {}): ScoreParts => ({ area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0, ...overrides })
 const total = (p: ScoreParts) => p.area + p.prize + p.pitfall + p.steal + p.enclosure
@@ -252,4 +255,182 @@ test('the table is labelled by its step, has scoped headers, and is not a live r
 test('the opponent is named in the table header as on Playing', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES, (g) => { g.players['2'].name = 'Bot (hard)' })} onBack={vi.fn()} />)
   expect(screen.getByRole('columnheader', { name: 'Bot (hard)' })).toBeTruthy()
+})
+
+const THREE_MOVES = [place(1, [0, 0], 2, 2), place(2, [3, 3], 2, 2), place(1, [0, 3], 1, 1)]
+const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
+const tick = (ms: number) => act(() => void vi.advanceTimersByTime(ms))
+const renderPlaying = (history = THREE_MOVES) => {
+  vi.useFakeTimers()
+  return render(<ReplayScreen game={replayGame(history)} onBack={vi.fn()} />)
+}
+
+test('Play sits between Prev and Next, turns into Pause and steps once a Normal interval later', () => {
+  renderPlaying()
+  expect(within(document.querySelector('.transport')!).getAllByRole('button').map((b) => b.textContent)).toEqual(['First', 'Prev', 'Play', 'Next', 'Last'])
+  click('Play')
+  expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
+  tick(599)
+  expect(caption()).toHaveTextContent('Start of game')
+  tick(1)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+})
+
+test('speed buttons are a labelled group of toggles with Normal pressed, and Slow and Fast set 1200 and 250 ms', () => {
+  renderPlaying()
+  const group = screen.getByRole('group', { name: 'Playback speed' })
+  expect(within(group).getAllByRole('button').map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([['Slow', 'false'], ['Normal', 'true'], ['Fast', 'false']])
+  click('Slow')
+  expect(screen.getByRole('button', { name: 'Slow' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Normal' })).toHaveAttribute('aria-pressed', 'false')
+  click('Play')
+  tick(1199)
+  expect(caption()).toHaveTextContent('Start of game')
+  tick(1)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+  click('Fast')
+  tick(250)
+  expect(caption()).toHaveTextContent('Turn 2 of 3')
+})
+
+test('playback runs every step at the same pace, skips included, stops on the last one and does not loop', () => {
+  renderPlaying([place(1, [0, 0], 2, 2), move(2, null), place(1, [3, 3], 1, 1)])
+  click('Play')
+  tick(600)
+  tick(600)
+  expect(caption()).toHaveTextContent('Turn 2 of 3')
+  tick(600)
+  expect(caption()).toHaveTextContent('Turn 3 of 3')
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+  tick(10_000)
+  expect(caption()).toHaveTextContent('Turn 3 of 3')
+})
+
+test('Pause stops the stepping', () => {
+  renderPlaying()
+  click('Play')
+  tick(600)
+  click('Pause')
+  tick(10_000)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+})
+
+test.each(['First', 'Prev', 'Next', 'Last'])('%s pauses autoplay', (name) => {
+  renderPlaying()
+  click('Next')
+  click('Play')
+  click(name)
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+  const shown = caption().textContent
+  tick(10_000)
+  expect(caption().textContent).toBe(shown)
+})
+
+test('Play on the last step starts again from the first', () => {
+  renderPlaying()
+  click('Last')
+  click('Play')
+  expect(caption()).toHaveTextContent('Start of game')
+  expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
+  tick(600)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+})
+
+test('changing the speed while playing restarts the wait at the new interval', () => {
+  renderPlaying()
+  click('Play')
+  tick(500)
+  click('Fast')
+  tick(249)
+  expect(caption()).toHaveTextContent('Start of game')
+  tick(1)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+})
+
+test('an all-skips game has nothing to play', () => {
+  renderPlaying([])
+  expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled()
+})
+
+const press = (key: string, init: KeyboardEventInit = {}) => fireEvent.keyDown(document.body, { key, ...init })
+
+test.each([
+  ['ArrowRight', 'Turn 1 of 3'],
+  ['ArrowDown', 'Turn 1 of 3'],
+  ['End', 'Turn 3 of 3'],
+])('%s steps forward from the start', (key, shown) => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  press(key)
+  expect(caption()).toHaveTextContent(shown)
+})
+
+test.each([
+  ['ArrowLeft', 'Turn 1 of 3'],
+  ['ArrowUp', 'Turn 1 of 3'],
+  ['Home', 'Start of game'],
+])('%s steps back from turn 2', (key, shown) => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  click('Next')
+  click('Next')
+  press(key)
+  expect(caption()).toHaveTextContent(shown)
+})
+
+test('keys stop at either end instead of running past it', () => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  press('ArrowLeft')
+  expect(caption()).toHaveTextContent('Start of game')
+  press('End')
+  press('ArrowRight')
+  expect(caption()).toHaveTextContent('Turn 3 of 3')
+})
+
+test('Space plays and pauses', () => {
+  vi.useFakeTimers()
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  press(' ')
+  expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
+  tick(600)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+  press(' ')
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+})
+
+test('a step key pauses autoplay', () => {
+  vi.useFakeTimers()
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  press(' ')
+  press('ArrowRight')
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+  tick(10_000)
+  expect(caption()).toHaveTextContent('Turn 1 of 3')
+})
+
+test('Escape goes back', () => {
+  const onBack = vi.fn()
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={onBack} />)
+  press('Escape')
+  expect(onBack).toHaveBeenCalledOnce()
+})
+
+test('Space on a focused button plays instead of also pressing that button', () => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  const nextButton = screen.getByRole('button', { name: 'Next' })
+  nextButton.focus()
+  const notPrevented = fireEvent.keyDown(nextButton, { key: ' ' })
+  expect(notPrevented).toBe(false)
+  expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
+  expect(fireEvent.keyUp(nextButton, { key: ' ' })).toBe(false)
+})
+
+test('browser shortcuts with Ctrl, Cmd or Alt are left alone', () => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) press('ArrowRight', { [modifier]: true })
+  expect(caption()).toHaveTextContent('Start of game')
+})
+
+test('Space does nothing in a game with no moves', () => {
+  render(<ReplayScreen game={replayGame([])} onBack={vi.fn()} />)
+  press(' ')
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
 })

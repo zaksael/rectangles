@@ -32,3 +32,20 @@ test('muted zeros and the caption\'s step label stay AA (4.5:1) on the ledger', 
   expect(textContrast(css, '.replay .breakdown td.zero')).toBeGreaterThanOrEqual(4.5)
   expect(textContrast(css, '.replay .caption .step')).toBeGreaterThanOrEqual(4.5)
 })
+
+test('the transport has five columns and the speed row three buttons centred under the middle three', () => {
+  expect(css).toMatch(/\.replay \.transport,\s*\.replay \.speed \{[^}]*grid-template-columns:\s*repeat\(5, 1fr\)/)
+  expect(ruleFor(css, '.replay .speed .btn:first-child')).toMatch(/grid-column:\s*2/)
+})
+
+test('Pause and the chosen speed are shown inverted, in ink on the ledger', () => {
+  for (const selector of ['.replay .play.playing', ".replay .speed .btn[aria-pressed='true']"]) {
+    const block = ruleFor(css, selector)
+    expect(block).toMatch(/background:\s*var\(--ink\)/)
+    expect(block).toMatch(/color:\s*var\(--ledger\)/)
+  }
+})
+
+test('nothing on Replay animates, so autoplay has no motion to reduce', () => {
+  expect(css).not.toMatch(/transition|animation|@keyframes/)
+})
