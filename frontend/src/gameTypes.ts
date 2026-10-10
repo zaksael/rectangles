@@ -45,6 +45,7 @@ export interface PlayerState {
   score: {
     totalArea: number
     totalScore: number
+    breakdown: ScoreParts
     potential: { area: number; prize: { points: number } }
   }
   houseRules: {

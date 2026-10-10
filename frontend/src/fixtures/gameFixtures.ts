@@ -19,7 +19,7 @@ export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState 
       '1': {
         name: 'Player 1',
         board: { startCorner: [0, 0], pieces: [], consecutiveSkips: 0 },
-        score: { totalArea: 0, totalScore: 0, potential: { area: 0, prize: { points: 0 } } },
+        score: { totalArea: 0, totalScore: 0, breakdown: { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }, potential: { area: 0, prize: { points: 0 } } },
         houseRules: {
           reroll: { used: 0, limit: 0 },
           comebackNudge: { granted: false },
@@ -32,7 +32,7 @@ export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState 
       '2': {
         name: 'Player 2',
         board: { startCorner: [2, 2], pieces: [], consecutiveSkips: 0 },
-        score: { totalArea: 0, totalScore: 0, potential: { area: 0, prize: { points: 0 } } },
+        score: { totalArea: 0, totalScore: 0, breakdown: { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }, potential: { area: 0, prize: { points: 0 } } },
         houseRules: {
           reroll: { used: 0, limit: 0 },
           comebackNudge: { granted: false },

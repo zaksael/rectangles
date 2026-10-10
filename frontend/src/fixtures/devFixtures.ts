@@ -8,7 +8,7 @@ function midGame(): GameWireState {
   const player = (id: '1' | '2', corner: [number, number], pieces: GameWireState['players']['1']['board']['pieces'], area: number) => ({
     ...base.players[id],
     board: { startCorner: corner, pieces, consecutiveSkips: 0 },
-    score: { totalArea: area, totalScore: area, potential: { area: 20, prize: { points: 0 } } },
+    score: { totalArea: area, totalScore: area, breakdown: { area, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }, potential: { area: 20, prize: { points: 0 } } },
     houseRules: { ...base.players[id].houseRules, reroll: { used: 0, limit: 2 } },
   })
   return makeGame({

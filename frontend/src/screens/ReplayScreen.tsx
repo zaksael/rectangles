@@ -4,6 +4,7 @@ import type { GameWireState, HistoryEntry, PieceState, ScoreParts } from '../gam
 import { noBreak } from '../noBreak'
 import { formatSigned, reasonText, SELF_ENCLOSED_PENALTY_PER_CELL } from './GameOverOverlay'
 import { ScoreChart } from './ScoreChart'
+import { RULE_ROWS, signed } from '../ruleRows'
 import './ScoreTable.css'
 import './ReplayScreen.css'
 
@@ -68,15 +69,6 @@ function Caption({ game, history, step }: { game: GameWireState; history: Histor
     </p>
   )
 }
-
-const RULE_ROWS = [
-  { label: 'Prize', part: 'prize', on: (g: GameWireState) => g.houseRules.prize.enabled },
-  { label: 'Pitfall', part: 'pitfall', on: (g: GameWireState) => g.houseRules.pitfall.enabled },
-  { label: 'Steal', part: 'steal', on: (g: GameWireState) => g.houseRules.steal.enabled },
-  { label: 'Enclosure', part: 'enclosure', on: (g: GameWireState) => g.houseRules.selfEnclosedPenalty.enabled },
-] as const
-
-const signed = (n: number) => (n > 0 ? `+${n}` : formatSigned(n))
 
 // Each rule's share of both players' scores at the step, so the total can be read as a sum.
 function ScoreTable({ game, history, step }: { game: GameWireState; history: HistoryEntry[]; step: number }) {

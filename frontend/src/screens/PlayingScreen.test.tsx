@@ -229,8 +229,8 @@ test('each column header carries the player\'s dot', () => {
 
 test('the Area and Score rows show each player\'s totals', () => {
   const game = makeGame()
-  game.players['1'].score = { ...game.players['1'].score, totalArea: 9, totalScore: 12 }
-  game.players['2'].score = { ...game.players['2'].score, totalArea: 5, totalScore: 7 }
+  game.players['1'].score = { ...game.players['1'].score, totalScore: 12, breakdown: { ...game.players['1'].score.breakdown, area: 9 } }
+  game.players['2'].score = { ...game.players['2'].score, totalScore: 7, breakdown: { ...game.players['2'].score.breakdown, area: 5 } }
   renderScreen({ game, series: null })
 
   expect(rowValues('Area')).toEqual(['9', '5'])
@@ -1769,4 +1769,53 @@ test('the status line and key hint sit together in one reserved box, with the di
   expect(box).toContainElement(document.getElementById('board-help'))
   expect(box.nextElementSibling).toHaveClass('rail-dice')
   expect(document.querySelector('.rail-actions')).toBe(box.nextElementSibling!.nextElementSibling)
+})
+
+
+// A game with each scoring rule on and a breakdown that sums to the Score row.
+function breakdownGame(on: { prize?: boolean; pitfall?: boolean; steal?: boolean; enclosure?: boolean }) {
+  const game = makeGame()
+  game.houseRules.prize = { ...game.houseRules.prize, enabled: !!on.prize }
+  game.houseRules.pitfall = { ...game.houseRules.pitfall, enabled: !!on.pitfall }
+  game.houseRules.steal = { ...game.houseRules.steal, enabled: !!on.steal }
+  game.houseRules.selfEnclosedPenalty = { enabled: !!on.enclosure }
+  game.players['1'].score = { ...game.players['1'].score, totalScore: 14, breakdown: { area: 18, prize: 5, pitfall: -3, steal: 4, enclosure: -10 } }
+  game.players['2'].score = { ...game.players['2'].score, totalScore: 6, breakdown: { area: 14, prize: 0, pitfall: -3, steal: -4, enclosure: -1 } }
+  return { game, series: null }
+}
+
+test('each scoring rule that is on gets a row between Area and Score, in the order Prize, Pitfall, Steal, Enclosure, with signed values', () => {
+  renderScreen(breakdownGame({ prize: true, pitfall: true, steal: true, enclosure: true }))
+
+  const labels = within(scoreTable()).getAllByRole('rowheader').map((h) => h.textContent)
+  expect(labels).toEqual(['Area', 'Prize', 'Pitfall', 'Steal', 'Enclosure', 'Score', 'In reach', 'Skips'])
+  expect(rowValues('Prize')).toEqual(['+5', '0'])
+  expect(rowValues('Pitfall')).toEqual(['−3', '−3'])
+  expect(rowValues('Steal')).toEqual(['+4', '−4'])
+  expect(rowValues('Enclosure')).toEqual(['−10', '−1'])
+})
+
+test.each([
+  ['Prize', { pitfall: true, steal: true, enclosure: true }],
+  ['Pitfall', { prize: true, steal: true, enclosure: true }],
+  ['Steal', { prize: true, pitfall: true, enclosure: true }],
+  ['Enclosure', { prize: true, pitfall: true, steal: true }],
+] as const)('a rule that is off leaves no %s row', (label, on) => {
+  renderScreen(breakdownGame(on))
+
+  expect(within(scoreTable()).queryByRole('rowheader', { name: label })).not.toBeInTheDocument()
+})
+
+test('with no scoring rule on the table is just Area and Score above the resources', () => {
+  renderScreen(breakdownGame({}))
+
+  expect(within(scoreTable()).getAllByRole('rowheader').map((h) => h.textContent)).toEqual(['Area', 'Score', 'In reach', 'Skips'])
+})
+
+test('a rule row that adds nothing is dimmed, and one that adds points is not', () => {
+  renderScreen(breakdownGame({ prize: true }))
+
+  const [p1, p2] = rowCells('Prize')
+  expect(p1).not.toHaveClass('zero')
+  expect(p2).toHaveClass('zero')
 })

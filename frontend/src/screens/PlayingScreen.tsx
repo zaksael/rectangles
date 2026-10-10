@@ -10,6 +10,7 @@ import { usePlacementInput } from '../usePlacementInput'
 import type { GameError, GameState } from '../useGameSocket'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
+import { RULE_ROWS, signed } from '../ruleRows'
 import { seriesRound } from '../seriesRound'
 import { coveredSpecialRules } from '../specialCells'
 import './ScoreTable.css'
@@ -268,8 +269,21 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 <tbody>
                   <tr>
                     <th scope="row">Area</th>
-                    {ids.map((id) => <td key={id}>{state.game.players[id].score.totalArea}</td>)}
+                    {ids.map((id) => <td key={id}>{state.game.players[id].score.breakdown.area}</td>)}
                   </tr>
+                  {RULE_ROWS.filter((row) => row.on(state.game)).map((row) => (
+                    <tr key={row.label}>
+                      <th scope="row">{row.label}</th>
+                      {ids.map((id) => {
+                        const value = state.game.players[id].score.breakdown[row.part]
+                        return (
+                          <td key={id} className={value === 0 ? 'zero' : undefined}>
+                            {signed(value)}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
                   <tr className="score-row">
                     <th scope="row">Score</th>
                     {ids.map((id) => <td key={id}>{state.game.players[id].score.totalScore}</td>)}
