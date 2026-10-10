@@ -97,11 +97,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     if (newly) setComebackNotice(`Comeback! ${noBreak(state.game.players[newly].name)} gets +1 reroll`)
   }, [state])
 
+  // The notice row holds one notice: an error shows first, and a Comeback notice waits (its timer unstarted) until it clears.
+  const errorShown = error !== null && error !== dismissedError
   useEffect(() => {
-    if (!comebackNotice) return
+    if (!comebackNotice || errorShown) return
     const timer = setTimeout(() => setComebackNotice(null), COMEBACK_TOAST_MS)
     return () => clearTimeout(timer)
-  }, [comebackNotice])
+  }, [comebackNotice, errorShown])
 
   const sendActionRef = useRef(sendAction)
   sendActionRef.current = sendAction
@@ -320,8 +322,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             </table>
             <SpecialCellLegend game={state.game} />
             <div className="rail-notice" role="status" aria-live="polite">
-              {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
-              {comebackNotice && <div className="toast">{comebackNotice}</div>}
+              {errorShown ? <div className="toast">{ERROR_TEXT[error.reason]}</div> : comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             {showResultBar ? (
               <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />

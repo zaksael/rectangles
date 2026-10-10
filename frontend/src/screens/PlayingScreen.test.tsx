@@ -1298,7 +1298,7 @@ test('a flag that was already granted on mount, or stays granted, shows no notic
   expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
 })
 
-test('the Comeback notice sits alongside an error toast rather than replacing it', () => {
+test('the notice row holds one notice at a time: an error toast first, the Comeback notice waits for it', () => {
   const { before, after } = comebackStates()
   const props = { sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
   const error: GameError = { reason: 'illegalPlacement', message: 'nope' }
@@ -1307,7 +1307,26 @@ test('the Comeback notice sits alongside an error toast rather than replacing it
   view.rerender(<PlayingScreen state={after} error={error} {...props} />)
 
   expect(screen.getByText('That piece can’t go there — try another spot.')).toBeInTheDocument()
-  expect(screen.getByText('Comeback! Player 2 gets +1 reroll')).toBeInTheDocument()
+  expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
+})
+
+test('the waiting Comeback notice appears once the error clears, then stays its full 8 seconds', () => {
+  vi.useFakeTimers()
+  onTestFinished(() => { vi.useRealTimers() })
+  const { before, after } = comebackStates()
+  const props = { sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const error: GameError = { reason: 'illegalPlacement', message: 'nope' }
+  const view = render(<PlayingScreen state={before} error={error} {...props} />)
+  view.rerender(<PlayingScreen state={after} error={error} {...props} />)
+
+  act(() => vi.advanceTimersByTime(4000))
+  expect(screen.queryByText('That piece can’t go there — try another spot.')).not.toBeInTheDocument()
+  expect(screen.getByText(/Comeback!/)).toBeInTheDocument()
+
+  act(() => vi.advanceTimersByTime(7999))
+  expect(screen.getByText(/Comeback!/)).toBeInTheDocument()
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.queryByText(/Comeback!/)).not.toBeInTheDocument()
 })
 
 test('a Comeback charge makes Reroll usable even when the Reroll rule itself is off', () => {
