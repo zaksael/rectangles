@@ -263,132 +263,132 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         </div>
         {state && (
           <>
-            {showResultBar ? (
-              <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
-            ) : (
-              <table className="score-table">
-                <caption className="visually-hidden">Score</caption>
-                <thead>
-                  <tr>
-                    <td />
-                    {ids.map((id) => (
-                      <th key={id} scope="col" className={`p${id}${currentId === Number(id) ? ' current' : ''}`} aria-current={currentId === Number(id) ? 'true' : undefined}>
-                        <span className="dot" aria-hidden="true" />
-                        {state.game.players[id].name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">Area</th>
-                    {ids.map((id) => <td key={id}>{state.game.players[id].score.breakdown.area}</td>)}
-                  </tr>
-                  {RULE_ROWS.filter((row) => row.on(state.game)).map((row) => (
-                    <tr key={row.label}>
-                      <th scope="row">{row.label}</th>
-                      {ids.map((id) => {
-                        const value = state.game.players[id].score.breakdown[row.part]
-                        return (
-                          <td key={id} className={value === 0 ? 'zero' : undefined}>
-                            {signed(value)}
-                          </td>
-                        )
-                      })}
-                    </tr>
+            <table className="score-table">
+              <caption className="visually-hidden">Score</caption>
+              <thead>
+                <tr>
+                  <td />
+                  {ids.map((id) => (
+                    <th key={id} scope="col" className={`p${id}${currentId === Number(id) ? ' current' : ''}${turnState === 'gameOver' ? ' over' : ''}`} aria-current={currentId === Number(id) ? 'true' : undefined}>
+                      <span className="dot" aria-hidden="true" />
+                      {state.game.players[id].name}
+                    </th>
                   ))}
-                  <tr className="score-row">
-                    <th scope="row">Score</th>
-                    {ids.map((id) => <td key={id}>{state.game.players[id].score.totalScore}</td>)}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Area</th>
+                  {ids.map((id) => <td key={id}>{state.game.players[id].score.breakdown.area}</td>)}
+                </tr>
+                {RULE_ROWS.filter((row) => row.on(state.game)).map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    {ids.map((id) => {
+                      const value = state.game.players[id].score.breakdown[row.part]
+                      return (
+                        <td key={id} className={value === 0 ? 'zero' : undefined}>
+                          {signed(value)}
+                        </td>
+                      )
+                    })}
                   </tr>
-                  <tr className="res-first">
-                    <th scope="row">In reach</th>
-                    {ids.map((id) => <td key={id}>{state.game.players[id].score.potential.area}</td>)}
-                  </tr>
+                ))}
+                <tr className="score-row">
+                  <th scope="row">Score</th>
+                  {ids.map((id) => <td key={id}>{state.game.players[id].score.totalScore}</td>)}
+                </tr>
+                <tr className="res-first">
+                  <th scope="row">In reach</th>
+                  {ids.map((id) => <td key={id}>{state.game.players[id].score.potential.area}</td>)}
+                </tr>
+                <tr>
+                  <th scope="row">Skips</th>
+                  {ids.map((id) => (
+                    <td key={id} className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'last-skip' : undefined}>
+                      {state.game.players[id].board.consecutiveSkips} / {state.game.board.skipLimit}
+                    </td>
+                  ))}
+                </tr>
+                {rerollEnabled && (
                   <tr>
-                    <th scope="row">Skips</th>
-                    {ids.map((id) => (
-                      <td key={id} className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'last-skip' : undefined}>
-                        {state.game.players[id].board.consecutiveSkips} / {state.game.board.skipLimit}
-                      </td>
-                    ))}
+                    <th scope="row">Rerolls</th>
+                    {ids.map((id) => <td key={id}>{reroll(id).limit - reroll(id).used} / {reroll(id).limit}</td>)}
                   </tr>
-                  {rerollEnabled && (
-                    <tr>
-                      <th scope="row">Rerolls</th>
-                      {ids.map((id) => <td key={id}>{reroll(id).limit - reroll(id).used} / {reroll(id).limit}</td>)}
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
+                )}
+              </tbody>
+            </table>
             <SpecialCellLegend game={state.game} />
             <div className="rail-notice" role="status" aria-live="polite">
               {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
-            <div className="rail-turn">
-              <div className="rail-instr">
-                {turnStatus && (
-                  <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
-                    {turnStatus}
-                  </div>
-                )}
-                {/* Always rendered (blank when no key applies) so the status line doesn't shift vertically. */}
-                <p id="board-help" className="board-help">
-                  {boardHint}
-                </p>
+            {showResultBar ? (
+              <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
+            ) : (
+              <div className="rail-turn">
+                <div className="rail-instr">
+                  {turnStatus && (
+                    <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
+                      {turnStatus}
+                    </div>
+                  )}
+                  {/* Always rendered (blank when no key applies) so the status line doesn't shift vertically. */}
+                  <p id="board-help" className="board-help">
+                    {boardHint}
+                  </p>
+                </div>
+                {/* Always rendered, at the picker's height while the Wildcard rule is on, so the buttons below never move. */}
+                <div className={`rail-dice${wildcard?.enabled ? ' reserves-picker' : ''}`}>
+                  {pickIndex !== null && (
+                    <div className="wildcard-picker">
+                      {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
+                      {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
+                    </div>
+                  )}
+                  {shownRoll && pickIndex === null && (
+                    <div
+                      className={`dice${roll ? '' : ' stale'}`}
+                      role="img"
+                      aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
+                    >
+                      {shownRoll.values.map((value, i) => (
+                        <span key={i} className="die">
+                          {value}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="rail-actions">
+                  {/* Only buttons that can be clicked right now are shown. */}
+                  {humanTurnState === 'awaitingRoll' && (
+                    <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">
+                      Roll
+                      <KeyBadge>D</KeyBadge>
+                    </button>
+                  )}
+                  {humanTurnState === 'choosingPlacement' && (
+                    <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r">
+                      Rotate
+                      <KeyBadge>R</KeyBadge>
+                    </button>
+                  )}
+                  {humanTurnState === 'skipped' && (
+                    <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s">
+                      Skip
+                      <KeyBadge>S</KeyBadge>
+                    </button>
+                  )}
+                  {rerollUsable && (
+                    <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e">
+                      Reroll
+                      <KeyBadge>E</KeyBadge>
+                    </button>
+                  )}
+                </div>
               </div>
-              {/* Always rendered, at the picker's height while the Wildcard rule is on, so the buttons below never move. */}
-              <div className={`rail-dice${wildcard?.enabled ? ' reserves-picker' : ''}`}>
-                {pickIndex !== null && (
-                  <div className="wildcard-picker">
-                    {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
-                    {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
-                  </div>
-                )}
-                {shownRoll && pickIndex === null && (
-                  <div
-                    className={`dice${roll ? '' : ' stale'}`}
-                    role="img"
-                    aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
-                  >
-                    {shownRoll.values.map((value, i) => (
-                      <span key={i} className="die">
-                        {value}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="rail-actions">
-                {/* Only buttons that can be clicked right now are shown. */}
-                {humanTurnState === 'awaitingRoll' && (
-                  <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">
-                    Roll
-                    <KeyBadge>D</KeyBadge>
-                  </button>
-                )}
-                {humanTurnState === 'choosingPlacement' && (
-                  <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r">
-                    Rotate
-                    <KeyBadge>R</KeyBadge>
-                  </button>
-                )}
-                {humanTurnState === 'skipped' && (
-                  <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s">
-                    Skip
-                    <KeyBadge>S</KeyBadge>
-                  </button>
-                )}
-                {rerollUsable && (
-                  <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e">
-                    Reroll
-                    <KeyBadge>E</KeyBadge>
-                  </button>
-                )}
-              </div>
-            </div>
+            )}
             <div className="rail-history">
               <h2 className="rail-h" id="moves-heading">Moves</h2>
               <ol className="history" role="log" aria-live="off" aria-labelledby="moves-heading">

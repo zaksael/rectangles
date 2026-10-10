@@ -93,12 +93,12 @@
   background: var(--p2);
 }
 /* The mover's dot is filled, the other player's is a ring. */
-.score-table thead th:not(.current) .dot {
+.score-table thead th:not(.current):not(.over) .dot {
   background: transparent;
   box-sizing: border-box;
   border: 2px solid var(--p1);
 }
-.score-table thead th.p2:not(.current) .dot {
+.score-table thead th.p2:not(.current):not(.over) .dot {
   border-color: var(--p2);
 }
 .score-table .res-first th,
@@ -473,20 +473,17 @@ dialog.game-over h2 {
   padding: 1px 4px;
   border: 1px solid var(--ink);
 }
-.game-over .dot,
-.game-over-bar .dot {
+.game-over .dot {
   display: inline-block;
   width: 12px;
   height: 12px;
   margin-right: 6px;
   border-radius: 50%;
 }
-.game-over .p1,
-.game-over-bar .p1 {
+.game-over .p1 {
   background: var(--p1);
 }
-.game-over .p2,
-.game-over-bar .p2 {
+.game-over .p2 {
   background: var(--p2);
 }
 .game-over table.breakdown {
@@ -741,47 +738,3 @@ dialog.settings {
   outline-offset: -2px; /* inside the board, so the sticky header and toolbar can't clip it */
 }
 
-/* Slim result bar, a full-width row of the sticky header, shown while the player looks at the final board. */
-.game-over-bar {
-  grid-column: 1 / -1;
-  /* Wrap to the board's width instead of widening the shrink-to-fit frame. */
-  contain: inline-size;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  padding: 8px 12px;
-  font-size: 13px;
-}
-.game-over-bar-text {
-  flex: 1 1 140px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.game-over-bar strong {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  white-space: nowrap;
-}
-.game-over-bar .dot.tie {
-  background: linear-gradient(to right, var(--p1) 50%, var(--p2) 50%);
-}
-.game-over-bar-reason {
-  font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
-}
-.game-over-bar-score {
-  flex: none;
-  font: 500 15px 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
-}
-.game-over-bar-actions {
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
-}
-.game-over-bar .btn {
-  padding: 6px 10px;
-  font-size: 12px;
-}

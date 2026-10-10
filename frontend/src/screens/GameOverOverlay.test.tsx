@@ -545,7 +545,6 @@ test('the series bar shows the series outcome and totals, with View Result and N
   render(<GameOverBar game={makeGame()} series={wonSeries} seriesResult {...handlers} />)
   const bar = screen.getByRole('region', { name: 'Series result' })
   expect(within(bar).getByText(/^Player.1 wins the series$/u)).toBeTruthy()
-  expect(bar).toHaveTextContent('459 – 440')
   expect(within(bar).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Result', 'New Game'])
   vi.advanceTimersByTime(KEY_GUARD_MS)
   fireEvent.keyDown(window, { key: 'n' })

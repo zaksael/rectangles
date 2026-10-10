@@ -218,15 +218,12 @@ export function GameOverBar({ game, series = null, seriesResult = false, onViewR
   const armedAt = useRef(Date.now() + ADVANCE_KEY_GUARD_MS)
   const outcome =
     seriesResult && series
-      ? { winner: series.winner, headline: seriesHeadline(game, series), reason: null, scores: [series.scores['1'], series.scores['2']], label: 'Series result' }
+      ? { headline: seriesHeadline(game, series), reason: null, label: 'Series result' }
       : {
-          winner: game.gameOver.winner,
           headline: headlineText(game, series !== null),
           reason: game.gameOver.reason === 'boardFull' ? null : reasonText(game),
-          scores: [game.players['1'].score.totalScore, game.players['2'].score.totalScore],
           label: 'Game result',
         }
-  const [score1, score2] = outcome.scores
   const { reason } = outcome
   // The bar is not a dialog, so it listens on the window and stands down while the Menu (or any dialog) is open.
   useEffect(() => {
@@ -237,21 +234,13 @@ export function GameOverBar({ game, series = null, seriesResult = false, onViewR
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onViewResult, advance.onAdvance])
   return (
-    <div className="game-over-bar" role="region" aria-label={outcome.label}>
-      <div className="game-over-bar-text">
-        <strong>
-          <span className={`dot ${outcome.winner === null ? 'tie' : `p${outcome.winner}`}`} aria-hidden="true" />
-          {outcome.headline}
-        </strong>
-        {reason && <span className="game-over-bar-reason">{reason}</span>}
+    <div className="rail-turn" role="region" aria-label={outcome.label}>
+      <div className="rail-instr">
+        <div className="turn-status">{outcome.headline}</div>
+        <p className="board-help">{reason}</p>
       </div>
-      <span className="game-over-bar-score">
-        <span aria-hidden="true">
-          {score1} – {score2}
-        </span>
-        <span className="visually-hidden">{`${nameOf(game, 1)} ${score1}, ${nameOf(game, 2)} ${score2}`}</span>
-      </span>
-      <div className="game-over-bar-actions">
+      <div className={`rail-dice${game.houseRules.wildcard.enabled ? ' reserves-picker' : ''}`} />
+      <div className="rail-actions">
         <button className="btn secondary" onClick={onViewResult} aria-keyshortcuts="v" autoFocus>
           View Result
           <KeyBadge>V</KeyBadge>

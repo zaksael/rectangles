@@ -119,3 +119,7 @@ test('the Moves rows use 2px of vertical padding, so four of them and the rest o
 test('on touch the Moves list gives up its fourth row, which the taller buttons need', () => {
   expect(css).toMatch(/@media \(any-pointer: coarse\) \{[^@]*\.history \.move:nth-child\(n \+ 4\) \{[^}]*display:\s*none/)
 })
+
+test('a header dot is a ring only while its player is neither the mover nor over: at game over both are filled', () => {
+  expect(css).toMatch(/\.score-table thead th:not\(\.current\):not\(\.over\) \.dot \{[^}]*background:\s*transparent/)
+})

@@ -471,7 +471,7 @@ function gameOverState() {
   return { game, series: null }
 }
 
-test('View Board hides the result dialog and pins a slim result bar over the board', () => {
+test('View Board hides the result dialog and turns the rail\'s turn block into the result', () => {
   renderScreen(gameOverState())
 
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
@@ -479,7 +479,7 @@ test('View Board hides the result dialog and pins a slim result bar over the boa
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   const bar = screen.getByRole('region', { name: 'Game result' })
   expect(bar).toHaveTextContent('Player 1 wins on score')
-  expect(bar).toHaveTextContent('158 – 141')
+  expect(rowValues('Score')).toEqual(['158', '141'])
   expect(screen.getByRole('grid')).toBeInTheDocument()
 })
 
@@ -1395,37 +1395,33 @@ test('a tie ended by the skip limit still names the reason on the bar', () => {
   expect(within(bar).getByText('Player 1 hit the skip limit (5 of 5)')).toBeInTheDocument()
 })
 
-test('a win puts the winner’s colour dot beside the outcome on the bar', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 2 })
-  expect(bar.querySelector('.dot.p2')).not.toBeNull()
-  expect(bar.querySelector('.dot.p1')).toBeNull()
-})
-
-test('a tie puts a half-and-half marker, in both colours, in place of the winner dot, beside equal scores', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: null }, (game) => {
-    game.players['1'].score = { ...game.players['1'].score, totalScore: 150 }
-    game.players['2'].score = { ...game.players['2'].score, totalScore: 150 }
-  })
-  expect(bar.querySelector('.dot.tie')).not.toBeNull()
-  expect(bar.querySelector('.dot.p1, .dot.p2')).toBeNull()
-  expect(bar).toHaveTextContent('150 – 150')
-})
-
 test('mid-game, the header marks the player whose turn it is', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
   expect(document.querySelector('[aria-current]')).toHaveTextContent('Player 2')
 })
 
-test('once the game is over, the table marks no current player', () => {
+test('once the game is over, the table marks no current player and draws both dots filled', () => {
   renderScreen(gameOverState())
   expect(document.querySelector('[aria-current]')).toBeNull()
   expect(document.querySelector('.score-table .current')).toBeNull()
+  expect(screen.getAllByRole('columnheader').map((h) => h.classList.contains('over'))).toEqual([true, true])
 })
 
-test('in board view the result bar replaces the score table', () => {
+test('in board view the rail keeps its score table and Moves list beside the result', () => {
   const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
   expect(bar).toBeInTheDocument()
-  expect(screen.queryByRole('table', { name: 'Score' })).not.toBeInTheDocument()
+  expect(screen.getByRole('table', { name: 'Score' })).toBeInTheDocument()
+  expect(screen.getByRole('log', { name: 'Moves' })).toBeInTheDocument()
+})
+
+test('the result sits in the turn block\'s reserved slots: the headline in the status box, the reason under it, the actions in the action row', () => {
+  const bar = resultBar({ reason: 'skipLimit', playerId: 2, winner: 1 })
+
+  expect(bar).toHaveClass('rail-turn')
+  expect(within(bar.querySelector('.rail-instr') as HTMLElement).getByText('Player 1 wins on score')).toBeInTheDocument()
+  expect(within(bar.querySelector('.rail-instr') as HTMLElement).getByText('Player 2 hit the skip limit (5 of 5)')).toBeInTheDocument()
+  expect(bar.querySelector('.rail-dice')).not.toBeNull()
+  expect(within(bar.querySelector('.rail-actions') as HTMLElement).getAllByRole('button')).toHaveLength(2)
 })
 
 test('with the result dialog open, the table still shows both players', () => {
@@ -1433,26 +1429,25 @@ test('with the result dialog open, the table still shows both players', () => {
   expect(screen.getAllByRole('columnheader')).toHaveLength(2)
 })
 
-test('the header and the dialog come back with View Result, and View Board swaps them for the bar again', () => {
+test('View Result brings the dialog back, and View Board swaps it for the result in the rail again', () => {
   renderScreen(gameOverState())
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
-  expect(screen.queryByRole('table', { name: 'Score' })).not.toBeInTheDocument()
+  expect(screen.getByRole('table', { name: 'Score' })).toBeInTheDocument()
 
   fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' }))
-  expect(screen.getAllByRole('columnheader')).toHaveLength(2)
   expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(screen.queryByRole('region', { name: 'Game result' })).not.toBeInTheDocument()
 
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
-  expect(screen.queryByRole('table', { name: 'Score' })).not.toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'Game result' })).toBeInTheDocument()
 })
 
-test('the bar shows the real score, Player 1 first, even when the winner trails after a surrender', () => {
+test('the table keeps the real score, Player 1 first, even when the winner trails after a surrender', () => {
   const bar = resultBar({ reason: 'surrender', playerId: 2, winner: 1 }, (game) => {
     game.players['1'].score = { ...game.players['1'].score, totalScore: 120 }
     game.players['2'].score = { ...game.players['2'].score, totalScore: 158 }
   })
-  expect(bar).toHaveTextContent('120 – 158')
-  expect(within(bar).getByText('Player 1 120, Player 2 158')).toBeInTheDocument()
+  expect(rowValues('Score')).toEqual(['120', '158'])
   expect(bar).not.toHaveTextContent(/by \d+ point/)
 })
 
@@ -1467,12 +1462,13 @@ test('focus lands on View Result in the bar after Escape', () => {
   expect(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' })).toHaveFocus()
 })
 
-test('the bar shows total score, not territory, when modifiers make them differ', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 }, (game) => {
-    game.players['1'].score = { ...game.players['1'].score, totalArea: 152, totalScore: 162 }
-    game.players['2'].score = { ...game.players['2'].score, totalArea: 141, totalScore: 141 }
+test('the table shows total score beside territory when modifiers make them differ', () => {
+  resultBar({ reason: 'boardFull', playerId: null, winner: 1 }, (game) => {
+    game.players['1'].score = { ...game.players['1'].score, totalScore: 162, breakdown: { ...game.players['1'].score.breakdown, area: 152 } }
+    game.players['2'].score = { ...game.players['2'].score, totalScore: 141, breakdown: { ...game.players['2'].score.breakdown, area: 141 } }
   })
-  expect(bar).toHaveTextContent('162 – 141')
+  expect(rowValues('Area')).toEqual(['152', '141'])
+  expect(rowValues('Score')).toEqual(['162', '141'])
 })
 
 test('in series play a caption gives the round and the running series score', () => {
@@ -1549,7 +1545,7 @@ test('View Board on the series card pins the series bar, and View Result brings 
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /View Board/ }))
 
   const bar = screen.getByRole('region', { name: 'Series result' })
-  expect(bar).toHaveTextContent('459 – 440')
+  expect(screen.getByText('Series 459 – 440')).toBeInTheDocument()
   fireEvent.click(within(bar).getByRole('button', { name: /View Result/ }))
 
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: /wins the series/ })).toBeInTheDocument()
