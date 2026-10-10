@@ -82,6 +82,12 @@ export interface HistoryEntry {
   breakdown: { '1': ScoreParts; '2': ScoreParts }
 }
 
+// A recent turn on every state message: a history entry plus its move number and the mover's own score change.
+export interface RecentTurn extends HistoryEntry {
+  turn: number
+  points: number
+}
+
 export interface GameWireState {
   board: { size: number; skipLimit: number }
   turn: {
@@ -89,6 +95,8 @@ export interface GameWireState {
     turnState: TurnStateName
     lastRoll: [number, number] | null
     legalPlacements: LegalPlacement[]
+    // The last six turns, oldest first.
+    recentTurns?: RecentTurn[]
   }
   houseRules: {
     wildcard: {

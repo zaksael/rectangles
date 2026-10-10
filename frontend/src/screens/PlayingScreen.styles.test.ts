@@ -111,3 +111,11 @@ test('on touch the dice slot holds 92px and the action row 66px, in a block afte
 test('the key hint is pinned to the bottom of the status box, so a one-row and a two-row status leave it in the same place', () => {
   expect(ruleFor(css, '.rail-instr .board-help')).toMatch(/margin-top:\s*auto/)
 })
+
+test('the Moves rows use 2px of vertical padding, so four of them and the rest of the rail fit a 888px frame', () => {
+  expect(ruleFor(css, '.move')).toMatch(/padding:\s*2px 0/)
+})
+
+test('on touch the Moves list gives up its fourth row, which the taller buttons need', () => {
+  expect(css).toMatch(/@media \(any-pointer: coarse\) \{[^@]*\.history \.move:nth-child\(n \+ 4\) \{[^}]*display:\s*none/)
+})

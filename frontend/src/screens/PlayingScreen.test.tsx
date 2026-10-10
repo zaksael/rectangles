@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { makeGame, makeSeries } from '../fixtures/gameFixtures'
-import type { GameWireState } from '../gameTypes'
+import type { GameWireState, RecentTurn } from '../gameTypes'
 import type { GameError, GameState } from '../useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
 
@@ -651,25 +651,14 @@ interface BotTurn {
   current: 1 | 2
   turnState: GameWireState['turn']['turnState']
   lastRoll?: [number, number] | null
-  botPieces?: [number, number][]
-  botRerollsUsed?: number
-  botSkips?: number
-  editableIndex?: number | null
 }
 
-function botGame({ current, turnState, lastRoll = null, botPieces = [], botRerollsUsed = 0, botSkips = 0, editableIndex = null }: BotTurn): GameState {
+function botGame({ current, turnState, lastRoll = null }: BotTurn): GameState {
   const base = makeGame().players
-  const pieces = botPieces.map(([width, height], i) => ({ topLeft: [0, i] as [number, number], width, height, owner: 2 }))
-  const bot = {
-    ...base['2'],
-    name: 'Bot (Greedy)',
-    board: { ...base['2'].board, pieces, consecutiveSkips: botSkips },
-    houseRules: { ...base['2'].houseRules, reroll: { used: botRerollsUsed, limit: 2 } },
-  }
-  const wildcard = { enabled: true, originalRoll: null, legalValues: [], editableIndex }
+  const wildcard = { enabled: true, originalRoll: null, legalValues: [], editableIndex: null }
   return makeState({
     turn: { currentPlayerId: current, turnState, lastRoll, legalPlacements: [] },
-    players: { ...base, '2': bot },
+    players: { ...base, '2': { ...base['2'], name: 'Bot (Greedy)' } },
     houseRules: { ...makeGame().houseRules, wildcard },
   })
 }
@@ -680,82 +669,6 @@ function renderBotGame(first: GameState) {
   const view = render(<PlayingScreen state={first} {...props} />)
   return (next: GameState) => view.rerender(<PlayingScreen state={next} {...props} />)
 }
-
-test("after the bot places a piece, the human's roll prompt recaps it", () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] }))
-
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: roll (D) · Bot (Greedy) placed 5 × 4')
-})
-
-const recapStatus = () => screen.getByTestId('turn-status')
-
-test('the recap says the bot rerolled', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [6, 6] }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 3], botRerollsUsed: 1 }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[3, 3]], botRerollsUsed: 1 }))
-  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) rerolled, placed 3 × 3')
-})
-
-test('the recap says "rerolled twice" when the bot spent two rerolls', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [6, 6] }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 3], botRerollsUsed: 1 }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [2, 2], botRerollsUsed: 2 }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[2, 2]], botRerollsUsed: 2 }))
-  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) rerolled twice, placed 2 × 2')
-})
-
-test('the recap names the wildcard value the bot chose, even if the roll then has no legal move', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingWildcard', lastRoll: [4, 2], editableIndex: 1 }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [4, 6] }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[4, 6]] }))
-  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) chose 6, placed 4 × 6')
-})
-
-test('a reroll out of a wildcard pick is not counted as a pick', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingWildcard', lastRoll: [4, 2], editableIndex: 1 }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 5], botRerollsUsed: 1 }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 5]], botRerollsUsed: 1 }))
-  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) rerolled, placed 5 × 5')
-  expect(recapStatus()).not.toHaveTextContent('chose')
-})
-
-test('the recap says the bot skipped', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'skipped', lastRoll: [6, 6] }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botSkips: 1 }))
-  expect(recapStatus()).toHaveTextContent('· Bot (Greedy) skipped')
-})
-
-test('the recap goes away once the human rolls', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] }))
-  update(botGame({ current: 1, turnState: 'choosingPlacement', lastRoll: [1, 2], botPieces: [[5, 4]] }))
-  expect(recapStatus()).not.toHaveTextContent('Bot (Greedy) placed')
-})
-
-test('the recap does not carry into the next round after the bot ends a game', () => {
-  const update = renderBotGame(botGame({ current: 2, turnState: 'awaitingRoll' }))
-  update(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] }))
-  update(botGame({ current: 2, turnState: 'gameOver', botPieces: [[5, 4]] }))
-  update(botGame({ current: 1, turnState: 'awaitingRoll' }))
-  expect(recapStatus()).toHaveTextContent('Player 1: roll (D)')
-  expect(recapStatus()).not.toHaveTextContent('·')
-})
-
-test('Local 2P never shows a recap', () => {
-  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
-  const view = render(<PlayingScreen state={botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [5, 4] })} {...props} />)
-  view.rerender(<PlayingScreen state={botGame({ current: 1, turnState: 'awaitingRoll', botPieces: [[5, 4]] })} {...props} />)
-  expect(recapStatus()).toHaveTextContent('Player 1: roll (D)')
-  expect(recapStatus()).not.toHaveTextContent('·')
-})
 
 test("the bot's last roll is labelled with the bot's name for assistive tech", () => {
   const update = renderBotGame(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 5] }))
@@ -1818,4 +1731,97 @@ test('a rule row that adds nothing is dimmed, and one that adds points is not', 
   const [p1, p2] = rowCells('Prize')
   expect(p1).not.toHaveClass('zero')
   expect(p2).toHaveClass('zero')
+})
+
+
+const zeroParts = { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }
+function recentTurn(
+  turn: number,
+  playerId: 1 | 2,
+  placed: [number, number] | null,
+  points: number,
+  wildcardOriginalRoll: [number, number] | null = null,
+): RecentTurn {
+  return {
+    turn,
+    playerId,
+    roll: [2, 2],
+    placed: placed && { topLeft: [0, 0], width: placed[0], height: placed[1] },
+    wildcardOriginalRoll,
+    score: { '1': 0, '2': 0 },
+    breakdown: { '1': zeroParts, '2': zeroParts },
+    points,
+  }
+}
+
+const moves = () => within(screen.getByRole('log', { name: 'Moves' })).queryAllByRole('listitem')
+const movesState = (recentTurns: RecentTurn[], turnState: GameWireState['turn']['turnState'] = 'awaitingRoll', currentPlayerId = 1) =>
+  makeState({ turn: { currentPlayerId, turnState, lastRoll: turnState === 'awaitingRoll' ? null : [2, 3], legalPlacements: [], recentTurns } })
+
+test('the Moves list is a log named Moves that is not announced', () => {
+  renderScreen(movesState([]))
+
+  expect(screen.getByRole('log', { name: 'Moves' })).toHaveAttribute('aria-live', 'off')
+})
+
+test('the rows run newest first, the turn in progress on top, each with turn number, player, what happened and signed points', () => {
+  renderScreen(movesState([recentTurn(1, 1, [2, 3], 6), recentTurn(2, 2, null, 0), recentTurn(3, 1, [4, 4], -3)], 'awaitingRoll', 2))
+
+  expect(moves().map((row) => row.textContent)).toEqual([
+    '4Player 2Waiting to roll…',
+    '3Player 1Placed 4 × 4−3',
+    '2Player 2No legal move, skipped',
+    '1Player 1Placed 2 × 3+6',
+  ])
+})
+
+test('the turn in progress is a tinted live row', () => {
+  renderScreen(movesState([recentTurn(1, 1, [2, 3], 6)]))
+
+  expect(moves()[0]).toHaveClass('live')
+  expect(moves()[1]).not.toHaveClass('live')
+})
+
+test.each([
+  ['awaitingRoll', 'Waiting to roll…'],
+  ['choosingWildcard', 'Wildcard roll, picking…'],
+  ['skipped', 'No legal move, deciding…'],
+] as const)('the live row reads by turn state (%s)', (turnState, text) => {
+  renderScreen(movesState([], turnState))
+
+  expect(within(moves()[0]).getByText(text)).toBeInTheDocument()
+})
+
+test('while placing, the live row names the piece being placed', () => {
+  renderScreen(movesState([], 'choosingPlacement'))
+
+  expect(moves()[0]).toHaveTextContent(/Placing \d+ × \d+…/)
+})
+
+test('a wildcard turn names the roll that was edited', () => {
+  renderScreen(movesState([recentTurn(1, 1, [6, 6], 36, [3, 3])]))
+
+  expect(within(moves()[1]).getByText('Placed 6 × 6, wildcard (rolled 3·3)')).toBeInTheDocument()
+})
+
+test('the list shows the live row and the last three turns, no more', () => {
+  const turns = [1, 2, 3, 4, 5, 6].map((n) => recentTurn(n, n % 2 ? 1 : 2, [1, n], n))
+  renderScreen(movesState(turns))
+
+  expect(moves()).toHaveLength(4)
+  expect(moves().map((row) => row.firstChild?.textContent)).toEqual(['7', '6', '5', '4'])
+})
+
+test('once the game is over there is no live row and the last four turns show', () => {
+  const turns = [1, 2, 3, 4, 5, 6].map((n) => recentTurn(n, n % 2 ? 1 : 2, [1, n], n))
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [], recentTurns: turns }, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+
+  expect(moves().map((row) => row.firstChild?.textContent)).toEqual(['6', '5', '4', '3'])
+  expect(document.querySelector('.move.live')).toBeNull()
+})
+
+test('before any move the list says nothing has been played', () => {
+  renderScreen(movesState([]))
+
+  expect(screen.getByText('Nothing played yet')).toBeInTheDocument()
 })

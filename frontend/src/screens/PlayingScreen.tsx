@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { describeBotRecap, stepBotRecap, type BotRecap } from '../botRecap'
 import { Board } from '../components/Board'
 import { SpecialCellLegend } from '../components/SpecialCellLegend'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
-import type { ErrorReason, GameAction, GameWireState } from '../gameTypes'
+import type { ErrorReason, GameAction, RecentTurn } from '../gameTypes'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
@@ -38,6 +37,19 @@ const KEY_HINT: Partial<Record<string, string>> = {
   choosingPlacement: 'Arrows move, N next, Enter places, R rotates',
 }
 
+function liveMoveText(turnState: string | undefined, size: readonly number[] | null) {
+  if (turnState === 'awaitingRoll') return 'Waiting to roll…'
+  if (turnState === 'choosingWildcard') return 'Wildcard roll, picking…'
+  if (turnState === 'skipped') return 'No legal move, deciding…'
+  return size ? `Placing ${size[0]} × ${size[1]}…` : 'Placing…'
+}
+
+function movedText(r: RecentTurn) {
+  if (!r.placed) return 'No legal move, skipped'
+  const wildcard = r.wildcardOriginalRoll ? `, wildcard (rolled ${r.wildcardOriginalRoll[0]}·${r.wildcardOriginalRoll[1]})` : ''
+  return `Placed ${r.placed.width} × ${r.placed.height}${wildcard}`
+}
+
 const ERROR_TEXT: Record<ErrorReason, string> = {
   illegalPlacement: 'That piece can’t go there — try another spot.',
   invalidAction: 'You can’t do that right now — finish your current step.',
@@ -51,14 +63,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
   const humanTurnState = isBotTurn ? undefined : turnState
-  const [botRecap, setBotRecap] = useState<BotRecap | null>(null)
-  const prevGameRef = useRef<GameWireState | null>(null)
-  useEffect(() => {
-    const prev = prevGameRef.current
-    prevGameRef.current = state?.game ?? null
-    if (botSeat === undefined || !prev || !state) return
-    setBotRecap((recap) => stepBotRecap(recap, prev, state.game, botSeat as 1 | 2))
-  }, [state, botSeat])
   const placing = humanTurnState === 'choosingPlacement'
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
@@ -165,8 +169,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     if (isBotTurn) turnStatus = `${currentName} is playing…`
     else if (turnState === 'awaitingRoll') {
       turnStatus = `${currentName}: roll (D)`
-      const recap = botRecap && botSeat !== undefined && describeBotRecap(noBreak(state.game.players[String(botSeat) as '1' | '2'].name), botRecap)
-      if (recap) turnStatus += ` · ${recap}`
     }
     else if (turnState === 'choosingPlacement') {
       turnStatus = `${currentName}: place ${dims ? `${dims[0]} wide × ${dims[1]} tall` : 'a rectangle'}`
@@ -216,6 +218,17 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }, [humanTurnState, rerollUsable])
 
   const ids = ['1', '2'] as const
+  const recentTurns = state?.game.turn.recentTurns ?? []
+  const liveRow = turnState !== 'gameOver' && state
+  const moveRows = [
+    ...(liveRow
+      ? [{ turn: (recentTurns.at(-1)?.turn ?? 0) + 1, playerId: state.game.turn.currentPlayerId, live: true, text: liveMoveText(turnState, dims ?? roll), points: 0 }]
+      : []),
+    ...recentTurns
+      .slice(liveRow ? -3 : -4)
+      .reverse()
+      .map((r) => ({ turn: r.turn, playerId: r.playerId, live: false, text: movedText(r), points: r.points })),
+  ]
   const reroll = (id: '1' | '2') => state!.game.players[id].houseRules.reroll
   const title = state?.series ? `Round ${seriesRound(state.game, state.series)} of ${state.series.length}` : 'Game'
 
@@ -375,6 +388,21 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                   </button>
                 )}
               </div>
+            </div>
+            <div className="rail-history">
+              <h2 className="rail-h" id="moves-heading">Moves</h2>
+              <ol className="history" role="log" aria-live="off" aria-labelledby="moves-heading">
+                {moveRows.map((m) => (
+                  <li key={m.turn} className={`move p${m.playerId}${m.live ? ' live' : ''}`}>
+                    <span className="turn-no">{m.turn}</span>
+                    <span className="dot" aria-hidden="true" />
+                    <span className="who">{state.game.players[String(m.playerId) as '1' | '2'].name}</span>
+                    <span className="what">{m.text}</span>
+                    <span className="gain">{m.points === 0 ? '' : signed(m.points)}</span>
+                  </li>
+                ))}
+              </ol>
+              {recentTurns.length === 0 && <p className="rail-empty">Nothing played yet</p>}
             </div>
           </>
         )}

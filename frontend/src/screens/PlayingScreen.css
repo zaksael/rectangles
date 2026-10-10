@@ -241,6 +241,10 @@
   .rail-actions {
     height: 66px;
   }
+  /* The taller buttons cost the list a row. */
+  .history .move:nth-child(n + 4) {
+    display: none;
+  }
 }
 
 /* One line naming each special-cell rule that is on; the marks are the board's own .board-cell.<kind> rules. */
@@ -265,6 +269,74 @@
   --cell: 18px;
   flex: none;
   forced-color-adjust: none; /* the marks are backgrounds, and only .board opts out of forced colors */
+}
+
+/* The Moves list fills the rest of the rail: the turn in progress, then the last three turns. */
+.rail-history {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* no border of its own: the action row's bottom hairline is the separator */
+}
+.rail-h {
+  margin: 10px 0 2px;
+  font: 500 12px 'IBM Plex Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.move {
+  flex: 1;
+  max-height: 64px;
+  align-content: center;
+  display: grid;
+  grid-template-columns: 22px 11px 1fr auto;
+  column-gap: 6px;
+  align-items: baseline;
+  font-size: 13px;
+  line-height: 18px;
+  padding: 2px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.move .turn-no {
+  font: 12px 'IBM Plex Mono', monospace;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+.move .dot {
+  width: 9px;
+  height: 9px;
+  align-self: center;
+}
+.move .who {
+  grid-column: 3;
+  font-weight: 500;
+}
+.move .what {
+  grid-column: 3;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+}
+.move .gain {
+  grid-column: 4;
+  grid-row: 1 / span 2;
+  font-family: 'IBM Plex Mono', monospace;
+  align-self: center;
+}
+.move.live {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.rail-empty {
+  margin: 0;
+  padding: 10px 0 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
 /* Errors and the Comeback notice stack in the rail. */
