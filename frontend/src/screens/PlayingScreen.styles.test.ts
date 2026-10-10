@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { contrast, danger, ledger, mix, readCss, ruleFor, token, tokensCss } from '../testUtils/styles'
+import { contrast, danger, ledger, readCss, ruleFor, tokensCss } from '../testUtils/styles'
 
 const css = readCss('screens/PlayingScreen.css')
 
@@ -11,65 +11,53 @@ test('on touch screens the key hint is blanked by colour (also under forced colo
   expect(block).not.toMatch(/display|visibility|height/)
 })
 
-test('Roll, the toolbar\'s one primary button, gets a 2px border to set it apart from Menu', () => {
-  const block = ruleFor(css, '.toolbar-leading .btn.primary')
+test('Roll, the action row\'s one primary button, gets a 2px border to set it apart from the secondary buttons', () => {
+  const block = ruleFor(css, '.rail-actions .btn.primary')
 
   expect(block).toMatch(/border-width:\s*2px/)
 })
 
-test('the heavier Roll border is scoped to the toolbar: primary and secondary buttons stay 1px everywhere else', () => {
+test('the heavier Roll border is scoped to the action row: primary and secondary buttons stay 1px everywhere else', () => {
   expect(ruleFor(tokensCss, '.btn.primary')).toMatch(/border:\s*1px solid/)
   expect(ruleFor(tokensCss, '.btn.secondary')).toMatch(/border:\s*1px solid/)
   expect(css).not.toMatch(/^\.btn\.primary\s*\{/m)
 })
 
-test('Reroll sits apart from the action button before it: a margin on the second button, not the shared gap', () => {
-  const block = ruleFor(css, '.toolbar-leading .btn + .btn')
-  const margin = Number(block.match(/margin-left:\s*(\d+)px/)![1])
+test('the action buttons sit 8px apart, Reroll included, so a shown key chip fits between them', () => {
+  const block = ruleFor(css, '.rail-actions')
 
-  expect(margin).toBeGreaterThan(0)
+  expect(block).toMatch(/gap:\s*8px/)
+  expect(css).not.toMatch(/\.rail-actions \.btn \+ \.btn/)
 })
 
-test('the toolbar row holds the Wildcard picker height only while the Wildcard rule is on, so the frame does not grow on a wildcard roll', () => {
-  const base = ruleFor(css, '.toolbar-actions')
-  const reserved = ruleFor(css, '.reserves-picker .toolbar-actions')
-
-  expect(base).toMatch(/--picker-height:\s*0px/)
-  expect(reserved).toMatch(/--picker-height:\s*54px/)
-  expect(base).toMatch(/grid-auto-rows:\s*minmax\(var\(--picker-height\),\s*auto\)/)
+test('the board fits the window height less the frame\'s 52px of chrome, the same as Replay: 24px padding and 1px border, and the board\'s own border, each twice', () => {
+  expect(ruleFor(css, '.playing')).toMatch(/--chrome:\s*52px/)
 })
 
-test('--chrome on the frame covers the header, status, hint and toolbar, and grows by the picker only while the rule is on', () => {
-  const chrome = Number(ruleFor(css, '.frame').match(/--chrome:\s*(\d+)px/)![1])
-  const reserved = Number(ruleFor(css, '.frame.reserves-picker').match(/--chrome:\s*(\d+)px/)![1])
+test('the rail is a 360px border-box column that scrolls by itself rather than outgrow the window', () => {
+  const block = ruleFor(css, '.playing .rail')
 
-  expect(chrome).toBeGreaterThanOrEqual(200)
-  expect(reserved).toBeGreaterThanOrEqual(220)
+  expect(block).toMatch(/box-sizing:\s*border-box/)
+  expect(block).toMatch(/width:\s*360px/)
+  expect(block).toMatch(/max-height:\s*calc\(100dvh - 2px\)/)
+  expect(block).toMatch(/overflow-y:\s*auto/)
 })
 
-const coarse = css.match(/@media \(any-pointer: coarse\) \{\s*\.reserves-picker \.toolbar-actions \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}\s*\.frame\.reserves-picker \{([^}]*)\}/)
+test('on any touch input (touchscreen laptops too) the action buttons and dice are 44px tall and the Wildcard pills are 44px targets', () => {
+  const media = css.match(/@media \(any-pointer: coarse\) \{\s*\.playing \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}/)
 
-test('on any touch input (touchscreen laptops too) the Wildcard pills are 44px targets and the toolbar row reserves their taller picker', () => {
-  expect(coarse).not.toBeNull()
-  expect(coarse![1]).toMatch(/--picker-height:\s*92px/)
-  expect(coarse![2]).toMatch(/min-width:\s*44px/)
-  expect(coarse![2]).toMatch(/min-height:\s*44px/)
+  expect(media).not.toBeNull()
+  expect(media![1]).toMatch(/--control-height:\s*44px/)
+  expect(media![2]).toMatch(/min-width:\s*44px/)
+  expect(media![2]).toMatch(/min-height:\s*44px/)
 })
 
-test('on touch screens --chrome grows with the taller toolbar, so the board still fits the window', () => {
-  expect(Number(coarse![3].match(/--chrome:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(257)
-})
-
-test('a streak one skip from the limit is danger-coloured and bold, and stays AA (4.5:1) on the ledger and both current-player tints', () => {
-  const rule = ruleFor(css, '.streak.last-skip')
+test('a streak one skip from the limit is danger-coloured and bold, and stays AA (4.5:1) on the ledger', () => {
+  const rule = ruleFor(css, '.score-table .last-skip')
 
   expect(rule).toMatch(/color:\s*var\(--danger\)/)
   expect(rule).toMatch(/font-weight:\s*600/)
   expect(contrast(danger, ledger)).toBeGreaterThanOrEqual(4.5)
-  for (const player of ['--p1', '--p2']) {
-    const tint = mix(token(tokensCss, player), 0.14, ledger)
-    expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
-  }
 })
 
 test('the special-cell legend is a 12px line whose marks keep their ink under forced colors', () => {
@@ -77,24 +65,12 @@ test('the special-cell legend is a 12px line whose marks keep their ink under fo
   expect(ruleFor(css, '.playing-legend-mark')).toMatch(/forced-color-adjust:\s*none/) // only .board opts out, and the legend sits outside it
 })
 
-test('a frame with a legend gives the board 24px less height, whichever --chrome it has (plain, Wildcard picker, touch)', () => {
-  expect(ruleFor(css, '.frame.has-legend')).toMatch(/--legend-height:\s*24px/)
-  expect(ruleFor(readCss('components/Board.css'), '.board')).toMatch(/var\(--chrome, 176px\) - var\(--legend-height, 0px\)/)
-})
-
-test('the turn instruction is as large as the 16px player names it sits under, at the same 500 weight', () => {
+test('the turn instruction is 14px on a 20px line at weight 500, so two lines and the hint fit the status box', () => {
   const block = ruleFor(css, '.turn-status')
 
-  expect(block).toMatch(/font-size:\s*16px/)
+  expect(block).toMatch(/font-size:\s*14px/)
+  expect(block).toMatch(/line-height:\s*20px/)
   expect(block).toMatch(/font-weight:\s*500/)
-})
-
-const touchControls = css.match(/@media \(any-pointer: coarse\) \{[\s\S]*?\.toolbar-actions \{([^}]*)\}\s*\.frame \{([^}]*)\}/)
-
-test('on any touch input the toolbar buttons and dice are 44px tall, and --chrome grows by the same 10px so the board still fits', () => {
-  expect(touchControls).not.toBeNull()
-  expect(touchControls![1]).toMatch(/--control-height:\s*44px/)
-  expect(touchControls![2]).toMatch(/--chrome:\s*210px/) // 200px at 34px controls, plus the 10px the controls grow
 })
 
 test('the game-over buttons share the row equally but are never narrower than their label, so Series Result and Replay Last Round stay on one line', () => {

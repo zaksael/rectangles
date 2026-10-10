@@ -1,16 +1,25 @@
-.frame {
-  --chrome: 200px; /* header, status line, key hint and toolbar; the board fills the rest */
-  position: relative;
+/* The board on the left, a 360px rail on the right (the layout Replay uses too). */
+.playing {
+  --chrome: 52px; /* the board fills the window height less the frame's padding and border and the board's own border */
+  --control-height: 34px; /* the action buttons and the dice share one height */
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   width: fit-content;
-  max-width: 100%;
   margin: 0 auto;
   border: 1px solid var(--line);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
-/* While the Wildcard rule is on the toolbar row also holds the picker (below), and the board gives that height up. */
-.frame.reserves-picker {
-  --chrome: 220px;
+/* Any touch input: the action buttons, dice and Wildcard pills are 44px targets. */
+@media (any-pointer: coarse) {
+  .playing {
+    --control-height: 44px;
+  }
+  .wildcard-pills .pill {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 .visually-hidden {
@@ -24,79 +33,46 @@
   white-space: nowrap;
 }
 
-.header {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: stretch;
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--ledger);
-  padding-top: env(safe-area-inset-top);
+.playing .board-wrap {
+  display: flex;
+  align-items: center; /* a board shorter than the rail sits vertically centred */
+  padding: 24px;
 }
 
-.player {
+.playing .rail {
+  box-sizing: border-box;
+  width: 360px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-left: 1px solid var(--line);
+  /* The frame never outgrows the window: past this the rail scrolls by itself. */
+  max-height: calc(100dvh - 2px);
+  overflow-y: auto;
+}
+.playing .rail .btn {
+  font-weight: 500;
+  padding: 8px 16px;
+}
+
+.playing .rail-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 24px 8px;
-  border-bottom: 4px solid transparent;
 }
-/* dot+name always sit at the block's outer corner (the screen edge); the scoreline sits at its
-   inner corner (facing the header's center divider). P2 mirrors P1's order exactly via
-   row-reverse, rather than a separate right-aligned layout, so both players' scores face each
-   other in the middle and both names sit at the two outer edges. */
-.player-id {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.playing .rail-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
 }
-.player.p2 .player-id {
-  order: 2;
-  flex-direction: row-reverse;
-}
-.player.p2 .scoreline {
-  flex-direction: row-reverse;
-}
-/* Mirrors P1's free space toward its own streak, not the center divider. */
-.player.p2 .score {
-  text-align: left;
-}
-.player.p1.current {
-  border-bottom-color: var(--p1);
-  background: color-mix(in srgb, var(--p1) 14%, transparent);
-}
-.player.p2.current {
-  border-bottom-color: var(--p2);
-  background: color-mix(in srgb, var(--p2) 14%, transparent);
-}
-
-.series-line {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  column-gap: 0.75em;
-  padding: 3px 12px;
-  font: 500 12px 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
-}
-.series-line .series-round {
-  text-align: right;
-}
-.series-line .series-total {
-  text-align: left;
-}
-.turn-status {
-  grid-column: 1 / -1;
-  padding: 5px 24px;
-  border-top: 1px solid var(--line);
-  text-align: center;
-  font-size: 16px;
-  font-weight: 500;
-  text-wrap: pretty;
+.playing .rail-series {
+  margin-left: 12px;
+  margin-right: auto;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
 }
 
 /* Player colour is a background, which forced colors would turn white: the dots and swatches opt out. */
@@ -116,89 +92,52 @@
 .p2 .dot {
   background: var(--p2);
 }
-/* Absolutely positioned (shared rule with .dice-label further down, both anchored off .dice) so
-   it doesn't count toward .dice's centered width - only the die faces should decide where the
-   dice cluster centers in its toolbar slot. */
-.dice .dot,
-.dice-label {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+/* The mover's dot is filled, the other player's is a ring. */
+.score-table thead th:not(.current) .dot {
+  background: transparent;
+  box-sizing: border-box;
+  border: 2px solid var(--p1);
 }
-.dice .dot {
-  right: calc(100% + 6px);
+.score-table thead th.p2:not(.current) .dot {
+  border-color: var(--p2);
 }
-
-.player .name {
-  font-size: 16px;
-}
-.player.current .name {
-  font-weight: 600;
-}
-
-.player .scoreline {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.score {
-  font-family: 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 20px;
-  font-weight: 500;
-  display: inline-block;
-  min-width: 3ch; /* reserves 3-digit width so gaining/losing a digit doesn't shift the scoreline */
-  text-align: right;
-}
-.streak {
-  font-family: 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+.score-table .res-first th,
+.score-table .res-first td {
+  border-top: 1px solid var(--line);
 }
 /* One skip from the limit: the next skip ends the game. Bold as well as red, so it is not colour-only. */
-.streak.last-skip {
+.score-table .last-skip {
   color: var(--danger);
   font-weight: 600;
 }
 
-.toolbar-actions {
-  /* Left: Roll/Rotate/Skip/Reroll (only the ones usable right now).
-     Center: the rolled dice, or nothing. Right: Menu. Buttons and
-     dice share one height so the row doesn't jump when the dice appear. */
-  --control-height: 34px;
-  --picker-height: 0px; /* held only with the Wildcard rule on, see .reserves-picker below */
-  --dice-slot: 152px; /* reserved even with no dice, so the frame width never changes on the first roll */
-  display: grid;
-  grid-template-columns: 1fr var(--dice-slot) 1fr;
-  grid-auto-rows: minmax(var(--picker-height), auto);
-  align-items: center;
-  gap: 16px;
-  padding: 16px 24px max(16px, env(safe-area-inset-bottom));
-  border-top: 1px solid var(--line);
-  position: sticky;
-  bottom: 0;
-  z-index: 3;
-  background: var(--ledger);
+.rail-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-/* The Wildcard picker: two 25px pills and the 4px row gap. The row holds it whenever the rule is on, so the frame never grows on a wildcard roll. */
-.reserves-picker .toolbar-actions {
-  --picker-height: 54px;
+.turn-status {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  text-wrap: pretty;
+}
+.board-help {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 14px;
+  min-height: 14px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+/* Touch players have no keyboard: blank the hint by colour, so its height stays reserved and the board's aria-describedby text stays in the DOM. */
+@media (pointer: coarse) {
+  .board-help {
+    color: transparent;
+    forced-color-adjust: none; /* forced colors would paint the blanked line back in */
+  }
 }
 
-.toolbar-leading,
-.toolbar-trailing {
-  display: flex;
-  gap: 16px;
-}
-/* Reroll spends a limited charge, so it sits apart from the Rotate/Skip before it (the only button that can precede it). */
-.toolbar-leading .btn + .btn {
-  margin-left: 24px;
-}
-.toolbar-trailing {
-  grid-column: 3;
-  justify-content: flex-end;
-}
 /* The dice and the wildcard picker both hold .die boxes, which inherit these digits. */
 .dice,
 .wildcard-picker {
@@ -207,15 +146,9 @@
   font-size: 24px;
   font-weight: 500;
 }
-/* While a wildcard value is being picked the middle column grows to fit the picker; the outer
-   tracks stay equal 1fr, which is what keeps the picker centered. */
-.toolbar-actions.has-picker {
-  grid-template-columns: 1fr auto 1fr;
-}
-/* Two equal halves, so the seam between the fixed die and the pills sits on the toolbar's true
+/* Two equal halves, so the seam between the fixed die and the pills sits on the rail's true
    center whichever side the pills are on: each half hugs the seam. */
 .wildcard-picker {
-  grid-column: 2;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
@@ -239,52 +172,14 @@
   border-color: color-mix(in srgb, var(--ink) 25%, transparent);
   cursor: default;
 }
-/* Any touch input (a touchscreen laptop's primary pointer is fine, so `pointer` alone misses it): the pills are 44px targets in the same 2x3 grid (two rows of 44px and the 4px gap = 92px), so the
-   toolbar row reserves that, and --chrome grows by the same 39px to keep the board fitting the window. */
-@media (any-pointer: coarse) {
-  .reserves-picker .toolbar-actions {
-    --picker-height: 92px;
-  }
-  .wildcard-pills .pill {
-    min-width: 44px;
-    min-height: 44px;
-  }
-  .frame.reserves-picker {
-    --chrome: 257px;
-  }
-  /* The toolbar buttons and dice are 44px too; the picker row already holds 92px, so only a frame without it grows (by the same 10px). */
-  .toolbar-actions {
-    --control-height: 44px;
-  }
-  .frame {
-    --chrome: 210px;
-  }
-}
 .dice {
-  grid-column: 2;
-  justify-self: center;
-  position: relative; /* anchor for .dot/.dice-label, see the rule above */
+  align-self: center;
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.toolbar-actions .btn {
-  height: var(--control-height);
-  padding: 0 16px;
-}
-/* Roll is the toolbar's only primary button; a heavier outline sets it apart from Menu without a solid fill. */
-.toolbar-leading .btn.primary {
-  border-width: 2px;
-}
-.dice-label {
-  left: 100%;
-  margin-left: 6px;
-  font-size: 12px;
-  font-weight: 400;
-  white-space: nowrap;
-}
 .die {
-  box-sizing: border-box; /* so the border stays inside the 34px, matching the buttons */
+  box-sizing: border-box; /* so the border stays inside the control height, matching the buttons */
   width: var(--control-height);
   height: var(--control-height);
   display: flex;
@@ -297,26 +192,29 @@
   border-style: dashed;
 }
 
-.board-area {
-  position: relative;
+.rail-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.rail-actions .btn {
+  height: var(--control-height);
+  padding: 0 16px;
+}
+/* Roll is the action row's only primary button; a heavier outline sets it apart without a solid fill. */
+.rail-actions .btn.primary {
+  border-width: 2px;
 }
 
-.board-help {
-  margin: 0;
-  padding: 6px 24px 0;
-  text-align: center;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
-}
-/* One line under the board naming each special-cell rule that is on; the marks are the board's own .board-cell.<kind> rules. */
+/* One line naming each special-cell rule that is on; the marks are the board's own .board-cell.<kind> rules. */
 .playing-legend {
   list-style: none;
   margin: 0;
-  padding: 2px 24px;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 4px 16px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -333,40 +231,19 @@
   flex: none;
   forced-color-adjust: none; /* the marks are backgrounds, and only .board opts out of forced colors */
 }
-/* The row takes 24px (20px line + 4px padding) of the window height, which the board gives up. */
-.frame.has-legend {
-  --legend-height: 24px;
-}
-/* Touch players have no keyboard: blank the hint by colour, so its height stays reserved and the board's aria-describedby text stays in the DOM. */
-@media (pointer: coarse) {
-  .board-help {
-    color: transparent;
-    forced-color-adjust: none; /* forced colors would paint the blanked line back in */
-  }
-}
 
-.toast-anchor {
-  /* Hangs from the bottom of the sticky header (which is positioned), so it stays in view
-     under the header whatever its height, even when the board scrolls. */
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 3;
-  height: 0;
+/* Errors and the Comeback notice stack in the rail. */
+.rail-notice {
   display: flex;
-  flex-direction: column; /* an error toast and a Comeback notice stack */
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
 }
-
 .toast {
-  margin-top: 12px;
-  padding: 8px 16px;
+  padding: 5px 12px;
   background: var(--ink);
   color: var(--ledger);
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
 dialog.modal {

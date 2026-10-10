@@ -17,6 +17,7 @@
 
 .score-table tbody th,
 .score-table tfoot th,
+.score-table .score-row th,
 .score-table td:first-child {
   text-align: left;
   font-family: inherit;
@@ -29,6 +30,7 @@
   font-weight: 500;
   font-size: 14px;
   border-bottom: 1px solid var(--line);
+  white-space: nowrap;
 }
 
 .score-table thead .dot {
@@ -42,18 +44,21 @@
 }
 
 .score-table tfoot td,
-.score-table tfoot th {
-  border-top: 1px solid var(--ink);
-  padding: 8px 12px;
-}
-
-.score-table tfoot td {
+.score-table .score-row td {
   font-size: 20px;
   font-weight: 600;
 }
 
-.score-table tfoot th {
+.score-table tfoot th,
+.score-table .score-row th {
   font-size: 14px;
   font-weight: 500;
 }
 
+.score-table tfoot td,
+.score-table tfoot th,
+.score-table .score-row td,
+.score-table .score-row th {
+  border-top: 1px solid var(--ink);
+  padding: 8px 12px;
+}

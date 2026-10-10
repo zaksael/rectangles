@@ -17,3 +17,7 @@ test('the Total is the table\'s strongest figure', () => {
 test('muted zeros stay AA (4.5:1) on the ledger', () => {
   expect(textContrast(css, '.score-table td.zero')).toBeGreaterThanOrEqual(4.5)
 })
+
+test('a header cell never wraps, so a long name like Bot (Greedy) keeps the column', () => {
+  expect(ruleFor(css, '.score-table thead th')).toMatch(/white-space:\s*nowrap/)
+})

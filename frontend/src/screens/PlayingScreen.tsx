@@ -11,7 +11,8 @@ import type { GameError, GameState } from '../useGameSocket'
 import { KeyBadge } from '../components/KeyBadge'
 import { noBreak } from '../noBreak'
 import { seriesRound } from '../seriesRound'
-import { coveredSpecialRules, enabledSpecialRules } from '../specialCells'
+import { coveredSpecialRules } from '../specialCells'
+import './ScoreTable.css'
 import './PlayingScreen.css'
 
 interface PlayingScreenProps {
@@ -33,7 +34,7 @@ const COMEBACK_TOAST_MS = 8000
 
 // The key that applies in each of the human's turn states; other states show a blank line.
 const KEY_HINT: Partial<Record<string, string>> = {
-  choosingPlacement: 'Arrows move, N next legal spot, Enter places, R rotates',
+  choosingPlacement: 'Arrows move, N next, Enter places, R rotates',
 }
 
 const ERROR_TEXT: Record<ErrorReason, string> = {
@@ -213,139 +214,158 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [humanTurnState, rerollUsable])
 
+  const ids = ['1', '2'] as const
+  const reroll = (id: '1' | '2') => state!.game.players[id].houseRules.reroll
+  const title = state?.series ? `Round ${seriesRound(state.game, state.series)} of ${state.series.length}` : 'Game'
+
   return (
-    <div className={['frame', wildcard?.enabled && 'reserves-picker', state && enabledSpecialRules(state.game).length > 0 && 'has-legend'].filter(Boolean).join(' ')}>
+    <div className="playing">
       <h1 className="visually-hidden">Playing</h1>
       {state && (
-        <>
-          <div className="header">
-            {!showResultBar && (['1', '2'] as const).map((id) => (
-              <div
-                key={id}
-                className={`player p${id}${currentId === Number(id) ? ' current' : ''}`}
-                aria-current={currentId === Number(id) ? 'true' : undefined}
-              >
-                <div className="player-id">
-                  <span className="dot" aria-hidden="true" />
-                  <span className="name">{state.game.players[id].name}</span>
-                </div>
-                <span className="scoreline">
-                  <span className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'streak last-skip' : 'streak'}>
-                    {state.game.players[id].board.consecutiveSkips}/{state.game.board.skipLimit} skips
-                    {rerollEnabled &&
-                      `, ${state.game.players[id].houseRules.reroll.limit - state.game.players[id].houseRules.reroll.used}/${state.game.players[id].houseRules.reroll.limit} rerolls`}
-                  </span>
-                  <span className="score">
-                    {state.game.players[id].score.totalScore}
-                    <span className="visually-hidden"> points</span>
-                  </span>
-                </span>
-              </div>
-            ))}
-            <div className="toast-anchor" role="status" aria-live="polite">
+        <div className="board-wrap">
+          <Board
+            game={state.game}
+            previewTopLeft={previewTopLeft}
+            previewDims={dims}
+            previewKind={previewKind}
+            coverableCells={coverableCells}
+            lastPlaced={lastPlaced}
+            onCellHover={placing ? handleCellHover : undefined}
+            onCellTap={placing ? handleCellTap : undefined}
+            onKeyDown={placing ? handleBoardKeyDown : undefined}
+            onFocus={placing ? handleBoardFocus : undefined}
+            describedBy={placing ? 'board-help' : undefined}
+          />
+        </div>
+      )}
+      <div className="rail">
+        <div className="rail-head">
+          <h2 className="rail-title">{title}</h2>
+          {state?.series && <span className="rail-series">{`Series ${state.series.scores['1']} – ${state.series.scores['2']}`}</span>}
+          <button className="btn secondary" onClick={onOpenSettings} aria-keyshortcuts="m">
+            Menu
+            <KeyBadge>M</KeyBadge>
+          </button>
+        </div>
+        {state && (
+          <>
+            {showResultBar ? (
+              <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
+            ) : (
+              <table className="score-table">
+                <caption className="visually-hidden">Score</caption>
+                <thead>
+                  <tr>
+                    <td />
+                    {ids.map((id) => (
+                      <th key={id} scope="col" className={`p${id}${currentId === Number(id) ? ' current' : ''}`} aria-current={currentId === Number(id) ? 'true' : undefined}>
+                        <span className="dot" aria-hidden="true" />
+                        {state.game.players[id].name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">Area</th>
+                    {ids.map((id) => <td key={id}>{state.game.players[id].score.totalArea}</td>)}
+                  </tr>
+                  <tr className="score-row">
+                    <th scope="row">Score</th>
+                    {ids.map((id) => <td key={id}>{state.game.players[id].score.totalScore}</td>)}
+                  </tr>
+                  <tr className="res-first">
+                    <th scope="row">In reach</th>
+                    {ids.map((id) => <td key={id}>{state.game.players[id].score.potential.area}</td>)}
+                  </tr>
+                  <tr>
+                    <th scope="row">Skips</th>
+                    {ids.map((id) => (
+                      <td key={id} className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'last-skip' : undefined}>
+                        {state.game.players[id].board.consecutiveSkips} / {state.game.board.skipLimit}
+                      </td>
+                    ))}
+                  </tr>
+                  {rerollEnabled && (
+                    <tr>
+                      <th scope="row">Rerolls</th>
+                      {ids.map((id) => <td key={id}>{reroll(id).limit - reroll(id).used} / {reroll(id).limit}</td>)}
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+            <SpecialCellLegend game={state.game} />
+            <div className="rail-notice" role="status" aria-live="polite">
               {error && error !== dismissedError && <div className="toast">{ERROR_TEXT[error.reason]}</div>}
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
-            {showResultBar && (
-              <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
-            )}
-            {state.series && (
-              <div className="series-line">
-                <span className="series-round">{`Round ${seriesRound(state.game, state.series)} of ${state.series.length}`}</span>
-                <span aria-hidden="true">·</span>
-                <span className="series-total">{`Series ${state.series.scores['1']} – ${state.series.scores['2']}`}</span>
+            <div className="rail-turn">
+              {turnStatus && (
+                <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
+                  {turnStatus}
+                </div>
+              )}
+              {/* Always rendered (blank when no key applies) so the status line doesn't shift vertically. */}
+              <p id="board-help" className="board-help">
+                {boardHint}
+              </p>
+              {pickIndex !== null && (
+                <div className="wildcard-picker">
+                  {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
+                  {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
+                </div>
+              )}
+              {shownRoll && pickIndex === null && (
+                <div
+                  className={`dice${roll ? '' : ' stale'}`}
+                  role="img"
+                  aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
+                >
+                  {shownRoll.values.map((value, i) => (
+                    <span key={i} className="die">
+                      {value}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="rail-actions">
+                {/* Only buttons that can be clicked right now are shown. */}
+                {humanTurnState === 'awaitingRoll' && (
+                  <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">
+                    Roll
+                    <KeyBadge>D</KeyBadge>
+                  </button>
+                )}
+                {humanTurnState === 'choosingPlacement' && (
+                  <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r">
+                    Rotate
+                    <KeyBadge>R</KeyBadge>
+                  </button>
+                )}
+                {humanTurnState === 'skipped' && (
+                  <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s">
+                    Skip
+                    <KeyBadge>S</KeyBadge>
+                  </button>
+                )}
+                {rerollUsable && (
+                  <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e">
+                    Reroll
+                    <KeyBadge>E</KeyBadge>
+                  </button>
+                )}
               </div>
-            )}
-            {turnStatus && (
-              <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
-                {turnStatus}
-              </div>
-            )}
-          </div>
-          <div className="board-area">
-            <Board
-              game={state.game}
-              previewTopLeft={previewTopLeft}
-              previewDims={dims}
-              previewKind={previewKind}
-              coverableCells={coverableCells}
-              lastPlaced={lastPlaced}
-              onCellHover={placing ? handleCellHover : undefined}
-              onCellTap={placing ? handleCellTap : undefined}
-              onKeyDown={placing ? handleBoardKeyDown : undefined}
-              onFocus={placing ? handleBoardFocus : undefined}
-              describedBy={placing ? 'board-help' : undefined}
-            />
-            <SpecialCellLegend game={state.game} />
-            {/* Always rendered (blank when no key applies) so the board doesn't shift vertically. */}
-            <p id="board-help" className="board-help">
-              {boardHint}
-            </p>
-          </div>
-        </>
-      )}
+            </div>
+          </>
+        )}
+      </div>
       {state && turnState === 'gameOver' && !resultHidden &&
         (seriesResultOpen && state.series ? (
           <SeriesResultOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onReplay={onReplay && (() => onReplay(true))} />
         ) : (
           <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} onReplay={onReplay && (() => onReplay(false))} />
         ))}
-      <div className={`toolbar-actions${pickIndex !== null ? ' has-picker' : ''}`}>
-        <div className="toolbar-leading">
-          {/* Only buttons that can be clicked right now are shown. */}
-          {humanTurnState === 'awaitingRoll' && (
-            <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">
-              Roll
-              <KeyBadge>D</KeyBadge>
-            </button>
-          )}
-          {humanTurnState === 'choosingPlacement' && (
-            <button className="btn secondary" onClick={rotate} aria-keyshortcuts="r">
-              Rotate
-              <KeyBadge>R</KeyBadge>
-            </button>
-          )}
-          {humanTurnState === 'skipped' && (
-            <button className="btn secondary" onClick={() => sendAction({ type: 'skip' })} aria-keyshortcuts="s">
-              Skip
-              <KeyBadge>S</KeyBadge>
-            </button>
-          )}
-          {rerollUsable && (
-            <button className="btn secondary" onClick={() => sendAction({ type: 'reroll' })} aria-keyshortcuts="e">
-              Reroll
-              <KeyBadge>E</KeyBadge>
-            </button>
-          )}
-        </div>
-        {pickIndex !== null && (
-          <div className="wildcard-picker">
-            {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
-            {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
-          </div>
-        )}
-        {state && shownRoll && pickIndex === null && (
-          <div
-            className={`dice p${shownRoll.owner}${roll ? '' : ' stale'}`}
-            role="img"
-            aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
-          >
-            <span className="dot" aria-hidden="true" />
-            {shownRoll.values.map((value, i) => (
-              <span key={i} className="die">
-                {value}
-              </span>
-            ))}
-            {!roll && <span className="dice-label">{state.game.players[shownRoll.owner].name} last</span>}
-          </div>
-        )}
-        <div className="toolbar-trailing">
-          <button className="btn secondary" onClick={onOpenSettings} aria-keyshortcuts="m">
-            Menu
-            <KeyBadge>M</KeyBadge>
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

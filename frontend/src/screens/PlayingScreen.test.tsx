@@ -10,6 +10,11 @@ function makeState(overrides: Parameters<typeof makeGame>[0] = {}): GameState {
   return { game: makeGame(overrides), series: null }
 }
 
+const scoreTable = () => screen.getByRole('table', { name: 'Score' })
+const scoreRow = (label: string) => within(scoreTable()).getByRole('row', { name: new RegExp(`^${label}( |$)`) })
+const rowCells = (label: string) => within(scoreRow(label)).getAllByRole('cell')
+const rowValues = (label: string) => rowCells(label).map((c) => c.textContent)
+
 function renderScreen(
   state: GameState | null,
   sendAction = vi.fn(),
@@ -39,8 +44,8 @@ test('renders nothing game-specific before the first state broadcast arrives', (
 test('highlights the current player in the turn indicator', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  expect(screen.getByText('Player 1').closest('.player')).not.toHaveClass('current')
-  expect(screen.getByText('Player 2').closest('.player')).toHaveClass('current')
+  expect(screen.getByRole('columnheader', { name: 'Player 1' })).not.toHaveClass('current')
+  expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveClass('current')
 })
 
 test('shows a Roll button while awaiting a roll, which sends the roll action', () => {
@@ -82,13 +87,13 @@ test.each([
   ['awaitingRoll', ['Roll']],
   ['choosingPlacement', ['Rotate']],
   ['skipped', ['Skip']],
-] as const)('only the applicable action button and Menu are shown (%s)', (turnState, shown) => {
+] as const)('only the applicable action button is shown in the action row (%s)', (turnState, shown) => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
-  const names = within(document.querySelector('.toolbar-actions') as HTMLElement)
+  const names = within(document.querySelector('.rail-actions') as HTMLElement)
     .getAllByRole('button')
     .map((b) => b.firstChild!.textContent!.trim())
-  expect(names).toEqual([...shown, 'Menu'])
+  expect(names).toEqual([...shown])
 })
 
 test('clicking a legal cell while choosing placement sends the place action', () => {
@@ -199,65 +204,63 @@ test('shows a Skip button when the turn was skipped, which sends the skip action
   expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
 })
 
-test("shows each player's total score in their header slot", () => {
+test('the rail opens with the Game title and the Menu button', () => {
+  renderScreen(makeState())
+
+  const title = screen.getByRole('heading', { name: 'Game' })
+  expect(within(title.parentElement as HTMLElement).getByRole('button', { name: 'Menu' })).toBeInTheDocument()
+})
+
+test('the score table has a column per player, with the mover marked', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(within(scoreTable()).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Player 1', 'Player 2'])
+  expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveAttribute('aria-current', 'true')
+  expect(screen.getByRole('columnheader', { name: 'Player 1' })).not.toHaveAttribute('aria-current')
+})
+
+test('each column header carries the player\'s dot', () => {
+  renderScreen(makeState())
+
+  for (const name of ['Player 1', 'Player 2']) {
+    expect(screen.getByRole('columnheader', { name }).querySelector('.dot')).toBeInTheDocument()
+  }
+})
+
+test('the Area and Score rows show each player\'s totals', () => {
   const game = makeGame()
-  game.players['1'].score.totalScore = 12
-  game.players['2'].score.totalScore = 7
+  game.players['1'].score = { ...game.players['1'].score, totalArea: 9, totalScore: 12 }
+  game.players['2'].score = { ...game.players['2'].score, totalArea: 5, totalScore: 7 }
   renderScreen({ game, series: null })
 
-  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
-  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
-  expect(within(p1).getByText('12')).toHaveClass('score')
-  expect(within(p2).getByText('7')).toHaveClass('score')
+  expect(rowValues('Area')).toEqual(['9', '5'])
+  expect(rowValues('Score')).toEqual(['12', '7'])
 })
 
-test("each header score is read out as points, not a bare number", () => {
-  const game = makeGame()
-  game.players['1'].score.totalScore = 12
-  renderScreen({ game, series: null })
-
-  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
-  expect(p1).toHaveTextContent('12 points')
-})
-
-test("shows both players' skip streaks against the skip limit at the same time", () => {
-  const game = makeGame({ board: { size: 3, skipLimit: 5 } })
-  game.players['1'].board.consecutiveSkips = 2
-  game.players['2'].board.consecutiveSkips = 0
-  renderScreen({ game, series: null })
-
-  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
-  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
-  expect(within(p1).getByText('2/5 skips')).toHaveClass('streak')
-  expect(within(p2).getByText('0/5 skips')).toHaveClass('streak')
-})
-
-test('a player one skip from the limit gets the last-skip mark on their streak, the other does not', () => {
+test('the Skips row shows each player\'s streak against the limit, and marks one skip from the limit', () => {
   const game = makeGame({ board: { size: 3, skipLimit: 5 } })
   game.players['1'].board.consecutiveSkips = 4
   game.players['2'].board.consecutiveSkips = 2
   renderScreen({ game, series: null })
 
-  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
-  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
-  expect(within(p1).getByText('4/5 skips')).toHaveClass('last-skip')
-  expect(within(p2).getByText('2/5 skips')).not.toHaveClass('last-skip')
+  expect(rowValues('Skips')).toEqual(['4 / 5', '2 / 5'])
+  expect(rowCells('Skips')[0]).toHaveClass('last-skip')
+  expect(rowCells('Skips')[1]).not.toHaveClass('last-skip')
 })
 
-test("groups each player's dot with their name, and orders the scoreline skips before score", () => {
+test('the In reach row shows the empty cells each player can still reach', () => {
   const game = makeGame()
-  game.players['1'].score.totalScore = 12
+  game.players['1'].score.potential = { area: 31, prize: { points: 0 } }
+  game.players['2'].score.potential = { area: 24, prize: { points: 0 } }
   renderScreen({ game, series: null })
 
-  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
-  const playerId = screen.getByText('Player 1').closest('.player-id') as HTMLElement
-  expect(playerId).not.toBeNull()
-  expect(playerId.querySelector('.dot')).toBeInTheDocument()
+  expect(rowValues('In reach')).toEqual(['31', '24'])
+})
 
-  const scoreline = p1.querySelector('.scoreline') as HTMLElement
-  const [first, second] = Array.from(scoreline.children)
-  expect(first).toHaveClass('streak')
-  expect(second).toHaveClass('score')
+test('the score table uses the shared score-table style', () => {
+  renderScreen(makeState())
+
+  expect(scoreTable()).toHaveClass('score-table')
 })
 
 test.each([
@@ -303,11 +306,11 @@ test('a newer error replaces the toast and restarts the 4 second timer', () => {
   expect(screen.getByRole('status')).not.toBeEmptyDOMElement()
 })
 
-test("marks only the current player's slot with aria-current", () => {
+test("marks only the current player's column with aria-current", () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
-  expect(screen.getByText('Player 1').closest('.player')).not.toHaveAttribute('aria-current')
-  expect(screen.getByText('Player 2').closest('.player')).toHaveAttribute('aria-current', 'true')
+  expect(screen.getByRole('columnheader', { name: 'Player 1' })).not.toHaveAttribute('aria-current')
+  expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveAttribute('aria-current', 'true')
 })
 
 test('the dice have an accessible name describing the roll', () => {
@@ -564,20 +567,15 @@ test('there is no Replay button mid-game; Replay is only reachable from the game
   expect(screen.queryByRole('button', { name: 'Replay' })).not.toBeInTheDocument()
 })
 
-test.each(['awaitingRoll', 'choosingPlacement', 'skipped'] as const)(
-  'Menu sits in the trailing toolbar group while %s',
+test.each(['awaitingRoll', 'choosingPlacement', 'skipped', 'gameOver'] as const)(
+  'Menu sits in the rail head beside the title while %s',
   (turnState) => {
     renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
-    expect(screen.getByRole('button', { name: 'Menu' }).parentElement).toHaveClass('toolbar-trailing')
+    const head = screen.getByRole('heading', { name: 'Game' }).parentElement as HTMLElement
+    expect(within(head).getByRole('button', { name: 'Menu' })).toBeInTheDocument()
   },
 )
-
-test('Menu stays in the trailing toolbar group once the game is over', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }))
-
-  expect(screen.getByRole('button', { name: 'Menu' }).parentElement).toHaveClass('toolbar-trailing')
-})
 
 test('the turn status line tells the current player what to do: roll', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
@@ -759,13 +757,13 @@ test('Local 2P never shows a recap', () => {
   expect(recapStatus()).not.toHaveTextContent('·')
 })
 
-test("the bot's last roll is captioned and labelled with the bot's name", () => {
+test("the bot's last roll is labelled with the bot's name for assistive tech", () => {
   const update = renderBotGame(botGame({ current: 2, turnState: 'choosingPlacement', lastRoll: [3, 5] }))
   expect(screen.getByRole('img', { name: 'Bot (Greedy) rolled 3 and 5' })).toBeInTheDocument()
 
   update(botGame({ current: 1, turnState: 'awaitingRoll' }))
 
-  expect(screen.getByRole('img', { name: 'Bot (Greedy)’s last roll 3 and 5' })).toHaveTextContent('Bot (Greedy) last')
+  expect(screen.getByRole('img', { name: 'Bot (Greedy)’s last roll 3 and 5' })).toHaveTextContent(/^35$/)
 })
 
 test('there is no turn status line once the game is over', () => {
@@ -791,7 +789,8 @@ test('keeps the last roll on screen, marked as the last roll, once the next turn
 
   const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
   expect(dice).toHaveClass('stale')
-  expect(dice).toHaveTextContent('Player 1 last')
+  expect(dice).not.toHaveTextContent('last')
+  expect(dice.querySelector('.dot')).not.toBeInTheDocument()
 })
 
 // jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
@@ -810,7 +809,7 @@ test('the dice are border-box, so their 34px matches the buttons and the toolbar
   expect([...document.querySelectorAll('.die')].map((d) => getComputedStyle(d).boxSizing)).toEqual(['border-box', 'border-box'])
 })
 
-test('the last roll is marked by a dashed border and a one-line owner label, not by dimming its digits', () => {
+test('the last roll is marked by a dashed border alone, not by dimming its digits', () => {
   injectPlayingCss()
   const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
   const dice = () => [...document.querySelectorAll('.die')].map((d) => getComputedStyle(d))
@@ -820,8 +819,7 @@ test('the last roll is marked by a dashed border and a one-line owner label, not
   update(rolledState('awaitingRoll', null))
 
   expect(dice().map((c) => c.borderTopStyle)).toEqual(['dashed', 'dashed'])
-  expect([...dice(), getComputedStyle(document.querySelector('.dice .dot')!)].map((c) => c.opacity)).toEqual(['1', '1', '1'])
-  expect(getComputedStyle(screen.getByText('Player 1 last')).whiteSpace).toBe('nowrap')
+  expect(dice().map((c) => c.opacity)).toEqual(['1', '1'])
 })
 
 test('the winner’s score cell has a 4px top border and 4px less top padding, so the scoreboard keeps its height', () => {
@@ -1002,13 +1000,13 @@ test('the board explains its keys to assistive tech', () => {
   renderScreen(keyboardState())
 
   const help = document.getElementById(screen.getByRole('grid').getAttribute('aria-describedby')!)
-  expect(help).toHaveTextContent('Arrows move, N next legal spot, Enter places, R rotates')
+  expect(help).toHaveTextContent('Arrows move, N next, Enter places, R rotates')
 })
 
 test('the placement keys are visible under the board, not only announced', () => {
   renderScreen(keyboardState())
 
-  expect(screen.getByText('Arrows move, N next legal spot, Enter places, R rotates')).not.toHaveClass('visually-hidden')
+  expect(screen.getByText('Arrows move, N next, Enter places, R rotates')).not.toHaveClass('visually-hidden')
 })
 
 test('the key hint under the board is blank on the roll turn and on the bot\'s turn', () => {
@@ -1101,28 +1099,26 @@ test('the Menu button exposes its keyboard shortcut to assistive tech', () => {
   expect(screen.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-keyshortcuts', 'm')
 })
 
-test('Roll sits in the toolbar\'s leading group, which is where its heavier border is scoped', () => {
+test('Roll sits in the action row, which is where its heavier border is scoped', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
-  expect(screen.getByRole('button', { name: 'Roll' }).parentElement).toHaveClass('toolbar-leading')
+  expect(screen.getByRole('button', { name: 'Roll' }).parentElement).toHaveClass('rail-actions')
 })
 
-test('the dice carry a dot in the color of the player who rolled them', () => {
+test('the dice name who rolled them for assistive tech but draw no dot or label', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [4, 2], legalPlacements: [] } }))
 
   const dice = screen.getByRole('img', { name: 'Player 2 rolled 4 and 2' })
-  expect(dice).toHaveClass('p2')
-  expect(dice.querySelector('.dot')).toBeInTheDocument()
+  expect(dice.querySelector('.dot')).not.toBeInTheDocument()
+  expect(dice).toHaveTextContent(/^42$/)
 })
 
-test("a dimmed last roll keeps its roller's name and color through the next player's turn", () => {
+test("a dimmed last roll keeps its roller's name for assistive tech through the next player's turn", () => {
   const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
 
   update(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
-  const dice = screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })
-  expect(dice).toHaveClass('p1')
-  expect(dice.querySelector('.dot')).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })).toHaveTextContent(/^35$/)
 })
 
 test('the placement hint points at the starting corner first, then at the adjacency rule once a piece is down', () => {
@@ -1137,11 +1133,10 @@ test('the placement hint points at the starting corner first, then at the adjace
   expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2 wide × 1 tall — must share an edge with your territory$/)
 })
 
-test('the error toast hangs from the sticky header, so it follows the header height', () => {
+test('the error toast shows in the rail\'s notice row, a polite status region', () => {
   renderScreen(makeState(), vi.fn(), { reason: 'illegalPlacement', message: 'x' })
 
-  const toast = screen.getByText(/can’t go there/)
-  expect(toast.closest('.header')).toBeInTheDocument()
+  expect(screen.getByRole('status')).toContainElement(screen.getByText(/can’t go there/))
 })
 
 const wildcardState = ({
@@ -1297,27 +1292,24 @@ test('pressing e does nothing once charges are exhausted', () => {
   expect(sendAction).not.toHaveBeenCalled()
 })
 
-test("appends each player's reroll charges to their skip streak, comma-joined", () => {
+test('the Rerolls row shows each player\'s charges left against the limit', () => {
   const state = rerollState(true)
   state.game.players['1'].houseRules.reroll = { used: 1, limit: 3 }
   state.game.players['2'].houseRules.reroll = { used: 2, limit: 2 }
   renderScreen(state)
 
-  const p1 = screen.getByText('Player 1').closest('.player') as HTMLElement
-  const p2 = screen.getByText('Player 2').closest('.player') as HTMLElement
-  expect(within(p1).getByText('0/5 skips, 2/3 rerolls')).toHaveClass('streak')
-  expect(within(p2).getByText('0/5 skips, 0/2 rerolls')).toHaveClass('streak')
+  expect(rowValues('Rerolls')).toEqual(['2 / 3', '0 / 2'])
 })
 
-test('the skip streak has no reroll count when the house rule is off', () => {
+test('there is no Rerolls row when the house rule is off', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  expect(screen.getAllByText('0/5 skips')).toHaveLength(2)
+  expect(within(scoreTable()).queryByRole('row', { name: /^Rerolls/ })).not.toBeInTheDocument()
 })
 
 test('the key hint names the reroll key, comma-joined, while placing, and is blank while skipping', () => {
   renderScreen(rerollState(true))
-  expect(screen.getByText('Arrows move, N next legal spot, Enter places, R rotates, E rerolls')).toBeInTheDocument()
+  expect(screen.getByText('Arrows move, N next, Enter places, R rotates, E rerolls')).toBeInTheDocument()
 
   cleanup()
   renderScreen(rerollState(true, 'skipped'))
@@ -1327,7 +1319,7 @@ test('the key hint names the reroll key, comma-joined, while placing, and is bla
 test('the key hint omits the reroll key once charges are exhausted', () => {
   renderScreen(rerollState(false))
 
-  expect(screen.getByText('Arrows move, N next legal spot, Enter places, R rotates')).toBeInTheDocument()
+  expect(screen.getByText('Arrows move, N next, Enter places, R rotates')).toBeInTheDocument()
 })
 
 test('the turn status line offers reroll as an alternative to a forced skip', () => {
@@ -1511,34 +1503,34 @@ test('mid-game, the header marks the player whose turn it is', () => {
   expect(document.querySelector('[aria-current]')).toHaveTextContent('Player 2')
 })
 
-test('once the game is over, the header marks no current player', () => {
+test('once the game is over, the table marks no current player', () => {
   renderScreen(gameOverState())
   expect(document.querySelector('[aria-current]')).toBeNull()
-  expect(document.querySelector('.header .current')).toBeNull()
+  expect(document.querySelector('.score-table .current')).toBeNull()
 })
 
-test('in board view the result bar replaces the player header', () => {
+test('in board view the result bar replaces the score table', () => {
   const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
   expect(bar).toBeInTheDocument()
-  expect(screen.queryByText(/skips/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('table', { name: 'Score' })).not.toBeInTheDocument()
 })
 
-test('with the result dialog open, the header still shows both players', () => {
+test('with the result dialog open, the table still shows both players', () => {
   renderScreen(gameOverState())
-  expect(screen.getAllByText(/skips/)).toHaveLength(2)
+  expect(screen.getAllByRole('columnheader')).toHaveLength(2)
 })
 
 test('the header and the dialog come back with View Result, and View Board swaps them for the bar again', () => {
   renderScreen(gameOverState())
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
-  expect(screen.queryByText(/skips/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('table', { name: 'Score' })).not.toBeInTheDocument()
 
   fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' }))
-  expect(screen.getAllByText(/skips/)).toHaveLength(2)
+  expect(screen.getAllByRole('columnheader')).toHaveLength(2)
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'View Board' }))
-  expect(screen.queryByText(/skips/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('table', { name: 'Score' })).not.toBeInTheDocument()
 })
 
 test('the bar shows the real score, Player 1 first, even when the winner trails after a surrender', () => {
@@ -1570,36 +1562,25 @@ test('the bar shows total score, not territory, when modifiers make them differ'
   expect(bar).toHaveTextContent('162 – 141')
 })
 
-test.each([[true], [false]])('the frame reserves the Wildcard picker height only while the Wildcard rule is on (rule on: %s)', (enabled) => {
-  const state = makeState()
-  state.game.houseRules.wildcard = { ...state.game.houseRules.wildcard, enabled }
-  renderScreen(state)
-
-  expect(document.querySelector('.frame')?.classList.contains('reserves-picker')).toBe(enabled)
-})
-
 test('in series play a caption gives the round and the running series score', () => {
   renderScreen({ ...makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }), series: makeSeries({ gamesPlayed: 1, scores: { '1': 18, '2': 14 } }) })
 
-  const caption = document.querySelector('.series-line') as HTMLElement
-  expect(caption).not.toBeNull()
-  expect(within(caption).getByText('Round 2 of 3')).toBeInTheDocument()
-  expect(within(caption).getByText('Series 18 – 14')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Round 2 of 3' })).toBeInTheDocument()
+  expect(screen.getByText('Series 18 – 14')).toBeInTheDocument()
 })
 
 test('after a round ends the caption counts that round and includes its points', () => {
   renderScreen({ ...gameOverState(), series: makeSeries({ gamesPlayed: 2, scores: { '1': 31, '2': 29 } }) })
 
-  const caption = document.querySelector('.series-line') as HTMLElement
-  expect(caption).not.toBeNull()
-  expect(within(caption).getByText('Round 2 of 3')).toBeInTheDocument()
-  expect(within(caption).getByText('Series 31 – 29')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Round 2 of 3' })).toBeInTheDocument()
+  expect(screen.getByText('Series 31 – 29')).toBeInTheDocument()
 })
 
 test('a single game has no series caption', () => {
   renderScreen(makeState())
 
-  expect(document.querySelector('.series-line')).toBeNull()
+  expect(screen.getByRole('heading', { name: 'Game' })).toBeInTheDocument()
+  expect(screen.queryByText(/^Series /)).not.toBeInTheDocument()
 })
 
 test('in a series, Next Round on the result dialog and on the bar sends continueSeries', () => {
@@ -1717,17 +1698,10 @@ test('the legend reads each rule\'s own point value and lists only the rules tha
   expect(items.map((item) => item.textContent)).toEqual(['Prize +7'])
 })
 
-test('with no special-cell rule on there is no legend and the frame reserves no room for one', () => {
+test('with no special-cell rule on there is no legend', () => {
   renderScreen(makeState())
 
   expect(screen.queryByRole('list', { name: 'Special cells' })).not.toBeInTheDocument()
-  expect(document.querySelector('.frame')).not.toHaveClass('has-legend')
-})
-
-test('the frame carries has-legend while the legend shows, so the board leaves room for it', () => {
-  renderScreen(makeState({ houseRules: specialRules({ steal: { enabled: true, cells: [[0, 2]], points: 10 } }) }))
-
-  expect(document.querySelector('.frame')).toHaveClass('has-legend')
 })
 
 function placingOnSpecialBoard(rules: Parameters<typeof specialRules>[0]) {
