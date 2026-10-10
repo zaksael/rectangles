@@ -1,0 +1,59 @@
+/* The score table shared by Replay and Playing: one row per rule that is on, the Total set apart under a rule in ink. */
+.score-table {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.score-table th,
+.score-table td {
+  padding: 5px 12px;
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.score-table tbody th,
+.score-table tfoot th,
+.score-table td:first-child {
+  text-align: left;
+  font-family: inherit;
+}
+
+.score-table thead th,
+.score-table thead td {
+  padding: 10px 12px;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.score-table thead .dot {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.score-table td.zero {
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+
+.score-table tfoot td,
+.score-table tfoot th {
+  border-top: 1px solid var(--ink);
+  padding: 8px 12px;
+}
+
+.score-table tfoot td {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.score-table tfoot th {
+  font-size: 14px;
+  font-weight: 500;
+}
+

@@ -4,6 +4,7 @@ import type { GameWireState, HistoryEntry, PieceState, ScoreParts } from '../gam
 import { noBreak } from '../noBreak'
 import { formatSigned, reasonText, SELF_ENCLOSED_PENALTY_PER_CELL } from './GameOverOverlay'
 import { ScoreChart } from './ScoreChart'
+import './ScoreTable.css'
 import './ReplayScreen.css'
 
 // The board as it stood after the first `step` moves: the final game's rules and special cells, with only those pieces on it.
@@ -82,7 +83,7 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
   const at = history[step - 1]
   const ids = ['1', '2'] as const
   return (
-    <table className="breakdown">
+    <table className="score-table">
       <caption className="visually-hidden">{`Score at ${step === 0 ? 'the start of the game' : `turn ${step}`}`}</caption>
       <thead>
         <tr>

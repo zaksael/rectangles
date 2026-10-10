@@ -505,3 +505,8 @@ test('the chart names the opponent as the rest of the screen does', () => {
   render(<ReplayScreen game={replayGame(THREE_MOVES, (g) => { g.players['2'].name = 'Bot (hard)' })} onBack={vi.fn()} />)
   expect(screen.getByRole('group', { name: 'Score history, Player 1 and Bot (hard)' })).toBeTruthy()
 })
+
+test('the score table carries the shared score-table class', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  expect(screen.getByRole('table').classList.contains('score-table')).toBe(true)
+})
