@@ -123,3 +123,15 @@ test('on touch the Moves list gives up its fourth row, which the taller buttons 
 test('a header dot is a ring only while its player is neither the mover nor over: at game over both are filled', () => {
   expect(css).toMatch(/\.score-table thead th:not\(\.current\):not\(\.over\) \.dot \{[^}]*background:\s*transparent/)
 })
+
+test('the Moves list is a size container that can shrink to two rows (26px heading + 2 x 43px rows = 112px) before the rail scrolls', () => {
+  const block = ruleFor(css, '.rail-history')
+
+  expect(block).toMatch(/container-type:\s*size/)
+  expect(block).toMatch(/min-height:\s*112px/)
+})
+
+test('a short Moves list sheds its fourth row under 197px and its third under 155px, the heights four and three rows need', () => {
+  expect(css).toMatch(/@container \(max-height: 196px\) \{\s*\.history \.move:nth-child\(n \+ 4\) \{[^}]*display:\s*none/)
+  expect(css).toMatch(/@container \(max-height: 154px\) \{\s*\.history \.move:nth-child\(n \+ 3\) \{[^}]*display:\s*none/)
+})

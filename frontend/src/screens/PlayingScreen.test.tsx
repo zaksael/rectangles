@@ -1840,3 +1840,14 @@ test('before any move the list says nothing has been played', () => {
 
   expect(screen.getByText('Nothing played yet')).toBeInTheDocument()
 })
+
+test('the focus order is the board, then Menu, then the action buttons', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+
+  const board = screen.getByRole('grid')
+  const menu = screen.getByRole('button', { name: 'Menu' })
+  const rotate = screen.getByRole('button', { name: 'Rotate' })
+  const follows = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+  expect(follows(board, menu)).toBe(true)
+  expect(follows(menu, rotate)).toBe(true)
+})
