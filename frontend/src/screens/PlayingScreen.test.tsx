@@ -1747,3 +1747,26 @@ test('a special cell of a rule that is off is not named', () => {
 
   expect(screen.getByTestId('turn-status').textContent).not.toMatch(/covers/)
 })
+
+test('the dice slot is always in the rail, and reserves the Wildcard picker height only while that rule is on', () => {
+  const off = makeState()
+  off.game.houseRules.wildcard = { ...off.game.houseRules.wildcard, enabled: false }
+  renderScreen(off)
+  expect(document.querySelector('.rail-dice')).not.toBeNull()
+  expect(document.querySelector('.rail-dice')).not.toHaveClass('reserves-picker')
+
+  cleanup()
+  const on = makeState()
+  on.game.houseRules.wildcard = { ...on.game.houseRules.wildcard, enabled: true }
+  renderScreen(on)
+  expect(document.querySelector('.rail-dice')).toHaveClass('reserves-picker')
+})
+
+test('the status line and key hint sit together in one reserved box, with the dice slot and action row after it', () => {
+  renderScreen(makeState())
+
+  const box = document.querySelector('.rail-instr') as HTMLElement
+  expect(box).toContainElement(document.getElementById('board-help'))
+  expect(box.nextElementSibling).toHaveClass('rail-dice')
+  expect(document.querySelector('.rail-actions')).toBe(box.nextElementSibling!.nextElementSibling)
+})

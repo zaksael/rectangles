@@ -83,3 +83,31 @@ test('under 480px the game-over actions stack full width, since three buttons si
   expect(media).toMatch(/\.game-over \.actions \{[^}]*flex-direction:\s*column/)
   expect(media).toMatch(/\.game-over \.actions \.btn \{[^}]*min-width:\s*0/)
 })
+
+test('the status line and the key hint share one 72px box that is always reserved (a two-row status over a two-row hint with Reroll on), so the controls below never move', () => {
+  expect(ruleFor(css, '.rail-instr')).toMatch(/min-height:\s*72px/)
+})
+
+test('the dice slot holds the Wildcard picker height only while the Wildcard rule is on: 54px, a plain die row otherwise', () => {
+  expect(ruleFor(css, '.rail-dice')).toMatch(/min-height:\s*var\(--control-height\)/)
+  expect(ruleFor(css, '.rail-dice.reserves-picker')).toMatch(/min-height:\s*54px/)
+})
+
+test('the action row is a fixed 58px even when no button applies, and the notice row a fixed 46px (two toast rows), toasts starting at its top', () => {
+  expect(ruleFor(css, '.rail-actions')).toMatch(/height:\s*58px/)
+  expect(ruleFor(css, '.rail-notice')).toMatch(/min-height:\s*46px/)
+  expect(ruleFor(css, '.rail-notice')).toMatch(/justify-content:\s*flex-start/)
+})
+
+test('on touch the dice slot holds 92px and the action row 66px, in a block after the base rules so the cascade lets them win', () => {
+  const touch = css.match(/@media \(any-pointer: coarse\) \{\s*\.rail-dice\.reserves-picker \{([^}]*)\}\s*\.rail-actions \{([^}]*)\}/)
+
+  expect(touch![1]).toMatch(/min-height:\s*92px/)
+  expect(touch![2]).toMatch(/height:\s*66px/)
+  expect(touch!.index).toBeGreaterThan(css.indexOf('\n.rail-dice.reserves-picker {'))
+  expect(touch!.index).toBeGreaterThan(css.indexOf('\n.rail-actions {'))
+})
+
+test('the key hint is pinned to the bottom of the status box, so a one-row and a two-row status leave it in the same place', () => {
+  expect(ruleFor(css, '.rail-instr .board-help')).toMatch(/margin-top:\s*auto/)
+})

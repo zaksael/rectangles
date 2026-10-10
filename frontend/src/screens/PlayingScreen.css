@@ -116,6 +116,27 @@
   flex-direction: column;
   gap: 12px;
 }
+/* The status line and its key hint always take the same room, whatever they say. */
+.rail-instr {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 72px; /* two status rows, the gap, and a two-row hint (Reroll on wraps it) */
+}
+/* The hint stays at the bottom whether the status takes one row or two. */
+.rail-instr .board-help {
+  margin-top: auto;
+}
+/* The dice slot: a plain die row, or the Wildcard picker's height while that rule is on. */
+.rail-dice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: var(--control-height);
+}
+.rail-dice.reserves-picker {
+  min-height: 54px;
+}
 .turn-status {
   font-size: 14px;
   line-height: 20px;
@@ -153,6 +174,9 @@
   grid-template-columns: 1fr 1fr;
   align-items: center;
   gap: 10px;
+}
+.rail-dice .wildcard-picker {
+  width: 100%;
 }
 .wildcard-picker > :first-child {
   justify-self: end;
@@ -193,6 +217,8 @@
 }
 
 .rail-actions {
+  box-sizing: border-box;
+  height: 58px; /* fixed, so the row holds its place on the bot's turn when no button applies */
   display: flex;
   gap: 8px;
   padding: 10px 0;
@@ -206,6 +232,15 @@
 /* Roll is the action row's only primary button; a heavier outline sets it apart without a solid fill. */
 .rail-actions .btn.primary {
   border-width: 2px;
+}
+/* After the base rules above, so they win on touch: two rows of 44px pills and the 4px gap, and 44px buttons. */
+@media (any-pointer: coarse) {
+  .rail-dice.reserves-picker {
+    min-height: 92px;
+  }
+  .rail-actions {
+    height: 66px;
+  }
 }
 
 /* One line naming each special-cell rule that is on; the marks are the board's own .board-cell.<kind> rules. */
@@ -236,10 +271,13 @@
 .rail-notice {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: 4px;
+  min-height: 46px; /* two toast rows, reserved so a toast coming and going moves nothing */
 }
 .toast {
   padding: 5px 12px;
+  line-height: 18px;
   background: var(--ink);
   color: var(--ledger);
   font-size: 13px;

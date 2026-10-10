@@ -301,34 +301,39 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               {comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             <div className="rail-turn">
-              {turnStatus && (
-                <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
-                  {turnStatus}
-                </div>
-              )}
-              {/* Always rendered (blank when no key applies) so the status line doesn't shift vertically. */}
-              <p id="board-help" className="board-help">
-                {boardHint}
-              </p>
-              {pickIndex !== null && (
-                <div className="wildcard-picker">
-                  {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
-                  {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
-                </div>
-              )}
-              {shownRoll && pickIndex === null && (
-                <div
-                  className={`dice${roll ? '' : ' stale'}`}
-                  role="img"
-                  aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
-                >
-                  {shownRoll.values.map((value, i) => (
-                    <span key={i} className="die">
-                      {value}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <div className="rail-instr">
+                {turnStatus && (
+                  <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">
+                    {turnStatus}
+                  </div>
+                )}
+                {/* Always rendered (blank when no key applies) so the status line doesn't shift vertically. */}
+                <p id="board-help" className="board-help">
+                  {boardHint}
+                </p>
+              </div>
+              {/* Always rendered, at the picker's height while the Wildcard rule is on, so the buttons below never move. */}
+              <div className={`rail-dice${wildcard?.enabled ? ' reserves-picker' : ''}`}>
+                {pickIndex !== null && (
+                  <div className="wildcard-picker">
+                    {/* The pills take the wildcard die's slot: leading when the server says editableIndex is 0. */}
+                    {pickIndex === 0 ? [pills, fixedDie] : [fixedDie, pills]}
+                  </div>
+                )}
+                {shownRoll && pickIndex === null && (
+                  <div
+                    className={`dice${roll ? '' : ' stale'}`}
+                    role="img"
+                    aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
+                  >
+                    {shownRoll.values.map((value, i) => (
+                      <span key={i} className="die">
+                        {value}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="rail-actions">
                 {/* Only buttons that can be clicked right now are shown. */}
                 {humanTurnState === 'awaitingRoll' && (
