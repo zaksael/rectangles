@@ -22,9 +22,11 @@ export const mix = (fg: number[], share: number, bg: number[]) => fg.map((v, i) 
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-// The body of the rule whose selector starts a line, e.g. ruleFor(css, '.start-error').
+// The body of the rule whose selector starts a line, e.g. ruleFor(css, '.start-error'); else the first rule whose comma list contains it.
 export function ruleFor(css: string, selector: string) {
-  const match = css.match(new RegExp(`(?:^|\\n)${escape(selector)} \\{([^}]*)\\}`))
+  const own = css.match(new RegExp(`(?:^|\\n)${escape(selector)} \\{([^}]*)\\}`))
+  const listed = css.match(new RegExp(`(?:^|\\n)(?:[^{}]*,\\s*)?${escape(selector)}(?:\\s*,[^{}]*)?\\s*\\{([^}]*)\\}`))
+  const match = own ?? listed
   if (!match) throw new Error(`no rule for ${selector}`)
   return match[1]
 }
