@@ -372,3 +372,53 @@ def test_serialize_game_history_breakdown_carries_a_steal_and_its_parts_sum_to_t
     assert entry["breakdown"]["1"]["steal"] == STEAL_POINTS
     assert entry["breakdown"]["2"]["steal"] == -STEAL_POINTS
     assert {pid: sum(parts.values()) for pid, parts in entry["breakdown"].items()} == entry["score"]
+
+
+def _play_moves(game, moves):
+    """Place each (top_left, width, height) for whoever's turn it is, bypassing dice."""
+    for top_left, w, h in moves:
+        game.last_roll = (w, h)
+        game.state = TurnState.CHOOSING_PLACEMENT
+        game.legal_cache = {(w, h): {top_left}}
+        assert game.attempt_place(top_left, w, h) is True
+        game.end_turn()
+
+
+def test_serialize_game_recent_turns_is_empty_before_any_move():
+    assert serialize_game(Game(board_size=11))["turn"]["recentTurns"] == []
+
+
+def test_serialize_game_recent_turns_keeps_the_last_six_with_the_movers_own_points():
+    game = Game(board_size=11)
+    _play_moves(
+        game,
+        [
+            ((0, 0), 1, 1),  # P1 +1 (dropped: only the last six stay)
+            ((10, 10), 1, 1),  # P2 +1
+            ((1, 0), 1, 2),  # P1 +2
+            ((9, 10), 1, 1),  # P2 +1
+            ((3, 0), 1, 3),  # P1 +3
+            ((6, 10), 1, 3),  # P2 +3
+            ((6, 0), 1, 1),  # P1 +1
+        ],
+    )
+
+    recent = serialize_game(game)["turn"]["recentTurns"]
+
+    assert [r["playerId"] for r in recent] == [2, 1, 2, 1, 2, 1]
+    assert [r["points"] for r in recent] == [1, 2, 1, 3, 3, 1]
+    assert recent[-1]["placed"] == {"topLeft": [6, 0], "width": 1, "height": 1}
+    assert recent[-1]["score"] == {"1": 7, "2": 5}
+
+
+def test_serialize_game_player_score_breakdown_sums_to_the_total_with_every_rule_on():
+    game = Game(board_size=11, steal_enabled=True, prize_enabled=True, pitfall_enabled=True)
+    game.board.special_cells = frozenset({SpecialCell(CellKind.STEAL, Cell(0, 0), pair_id=0)})
+    _play_moves(game, [((0, 0), 2, 2)])
+
+    players = serialize_game(game)["players"]
+
+    assert players["1"]["score"]["breakdown"] == {"area": 4, "prize": 0, "pitfall": 0, "steal": STEAL_POINTS, "enclosure": 0}
+    assert players["2"]["score"]["breakdown"]["steal"] == -STEAL_POINTS
+    for player in players.values():
+        assert sum(player["score"]["breakdown"].values()) == player["score"]["totalScore"]

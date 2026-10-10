@@ -27,6 +27,7 @@ _GAME_OVER_REASON_NAMES = {
 
 def _serialize_player(game: Game, player: Player, self_enclosed_counts: dict[int, int]) -> dict:
     potential = game.potential_stats(player)
+    breakdown = game.score_breakdown(player)
     return {
         "name": player.name,
         "board": {
@@ -39,7 +40,8 @@ def _serialize_player(game: Game, player: Player, self_enclosed_counts: dict[int
         },
         "score": {
             "totalArea": player.total_area,
-            "totalScore": game.total_score(player),
+            "totalScore": breakdown.total,
+            "breakdown": asdict(breakdown),
             "potential": {"area": potential["area"], "prize": {"points": potential["prize_points"]}},
         },
         "houseRules": {
@@ -52,6 +54,9 @@ def _serialize_player(game: Game, player: Player, self_enclosed_counts: dict[int
             },
         },
     }
+
+
+RECENT_TURNS = 6
 
 
 def serialize_game(game: Game) -> dict:
@@ -71,6 +76,7 @@ def serialize_game(game: Game) -> dict:
             "turnState": _TURN_STATE_NAMES[game.state],
             "lastRoll": list(game.last_roll) if game.last_roll is not None else None,
             "legalPlacements": legal_placements,
+            "recentTurns": _serialize_steps(game)[-RECENT_TURNS:],
         },
         "houseRules": {
             "wildcard": {
@@ -117,21 +123,31 @@ def serialize_game(game: Game) -> dict:
 
 
 def _serialize_history(game: Game) -> list[dict]:
-    return [
-        {
-            "playerId": record.player_id,
-            "roll": list(record.roll),
-            "placed": (
-                None
-                if record.placed is None
-                else {"topLeft": list(record.placed.top_left), "width": record.placed.width, "height": record.placed.height}
-            ),
-            "wildcardOriginalRoll": list(record.wildcard_original_roll) if record.wildcard_original_roll else None,
-            "score": _by_player({pid: parts.total for pid, parts in breakdown.items()}),
-            "breakdown": _by_player({pid: asdict(parts) for pid, parts in breakdown.items()}),
-        }
-        for record, breakdown in zip(game.history, game.score_breakdown_history())
-    ]
+    return [{k: v for k, v in step.items() if k != "points"} for step in _serialize_steps(game)]
+
+
+def _serialize_steps(game: Game) -> list[dict]:
+    """One entry per history record; `points` is the mover's own score change on that move."""
+    breakdowns = game.score_breakdown_history()
+    steps = []
+    for i, (record, breakdown) in enumerate(zip(game.history, breakdowns)):
+        before = breakdowns[i - 1][record.player_id].total if i else 0
+        steps.append(
+            {
+                "playerId": record.player_id,
+                "roll": list(record.roll),
+                "placed": (
+                    None
+                    if record.placed is None
+                    else {"topLeft": list(record.placed.top_left), "width": record.placed.width, "height": record.placed.height}
+                ),
+                "wildcardOriginalRoll": list(record.wildcard_original_roll) if record.wildcard_original_roll else None,
+                "score": _by_player({pid: parts.total for pid, parts in breakdown.items()}),
+                "breakdown": _by_player({pid: asdict(parts) for pid, parts in breakdown.items()}),
+                "points": breakdown[record.player_id].total - before,
+            }
+        )
+    return steps
 
 
 def _by_player(values: dict[int, object]) -> dict:

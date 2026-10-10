@@ -510,8 +510,11 @@ class Game:
         return self.players[other_id]
 
     def total_score(self, player: Player) -> int:
+        return self.score_breakdown(player).total
+
+    def score_breakdown(self, player: Player) -> ScoreBreakdown:
         enclosed = self.board.self_enclosed_cell_counts() if self.self_enclosed_penalty_enabled else {}
-        return self._breakdown(player, self._other_player(player), enclosed.get(player.id, 0)).total
+        return self._breakdown(player, self._other_player(player), enclosed.get(player.id, 0))
 
     def _breakdown(self, player: Player, other: Player, enclosed_cells: int) -> ScoreBreakdown:
         points = {}
