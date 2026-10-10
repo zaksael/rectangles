@@ -123,17 +123,18 @@ def serialize_game(game: Game) -> dict:
 
 
 def _serialize_history(game: Game) -> list[dict]:
-    return [{k: v for k, v in step.items() if k != "points"} for step in _serialize_steps(game)]
+    return [{k: v for k, v in step.items() if k not in ("turn", "points")} for step in _serialize_steps(game)]
 
 
 def _serialize_steps(game: Game) -> list[dict]:
-    """One entry per history record; `points` is the mover's own score change on that move."""
+    """One entry per history record; `turn` is its 1-based move number, `points` the mover's own score change."""
     breakdowns = game.score_breakdown_history()
     steps = []
     for i, (record, breakdown) in enumerate(zip(game.history, breakdowns)):
         before = breakdowns[i - 1][record.player_id].total if i else 0
         steps.append(
             {
+                "turn": i + 1,
                 "playerId": record.player_id,
                 "roll": list(record.roll),
                 "placed": (

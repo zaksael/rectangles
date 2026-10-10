@@ -407,6 +407,7 @@ def test_serialize_game_recent_turns_keeps_the_last_six_with_the_movers_own_poin
 
     assert [r["playerId"] for r in recent] == [2, 1, 2, 1, 2, 1]
     assert [r["points"] for r in recent] == [1, 2, 1, 3, 3, 1]
+    assert [r["turn"] for r in recent] == [2, 3, 4, 5, 6, 7]
     assert recent[-1]["placed"] == {"topLeft": [6, 0], "width": 1, "height": 1}
     assert recent[-1]["score"] == {"1": 7, "2": 5}
 
@@ -422,3 +423,4 @@ def test_serialize_game_player_score_breakdown_sums_to_the_total_with_every_rule
     assert players["2"]["score"]["breakdown"]["steal"] == -STEAL_POINTS
     for player in players.values():
         assert sum(player["score"]["breakdown"].values()) == player["score"]["totalScore"]
+
