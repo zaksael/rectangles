@@ -245,7 +245,7 @@ export function Board({
   return (
     <div
       className="board"
-      role="grid"
+      role="group"
       aria-label={`${size}×${size} board`}
       aria-describedby={describedBy}
       tabIndex={onKeyDown ? 0 : undefined}

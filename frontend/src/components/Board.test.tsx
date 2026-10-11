@@ -10,7 +10,7 @@ test('renders one cell per board square', () => {
 
 test('exposes the grid as an accessible role with a size label', () => {
   render(<Board game={makeGame()} />)
-  expect(screen.getByRole('grid', { name: '3×3 board' })).toBeInTheDocument()
+  expect(screen.getByRole('group', { name: '3×3 board' })).toBeInTheDocument()
 })
 
 test('marks a cell covered by a player 1 piece with p1-fill', () => {

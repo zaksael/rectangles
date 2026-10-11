@@ -38,7 +38,7 @@ function renderScreen(
 test('renders nothing game-specific before the first state broadcast arrives', () => {
   renderScreen(null)
   expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
-  expect(screen.queryByRole('grid')).not.toBeInTheDocument()
+  expect(screen.queryByRole('group', { name: / board$/ })).not.toBeInTheDocument()
 })
 
 test('highlights the current player in the turn indicator', () => {
@@ -109,7 +109,7 @@ test('clicking a legal cell while choosing placement sends the place action', ()
     }),
   )
 
-  fireEvent.pointerUp(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
+  fireEvent.pointerUp(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
@@ -131,7 +131,7 @@ test('Rotate swaps the orientation used for placement', () => {
   )
 
   fireEvent.click(screen.getByRole('button', { name: 'Rotate' }))
-  fireEvent.pointerUp(screen.getByRole('grid').querySelector('[data-cell="3,2"]')!, { pointerType: 'mouse' })
+  fireEvent.pointerUp(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="3,2"]')!, { pointerType: 'mouse' })
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [2, 2], width: 1, height: 2 })
 })
@@ -148,7 +148,7 @@ test('marks every cell any legal placement of the current orientation would cove
       },
     }),
   )
-  const grid = screen.getByRole('grid')
+  const grid = screen.getByRole('group', { name: / board$/ })
 
   expect(grid.querySelector('[data-cell="0,0"]')).toHaveClass('coverable')
   expect(grid.querySelector('[data-cell="0,1"]')).toHaveClass('coverable')
@@ -168,9 +168,9 @@ test('hovering an illegal cell shows the preview in the danger state', () => {
     }),
   )
 
-  fireEvent.mouseEnter(screen.getByRole('grid').querySelector('[data-cell="4,4"]')!)
+  fireEvent.mouseEnter(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="4,4"]')!)
 
-  expect(screen.getByRole('grid').querySelector('.preview')).toHaveClass('danger')
+  expect(screen.getByRole('group', { name: / board$/ }).querySelector('.preview')).toHaveClass('danger')
 })
 
 test('touch: two taps on the same cell are needed to place', () => {
@@ -185,7 +185,7 @@ test('touch: two taps on the same cell are needed to place', () => {
       },
     }),
   )
-  const cell = screen.getByRole('grid').querySelector('[data-cell="0,0"]')!
+  const cell = screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!
 
   fireEvent.pointerUp(cell, { pointerType: 'touch' })
   expect(sendAction).not.toHaveBeenCalled()
@@ -480,7 +480,7 @@ test('View Board hides the result dialog and turns the rail\'s turn block into t
   const bar = screen.getByRole('region', { name: 'Game result' })
   expect(bar).toHaveTextContent('Player 1 wins on score')
   expect(rowValues('Score')).toEqual(['158', '141'])
-  expect(screen.getByRole('grid')).toBeInTheDocument()
+  expect(screen.getByRole('group', { name: / board$/ })).toBeInTheDocument()
 })
 
 test('Escape on the result dialog shows the board, and View Result brings the dialog back', () => {
@@ -520,7 +520,7 @@ const botPlacementTurn = {
 
 test("on the bot's turn, hovering shows no preview or coverable overlay and tapping places nothing", () => {
   const sendAction = renderVsBot(makeState({ board: { size: 5, skipLimit: 5 }, turn: botPlacementTurn }))
-  const grid = screen.getByRole('grid')
+  const grid = screen.getByRole('group', { name: / board$/ })
 
   fireEvent.mouseEnter(grid.querySelector('[data-cell="0,0"]')!)
   fireEvent.pointerUp(grid.querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
@@ -548,7 +548,7 @@ test("on the bot's turn the Skip button is hidden", () => {
 test("on the human's turn against a bot, placement still works", () => {
   const sendAction = renderVsBot(makeState({ board: { size: 5, skipLimit: 5 }, turn: { ...botPlacementTurn, currentPlayerId: 1 } }))
 
-  fireEvent.pointerUp(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
+  fireEvent.pointerUp(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!, { pointerType: 'mouse' })
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
@@ -859,7 +859,7 @@ const hoverState = () =>
 test('hovering an illegal spot explains why in the status line', () => {
   renderScreen(hoverState())
 
-  fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="4,4"]')!)
+  fireEvent.mouseOver(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="4,4"]')!)
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — your first piece must cover your starting corner')
 })
@@ -867,7 +867,7 @@ test('hovering an illegal spot explains why in the status line', () => {
 test('hovering a legal spot shows no reason', () => {
   renderScreen(hoverState())
 
-  fireEvent.mouseOver(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
+  fireEvent.mouseOver(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!)
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent(/^Player 1: place 2 wide × 1 tall$/)
 })
@@ -885,18 +885,18 @@ const keyboardState = () =>
 
 test('the board is keyboard-focusable only while a placement can be made', () => {
   renderScreen(keyboardState())
-  expect(screen.getByRole('grid')).toHaveAttribute('tabindex', '0')
+  expect(screen.getByRole('group', { name: / board$/ })).toHaveAttribute('tabindex', '0')
 })
 
 test('the board is not focusable while awaiting a roll', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
-  expect(screen.getByRole('grid')).not.toHaveAttribute('tabindex')
+  expect(screen.getByRole('group', { name: / board$/ })).not.toHaveAttribute('tabindex')
 })
 
 test('focusing the board puts the piece on the first legal spot', () => {
   renderScreen(keyboardState())
 
-  fireEvent.focus(screen.getByRole('grid'))
+  fireEvent.focus(screen.getByRole('group', { name: / board$/ }))
 
   const preview = document.querySelector<HTMLElement>('.preview.legal')!
   expect(preview.style.getPropertyValue('--c')).toBe('0')
@@ -905,7 +905,7 @@ test('focusing the board puts the piece on the first legal spot', () => {
 
 test('arrow keys move the piece and Enter places it', () => {
   const sendAction = renderScreen(keyboardState())
-  const grid = screen.getByRole('grid')
+  const grid = screen.getByRole('group', { name: / board$/ })
 
   fireEvent.focus(grid)
   fireEvent.keyDown(grid, { key: 'ArrowRight' })
@@ -917,7 +917,7 @@ test('arrow keys move the piece and Enter places it', () => {
 
 test('moving onto an illegal spot explains why, and Enter does not place', () => {
   const sendAction = renderScreen(keyboardState())
-  const grid = screen.getByRole('grid')
+  const grid = screen.getByRole('group', { name: / board$/ })
 
   fireEvent.focus(grid)
   fireEvent.keyDown(grid, { key: 'ArrowDown' })
@@ -931,7 +931,7 @@ test('moving onto an illegal spot explains why, and Enter does not place', () =>
 test('the board explains its keys to assistive tech', () => {
   renderScreen(keyboardState())
 
-  const help = document.getElementById(screen.getByRole('grid').getAttribute('aria-describedby')!)
+  const help = document.getElementById(screen.getByRole('group', { name: / board$/ }).getAttribute('aria-describedby')!.split(' ')[0])
   expect(help).toHaveTextContent('Arrows move, N next, Enter places, R rotates')
 })
 
@@ -1664,7 +1664,7 @@ function placingOnSpecialBoard(rules: Parameters<typeof specialRules>[0]) {
       houseRules: specialRules(rules),
     }),
   )
-  fireEvent.mouseEnter(screen.getByRole('grid').querySelector('[data-cell="0,0"]')!)
+  fireEvent.mouseEnter(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!)
 }
 
 test('a legal preview over a special cell ends the status line with what it would trigger', () => {
@@ -1863,7 +1863,7 @@ test('before any move the list says nothing has been played', () => {
 test('the focus order is the board, then Menu, then the action buttons', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  const board = screen.getByRole('grid')
+  const board = screen.getByRole('group', { name: / board$/ })
   const menu = screen.getByRole('button', { name: 'Menu' })
   const rotate = screen.getByRole('button', { name: 'Rotate' })
   const follows = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
@@ -1900,4 +1900,44 @@ test('leaving the Playing screen removes the leave confirmation', () => {
   cleanup()
 
   expect(leavePrevented()).toBe(false)
+})
+
+test('the piece position is announced as the keyboard moves it', () => {
+  renderScreen(keyboardState())
+  const board = screen.getByRole('group', { name: / board$/ })
+
+  fireEvent.focus(board)
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1')
+  expect(screen.getByTestId('cursor-position')).toHaveAttribute('aria-live', 'polite')
+  fireEvent.keyDown(board, { key: 'ArrowRight' })
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2')
+})
+
+test('no position is announced before the piece is on the board', () => {
+  renderScreen(keyboardState())
+  expect(screen.getByTestId('cursor-position')).toBeEmptyDOMElement()
+})
+
+test('the board summary names each player\'s pieces and cells, and the obstacles and walls', () => {
+  const base = makeGame()
+  const player = (id: '1' | '2', pieces: { topLeft: [number, number]; width: number; height: number; owner: number }[], area: number) => ({
+    ...base.players[id],
+    board: { ...base.players[id].board, pieces },
+    score: { ...base.players[id].score, totalArea: area },
+  })
+  const state = makeState({
+    turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 1], legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }] },
+    players: {
+      '1': player('1', [{ topLeft: [0, 0], width: 2, height: 3, owner: 1 }, { topLeft: [0, 2], width: 1, height: 1, owner: 1 }], 7),
+      '2': player('2', [], 0),
+    },
+    houseRules: { ...base.houseRules, obstacles: { enabled: true, cells: [[5, 5], [5, 6]] }, walls: { enabled: true, edges: [[[1, 1], [1, 2]]] } },
+  })
+  renderScreen(state)
+
+  const describedBy = screen.getByRole('group', { name: / board$/ }).getAttribute('aria-describedby')!.split(' ')
+  expect(describedBy).toContain('board-summary')
+  const summary = document.getElementById('board-summary')!
+  expect(summary).toHaveClass('visually-hidden')
+  expect(summary).toHaveTextContent('Player 1: 2 pieces, 7 cells. Player 2: 0 pieces, 0 cells. 2 obstacle cells. 1 wall.')
 })

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Board } from '../components/Board'
 import { SpecialCellLegend } from '../components/SpecialCellLegend'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
-import type { ErrorReason, GameAction, RecentTurn } from '../gameTypes'
+import type { ErrorReason, GameAction, GameWireState, RecentTurn } from '../gameTypes'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
@@ -35,6 +35,18 @@ const COMEBACK_TOAST_MS = 8000
 // The key that applies in each of the human's turn states; other states show a blank line.
 const KEY_HINT: Partial<Record<string, string>> = {
   choosingPlacement: 'Arrows move, N next, Enter places, R rotates',
+}
+
+function boardSummary(game: GameWireState) {
+  const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
+  const { obstacles, walls } = game.houseRules
+  const parts = (['1', '2'] as const).map((id) => {
+    const p = game.players[id]
+    return `${p.name}: ${count(p.board.pieces.length, 'piece')}, ${count(p.score.totalArea, 'cell')}.`
+  })
+  if (obstacles.enabled) parts.push(`${count(obstacles.cells.length, 'obstacle cell')}.`)
+  if (walls.enabled) parts.push(`${count(walls.edges.length, 'wall')}.`)
+  return parts.join(' ')
 }
 
 function liveMoveText(turnState: string | undefined, size: readonly number[] | null) {
@@ -260,8 +272,12 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             onCellTap={placing ? handleCellTap : undefined}
             onKeyDown={placing ? handleBoardKeyDown : undefined}
             onFocus={placing ? handleBoardFocus : undefined}
-            describedBy={placing ? 'board-help' : undefined}
+            describedBy={placing ? 'board-help board-summary' : 'board-summary'}
           />
+          <p id="board-summary" className="visually-hidden">{boardSummary(state.game)}</p>
+          <div className="visually-hidden" data-testid="cursor-position" aria-live="polite">
+            {previewTopLeft ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}` : ''}
+          </div>
         </div>
       )}
       <div className="rail">
