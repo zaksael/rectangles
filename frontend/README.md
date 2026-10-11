@@ -1,6 +1,6 @@
 # frontend
 
-React/TypeScript frontend for Rectangles, replacing the Pygame desktop UI. Talks to the FastAPI/WebSocket server in `../rectangles/server/`.
+React/TypeScript frontend for Rectangles. Talks to the FastAPI/WebSocket server in `../rectangles/server/`.
 
 ```
 npm install

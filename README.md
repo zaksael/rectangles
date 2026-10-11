@@ -76,10 +76,10 @@ are kept clear of both starting corners and spread apart from each other,
 so they never cluster together. Whichever player's
 placed piece happens to cover a prize captures it immediately, earning a
 fixed bonus of 10 points added on top of their area. A single large piece can capture more
-than one prize at once if it covers them both. Shown on the board as a green
-plus mark, which disappears once a piece covers it; a green ring around
-whichever prize cell(s) your most recent placement captured makes sure a
-capture doesn't go unnoticed.
+than one prize at once if it covers them both. Shown on the board as a plus
+mark, which disappears once a piece covers it; a ring around whichever
+prize cell(s) your most recent placement captured makes sure a capture
+doesn't go unnoticed.
 
 ### Walls
 
@@ -97,8 +97,8 @@ regardless of which corner they start from.
 
 ### Obstacles
 
-When turned on, a handful of individual
-cells are seeded on the board in mirrored pairs, randomly placed and kept
+When turned on, four individual
+cells (two mirrored pairs) are seeded on the board in mirrored pairs, randomly placed and kept
 clear of both starting corners, Prize's cells, Walls' lines, and
 any other Obstacle pair, so they never cluster together.
 Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
@@ -107,16 +107,15 @@ the board as a solid dark square.
 
 ### Pitfall
 
-When turned on, two pitfall cells are seeded
-on the board as a single mirrored pair, randomly placed and kept clear of
+When turned on, four pitfall cells are seeded
+on the board as two mirrored pairs, randomly placed and kept clear of
 both starting corners and every other special cell (Prize's cells,
 Walls' lines, Obstacles), so they never overlap. Covering a pitfall docks the
 capturer 10 points off their own score — the mirror image of Prize's
 bonus, with no effect on the opponent. Scores aren't floored at 0, so
 triggering enough pitfalls can push a player negative. Shown on the board as a
-red bar, which disappears once a piece covers it, and the live panel shows the
-count separately from your score (e.g. "Pitfall 1") so it's never silently baked
-into the total.
+bar mark, which disappears once a piece covers it, and the score table keeps a
+separate Pitfall row so it's never silently baked into the total.
 
 ### Steal
 
@@ -127,10 +126,10 @@ Obstacles, Pitfall's cells), so they never overlap. Covering a steal cell is a
 zero-sum transfer: you gain 10 points *and* your opponent loses 10, a 20-point
 swing in the score gap for a single cell — higher stakes than Prize's pure
 gain or Pitfall's pure loss. Scores aren't floored at 0, so being on the wrong
-end of enough steals can push you negative. Shown on the board as an amber
-plus-over-minus mark, which disappears once a piece covers it; the live panel shows
-the running swing on both players' rows (e.g. "Steal +10" for the capturer,
-"Steal -10" for the opponent) so it's never silently baked into the total.
+end of enough steals can push you negative. Shown on the board as a
+plus-over-minus mark, which disappears once a piece covers it; the score table's
+Steal row shows each player's net swing (+10 for the capturer, −10 for the
+opponent) so it's never silently baked into the total.
 
 ### Wildcard Roll
 
@@ -148,15 +147,15 @@ all-illegal picker.
 
 When turned on, any empty cell that's
 fully surrounded by only *your own* territory docks you 1 point — a live
-penalty, recomputed every frame from the current board, not a one-time or
+penalty, recomputed after every move from the current board, not a one-time or
 permanent effect. Filling the hole back in (even partially, breaking the
 enclosure) drops the penalty immediately. A gap bordered by both players,
 by neither (walled off or [Obstacles](#obstacles)-bound), or that touches
 the board's outer edge at all, is never penalized — the edge already does
 part of the enclosing for free, so only a hole your own territory fully
-closes off, with no help from the edge, counts. The live panel shows the
-penalty separately from your score (e.g. "-3 enclosed") so it's never
-silently baked into the total.
+closes off, with no help from the edge, counts. The enclosed cells are hatched in your colour on the board, and the score
+table keeps a separate Enclosure row so the penalty is never silently baked
+into the total.
 
 ### Reroll
 
@@ -166,8 +165,9 @@ dice — and roll fresh instead of accepting it. Usable any time a roll is
 pending and you haven't committed to it yet: while choosing where to place,
 while picking a [Wildcard Roll](#wildcard-roll) value, or when a roll would
 otherwise skip your turn. Each use costs exactly one charge, no matter which
-of those three situations you're in. The button shows your remaining count,
-e.g. "Reroll (1/2)", and disappears once you're out. **Basic** never uses its
+of those three situations you're in. The score table's Rerolls row shows each
+player's remaining charges (e.g. "1 / 2"), and the Reroll button disappears
+once you're out. **Basic** never uses its
 rerolls; **Greedy**/**Blocking** reroll whenever nothing on the board (or in
 [Wildcard Roll](#wildcard-roll)'s value picker) would advance their own
 strategy at all — see [Bot opponent](#bot-opponent).
@@ -180,14 +180,14 @@ enough behind — the gap crosses 8% of the board's total cells (rounded up:
 granted one extra [Reroll](#reroll) charge for the rest of that game. It's
 its own independent charge, not an extra use of the regular Reroll budget:
 it applies even if Reroll itself is off, and once granted it's never taken
-away, even if that player later retakes the lead. The Reroll button's count
-(e.g. "Reroll (2/2)" instead of "Reroll (1/2)") is the only visible sign a
-nudge charge has kicked in.
+away, even if that player later retakes the lead. A "Comeback! Player N gets +1 reroll"
+notice marks the moment the charge is granted, and the Reroll button
+appears if it wasn't already available.
 
 ## Bot opponent
 
 Pick the opponent on the Mode Select screen: **Local 2P** for local
-pass-and-play, or **Vs Bot** with one of the three difficulties below to play solo — the
+pass-and-play, or **Vs Bot** (Greedy is preselected) with one of the three difficulties below to play solo — the
 bot rolls, places a legal piece (or continues past a forced skip), and ends
 its turn on its own, with a short pause between actions. Human input for
 Player 2's controls is ignored while the bot is taking its turn.
@@ -230,15 +230,15 @@ round's score (same rules as above) adds to each player's running series
 total — a landslide round counts for more than a squeaker — so the whole
 series is always played out, and the player with the higher cumulative
 score at the end wins. Equal cumulative scores after all rounds is a
-tied series. Both the in-game panel and the between-rounds screen show a
-round-by-round breakdown (each round's score, plus prize bonus points when
-Prize is on) alongside series-wide totals.
+tied series. The side rail shows the running series score, each round ends on its own
+result card, and the series result card lists every round's score above the
+series total.
 
 ## Requirements
 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) for dependency management
-- Node.js and npm, to build the frontend
+- Node.js 22.12 or newer and npm, to build the frontend
 
 ## Setup
 
@@ -255,7 +255,8 @@ npm run build
 uv run python -m rectangles.server.app
 ```
 
-Then open `http://127.0.0.1:8765/`. The server serves the built frontend from
+Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
+`RECTANGLES_SERVER_PORT` to change the address). The server serves the built frontend from
 `frontend/dist` and the game socket at `/ws`; without a build it serves only
 `/ws`.
 
@@ -342,6 +343,9 @@ rectangles/
     └── schema.py         # wire message schema, state serialization
 frontend/                 # React + Vite web client (src/screens, src/components)
 ```
+
+The engine also implements tournaments and save/resume (see sections 12 and 13
+of the [spec](docs/GAME_SPEC.md)); the web client doesn't offer them.
 
 The rules engine (`rectangles/engine/`) has no UI dependency, so it's fully
 unit-testable headlessly — see `tests/`. Frontend tests run with `npm test` in

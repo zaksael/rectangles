@@ -344,7 +344,7 @@ progress, not the rest of the bracket.
 
 ## 14. Reference: typical match settings
 
-| Setting | Typical choices | Default |
+| Setting | Typical choices | Default (rules engine) |
 |---|---|---|
 | Board size | 19×19, 23×23, 27×27 | 19×19 |
 | Skip limit | 3, 5 | 5 |
