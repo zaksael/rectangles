@@ -371,7 +371,11 @@
 
 dialog.modal {
   box-sizing: border-box;
-  max-width: calc(100vw - 32px);
+  /* A modal's auto margins centre it between its insets: pull them in to the notch and corner insets so it
+     centres in the visible area (all zero on a desktop, so nothing moves there). */
+  inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  max-width: calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   background: var(--ledger);
   color: var(--ink);
   border: 1px solid var(--ink);
