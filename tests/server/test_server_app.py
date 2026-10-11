@@ -630,3 +630,36 @@ def test_ws_without_bot_seats_player_two_stays_human():
         assert reply["turn"]["turnState"] == "awaitingRoll"
         assert reply["turn"]["lastRoll"] is None  # no auto-roll - player 2 is human here
 
+
+
+@pytest.mark.parametrize("value", ["4", 4.0, True, [4], None])
+def test_apply_action_choose_wildcard_non_integer_value_is_malformed(value):
+    game = Game(board_size=19, wildcard_enabled=True)
+    game.state = TurnState.CHOOSING_WILDCARD
+    game.last_roll = (6, 6)
+    game.wildcard_index = 0
+
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(game, {"protocolVersion": 1, "type": "chooseWildcard", "value": value})
+    assert exc_info.value.reason == ErrorReason.MALFORMED_MESSAGE
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"topLeft": [[0], [0]], "width": 2, "height": 2},
+        {"topLeft": ["0", "0"], "width": 2, "height": 2},
+        {"topLeft": [0, 0], "width": [2], "height": 2},
+        {"topLeft": [0, 0], "width": 2.0, "height": 2},
+        {"topLeft": [0, 0], "width": True, "height": 2},
+    ],
+)
+def test_apply_action_place_non_integer_fields_are_malformed(fields):
+    game = Game(board_size=19)
+    game.state = TurnState.CHOOSING_PLACEMENT
+    game.last_roll = (2, 2)
+    game.legal_cache = {(2, 2): {(0, 0)}}
+
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(game, {"protocolVersion": 1, "type": "place", **fields})
+    assert exc_info.value.reason == ErrorReason.MALFORMED_MESSAGE

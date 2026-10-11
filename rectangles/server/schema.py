@@ -227,7 +227,7 @@ class ChooseWildcardMsg:
 
     @classmethod
     def from_json(cls, data: dict) -> "ChooseWildcardMsg":
-        return cls(protocol_version=data["protocolVersion"], value=data["value"])
+        return cls(protocol_version=data["protocolVersion"], value=_int(data["value"]))
 
 
 @dataclass(frozen=True)
@@ -247,6 +247,13 @@ class StateMsg:
     @classmethod
     def from_json(cls, data: dict) -> "StateMsg":
         return cls(protocol_version=data["protocolVersion"], game=data["game"], series=data["series"])
+
+
+def _int(value: object) -> int:
+    """A wire integer: bool and float are rejected, since both pass int comparisons but are not what a client means."""
+    if type(value) is not int:
+        raise TypeError(f"expected an integer, got {value!r}")
+    return value
 
 
 class ErrorReason(str, Enum):
@@ -301,7 +308,7 @@ class PlaceMsg:
         row, col = data["topLeft"]
         return cls(
             protocol_version=data["protocolVersion"],
-            top_left=(row, col),
-            width=data["width"],
-            height=data["height"],
+            top_left=(_int(row), _int(col)),
+            width=_int(data["width"]),
+            height=_int(data["height"]),
         )
