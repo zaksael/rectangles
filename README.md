@@ -12,6 +12,7 @@ area when the game ends wins.
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Play](#play)
+  - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Accessibility](#accessibility)
 - [Development](#development)
   - [Frontend development](#frontend-development)
@@ -72,9 +73,7 @@ Window" notice takes their place and the game waits where it was.
 - **Roll** (`D`) to get a piece for your turn.
 - Every cell where your rolled piece could legally go is highlighted; hover
   the board (or tap, then tap again to place) to preview the exact placement,
-  centered on the pointer, and click to place the piece. The keyboard works
-  too: arrows move the cursor, `N` / `Shift+N` jump to the next / previous
-  legal spot, and `Enter` places.
+  centered on the pointer, and click to place the piece.
 - Rotate the piece with the **Rotate** button or `R`.
 - A roll with no legal placement waits for you to press **Skip** (`S`).
 - A [Wildcard Roll](#wildcard-roll) turn shows a row of value buttons (greyed
@@ -94,8 +93,8 @@ Window" notice takes their place and the game waits where it was.
   game, and **New Game** (`N`) returns to Mode Select. During a series the
   button reads **Next Round** until the series itself is decided, then **Series
   Result**.
-- **Replay** the finished game turn by turn: step with First/Prev/Next/Last
-  (or the arrow, Home and End keys), seeing each turn's roll, placement and
+- **Replay** the finished game turn by turn: step with First/Prev/Next/Last,
+  seeing each turn's roll, placement and
   each player's score breakdown at that point, plus a score-history chart
   across the whole game (click or arrow along it to jump to a turn). For the
   turn just taken, a flag appears if the best other legal option that roll
@@ -106,7 +105,27 @@ Window" notice takes their place and the game waits where it was.
   cell this turn (best possible: 5)"). Toggle **Show Better Option** to
   outline the better placement on the board. **Play** advances automatically
   at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
-  manual navigation pauses it. **Back**/`Esc` returns to the summary.
+  manual navigation pauses it. **Back** returns to the summary.
+
+### Keyboard shortcuts
+
+| Screen | Key | Action |
+|---|---|---|
+| Playing | `D` | Roll |
+| Playing | `R` | Rotate the piece |
+| Playing | `S` | Skip a roll with no legal placement |
+| Playing | `E` | Reroll |
+| Playing | `M` | Menu |
+| Playing, board focused | Arrows | Move the piece |
+| Playing, board focused | `N` / `Shift+N` | Jump to the next / previous legal spot |
+| Playing, board focused | `Enter` or `Space` | Place the piece |
+| Game over | `V` | View Board |
+| Game over | `R` | Replay |
+| Game over | `N` | New Game, or Next Round / Series Result in a series |
+| Replay | Arrows, `Home`, `End` | Step: previous, next, first, last |
+| Replay | `Space` | Play or pause |
+| Replay | `Esc` | Back to the summary |
+| Replay, chart focused | Arrows, `Home`, `End`, `Enter` | Move along the chart, jump to a turn |
 
 ## Accessibility
 
