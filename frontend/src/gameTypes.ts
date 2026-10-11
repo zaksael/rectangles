@@ -85,11 +85,11 @@ export interface HistoryEntry {
   wildcardOriginalRoll: [number, number] | null
   score: { '1': number; '2': number }
   breakdown: { '1': ScoreParts; '2': ScoreParts }
-  potential?: { '1': Potential; '2': Potential } // game-over history only, not recentTurns
+  potential: { '1': Potential; '2': Potential }
 }
 
 // A recent turn on every state message: a history entry plus its move number and the mover's own score change.
-export interface RecentTurn extends HistoryEntry {
+export interface RecentTurn extends Omit<HistoryEntry, 'potential'> { // recentTurns never carry potential
   turn: number
   points: number
 }

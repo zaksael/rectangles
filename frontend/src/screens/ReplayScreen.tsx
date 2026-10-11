@@ -70,7 +70,8 @@ function Caption({ game, history, step }: { game: GameWireState; history: Histor
   )
 }
 
-// Each rule's share of both players' scores at the step, so the total can be read as a sum.
+// Each rule's share of both players' scores at the step, so the total can be read as a sum; In reach is the cells each
+// player can still reach, which the wire carries per played move, so the start of the game has no figure.
 function ScoreTable({ game, history, step }: { game: GameWireState; history: HistoryEntry[]; step: number }) {
   const at = history[step - 1]
   const ids = ['1', '2'] as const
@@ -114,6 +115,14 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
           <th scope="row">Total</th>
           {ids.map((id) => (
             <td key={id}>{formatSigned(at ? at.score[id] : 0)}</td>
+          ))}
+        </tr>
+        <tr className="res-first">
+          <th scope="row">In reach</th>
+          {ids.map((id) => (
+            <td key={id} className={at ? undefined : 'zero'}>
+              {at ? at.potential[id].area : '–'}
+            </td>
           ))}
         </tr>
       </tfoot>

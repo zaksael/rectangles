@@ -1,4 +1,10 @@
-import type { GameWireState, SeriesWireState } from '../gameTypes'
+import type { GameWireState, HistoryEntry, SeriesWireState } from '../gameTypes'
+
+// A history entry's potential: each player's reachable empty cells after the move (prize points left at 0).
+export const reach = (one: number, two: number): HistoryEntry['potential'] => ({
+  '1': { area: one, prize: { points: 0 } },
+  '2': { area: two, prize: { points: 0 } },
+})
 
 export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState {
   return {

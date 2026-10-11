@@ -1,6 +1,6 @@
 import type { GameWireState, HistoryEntry } from '../gameTypes'
 import type { GameState } from '../useGameSocket'
-import { makeGame, makeSeries } from './gameFixtures'
+import { makeGame, makeSeries, reach } from './gameFixtures'
 
 // One realistic 10x10 mid-game position shared by every fixture; only the turn state differs.
 function midGame(): GameWireState {
@@ -38,20 +38,21 @@ function midGame(): GameWireState {
 // The mid-game position's four pieces in play order, then a skip; a real game can't be driven to a given step in a browser.
 // No special cell is captured along the way, so a step's whole score is its area.
 const area = (n: number) => ({ area: n, prize: 0, pitfall: 0, steal: 0, enclosure: 0 })
-const move = (playerId: number, topLeft: [number, number], width: number, height: number, score: [number, number]): HistoryEntry => ({
+const move = (playerId: number, topLeft: [number, number], width: number, height: number, score: [number, number], potential: [number, number]): HistoryEntry => ({
   playerId,
   roll: [width, height],
   placed: { topLeft, width, height },
   wildcardOriginalRoll: null,
   score: { '1': score[0], '2': score[1] },
   breakdown: { '1': area(score[0]), '2': area(score[1]) },
+  potential: reach(...potential),
 })
 const HISTORY: HistoryEntry[] = [
-  move(1, [0, 0], 4, 3, [12, 0]),
-  move(2, [8, 6], 4, 2, [12, 8]),
-  move(1, [3, 0], 2, 3, [18, 8]),
-  move(2, [5, 8], 2, 3, [18, 14]),
-  { playerId: 1, roll: [6, 6], placed: null, wildcardOriginalRoll: null, score: { '1': 18, '2': 14 }, breakdown: { '1': area(18), '2': area(14) } },
+  move(1, [0, 0], 4, 3, [12, 0], [330, 337]),
+  move(2, [8, 6], 4, 2, [12, 8], [322, 322]),
+  move(1, [3, 0], 2, 3, [18, 8], [310, 316]),
+  move(2, [5, 8], 2, 3, [18, 14], [304, 304]),
+  { playerId: 1, roll: [6, 6], placed: null, wildcardOriginalRoll: null, score: { '1': 18, '2': 14 }, breakdown: { '1': area(18), '2': area(14) }, potential: reach(304, 304) },
 ]
 
 function gameOver(): GameWireState {

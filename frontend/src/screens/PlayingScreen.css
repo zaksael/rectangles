@@ -101,10 +101,6 @@
 .score-table thead th.p2:not(.current):not(.over) .dot {
   border-color: var(--p2);
 }
-.score-table .res-first th,
-.score-table .res-first td {
-  border-top: 1px solid var(--line);
-}
 /* One skip from the limit: the next skip ends the game. Bold as well as red, so it is not colour-only. */
 .score-table .last-skip {
   color: var(--danger);

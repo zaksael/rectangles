@@ -62,3 +62,16 @@
   border-top: 1px solid var(--ink);
   padding: 8px 12px;
 }
+
+/* A resource row (In reach) under the figures it explains: a hairline, and plain 13px even when it follows the Total in the footer. */
+.score-table .res-first th,
+.score-table .res-first td {
+  border-top: 1px solid var(--line);
+}
+
+.score-table tfoot .res-first th,
+.score-table tfoot .res-first td {
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 400;
+}

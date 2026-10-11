@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { GameWireState, HistoryEntry, ScoreParts } from '../gameTypes'
-import { makeGame } from '../fixtures/gameFixtures'
+import { makeGame, reach } from '../fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
 
 afterEach(() => {
@@ -20,7 +20,7 @@ const move = (
   extra: Partial<HistoryEntry> = {},
 ): HistoryEntry => {
   const b = { '1': parts(breakdown['1']), '2': parts(breakdown['2']) }
-  return { playerId, roll: [2, 2], placed, wildcardOriginalRoll: null, score: { '1': total(b['1']), '2': total(b['2']) }, breakdown: b, ...extra }
+  return { playerId, roll: [2, 2], placed, wildcardOriginalRoll: null, score: { '1': total(b['1']), '2': total(b['2']) }, breakdown: b, potential: reach(0, 0), ...extra }
 }
 
 const place = (playerId: number, topLeft: [number, number], width: number, height: number, breakdown = {}): HistoryEntry =>
@@ -228,16 +228,16 @@ test('the table starts at zero and follows the step: Area and Total per player',
   expect(cellsOf('Total')).toEqual(['4', '0'])
 })
 
-test('a rule gets a row only when it is on', () => {
+test('a rule gets a row only when it is on, and In reach always follows Total', () => {
   const history = [place(1, [0, 0], 2, 2, { '1': { area: 4 } })]
   render(<ReplayScreen game={replayGame(history)} onBack={vi.fn()} />)
-  expect(rowLabels()).toEqual(['Area', 'Total'])
+  expect(rowLabels()).toEqual(['Area', 'Total', 'In reach'])
   cleanup()
   render(<ReplayScreen game={replayGame(history, rulesOn('prize'))} onBack={vi.fn()} />)
-  expect(rowLabels()).toEqual(['Area', 'Prize', 'Total'])
+  expect(rowLabels()).toEqual(['Area', 'Prize', 'Total', 'In reach'])
   cleanup()
   render(<ReplayScreen game={replayGame(history, rulesOn('prize', 'pitfall', 'steal', 'selfEnclosedPenalty'))} onBack={vi.fn()} />)
-  expect(rowLabels()).toEqual(['Area', 'Prize', 'Pitfall', 'Steal', 'Enclosure', 'Total'])
+  expect(rowLabels()).toEqual(['Area', 'Prize', 'Pitfall', 'Steal', 'Enclosure', 'Total', 'In reach'])
 })
 
 test('rule rows are signed with a real minus sign, and the total can go below zero', () => {
@@ -256,6 +256,24 @@ test('a zero in a rule row is muted, a real amount is not', () => {
   const [mine, theirs] = within(screen.getByRole('rowheader', { name: 'Prize' }).closest('tr')!).getAllByRole('cell')
   expect(mine).not.toHaveClass('zero')
   expect(theirs).toHaveClass('zero')
+})
+
+test('In reach is the last row, under Total, and shows each player\'s reachable cells at the step', () => {
+  const history = [place(1, [0, 0], 2, 2), place(2, [3, 3], 2, 2)].map((entry, i) => ({ ...entry, potential: reach(21 - 2 * i, 20 - 3 * i) }))
+  render(<ReplayScreen game={replayGame(history)} onBack={vi.fn()} />)
+  next()
+  expect(cellsOf('In reach')).toEqual(['21', '20'])
+  expect(rowLabels().at(-1)).toBe('In reach')
+  next()
+  expect(cellsOf('In reach')).toEqual(['19', '17'])
+})
+
+test('at the start of the game In reach has no figure: a muted en dash per player', () => {
+  render(<ReplayScreen game={replayGame([{ ...place(1, [0, 0], 2, 2), potential: reach(21, 20) }])} onBack={vi.fn()} />)
+  expect(cellsOf('In reach')).toEqual(['–', '–'])
+  for (const cell of within(screen.getByRole('rowheader', { name: 'In reach' }).closest('tr')!).getAllByRole('cell')) expect(cell).toHaveClass('zero')
+  next()
+  for (const cell of within(screen.getByRole('rowheader', { name: 'In reach' }).closest('tr')!).getAllByRole('cell')) expect(cell).not.toHaveClass('zero')
 })
 
 test('the table is labelled by its step, has scoped headers, and is not a live region', () => {

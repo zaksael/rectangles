@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { HistoryEntry } from '../gameTypes'
+import { reach } from '../fixtures/gameFixtures'
 import { ScoreChart } from './ScoreChart'
 
 afterEach(() => {
@@ -16,6 +17,7 @@ const entry = (one: number, two: number): HistoryEntry => ({
   wildcardOriginalRoll: null,
   score: { '1': one, '2': two },
   breakdown: { '1': zero, '2': zero },
+  potential: reach(0, 0),
 })
 
 // Scores per turn after turn 0; the chart is 320x300 here, so the plot runs x 36..310 and y 274 (bottom) to 10 (top).
