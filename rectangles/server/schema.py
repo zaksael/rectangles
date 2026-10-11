@@ -42,7 +42,7 @@ def _serialize_player(game: Game, player: Player, self_enclosed_counts: dict[int
             "totalArea": player.total_area,
             "totalScore": breakdown.total,
             "breakdown": asdict(breakdown),
-            "potential": {"area": potential["area"], "prize": {"points": potential["prize_points"]}},
+            "potential": _potential(potential),
         },
         "houseRules": {
             "reroll": {"used": player.rerolls_used, "limit": game.effective_reroll_limit(player)},
@@ -123,7 +123,14 @@ def serialize_game(game: Game) -> dict:
 
 
 def _serialize_history(game: Game) -> list[dict]:
-    return [{k: v for k, v in step.items() if k not in ("turn", "points")} for step in _serialize_steps(game)]
+    return [
+        {**{k: v for k, v in step.items() if k not in ("turn", "points")}, "potential": _by_player({pid: _potential(p) for pid, p in potential.items()})}
+        for step, potential in zip(_serialize_steps(game), game.potential_history())
+    ]
+
+
+def _potential(stats: dict[str, int]) -> dict:
+    return {"area": stats["area"], "prize": {"points": stats["prize_points"]}}
 
 
 def _serialize_steps(game: Game) -> list[dict]:

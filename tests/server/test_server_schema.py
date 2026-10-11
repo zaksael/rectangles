@@ -354,6 +354,7 @@ def test_serialize_game_history_is_null_while_playing_and_a_step_list_at_game_ov
                 "1": {"area": 6, "prize": 0, "pitfall": 0, "steal": 0, "enclosure": 0},
                 "2": {"area": 0, "prize": 0, "pitfall": 0, "steal": 0, "enclosure": 0},
             },
+            "potential": {"1": {"area": 115, "prize": {"points": 0}}, "2": {"area": 115, "prize": {"points": 0}}},
         }
     ]
 

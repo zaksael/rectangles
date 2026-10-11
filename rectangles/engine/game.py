@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import random
+from collections.abc import Iterator
 from enum import Enum, auto
 
 from .board import Board
@@ -531,8 +532,8 @@ class Game:
             enclosure=-enclosed_cells * SELF_ENCLOSED_PENALTY_PER_CELL,
         )
 
-    def score_breakdown_history(self) -> list[dict[int, ScoreBreakdown]]:
-        """Both players' score parts after each history record, replayed on a scratch board."""
+    def _replay_history(self) -> Iterator[tuple[Board, dict[int, Player]]]:
+        """The scratch board and players after each history record, replayed from an empty board."""
         board = Board(
             self.board.size,
             special_cells=self.board.special_cells,
@@ -540,7 +541,6 @@ class Game:
             obstacle_cells=self.board.obstacle_cells,
         )
         scratch = {pid: Player(pid, "", p.start_corner) for pid, p in self.players.items()}
-        steps = []
         for record in self.history:
             if record.placed is not None:
                 rect = record.placed
@@ -550,17 +550,30 @@ class Game:
                 for sc in board.special_cells:
                     if sc.location in cells:
                         owner.special_captures[sc.kind] = owner.special_captures.get(sc.kind, 0) + 1
+            yield board, scratch
+
+    def score_breakdown_history(self) -> list[dict[int, ScoreBreakdown]]:
+        """Both players' score parts after each history record, replayed on a scratch board."""
+        steps = []
+        for board, scratch in self._replay_history():
             enclosed = board.self_enclosed_cell_counts() if self.self_enclosed_penalty_enabled else {}
             steps.append(
                 {pid: self._breakdown(p, scratch[PLAYER_2 if pid == PLAYER_1 else PLAYER_1], enclosed.get(pid, 0)) for pid, p in scratch.items()}
             )
         return steps
 
+    def potential_history(self) -> list[dict[int, dict[str, int]]]:
+        """Both players' potential_stats after each history record, replayed on a scratch board."""
+        return [{pid: self._potential_on(board, p) for pid, p in scratch.items()} for board, scratch in self._replay_history()]
+
     def potential_stats(self, player: Player) -> dict[str, int]:
-        reachable = self.board.reachable_empty_cells(player)
+        return self._potential_on(self.board, player)
+
+    def _potential_on(self, board: Board, player: Player) -> dict[str, int]:
+        reachable = board.reachable_empty_cells(player)
         return {
             "area": len(reachable),
-            "prize_points": len(reachable & self.board.cells_of_kind(CellKind.PRIZE)) * self.points_for(CellKind.PRIZE),
+            "prize_points": len(reachable & board.cells_of_kind(CellKind.PRIZE)) * self.points_for(CellKind.PRIZE),
         }
 
     def winner(self) -> int | None:

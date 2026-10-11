@@ -1226,3 +1226,24 @@ def test_score_breakdown_history_shows_the_enclosure_penalty_from_the_step_it_ap
 
     assert [s[PLAYER_1].enclosure for s in steps] == [0, 0, 0, -SELF_ENCLOSED_PENALTY_PER_CELL]
     assert [s[PLAYER_1].area for s in steps] == [1, 2, 3, 4]
+
+
+def test_potential_history_ends_at_the_live_potential_of_each_player():
+    game = Game(board_size=6, rng=ScriptedRandom([2, 3, 1, 1]))
+    game.roll_dice()
+    game.attempt_place((0, 0), 2, 3)
+    game.end_turn()
+    game.roll_dice()
+    game.attempt_place((5, 5), 1, 1)
+
+    assert game.potential_history()[-1] == {pid: game.potential_stats(p) for pid, p in game.players.items()}
+
+
+def test_potential_history_counts_a_prize_both_players_can_still_reach():
+    game = Game(board_size=11, rng=ScriptedRandom([2, 2]))
+    game.board.special_cells = _special(CellKind.PRIZE, (5, 5))
+    game.roll_dice()
+    assert game.attempt_place((0, 0), 2, 2) is True
+
+    prize = game.points_for(CellKind.PRIZE)
+    assert [step[pid]["prize_points"] for step in game.potential_history() for pid in (PLAYER_1, PLAYER_2)] == [prize, prize]
