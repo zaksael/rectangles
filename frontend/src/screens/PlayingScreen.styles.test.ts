@@ -108,6 +108,12 @@ test('on touch the dice slot holds 92px and the action row 66px, in a block afte
   expect(touch!.index).toBeGreaterThan(css.indexOf('\n.rail-actions {'))
 })
 
+test('on touch the rail head\'s Menu button is a 44px target, in the block after the base rules', () => {
+  const touch = css.match(/@media \(any-pointer: coarse\) \{\s*\.rail-dice\.reserves-picker[\s\S]*?\n\}/)![0]
+
+  expect(touch).toMatch(/\.rail-head \.btn \{[^}]*min-height:\s*44px/)
+})
+
 test('the key hint is pinned to the bottom of the status box, so a one-row and a two-row status leave it in the same place', () => {
   expect(ruleFor(css, '.rail-instr .board-help')).toMatch(/margin-top:\s*auto/)
 })

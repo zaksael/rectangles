@@ -241,6 +241,9 @@
   .rail-actions {
     height: 66px;
   }
+  .rail-head .btn {
+    min-height: 44px;
+  }
   /* The taller buttons cost the list a row. */
   .history .move:nth-child(n + 4) {
     display: none;
