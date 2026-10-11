@@ -9,6 +9,12 @@ area when the game ends wins.
 
 ## Index
 
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Play](#play)
+- [Development](#development)
+  - [Frontend development](#frontend-development)
+- [Tests](#tests)
 - [Rules](#rules)
 - [House Rules](#house-rules)
   - [Prize](#prize)
@@ -22,13 +28,97 @@ area when the game ends wins.
   - [Comeback](#comeback)
 - [Bot opponent](#bot-opponent)
 - [Series mode](#series-mode)
-- [Requirements](#requirements)
-- [Setup](#setup)
-- [Play](#play)
-- [Development](#development)
-  - [Frontend development](#frontend-development)
-- [Tests](#tests)
 - [Project structure](#project-structure)
+
+## Requirements
+
+- Python 3.10+
+- [uv](https://docs.astral.sh/uv/) for dependency management
+- Node.js 22.12 or newer and npm, to build the frontend
+
+## Setup
+
+```bash
+uv sync
+cd frontend
+npm install
+npm run build
+```
+
+## Play
+
+```bash
+uv run python -m rectangles.server.app
+```
+
+Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
+`RECTANGLES_SERVER_PORT` to change the address). The server serves the built frontend from
+`frontend/dist` and the game socket at `/ws`; without a build it serves only
+`/ws`.
+
+The game opens on Mode Select. Pick the opponent (**Local 2P** or **Vs Bot** and
+its difficulty), a board size and skip limit, how many games to play (1, 3 or
+5, see [Series mode](#series-mode)), and which of the nine
+[house rules](#house-rules) to switch on, then **Start Game**. Your last choices
+are remembered, and **Reset to Defaults** appears once any differ.
+
+Playing and Replay need a window at least 1320px wide; below that a "Widen the
+Window" notice takes their place and the game waits where it was.
+
+- **Roll** (`D`) to get a piece for your turn.
+- Every cell where your rolled piece could legally go is highlighted; hover
+  the board (or tap, then tap again to place) to preview the exact placement,
+  centered on the pointer, and click to place the piece. The keyboard works
+  too: arrows move the cursor, `N` / `Shift+N` jump to the next / previous
+  legal spot, and `Enter` places.
+- Rotate the piece with the **Rotate** button or `R`.
+- A roll with no legal placement waits for you to press **Skip** (`S`).
+- A [Wildcard Roll](#wildcard-roll) turn shows a row of value buttons (greyed
+  out for any value without a legal placement) to choose the editable die's
+  value before placement continues.
+- With [Reroll](#reroll) on and a charge left, **Reroll** (`E`) discards the
+  current roll for a fresh one, including alongside a forced skip.
+- The side rail shows both scores with a row for each scoring rule that is
+  on, each player's skip streak, a legend of the special cells, and the
+  latest moves.
+- **Menu** (`M`) shows the match settings and has **Resume** and
+  **Surrender**; surrender always asks for confirmation first, and your
+  opponent wins regardless of the area tally.
+- When the game ends, a summary shows the winner (or tie), final scores, the
+  score breakdown and the reason the game ended. **View Board** (`V`) looks at
+  the final board with a slim result bar, **Replay** (`R`) steps through the
+  game, and **New Game** (`N`) returns to Mode Select. During a series the
+  button reads **Next Round** until the series itself is decided, then **Series
+  Result**.
+- **Replay** the finished game turn by turn: step with First/Prev/Next/Last
+  (or the arrow, Home and End keys), seeing each turn's roll, placement and
+  each player's score breakdown at that point, plus a score-history chart
+  across the whole game (click or arrow along it to jump to a turn). For the
+  turn just taken, a flag appears if the best other legal option that roll
+  would have scored higher than what was actually played, showing the actual
+  score against the best possible one (e.g. "scored 4 this turn (best
+  possible: 14 — prize)") — or, when the difference is purely strategic
+  denial rather than real points, the cells denied instead (e.g. "denied 1
+  cell this turn (best possible: 5)"). Toggle **Show Better Option** to
+  outline the better placement on the board. **Play** advances automatically
+  at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
+  manual navigation pauses it. **Back**/`Esc` returns to the summary.
+
+## Development
+
+### Frontend development
+
+Run the server in one terminal (`uv run python -m rectangles.server.app`) and
+`npm run dev` in `frontend/` in another. The Vite dev server forwards `/ws` to
+the server on port 8765; open the printed `localhost` URL to play. The server
+accepts a WebSocket only from a page served from its own host and port, which
+the Vite proxy preserves.
+
+## Tests
+
+```bash
+uv run pytest
+```
 
 ## Rules
 
@@ -233,96 +323,6 @@ score at the end wins. Equal cumulative scores after all rounds is a
 tied series. The side rail shows the running series score, each round ends on its own
 result card, and the series result card lists every round's score above the
 series total.
-
-## Requirements
-
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) for dependency management
-- Node.js 22.12 or newer and npm, to build the frontend
-
-## Setup
-
-```bash
-uv sync
-cd frontend
-npm install
-npm run build
-```
-
-## Play
-
-```bash
-uv run python -m rectangles.server.app
-```
-
-Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
-`RECTANGLES_SERVER_PORT` to change the address). The server serves the built frontend from
-`frontend/dist` and the game socket at `/ws`; without a build it serves only
-`/ws`.
-
-The game opens on Mode Select. Pick the opponent (**Local 2P** or **Vs Bot** and
-its difficulty), a board size and skip limit, how many games to play (1, 3 or
-5, see [Series mode](#series-mode)), and which of the nine
-[house rules](#house-rules) to switch on, then **Start Game**. Your last choices
-are remembered, and **Reset to Defaults** appears once any differ.
-
-Playing and Replay need a window at least 1320px wide; below that a "Widen the
-Window" notice takes their place and the game waits where it was.
-
-- **Roll** (`D`) to get a piece for your turn.
-- Every cell where your rolled piece could legally go is highlighted; hover
-  the board (or tap, then tap again to place) to preview the exact placement,
-  centered on the pointer, and click to place the piece. The keyboard works
-  too: arrows move the cursor, `N` / `Shift+N` jump to the next / previous
-  legal spot, and `Enter` places.
-- Rotate the piece with the **Rotate** button or `R`.
-- A roll with no legal placement waits for you to press **Skip** (`S`).
-- A [Wildcard Roll](#wildcard-roll) turn shows a row of value buttons (greyed
-  out for any value without a legal placement) to choose the editable die's
-  value before placement continues.
-- With [Reroll](#reroll) on and a charge left, **Reroll** (`E`) discards the
-  current roll for a fresh one, including alongside a forced skip.
-- The side rail shows both scores with a row for each scoring rule that is
-  on, each player's skip streak, a legend of the special cells, and the
-  latest moves.
-- **Menu** (`M`) shows the match settings and has **Resume** and
-  **Surrender**; surrender always asks for confirmation first, and your
-  opponent wins regardless of the area tally.
-- When the game ends, a summary shows the winner (or tie), final scores, the
-  score breakdown and the reason the game ended. **View Board** (`V`) looks at
-  the final board with a slim result bar, **Replay** (`R`) steps through the
-  game, and **New Game** (`N`) returns to Mode Select. During a series the
-  button reads **Next Round** until the series itself is decided, then **Series
-  Result**.
-- **Replay** the finished game turn by turn: step with First/Prev/Next/Last
-  (or the arrow, Home and End keys), seeing each turn's roll, placement and
-  each player's score breakdown at that point, plus a score-history chart
-  across the whole game (click or arrow along it to jump to a turn). For the
-  turn just taken, a flag appears if the best other legal option that roll
-  would have scored higher than what was actually played, showing the actual
-  score against the best possible one (e.g. "scored 4 this turn (best
-  possible: 14 — prize)") — or, when the difference is purely strategic
-  denial rather than real points, the cells denied instead (e.g. "denied 1
-  cell this turn (best possible: 5)"). Toggle **Show Better Option** to
-  outline the better placement on the board. **Play** advances automatically
-  at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
-  manual navigation pauses it. **Back**/`Esc` returns to the summary.
-
-## Development
-
-### Frontend development
-
-Run the server in one terminal (`uv run python -m rectangles.server.app`) and
-`npm run dev` in `frontend/` in another. The Vite dev server forwards `/ws` to
-the server on port 8765; open the printed `localhost` URL to play. The server
-accepts a WebSocket only from a page served from its own host and port, which
-the Vite proxy preserves.
-
-## Tests
-
-```bash
-uv run pytest
-```
 
 ## Project structure
 
