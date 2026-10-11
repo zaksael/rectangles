@@ -12,6 +12,7 @@ area when the game ends wins.
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Play](#play)
+- [Accessibility](#accessibility)
 - [Development](#development)
   - [Frontend development](#frontend-development)
 - [Tests](#tests)
@@ -55,6 +56,9 @@ Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
 `RECTANGLES_SERVER_PORT` to change the address). The server serves the built frontend from
 `frontend/dist` and the game socket at `/ws`; without a build it serves only
 `/ws`.
+
+A game lives in its browser tab: the server keeps one game per connection, with no accounts, so
+reloading or closing the tab ends it (the browser asks before leaving a game in progress).
 
 The game opens on Mode Select. Pick the opponent (**Local 2P** or **Vs Bot** and
 its difficulty), a board size and skip limit, how many games to play (1, 3 or
@@ -104,6 +108,18 @@ Window" notice takes their place and the game waits where it was.
   at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
   manual navigation pauses it. **Back**/`Esc` returns to the summary.
 
+## Accessibility
+
+- **Keyboard:** every control on Playing is reachable by keyboard. The board is a single tab stop on every
+  turn and keeps focus between turns; the piece starts on the first legal spot when you focus it or a
+  new placement begins.
+- **Screen readers:** the turn status, each roll ("Player 1 rolled 2 and 1") and the piece's position with
+  what it would sit on ("Row 5, column 7, 4 empty cells") are announced as they change. The board has a
+  hidden summary of each player's pieces and cells, plus obstacles and walls.
+- **Colour and touch:** the player colours and the illegal-placement colour were checked under red-green
+  and blue-yellow colour blindness, and special cells are told apart by shape (`+`, `−`, `±`) as well as
+  position. Touch screens get 44px controls, and dialogs are inset to clear a phone's notch and corners.
+
 ## Development
 
 ### Frontend development
@@ -117,8 +133,14 @@ the Vite proxy preserves.
 ## Tests
 
 ```bash
-uv run pytest
+uv run pytest                  # backend: engine and server
+cd frontend
+npm test                       # frontend (Vitest)
+npm run lint
 ```
+
+Coverage is about 99% on the backend and 97% on the frontend (measured with `pytest-cov` and
+`@vitest/coverage-v8`, neither a project dependency).
 
 ## Rules
 
@@ -279,8 +301,8 @@ appears if it wasn't already available.
 Pick the opponent on the Mode Select screen: **Local 2P** for local
 pass-and-play, or **Vs Bot** (Greedy is preselected) with one of the three difficulties below to play solo — the
 bot rolls, places a legal piece (or continues past a forced skip), and ends
-its turn on its own, with a short pause between actions. Human input for
-Player 2's controls is ignored while the bot is taking its turn.
+its turn on its own, with a short pause between actions. The bot always plays
+Player 2 (you are Player 1), and your input is ignored while it takes its turn.
 
 The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
@@ -341,12 +363,20 @@ rectangles/
 └── server/               # FastAPI/WebSocket server for online play
     ├── app.py            # WebSocket handler, one Game per connection; serves frontend/dist
     └── schema.py         # wire message schema, state serialization
-frontend/                 # React + Vite web client (src/screens, src/components)
+frontend/                 # React + Vite web client
+└── src/
+    ├── screens/          # Mode Select, Playing, Replay, and the dialogs and overlays
+    ├── components/       # the board and other shared pieces
+    ├── useGameSocket.ts  # the WebSocket connection and game state
+    ├── usePlacementInput.ts  # mouse, touch and keyboard placement
+    └── tokens.css        # colours, type and shared button styles
+tests/                    # backend tests (engine/, server/); frontend tests sit beside their source
+docs/GAME_SPEC.md         # the full ruleset, independent of this code
+pyproject.toml            # Python dependencies and settings (managed with uv)
 ```
 
 The engine also implements tournaments and save/resume (see sections 12 and 13
 of the [spec](docs/GAME_SPEC.md)); the web client doesn't offer them.
 
 The rules engine (`rectangles/engine/`) has no UI dependency, so it's fully
-unit-testable headlessly — see `tests/`. Frontend tests run with `npm test` in
-`frontend/`.
+unit-testable headlessly — see `tests/`.
