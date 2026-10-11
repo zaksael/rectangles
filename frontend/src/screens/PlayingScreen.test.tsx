@@ -1870,3 +1870,34 @@ test('the focus order is the board, then Menu, then the action buttons', () => {
   expect(follows(board, menu)).toBe(true)
   expect(follows(menu, rotate)).toBe(true)
 })
+
+function leavePrevented() {
+  const event = new Event('beforeunload', { cancelable: true })
+  window.dispatchEvent(event)
+  return event.defaultPrevented
+}
+
+test('closing or refreshing the tab mid-game asks the browser to confirm once a move has been played', () => {
+  renderScreen(movesState([recentTurn(1, 1, [2, 2], 4)]))
+
+  expect(leavePrevented()).toBe(true)
+})
+
+test('nothing asks before the first move', () => {
+  renderScreen(movesState([]))
+
+  expect(leavePrevented()).toBe(false)
+})
+
+test('nothing asks once the game is over', () => {
+  renderScreen(gameOverState())
+
+  expect(leavePrevented()).toBe(false)
+})
+
+test('leaving the Playing screen removes the leave confirmation', () => {
+  renderScreen(movesState([recentTurn(1, 1, [2, 2], 4)]))
+  cleanup()
+
+  expect(leavePrevented()).toBe(false)
+})

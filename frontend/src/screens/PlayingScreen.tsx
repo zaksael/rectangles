@@ -223,6 +223,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   const ids = ['1', '2'] as const
   const recentTurns = state?.game.turn.recentTurns ?? []
+  // A game in progress can't be resumed once the tab is gone, so ask first (the browser words the prompt itself).
+  const leaveGuarded = turnState !== 'gameOver' && recentTurns.length > 0
+  useEffect(() => {
+    if (!leaveGuarded) return
+    const guard = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', guard)
+    return () => window.removeEventListener('beforeunload', guard)
+  }, [leaveGuarded])
   const liveRow = turnState !== 'gameOver' && state
   const moveRows = [
     ...(liveRow
