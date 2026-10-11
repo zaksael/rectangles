@@ -33,9 +33,11 @@ interface ScoreChartProps {
   step: number
   names: { '1': string; '2': string }
   onJump: (turn: number) => void
+  // Turns where a better move existed: each gets a ring on the mover's own dot.
+  flagged?: number[]
 }
 
-export function ScoreChart({ history, step, names, onJump }: ScoreChartProps) {
+export function ScoreChart({ history, step, names, onJump, flagged = [] }: ScoreChartProps) {
   const [ref, { width, height }] = useBoxSize()
   // The one tab stop: the turn that last had focus inside the chart, else the current turn.
   const [roving, setRoving] = useState<number | null>(null)
@@ -83,6 +85,15 @@ export function ScoreChart({ history, step, names, onJump }: ScoreChartProps) {
               ))}
               <span>{`Turn ${step}`}</span>
             </span>
+            {flagged.length > 0 && (
+              <span className="chart-key">
+                <svg viewBox="0 0 14 14" aria-hidden="true">
+                  <circle cx="7" cy="7" r="2.5" fill="var(--ink)" />
+                  <circle cx="7" cy="7" r="6" fill="none" stroke="var(--ink)" strokeWidth="1.5" />
+                </svg>
+                Better move existed
+              </span>
+            )}
             <span className="chart-hint">Select a turn to jump to it</span>
           </>
         )}
@@ -141,6 +152,22 @@ export function ScoreChart({ history, step, names, onJump }: ScoreChartProps) {
                     opacity={turn > step ? 0.35 : 1}
                   />
                 ))}
+                {flagged
+                  .filter((turn) => history[turn - 1]?.playerId === Number(id))
+                  .map((turn) => (
+                    <circle
+                      key={`ring-${turn}`}
+                      className={`chart-ring p${id}`}
+                      cx={x(turn)}
+                      cy={y(series[id][turn])}
+                      r={turn === step ? 8.5 : 6}
+                      fill="none"
+                      stroke="var(--ink)"
+                      strokeWidth={1.5}
+                      opacity={turn > step ? 0.35 : 1}
+                      aria-hidden="true"
+                    />
+                  ))}
               </g>
             ))}
           </svg>

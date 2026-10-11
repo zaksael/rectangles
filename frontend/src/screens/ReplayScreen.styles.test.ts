@@ -123,3 +123,41 @@ test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.
   expect(hint).toMatch(/flex-basis:\s*100%/)
   expect(textContrast(css, '.replay .chart-hint')).toBeGreaterThanOrEqual(4.5)
 })
+
+// --- turn analysis ---
+
+const boardCss = readCss('components/Board.css')
+
+test('the note slot reserves two lines so a note coming and going never resizes the chart', () => {
+  expect(ruleFor(css, '.replay .analysis-slot')).toMatch(/min-height:\s*44px/)
+})
+
+test('the muted note lines and the chart key stay AA (4.5:1) on the ledger', () => {
+  expect(textContrast(css, '.replay .analysis.pending')).toBeGreaterThanOrEqual(4.5)
+  expect(textContrast(css, '.replay .chart-key')).toBeGreaterThanOrEqual(4.5)
+})
+
+test('a flagged note has a full-ink rule on its left and a muted one has a hairline', () => {
+  expect(ruleFor(css, '.replay .analysis')).toMatch(/border-left:\s*2px solid var\(--ink\)/)
+  expect(ruleFor(css, '.replay .analysis.pending')).toMatch(/border-left-color:\s*var\(--line\)/)
+})
+
+test('the pressed Show Better Option toggle is inverted, in ink on the ledger', () => {
+  const block = ruleFor(css, ".replay .analysis-row .btn[aria-pressed='true']")
+
+  expect(block).toMatch(/background:\s*var\(--ink\)/)
+  expect(block).toMatch(/color:\s*var\(--ledger\)/)
+})
+
+test('a long note stacks the toggle under it, and the toggle never wraps its label', () => {
+  expect(ruleFor(css, '.replay .analysis-row.stacked')).toMatch(/flex-direction:\s*column/)
+  expect(ruleFor(css, '.replay .analysis-row .btn')).toMatch(/white-space:\s*nowrap/)
+})
+
+test('the better placement is a 3px dashed ink outline with a light ink tint, above the pieces', () => {
+  const block = ruleFor(boardCss, '.better-option')
+
+  expect(block).toMatch(/border:\s*3px dashed var\(--ink\)/)
+  expect(block).toMatch(/background:\s*color-mix\(in srgb, var\(--ink\) 12%, transparent\)/)
+  expect(block).toMatch(/z-index:\s*2/)
+})

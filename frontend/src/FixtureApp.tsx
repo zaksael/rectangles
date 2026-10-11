@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { buildFixture } from './fixtures/devFixtures'
+import { buildFixture, FIXTURE_ANALYSIS } from './fixtures/devFixtures'
 import { NarrowWindowGate } from './screens/NarrowWindowGate'
 import { PlayingScreen } from './screens/PlayingScreen'
 import { ReplayScreen } from './screens/ReplayScreen'
@@ -9,6 +9,7 @@ export function FixtureApp({ name }: { name: string }) {
   const state = buildFixture(name)
   const [replaying, setReplaying] = useState(false)
   const [fromSeriesResult, setFromSeriesResult] = useState(false)
+  const [showBetterOption, setShowBetterOption] = useState(false)
   useEffect(() => {
     console.info(`fixture "${name}" is active: actions are ignored`)
   }, [name])
@@ -16,7 +17,13 @@ export function FixtureApp({ name }: { name: string }) {
   if (replaying) {
     return (
       <NarrowWindowGate screen="Replay">
-        <ReplayScreen game={state.game} onBack={() => setReplaying(false)} />
+        <ReplayScreen
+          game={state.game}
+          onBack={() => setReplaying(false)}
+          analysis={FIXTURE_ANALYSIS}
+          showBetterOption={showBetterOption}
+          onToggleBetterOption={() => setShowBetterOption((on) => !on)}
+        />
       </NarrowWindowGate>
     )
   }

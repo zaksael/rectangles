@@ -1,4 +1,4 @@
-import type { GameWireState, HistoryEntry } from '../gameTypes'
+import type { Analysis, GameWireState, HistoryEntry } from '../gameTypes'
 import type { GameState } from '../useGameSocket'
 import { makeGame, makeSeries, reach } from './gameFixtures'
 
@@ -54,6 +54,15 @@ const HISTORY: HistoryEntry[] = [
   move(2, [5, 8], 2, 3, [18, 14], [304, 304]),
   { playerId: 1, roll: [6, 6], placed: null, wildcardOriginalRoll: null, score: { '1': 18, '2': 14 }, breakdown: { '1': area(18), '2': area(14) }, potential: reach(304, 304) },
 ]
+
+// Turns 2 and 3 of HISTORY had a better move: Player 2 denied less than it could have, then Player 1 missed the Prize.
+export const FIXTURE_ANALYSIS: Analysis = {
+  status: 'ready',
+  turns: [
+    { turn: 2, axis: 'denial', chosen: 6, best: 9, topLeft: [6, 6], width: 3, height: 2 },
+    { turn: 3, axis: 'prize', chosen: 0, best: 5, topLeft: [4, 5], width: 2, height: 2 },
+  ],
+}
 
 function gameOver(): GameWireState {
   const game = midGame()

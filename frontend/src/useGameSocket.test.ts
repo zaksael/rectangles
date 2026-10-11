@@ -309,3 +309,76 @@ test('a fresh connection clears the previous game state and error', () => {
   expect(result.current.state).toBeNull()
   expect(result.current.error).toBeNull()
 })
+
+const analysisTurns = [{ turn: 3, axis: 'prize', chosen: 0, best: 10, topLeft: [0, 0], width: 4, height: 1 }]
+const analysisMessage = { protocolVersion: 1, type: 'analysis', turns: analysisTurns }
+const stateMessage = (game: GameWireState = fakeGame) => ({ type: 'state', game, series: null })
+
+test('requestAnalysis sends the request and the analysis reads loading', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  expect(result.current.analysis).toBeNull()
+
+  act(() => result.current.requestAnalysis())
+
+  expect(FakeWebSocket.instances[0].sent).toEqual([{ protocolVersion: 1, type: 'requestAnalysis' }])
+  expect(result.current.analysis).toEqual({ status: 'loading' })
+})
+
+test('an analysis message makes the analysis ready with its turns', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => result.current.requestAnalysis())
+
+  act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
+
+  expect(result.current.analysis).toEqual({ status: 'ready', turns: analysisTurns })
+})
+
+test('an error reply while the analysis is loading makes it unavailable', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => result.current.requestAnalysis())
+
+  act(() => FakeWebSocket.instances[0].emit('message', { type: 'error', reason: 'invalidAction', message: 'the game is not over' }))
+
+  expect(result.current.analysis).toEqual({ status: 'unavailable' })
+})
+
+test('the socket closing while the analysis is loading makes it unavailable', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  act(() => result.current.requestAnalysis())
+
+  act(() => FakeWebSocket.instances[0].emit('close'))
+
+  expect(result.current.analysis).toEqual({ status: 'unavailable' })
+})
+
+test('asking again once the analysis is ready sends nothing', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => result.current.requestAnalysis())
+  act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
+
+  act(() => result.current.requestAnalysis())
+
+  expect(FakeWebSocket.instances[0].sent).toHaveLength(1)
+})
+
+test('the next game starting clears the previous round\'s analysis', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => result.current.requestAnalysis())
+  act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
+
+  act(() => FakeWebSocket.instances[0].emit('message', stateMessage()))
+
+  expect(result.current.analysis).toBeNull()
+})
+
+test('a game-over state keeps the analysis', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => result.current.requestAnalysis())
+  act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
+  const over = { ...fakeGame, gameOver: { ...fakeGame.gameOver, reason: 'surrender', history: [] } } as GameWireState
+
+  act(() => FakeWebSocket.instances[0].emit('message', stateMessage(over)))
+
+  expect(result.current.analysis).toEqual({ status: 'ready', turns: analysisTurns })
+})

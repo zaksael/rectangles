@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildFixture, fixtureNameFromSearch } from './devFixtures'
+import { buildFixture, FIXTURE_ANALYSIS, fixtureNameFromSearch } from './devFixtures'
 
 describe('buildFixture', () => {
   it('wildcard: a choosing-wildcard turn with legal values and the original roll', () => {
@@ -30,6 +30,14 @@ describe('buildFixture', () => {
     expect(state?.game.gameOver).toMatchObject({ reason: 'boardFull', playerId: null, winner: 1 })
     expect(state?.game.gameOver.history).toHaveLength(5) // so Replay has something to step through
     expect(state?.series).toBeNull()
+  })
+
+  it('the canned analysis flags turns that exist in the gameover fixture\'s history', () => {
+    const history = buildFixture('gameover')!.game.gameOver.history!
+    const turns = FIXTURE_ANALYSIS.status === 'ready' ? FIXTURE_ANALYSIS.turns.map((t) => t.turn) : []
+
+    expect(turns.length).toBeGreaterThan(0)
+    expect(turns.every((turn) => history[turn - 1]?.placed)).toBe(true)
   })
 
   it('series: an incomplete series on a finished round', () => {

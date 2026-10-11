@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
-import type { GameWireState, HistoryEntry, ScoreParts } from '../gameTypes'
+import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, ScoreParts } from '../gameTypes'
 import { makeGame, reach } from '../fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
 
@@ -543,4 +543,147 @@ test('the chart names the opponent as the rest of the screen does', () => {
 test('the score table carries the shared score-table class', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
   expect(screen.getByRole('table').classList.contains('score-table')).toBe(true)
+})
+
+
+// --- turn analysis ---
+
+const flagged = (overrides: Partial<AnalysisTurn> = {}): AnalysisTurn => ({
+  turn: 1, axis: 'prize', chosen: 0, best: 10, topLeft: [0, 0], width: 4, height: 1, ...overrides,
+})
+const ready = (...turns: AnalysisTurn[]): Analysis => ({ status: 'ready', turns })
+const renderAnalysed = (analysis: Analysis | null, step = 0) => {
+  const view = render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={() => {}} analysis={analysis} />)
+  for (let i = 0; i < step; i++) fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  return view
+}
+
+test('a flagged turn gets a note naming the points and the axis, with a real minus sign', () => {
+  renderAnalysed(ready(flagged({ chosen: -10, best: 10 })), 1)
+
+  expect(screen.getByText('Scored −10 this turn (best possible: 10, Prize)')).toBeTruthy()
+})
+
+test('a denial turn reads in cells, singular for one', () => {
+  renderAnalysed(ready(flagged({ axis: 'denial', chosen: 1, best: 5 })), 1)
+
+  expect(screen.getByText('Denied 1 cell this turn (best possible: 5)')).toBeTruthy()
+})
+
+test('a denial turn with several cells reads plural', () => {
+  renderAnalysed(ready(flagged({ axis: 'denial', chosen: 5, best: 25 })), 1)
+
+  expect(screen.getByText('Denied 5 cells this turn (best possible: 25)')).toBeTruthy()
+})
+
+test('a turn that is not flagged has no note, with other turns flagged', () => {
+  renderAnalysed(ready(flagged({ turn: 2 })), 1)
+
+  expect(screen.queryByText(/this turn \(best possible/)).toBeNull()
+})
+
+test('while the analysis loads the note slot says it is checking, as a status', () => {
+  renderAnalysed({ status: 'loading' }, 1)
+
+  expect(screen.getByRole('status').textContent).toBe('Checking for better moves…')
+})
+
+test('an unavailable analysis says so and Replay still steps', () => {
+  renderAnalysed({ status: 'unavailable' }, 1)
+
+  expect(screen.getByText('Turn analysis unavailable')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy()
+})
+
+test('a game with nothing flagged says none were found on every step', () => {
+  renderAnalysed(ready(), 1)
+
+  expect(screen.getByText('No better moves found')).toBeTruthy()
+})
+
+test('no analysis asked for shows nothing in the note slot', () => {
+  renderAnalysed(null, 1)
+
+  expect(screen.queryByText(/better moves|Turn analysis|this turn \(best/)).toBeNull()
+})
+
+
+test('flagged turns ring the chart and the chart says what a ring means', () => {
+  const { container } = renderAnalysed(ready(flagged({ turn: 1 })), 1)
+
+  expect(container.querySelectorAll('.chart-ring')).toHaveLength(1)
+  expect(screen.getByText('Better move existed')).toBeTruthy()
+})
+
+const renderToggle = (props: { showBetterOption?: boolean; onToggle?: () => void; turn?: AnalysisTurn } = {}) => {
+  const view = render(
+    <ReplayScreen
+      game={replayGame(TWO_MOVES)}
+      onBack={() => {}}
+      analysis={ready(props.turn ?? flagged({ topLeft: [1, 2], width: 3, height: 2 }))}
+      showBetterOption={props.showBetterOption}
+      onToggleBetterOption={props.onToggle}
+    />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  return view
+}
+const toggle = () => screen.queryByRole('button', { name: 'Show Better Option' })
+const outline = (container: HTMLElement) => container.querySelector('.better-option') as HTMLElement | null
+
+test('a flagged turn offers Show Better Option, not pressed by default', () => {
+  renderToggle()
+
+  expect(toggle()?.getAttribute('aria-pressed')).toBe('false')
+})
+
+test('a turn that is not flagged has no toggle', () => {
+  renderToggle({ turn: flagged({ turn: 2 }) })
+
+  expect(toggle()).toBeNull()
+})
+
+test('pressing the toggle asks the owner of the state to flip it', () => {
+  const onToggle = vi.fn()
+  renderToggle({ onToggle })
+
+  fireEvent.click(toggle()!)
+
+  expect(onToggle).toHaveBeenCalledTimes(1)
+})
+
+test('with it on, the toggle reads pressed and the better placement is outlined on the board', () => {
+  const { container } = renderToggle({ showBetterOption: true })
+  const box = outline(container)!
+
+  expect(toggle()?.getAttribute('aria-pressed')).toBe('true')
+  expect(['--r', '--c', '--w', '--h'].map((v) => box.style.getPropertyValue(v))).toEqual(['1', '2', '3', '2'])
+})
+
+test('with it off there is no outline', () => {
+  const { container } = renderToggle({ showBetterOption: false })
+
+  expect(outline(container)).toBeNull()
+})
+
+test('with it on, stepping to a turn that is not flagged drops the outline and the button', () => {
+  const { container } = renderToggle({ showBetterOption: true })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+  expect(outline(container)).toBeNull()
+  expect(toggle()).toBeNull()
+})
+
+test('a note over 50 characters puts the toggle on its own row', () => {
+  const { container } = renderToggle({ turn: flagged({ axis: 'enclosure', chosen: -100, best: 100 }) })
+
+  expect(container.querySelector('.analysis-row.stacked')).not.toBeNull()
+})
+
+test('a shorter note keeps the toggle beside it', () => {
+  const { container } = renderToggle()
+
+  expect(container.querySelector('.analysis-row')).not.toBeNull()
+  expect(container.querySelector('.analysis-row.stacked')).toBeNull()
 })

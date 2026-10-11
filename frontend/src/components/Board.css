@@ -157,6 +157,7 @@
   height: 5px;
 }
 
+.better-option,
 .piece-outline,
 .preview {
   box-sizing: border-box; /* borders sit inside the piece's cells, not beyond them */
@@ -178,6 +179,14 @@
 
 .preview {
   position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.better-option {
+  position: absolute;
+  border: 3px dashed var(--ink);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
   pointer-events: none;
   z-index: 2;
 }

@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
-import { makeGame, makeSeries } from './fixtures/gameFixtures'
+import type { HistoryEntry } from './gameTypes'
+import { makeGame, makeSeries, reach } from './fixtures/gameFixtures'
 
 beforeEach(() => {
   localStorage.clear()
@@ -244,7 +245,7 @@ describe('App', () => {
     setWidth(1100)
     expect(screen.getByRole('status')).toHaveTextContent('Replay needs a window at least 1320px wide, and yours is 1100px')
     setWidth(1400)
-    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.queryByText(/needs a window at least/)).toBeNull()
     expect(screen.getByRole('heading', { name: 'Replay' })).toBeVisible()
   })
 
@@ -269,5 +270,77 @@ describe('App', () => {
     act(() => vi.advanceTimersByTime(500)) // state broadcasts are paced, so the second one lands after the delay
     expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
     vi.useRealTimers()
+  })
+})
+
+describe('App replay analysis', () => {
+  const zero = { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }
+  const oneMove: HistoryEntry = {
+    playerId: 1, roll: [1, 1], placed: { topLeft: [0, 0], width: 1, height: 1 }, wildcardOriginalRoll: null,
+    score: { '1': 1, '2': 0 }, breakdown: { '1': { ...zero, area: 1 }, '2': zero }, potential: reach(0, 0),
+  }
+  const sent = () => FakeWebSocket.instances.at(-1)!.sent
+  const requests = () => sent().filter((m) => (m as { type: string }).type === 'requestAnalysis')
+
+  function gameOverAndReplay() {
+    render(<App />)
+    startGameAndOpen()
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [oneMove] },
+        }),
+        series: null,
+      })
+    })
+    fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+  }
+  const backAndReopen = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+  }
+  const answer = () =>
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'analysis',
+        turns: [{ turn: 1, axis: 'prize', chosen: 0, best: 10, topLeft: [0, 0], width: 1, height: 1 }],
+      })
+    })
+
+  it('asks the server for the analysis when Replay opens, and shows it once it arrives', () => {
+    gameOverAndReplay()
+    expect(requests()).toHaveLength(1)
+    expect(screen.getByRole('status')).toHaveTextContent('Checking for better moves…')
+
+    answer()
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    expect(screen.getByText('Scored 0 this turn (best possible: 10, Prize)')).toBeInTheDocument()
+  })
+
+  it('does not ask again when Replay is reopened', () => {
+    gameOverAndReplay()
+    answer()
+
+    backAndReopen()
+
+    expect(requests()).toHaveLength(1)
+  })
+
+  it('keeps Show Better Option on across leaving and reopening Replay', () => {
+    gameOverAndReplay()
+    answer()
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show Better Option' }))
+    expect(screen.getByRole('button', { name: 'Show Better Option' })).toHaveAttribute('aria-pressed', 'true')
+
+    backAndReopen()
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    expect(screen.getByRole('button', { name: 'Show Better Option' })).toHaveAttribute('aria-pressed', 'true')
   })
 })

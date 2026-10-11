@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Board } from '../components/Board'
-import type { GameWireState, HistoryEntry, PieceState, ScoreParts } from '../gameTypes'
+import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts } from '../gameTypes'
 import { noBreak } from '../noBreak'
 import { formatSigned, reasonText, SELF_ENCLOSED_PENALTY_PER_CELL } from './GameOverOverlay'
 import { ScoreChart } from './ScoreChart'
@@ -71,6 +71,50 @@ function Caption({ game, history, step }: { game: GameWireState; history: Histor
   )
 }
 
+const AXIS_LABELS: Record<AnalysisTurn['axis'], string> = { prize: 'Prize', pitfall: 'Pitfall', denial: 'Denial', enclosure: 'Enclosure' }
+
+// Denial is counted in cells; the other axes are real points, named by the rule that drove the gap.
+function analysisText({ axis, chosen, best }: AnalysisTurn): string {
+  if (axis === 'denial') return `Denied ${chosen} ${chosen === 1 ? 'cell' : 'cells'} this turn (best possible: ${best})`
+  return `Scored ${formatSigned(chosen)} this turn (best possible: ${formatSigned(best)}, ${AXIS_LABELS[axis]})`
+}
+
+// The note for a flagged turn, or the one muted line saying why there is none.
+function AnalysisLine({
+  analysis,
+  flaggedTurn,
+  showBetterOption,
+  onToggleBetterOption,
+}: {
+  analysis: Analysis
+  flaggedTurn: AnalysisTurn | undefined
+  showBetterOption: boolean
+  onToggleBetterOption: () => void
+}) {
+  if (analysis.status === 'loading') {
+    return (
+      <p className="analysis pending" role="status">
+        Checking for better moves…
+      </p>
+    )
+  }
+  if (analysis.status === 'unavailable') return <p className="analysis pending">Turn analysis unavailable</p>
+  if (analysis.turns.length === 0) return <p className="analysis pending">No better moves found</p>
+  if (!flaggedTurn) return null
+  const text = analysisText(flaggedTurn)
+  // A note this long would wrap to three lines beside the toggle, so the toggle takes its own row.
+  return (
+    <div className="analysis">
+      <div className={`analysis-row${text.length > 50 ? ' stacked' : ''}`}>
+        <span>{text}</span>
+        <button className="btn secondary" aria-pressed={showBetterOption} onClick={onToggleBetterOption}>
+          Show Better Option
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Each rule's share of both players' scores at the step, so the total can be read as a sum; In reach is the cells each
 // player can still reach, which the wire carries per played move, so the start of the game has no figure.
 function ScoreTable({ game, history, step }: { game: GameWireState; history: HistoryEntry[]; step: number }) {
@@ -138,7 +182,15 @@ const SPEEDS = [
   { label: 'Fast', ms: 250 },
 ] as const
 
-export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: () => void }) {
+interface ReplayScreenProps {
+  game: GameWireState
+  onBack: () => void
+  analysis?: Analysis | null
+  showBetterOption?: boolean
+  onToggleBetterOption?: () => void
+}
+
+export function ReplayScreen({ game, onBack, analysis = null, showBetterOption = false, onToggleBetterOption = () => {} }: ReplayScreenProps) {
   const history = game.gameOver.history ?? []
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -150,6 +202,7 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(SPEEDS[1])
   const lastPlaced = history[step - 1]?.placed?.topLeft ?? null
   const atEnd = step === history.length
+  const flaggedTurn = analysis?.status === 'ready' ? analysis.turns.find((t) => t.turn === step) : undefined
 
   useEffect(() => {
     if (!playing) return
@@ -201,7 +254,7 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
   return (
     <div className="replay">
       <div className="board-wrap">
-        <Board game={gameAt(game, history, step)} lastPlaced={lastPlaced} />
+        <Board game={gameAt(game, history, step)} lastPlaced={lastPlaced} betterOption={showBetterOption ? flaggedTurn : null} />
       </div>
       <div className="rail">
         <div className="rail-head">
@@ -210,7 +263,12 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
         </div>
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} />
-        <ScoreChart history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
+        {analysis && (
+          <div className="analysis-slot">
+            <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} showBetterOption={showBetterOption} onToggleBetterOption={onToggleBetterOption} />
+          </div>
+        )}
+        <ScoreChart flagged={analysis?.status === 'ready' ? analysis.turns.map((t) => t.turn) : []} history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
         <div className="controls">
           <div className="transport">
             <button className="btn secondary" disabled={step === 0} onClick={() => goTo(() => 0)}>First</button>

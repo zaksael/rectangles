@@ -216,3 +216,61 @@
   font-size: 13px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
+
+/* The turn analysis: a note under the caption for a flagged turn, or the one muted line saying why there is none. The slot
+   keeps two lines whether or not this step has a note, so the chart below never resizes as steps come and go. */
+.replay .analysis-slot {
+  min-height: 44px;
+  margin-top: -8px;
+}
+
+.replay .analysis {
+  margin: 0;
+  padding: 4px 0 4px 10px;
+  border-left: 2px solid var(--ink);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.replay .analysis.pending {
+  border-left-color: var(--line);
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+.replay .analysis-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* A note over 50 characters would wrap to three lines beside the toggle, so the toggle takes its own row. */
+.replay .analysis-row.stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.replay .analysis-row .btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.replay .analysis-row .btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--ledger);
+}
+
+.replay .chart-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+.replay .chart-key svg {
+  width: 14px;
+  height: 14px;
+}

@@ -26,6 +26,8 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   // Back from Replay shows the card Replay was opened from; only the series card differs from the default.
   const [replayFromSeriesResult, setReplayFromSeriesResult] = useState(false)
+  // Kept here, not in Replay, so it survives leaving and reopening the screen.
+  const [showBetterOption, setShowBetterOption] = useState(false)
   const [connectParams, setConnectParams] = useState(IDLE_CONNECT_PARAMS)
 
   const gameSocket = useGameSocket(connectParams)
@@ -78,6 +80,7 @@ function App() {
           onNewGame={handleNewGame}
           onReplay={(fromSeriesResult) => {
             setReplayFromSeriesResult(fromSeriesResult)
+            gameSocket.requestAnalysis()
             setScreen('REPLAY')
           }}
           initialSeriesResultOpen={replayFromSeriesResult}
@@ -100,7 +103,13 @@ function App() {
   if (screen === 'REPLAY' && gameSocket.state) {
     return (
       <NarrowWindowGate screen="Replay">
-        <ReplayScreen game={gameSocket.state.game} onBack={() => setScreen('PLAYING')} />
+        <ReplayScreen
+          game={gameSocket.state.game}
+          onBack={() => setScreen('PLAYING')}
+          analysis={gameSocket.analysis}
+          showBetterOption={showBetterOption}
+          onToggleBetterOption={() => setShowBetterOption((on) => !on)}
+        />
       </NarrowWindowGate>
     )
   }

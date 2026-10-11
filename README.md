@@ -398,7 +398,10 @@ All nine house rules (Walls, Obstacles, Prize, Pitfall, Steal, Enclosure
 Penalty, Reroll, Wildcard and Comeback Nudge) are built and toggleable on the
 picker; a first launch starts with all nine on, and later launches keep the
 last choice. Replay steps a finished game (or a series round) turn by turn with a
-caption, a per-rule score table, a score-history chart and Play/Pause. Not yet
+caption, a per-rule score table, a score-history chart and Play/Pause, and flags each
+turn where a better move existed (a note with the score or cells denied against the best
+possible, a ring on the chart, and a Show Better Option toggle that outlines the better
+placement on the board). Not yet
 built: Tournament flows, and production serving from the FastAPI backend.
 
 ## Tests
@@ -412,6 +415,7 @@ uv run pytest
 ```
 rectangles/
 ├── engine/               # rules engine, no dependency on Pygame
+│   ├── analysis.py       # Replay's turn analysis: where a better move existed
 │   ├── board.py          # grid + placement legality
 │   ├── bot.py            # picks a placement for the bot opponent (Basic/Greedy/Blocking)
 │   ├── constants.py      # tunable game/UI values (board sizes, limits, presets)

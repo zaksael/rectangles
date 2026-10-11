@@ -209,3 +209,41 @@ test('a game with no moves has neither the hint nor the readout', () => {
   expect(screen.queryByText('Select a turn to jump to it')).toBeNull()
   expect(container.querySelector('.chart-readout')).toBeNull()
 })
+
+
+// --- flagged turns ---
+
+// Player 1 moves on turn 1, Player 2 on turn 2; scores climb so the two dots at turn 2 sit apart.
+const MOVERS = [{ ...entry(25, 0), playerId: 1 }, { ...entry(25, 25), playerId: 2 }]
+const drawFlagged = (flagged: number[], step = 0) =>
+  render(<ScoreChart history={MOVERS} step={step} names={NAMES} onJump={() => {}} flagged={flagged} />)
+const rings = (container: HTMLElement) => [...container.querySelectorAll('.chart-ring')]
+
+test('no flagged turns draws no rings and no key', () => {
+  const { container } = drawFlagged([])
+  expect(rings(container)).toHaveLength(0)
+  expect(screen.queryByText('Better move existed')).toBeNull()
+})
+
+test('a flagged turn rings the mover\'s own dot, centred on it', () => {
+  const { container } = drawFlagged([2])
+  const [ring] = rings(container)
+  const dot = container.querySelectorAll('.chart-dot.p2')[2]
+
+  expect(rings(container)).toHaveLength(1)
+  expect(ring.classList.contains('p2')).toBe(true)
+  expect(ring.getAttribute('cx')).toBe(dot.getAttribute('cx'))
+  expect(ring.getAttribute('cy')).toBe(dot.getAttribute('cy'))
+})
+
+test('flagged turns add a key saying a better move existed', () => {
+  drawFlagged([1])
+  expect(screen.getByText('Better move existed')).toBeTruthy()
+})
+
+test('the ring on the current turn is larger than the others', () => {
+  const { container } = drawFlagged([1, 2], 2)
+  const [first, second] = rings(container)
+
+  expect(Number(second.getAttribute('r'))).toBeGreaterThan(Number(first.getAttribute('r')))
+})

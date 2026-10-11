@@ -15,6 +15,8 @@ interface BoardProps {
   previewKind?: 'legal' | 'danger' | 'pending' | null
   coverableCells?: [number, number][]
   lastPlaced?: [number, number] | null
+  // Replay's Show Better Option: the placement that would have ranked higher, outlined.
+  betterOption?: { topLeft: [number, number]; width: number; height: number } | null
   onCellHover?: (cell: [number, number]) => void
   onCellTap?: (cell: [number, number], pointerType: string) => void
   // Keyboard play: giving onKeyDown makes the board a single tab stop.
@@ -231,6 +233,7 @@ export function Board({
   previewKind,
   coverableCells,
   lastPlaced,
+  betterOption,
   onCellHover,
   onCellTap,
   onKeyDown,
@@ -267,6 +270,7 @@ export function Board({
           style={gridBox(previewTopLeft[0], previewTopLeft[1], previewDims[0], previewDims[1])}
         />
       )}
+      {betterOption && <div className="better-option" style={gridBox(betterOption.topLeft[0], betterOption.topLeft[1], betterOption.width, betterOption.height)} />}
     </div>
   )
 }

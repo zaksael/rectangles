@@ -15,8 +15,25 @@ export type GameAction =
   | { type: 'reroll' }
   | { type: 'surrender' }
   | { type: 'continueSeries' }
+  | { type: 'requestAnalysis' }
   | { type: 'chooseWildcard'; value: number }
   | { type: 'place'; topLeft: [number, number]; width: number; height: number }
+
+export type AnalysisAxis = 'prize' | 'pitfall' | 'denial' | 'enclosure'
+
+// One flagged move: another legal placement would have ranked higher. chosen/best are cells denied for 'denial', points otherwise.
+export interface AnalysisTurn {
+  turn: number
+  axis: AnalysisAxis
+  chosen: number
+  best: number
+  topLeft: [number, number]
+  width: number
+  height: number
+}
+
+// The replay's turn analysis; a game with nothing flagged is 'ready' with no turns. Absent (null) until asked for.
+export type Analysis = { status: 'loading' } | { status: 'ready'; turns: AnalysisTurn[] } | { status: 'unavailable' }
 
 export interface LegalPlacement {
   width: number
