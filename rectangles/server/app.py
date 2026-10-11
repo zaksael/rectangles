@@ -6,6 +6,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlparse
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
@@ -268,9 +269,19 @@ async def _broadcast_and_run_bots(
     return series_game_recorded
 
 
+def _origin_allowed(headers) -> bool:
+    """Browsers always send Origin on a WebSocket upgrade; refuse a page served from anywhere but this host.
+
+    No Origin means a non-browser client (a script, a test), which cross-site hijacking can't use.
+    shortcut: same-host only, no allowlist; add one if a proxy that rewrites Host ever fronts the server.
+    """
+    origin = headers.get("origin")
+    return origin is None or urlparse(origin).netloc == headers.get("host")
+
+
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
-    if not _connect_params_valid(websocket.query_params):
+    if not _origin_allowed(websocket.headers) or not _connect_params_valid(websocket.query_params):
         await websocket.close(code=1008)
         return
     await websocket.accept()

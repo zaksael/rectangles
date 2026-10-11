@@ -92,6 +92,22 @@ def test_ws_rejects_invalid_connect_params(query):
             pass
 
 
+def _connect_with_origin(origin):
+    with TestClient(app).websocket_connect("/ws?protocolVersion=1", headers={"origin": origin}):
+        pass
+
+
+def test_ws_accepts_a_same_origin_page():
+    _connect_with_origin("http://testserver")  # TestClient's Host is "testserver"
+
+
+@pytest.mark.parametrize("origin", ["http://evil.example", "http://testserver:9999", "null", "not a url"])
+def test_ws_rejects_a_cross_origin_page(origin):
+    with pytest.raises(WebSocketDisconnect) as exc:
+        _connect_with_origin(origin)
+    assert exc.value.code == 1008
+
+
 def test_ws_accepts_points_at_the_upper_bound_of_an_enabled_rule():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1&prizeEnabled=true&prizePoints=100") as ws:
