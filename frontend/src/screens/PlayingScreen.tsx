@@ -3,6 +3,7 @@ import { Board } from '../components/Board'
 import { SpecialCellLegend } from '../components/SpecialCellLegend'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 import type { ErrorReason, GameAction, GameWireState, RecentTurn } from '../gameTypes'
+import { describeFootprint } from '../footprint'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../placementReason'
 import { useLastPlaced } from '../useLastPlaced'
 import { usePlacementInput } from '../usePlacementInput'
@@ -281,7 +282,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
           <p id="board-summary" className="visually-hidden">{boardSummary(state.game)}</p>
           <div className="visually-hidden" data-testid="cursor-position" aria-live="polite">
-            {previewTopLeft ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}` : ''}
+            {previewTopLeft && dims && state ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}, ${describeFootprint(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)}` : ''}
           </div>
         </div>
       )}

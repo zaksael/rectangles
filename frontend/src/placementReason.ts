@@ -5,14 +5,8 @@ import type { GameWireState } from './gameTypes'
 export const START_CORNER_RULE = 'your first piece must cover your starting corner'
 export const ADJACENCY_RULE = 'must share an edge with your territory'
 
-// Why a candidate piece isn't placeable, by the legality rules in order (overlap, then the rest), or
-// null when none of them explains it. Only used to explain an illegal hover; the server stays the judge.
-export function placementReason(
-  game: GameWireState,
-  playerId: 1 | 2,
-  [row, col]: [number, number],
-  [width, height]: [number, number],
-): string | null {
+// The owner of every placed cell, keyed "row,col".
+export function ownersByCell(game: GameWireState): Map<string, number> {
   const owners = new Map<string, number>()
   for (const id of ['1', '2'] as const) {
     for (const p of game.players[id].board.pieces) {
@@ -21,6 +15,18 @@ export function placementReason(
       }
     }
   }
+  return owners
+}
+
+// Why a candidate piece isn't placeable, by the legality rules in order (overlap, then the rest), or
+// null when none of them explains it. Only used to explain an illegal hover; the server stays the judge.
+export function placementReason(
+  game: GameWireState,
+  playerId: 1 | 2,
+  [row, col]: [number, number],
+  [width, height]: [number, number],
+): string | null {
+  const owners = ownersByCell(game)
 
   for (let r = row; r < row + height; r++) {
     for (let c = col; c < col + width; c++) {

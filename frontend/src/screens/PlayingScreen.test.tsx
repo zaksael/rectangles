@@ -1907,10 +1907,10 @@ test('the piece position is announced as the keyboard moves it', () => {
   const board = screen.getByRole('group', { name: / board$/ })
 
   fireEvent.focus(board)
-  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1')
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1, 2 empty cells')
   expect(screen.getByTestId('cursor-position')).toHaveAttribute('aria-live', 'polite')
   fireEvent.keyDown(board, { key: 'ArrowRight' })
-  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2')
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2, 2 empty cells')
 })
 
 test('no position is announced before the piece is on the board', () => {
