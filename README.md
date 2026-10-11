@@ -27,7 +27,7 @@ area when the game ends wins.
 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) for dependency management
-- Node.js 22.12 or newer and npm, to build the frontend
+- Node.js 22.22.2, 24.15 or 26 and newer (the even-numbered LTS lines) and npm, to build and test the frontend
 
 ## Setup
 
