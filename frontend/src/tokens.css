@@ -23,7 +23,7 @@
 
   /* Illegal-placement preview outline and hatch. Legal previews and the
      legal-cell highlight use the mover's colour (--mover) instead. */
-  --preview-illegal: #DC4646;
+  --preview-illegal: #8E1B1B;
 }
 
 /* Typography: IBM Plex Sans for UI text; IBM Plex Mono with tabular numerals for
