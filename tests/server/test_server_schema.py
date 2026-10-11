@@ -425,3 +425,19 @@ def test_serialize_game_player_score_breakdown_sums_to_the_total_with_every_rule
     for player in players.values():
         assert sum(player["score"]["breakdown"].values()) == player["score"]["totalScore"]
 
+
+
+def test_serialize_game_replays_the_history_once_at_game_over(monkeypatch):
+    game = Game(board_size=11)
+    game.last_roll = (2, 3)
+    game.state = TurnState.CHOOSING_PLACEMENT
+    game.legal_cache = {(2, 3): {(0, 0)}}
+    assert game.attempt_place((0, 0), 2, 3) is True
+    game.surrender()
+    calls = []
+    original = Game.score_breakdown_history
+    monkeypatch.setattr(Game, "score_breakdown_history", lambda self: calls.append(1) or original(self))
+
+    serialize_game(game)
+
+    assert len(calls) == 1

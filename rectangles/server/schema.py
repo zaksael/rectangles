@@ -69,6 +69,7 @@ def serialize_game(game: Game) -> dict:
     self_enclosed_counts = (
         game.board.self_enclosed_cell_counts() if game.self_enclosed_penalty_enabled else {}
     )
+    steps = _serialize_steps(game)
     return {
         "board": {"size": game.board_size, "skipLimit": game.skip_limit},
         "turn": {
@@ -76,7 +77,7 @@ def serialize_game(game: Game) -> dict:
             "turnState": _TURN_STATE_NAMES[game.state],
             "lastRoll": list(game.last_roll) if game.last_roll is not None else None,
             "legalPlacements": legal_placements,
-            "recentTurns": _serialize_steps(game)[-RECENT_TURNS:],
+            "recentTurns": steps[-RECENT_TURNS:],
         },
         "houseRules": {
             "wildcard": {
@@ -117,15 +118,15 @@ def serialize_game(game: Game) -> dict:
             "reason": _GAME_OVER_REASON_NAMES.get(game.game_over_reason),
             "playerId": game.blocked_player_id or game.skipped_out_player_id or game.surrendered_player_id,
             "winner": winner,
-            "history": _serialize_history(game) if game.state == TurnState.GAME_OVER else None,
+            "history": _serialize_history(game, steps) if game.state == TurnState.GAME_OVER else None,
         },
     }
 
 
-def _serialize_history(game: Game) -> list[dict]:
+def _serialize_history(game: Game, steps: list[dict]) -> list[dict]:
     return [
         {**{k: v for k, v in step.items() if k not in ("turn", "points")}, "potential": _by_player({pid: _potential(p) for pid, p in potential.items()})}
-        for step, potential in zip(_serialize_steps(game), game.potential_history())
+        for step, potential in zip(steps, game.potential_history())
     ]
 
 
