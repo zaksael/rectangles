@@ -820,3 +820,36 @@ def test_mount_frontend_does_nothing_when_the_folder_is_missing(tmp_path):
     assert client.get("/").status_code == 404
     with client.websocket_connect("/ws?protocolVersion=1") as ws:
         assert ws.receive_json()["type"] == "state"
+
+
+def test_apply_action_unknown_type_is_malformed():
+    with pytest.raises(ActionError) as exc_info:
+        _apply_action(Game(board_size=19), {"protocolVersion": 1, "type": "nope"})
+    assert exc_info.value.reason == ErrorReason.MALFORMED_MESSAGE
+
+
+def test_ws_rejects_a_non_integer_points_value():
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with TestClient(app).websocket_connect("/ws?protocolVersion=1&prizeEnabled=true&prizePoints=abc"):
+            pass
+    assert exc.value.code == 1008
+
+
+def test_bot_turn_step_picks_a_wildcard_value_when_not_rerolling():
+    game = Game(board_size=19, wildcard_enabled=True)
+    game.current_player_id = PLAYER_2
+    game.state = TurnState.CHOOSING_WILDCARD
+    game.last_roll = (6, 6)
+    game.wildcard_original_roll = (6, 6)
+    game.wildcard_index = 0
+
+    assert _bot_turn_step(game, "Basic") is True
+    assert game.state != TurnState.CHOOSING_WILDCARD
+
+
+def test_bot_turn_step_declines_a_finished_game():
+    game = Game(board_size=19)
+    game.current_player_id = PLAYER_2
+    game.state = TurnState.GAME_OVER
+
+    assert _bot_turn_step(game, "Basic") is False
