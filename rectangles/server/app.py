@@ -58,6 +58,7 @@ _BOOL_PARAM_NAMES = {
 }
 
 _INT_PARAM_NAMES = {"prizePoints", "pitfallPoints", "stealPoints"}
+MAX_POINTS = 100
 
 app = FastAPI()
 
@@ -85,8 +86,10 @@ def _connect_params_valid(query_params) -> bool:
         value = query_params.get(name)
         if value is None:
             continue
+        if query_params.get(name.removesuffix("Points") + "Enabled") != "true":
+            return False
         try:
-            if int(value) < 0:
+            if not 0 <= int(value) <= MAX_POINTS:
                 return False
         except ValueError:
             return False

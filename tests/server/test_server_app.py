@@ -60,6 +60,12 @@ def test_ws_accepts_and_closes():
         "protocolVersion=1&pitfallPoints=abc",
         "protocolVersion=1&stealEnabled=1",
         "protocolVersion=1&stealPoints=abc",
+        "protocolVersion=1&prizeEnabled=true&prizePoints=101",
+        "protocolVersion=1&pitfallEnabled=true&pitfallPoints=101",
+        "protocolVersion=1&stealEnabled=true&stealPoints=101",
+        "protocolVersion=1&prizePoints=25",
+        "protocolVersion=1&pitfallEnabled=false&pitfallPoints=25",
+        "protocolVersion=1&stealPoints=25",
         "protocolVersion=1&selfEnclosedPenaltyEnabled=1",
         "protocolVersion=1&comebackNudgeEnabled=1",
         "",
@@ -72,6 +78,12 @@ def test_ws_rejects_invalid_connect_params(query):
     with pytest.raises(WebSocketDisconnect):
         with client.websocket_connect(f"/ws?{query}"):
             pass
+
+
+def test_ws_accepts_points_at_the_upper_bound_of_an_enabled_rule():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&prizeEnabled=true&prizePoints=100") as ws:
+        assert ws.receive_json()["game"]["houseRules"]["prize"]["points"] == 100
 
 
 def test_ws_replies_malformed_message_and_stays_open():
