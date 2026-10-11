@@ -27,3 +27,11 @@ test('the series ledger sets its total row apart: bold, ruled above, winner tota
   expect(total).toMatch(/border-top:/)
   expect(ruleFor(css, '.game-over table.breakdown td.win')).toMatch(/font-size:\s*15px/)
 })
+
+test('a breakdown header keeps its dot and name on one line, so the dot never stacks above the name', () => {
+  expect(ruleFor(css, '.game-over table.breakdown thead th')).toMatch(/white-space:\s*nowrap/)
+})
+
+test('a breakdown header keeps 16px between one player\'s name and the next player\'s dot', () => {
+  expect(ruleFor(css, '.game-over table.breakdown thead th')).toMatch(/padding-left:\s*16px/)
+})

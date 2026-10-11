@@ -530,6 +530,8 @@ dialog.game-over h2 {
   font-size: 15px;
 }
 .game-over table.breakdown thead th {
+  white-space: nowrap; /* the dot stays beside the name, not wrapped above it */
+  padding-left: 16px; /* so a name never touches the next column's dot */
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 11px;
   text-transform: uppercase;
