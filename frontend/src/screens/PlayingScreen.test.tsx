@@ -793,6 +793,25 @@ test('a new roll replaces the dimmed last roll', () => {
   expect(screen.queryByRole('img', { name: /last roll/i })).not.toBeInTheDocument()
 })
 
+test('once the game is over no dice show in the rail, not even the last roll dimmed', () => {
+  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  expect(screen.getByRole('img', { name: 'Player 1 rolled 3 and 5' })).toBeInTheDocument()
+
+  update(gameOverState())
+
+  expect(screen.queryByRole('img', { name: /roll/i })).not.toBeInTheDocument()
+  expect(document.querySelector('.rail-dice')).toBeInTheDocument() // the slot stays, so nothing below it moves
+})
+
+test('the next round does not open on the previous round\'s last roll', () => {
+  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  update(gameOverState())
+
+  update(rolledState('awaitingRoll', null))
+
+  expect(screen.queryByRole('img', { name: /roll/i })).not.toBeInTheDocument()
+})
+
 function withPieces(p1: [number, number][], p2: [number, number][]): GameState {
   const state = makeState({ board: { size: 6, skipLimit: 5 } })
   state.game.players['1'].board.pieces = p1.map((topLeft) => ({ topLeft, width: 1, height: 1, owner: 1 }))

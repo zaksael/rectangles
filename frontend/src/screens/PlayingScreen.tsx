@@ -158,7 +158,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       {roll[1 - pickIndex]}
     </span>
   )
-  if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
+  // Nobody is to move once the game is over, so the last roll goes, and the next round does not open on it.
+  if (turnState === 'gameOver') lastRollRef.current = null
+  else if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
   const shownRoll = lastRollRef.current
 
   // In board view the result bar takes the header's place, so the player cells are not rendered.
