@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import pygame
 
-from ...engine import bot, constants
+from ...engine import constants
+from ...engine.analysis import AnalysisAxis, TurnAnalysis, turn_analyses
 from ...engine.board import Board
 from ...engine.constants import CellKind
 from ...engine.game import Game
-from ...engine.models import Player, Rectangle, TurnRecord
+from ...engine.models import Player, Rectangle
 from . import colors
 from .. import layout
 from ..state import UIState
@@ -14,10 +15,6 @@ from ..state import UIState
 # (top_left, width, height) - one candidate placement a turn's analysis can
 # compare against the move actually played.
 _AnalysisCandidate = tuple[tuple[int, int], int, int]
-
-# (prize_cells, pitfall_cells, denial_cells, enclosure_delta) - a candidate's
-# raw per-axis values, bundled so four same-typed ints aren't passed loose.
-_AxisBreakdown = tuple[int, int, int, int]
 
 
 class ReplayMixin:
@@ -44,16 +41,7 @@ class ReplayMixin:
         pygame.draw.rect(self.screen, (150, 150, 150), layout.board_rect(game.board.size), width=2)
 
     def _new_scratch_board(self, game: Game) -> tuple[Board, dict[int, Player]]:
-        board = Board(
-            game.board.size,
-            special_cells=game.board.special_cells,
-            wall_edges=game.board.wall_edges,
-            obstacle_cells=game.board.obstacle_cells,
-        )
-        scratch = {
-            player_id: Player(player_id, "", game.players[player_id].start_corner) for player_id in game.players
-        }
-        return board, scratch
+        return game.new_scratch()
 
     def _board_at_step(self, game: Game, step: int) -> tuple[Board, dict[int, Player]]:
         board, scratch = self._new_scratch_board(game)
@@ -97,221 +85,31 @@ class ReplayMixin:
                 history[player_id].append(score)
         return history
 
-    def _candidate_partial_value(
-        self,
-        game: Game,
-        board: Board,
-        player: Player,
-        candidate: tuple[tuple[int, int], int, int],
-        opponent: Player,
-        reachable_before: int,
-    ) -> tuple[int, int, int]:
-        # The cheap axes computed for every candidate up front: prize/pitfall
-        # are exact cell-overlap counts; denial is a reachable-area cutoff (see
-        # reachable_count_if) with no cheap bound, so it's always paid.
-        top_left, w, h = candidate
-        prize_cells = bot.cell_overlap_score(candidate, board.cells_of_kind(CellKind.PRIZE)) if game.prize_enabled else 0
-        pitfall_cells = bot.cell_overlap_score(candidate, board.cells_of_kind(CellKind.PITFALL)) if game.pitfall_enabled else 0
-        denial_cells = reachable_before - board.reachable_count_if(player.id, opponent, top_left, w, h)
-        return prize_cells, pitfall_cells, denial_cells
-
-    def _candidate_value(
-        self,
-        game: Game,
-        board: Board,
-        player: Player,
-        candidate: tuple[tuple[int, int], int, int],
-        prize_cells: int,
-        pitfall_cells: int,
-        denial_cells: int,
-        enclosure_before: int,
-    ) -> tuple[int, _AxisBreakdown]:
-        # One turn-quality value per candidate on the same weights
-        # Game.total_score() uses, so candidates rank on one scale. Denial
-        # carries weight 1 (no total_score() equivalent) - this "total" is a
-        # ranking value only, never shown as real score (see _analysis_note).
-        # The cheap axes come in pre-computed to avoid a second reachable_count_if.
-        # Returns the raw breakdown too, so _analysis_note can name the axis
-        # that drove the gap.
-        enclosure_delta = 0
-        if game.self_enclosed_penalty_enabled:
-            top_left, w, h = candidate
-            enclosure_delta = board.self_enclosed_count_if(player.id, top_left, w, h) - enclosure_before
-        total = (
-            prize_cells * game.points_for(CellKind.PRIZE)
-            - pitfall_cells * game.points_for(CellKind.PITFALL)
-            + denial_cells
-            - enclosure_delta * constants.SELF_ENCLOSED_PENALTY_PER_CELL
-        )
-        return total, (prize_cells, pitfall_cells, denial_cells, enclosure_delta)
-
-    def _analysis_candidate_pool(
-        self, record: TurnRecord, board: Board, player: Player
-    ) -> list[_AnalysisCandidate]:
-        # Every placement this turn could have used: the rolled orientation
-        # pair, or every wildcard value's orientations on a Wildcard Roll turn.
-        a, b = record.roll
-        if record.wildcard_original_roll is not None:
-            fixed = record.wildcard_original_roll[0]
-            return [
-                (top_left, w, h)
-                for value in range(constants.DICE_MIN, constants.DICE_MAX + 1)
-                for w, h in ((fixed, value), (value, fixed))
-                for top_left in board.legal_top_lefts(player, w, h)
-            ]
-        return [
-            (top_left, w, h)
-            for w, h in ((a, b), (b, a))
-            for top_left in board.legal_top_lefts(player, w, h)
-        ]
-
-    def _best_analysis_candidate(
-        self,
-        game: Game,
-        board: Board,
-        player: Player,
-        opponent: Player,
-        reachable_before: int,
-        enclosure_before: int,
-        pool: list[_AnalysisCandidate],
-    ) -> tuple[float, _AnalysisCandidate, _AxisBreakdown]:
-        # self_enclosed_count_if is an O(board_size^2) flood-fill and a Wildcard
-        # pool can be hundreds of candidates. A candidate's enclosure bonus can
-        # never exceed enclosure_before, so skip the flood-fill for any whose
-        # cheap prize+denial value plus that ceiling can't beat the running best.
-        # Provably exact: a skipped candidate could never have won.
-        # ponytail: this ceiling is player-wide (all of enclosure_before,
-        # not just the region(s) a given candidate actually touches), so
-        # it stops pruning much once a player has several existing
-        # self-enclosed cells - deep games on the largest board with
-        # both Wildcard and Enclosure Penalty on can still take ~1s
-        # (measured), down from ~3s unpruned. A tighter, region-scoped
-        # bound (or an incremental region tracker instead of a fresh
-        # flood-fill per candidate) would close the rest of the gap if
-        # that's ever felt as too slow.
-        ceiling_bonus = (
-            enclosure_before * constants.SELF_ENCLOSED_PENALTY_PER_CELL if game.self_enclosed_penalty_enabled else 0
-        )
-        # pool always contains the chosen move, so the loop always sets these.
-        best_value_axis = float("-inf")
-        for candidate in pool:
-            prize_cells, pitfall_cells, denial_cells = self._candidate_partial_value(
-                game, board, player, candidate, opponent, reachable_before
-            )
-            partial = (
-                prize_cells * game.points_for(CellKind.PRIZE)
-                - pitfall_cells * game.points_for(CellKind.PITFALL)
-                + denial_cells
-            )
-            if partial + ceiling_bonus <= best_value_axis:
-                continue
-            total, breakdown = self._candidate_value(
-                game, board, player, candidate, prize_cells, pitfall_cells, denial_cells, enclosure_before
-            )
-            if total > best_value_axis:
-                best_value_axis = total
-                best_breakdown = breakdown
-                best_candidate = candidate
-        return best_value_axis, best_candidate, best_breakdown
-
-    def _analysis_note(
-        self,
-        game: Game,
-        chosen_total: int,
-        chosen_breakdown: _AxisBreakdown,
-        best_value_axis: float,
-        best_candidate: _AnalysisCandidate,
-        best_breakdown: _AxisBreakdown,
-    ) -> tuple[str, _AnalysisCandidate] | None:
-        # Reports actual-vs-best as two raw values, never one blended score:
-        # denial is a cell-count heuristic with no real point weight, so it's
-        # shown as its own "denied N cells" line. The largest weighted gap
-        # (tie order prize > pitfall > denial > enclosure) picks which line to show.
-        if best_value_axis <= chosen_total:
-            return None
-        chosen_prize, chosen_pitfall, chosen_denial, chosen_enclosure = chosen_breakdown
-        best_prize, best_pitfall, best_denial, best_enclosure = best_breakdown
-        prize_gap = (best_prize - chosen_prize) * game.points_for(CellKind.PRIZE) if game.prize_enabled else 0
-        pitfall_gap = (
-            (chosen_pitfall - best_pitfall) * game.points_for(CellKind.PITFALL) if game.pitfall_enabled else 0
-        )
-        denial_gap = best_denial - chosen_denial
-        enclosure_gap = (
-            (chosen_enclosure - best_enclosure) * constants.SELF_ENCLOSED_PENALTY_PER_CELL
-            if game.self_enclosed_penalty_enabled
-            else 0
-        )
-        _gap, axis = max(
-            ((prize_gap, "prize"), (pitfall_gap, "pitfall"), (denial_gap, "denial"), (enclosure_gap, "enclosure")),
-            key=lambda ga: ga[0],
-        )
-        if axis == "denial":
-            unit = "cell" if chosen_denial == 1 else "cells"
-            message = f"denied {chosen_denial} {unit} this turn (best possible: {best_denial})"
-        else:
-            def points(prize: int, pitfall: int, enclosure: int) -> int:
-                return (
-                    prize * game.points_for(CellKind.PRIZE)
-                    - pitfall * game.points_for(CellKind.PITFALL)
-                    - enclosure * constants.SELF_ENCLOSED_PENALTY_PER_CELL
-                )
-
-            chosen_points = points(chosen_prize, chosen_pitfall, chosen_enclosure)
-            best_points = points(best_prize, best_pitfall, best_enclosure)
-            message = f"scored {chosen_points} this turn (best possible: {best_points} — {axis})"
-        return (message, best_candidate)
+    @staticmethod
+    def _analysis_message(game: Game, analysis: TurnAnalysis) -> str:
+        # Two raw numbers, never one blended score: denial is a cell count with no point weight, so it
+        # reads as "denied N cells"; the other axes read as real points naming the axis.
+        if analysis.axis is AnalysisAxis.DENIAL:
+            unit = "cell" if analysis.chosen == 1 else "cells"
+            return f"denied {analysis.chosen} {unit} this turn (best possible: {analysis.best})"
+        return f"scored {analysis.chosen} this turn (best possible: {analysis.best} — {analysis.axis.value})"
 
     def _turn_analyses(self, game: Game) -> dict[int, tuple[str, _AnalysisCandidate]]:
-        # One incremental O(N) walk, cached - the one place in Renderer where
-        # recompute-every-frame is too expensive. The cache key holds the game
-        # object itself (compared via `is`), not id(game), which could be
+        # The one place in Renderer that caches: the engine walk is too expensive to redo every frame.
+        # The cache key holds the game object itself (compared via `is`), not id(game), which could be
         # reused after GC and cause a false hit against an unrelated game.
         if self._turn_analyses_cache is not None:
             cached_game, cached_history_len, cached_analyses = self._turn_analyses_cache
             if cached_game is game and cached_history_len == len(game.history):
                 return cached_analyses
 
-        board, scratch = self._new_scratch_board(game)
-        analyses: dict[int, tuple[str, _AnalysisCandidate]] = {}
-        for step, record in enumerate(game.history, start=1):
-            if record.placed is None:
-                continue  # skips are never mistakes - no legal placement existed
-
-            player = scratch[record.player_id]
-            opponent_id = constants.PLAYER_2 if record.player_id == constants.PLAYER_1 else constants.PLAYER_1
-            opponent = scratch[opponent_id]
-            reachable_before = len(board.reachable_empty_cells(opponent))
-            enclosure_before = (
-                board.self_enclosed_cell_counts().get(player.id, 0) if game.self_enclosed_penalty_enabled else 0
+        analyses = {
+            step: (
+                self._analysis_message(game, analysis),
+                (analysis.better.top_left, analysis.better.width, analysis.better.height),
             )
-
-            pool = self._analysis_candidate_pool(record, board, player)
-            chosen_candidate = (record.placed.top_left, record.placed.width, record.placed.height)
-            chosen_partial_prize, chosen_partial_pitfall, chosen_partial_denial = self._candidate_partial_value(
-                game, board, player, chosen_candidate, opponent, reachable_before
-            )
-            chosen_total, chosen_breakdown = self._candidate_value(
-                game,
-                board,
-                player,
-                chosen_candidate,
-                chosen_partial_prize,
-                chosen_partial_pitfall,
-                chosen_partial_denial,
-                enclosure_before,
-            )
-            best_value_axis, best_candidate, best_breakdown = self._best_analysis_candidate(
-                game, board, player, opponent, reachable_before, enclosure_before, pool
-            )
-
-            note = self._analysis_note(
-                game, chosen_total, chosen_breakdown, best_value_axis, best_candidate, best_breakdown
-            )
-            if note is not None:
-                analyses[step] = note
-
-            board.place(player, record.placed.top_left, record.placed.width, record.placed.height)
-
+            for step, analysis in turn_analyses(game).items()
+        }
         self._turn_analyses_cache = (game, len(game.history), analyses)
         return analyses
 

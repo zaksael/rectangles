@@ -532,15 +532,19 @@ class Game:
             enclosure=-enclosed_cells * SELF_ENCLOSED_PENALTY_PER_CELL,
         )
 
-    def _replay_history(self) -> Iterator[tuple[Board, dict[int, Player]]]:
-        """The scratch board and players after each history record, replayed from an empty board."""
+    def new_scratch(self) -> tuple[Board, dict[int, Player]]:
+        """An empty copy of this game's board geometry plus unplayed scratch players at the real start corners."""
         board = Board(
             self.board.size,
             special_cells=self.board.special_cells,
             wall_edges=self.board.wall_edges,
             obstacle_cells=self.board.obstacle_cells,
         )
-        scratch = {pid: Player(pid, "", p.start_corner) for pid, p in self.players.items()}
+        return board, {pid: Player(pid, "", p.start_corner) for pid, p in self.players.items()}
+
+    def _replay_history(self) -> Iterator[tuple[Board, dict[int, Player]]]:
+        """The scratch board and players after each history record, replayed from an empty board."""
+        board, scratch = self.new_scratch()
         for record in self.history:
             if record.placed is not None:
                 rect = record.placed
