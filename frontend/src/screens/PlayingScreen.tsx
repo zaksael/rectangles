@@ -174,6 +174,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   if (turnState === 'gameOver') lastRollRef.current = null
   else if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
   const shownRoll = lastRollRef.current
+  const rollLabel = shownRoll && state ? `${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}` : ''
 
   // In board view the result bar takes the header's place, so the player cells are not rendered.
   const showResultBar = turnState === 'gameOver' && resultHidden
@@ -274,6 +275,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             onFocus={placing ? handleBoardFocus : undefined}
             describedBy={placing ? 'board-help board-summary' : 'board-summary'}
           />
+          {/* The dice are an image, which a screen reader doesn't announce when it changes; only a live roll is read out. */}
+          <div className="visually-hidden" data-testid="roll-announcement" aria-live="polite">
+            {roll ? rollLabel : ''}
+          </div>
           <p id="board-summary" className="visually-hidden">{boardSummary(state.game)}</p>
           <div className="visually-hidden" data-testid="cursor-position" aria-live="polite">
             {previewTopLeft ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}` : ''}
@@ -377,7 +382,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                     <div
                       className={`dice${roll ? '' : ' stale'}`}
                       role="img"
-                      aria-label={`${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}`}
+                      aria-label={rollLabel}
                     >
                       {shownRoll.values.map((value, i) => (
                         <span key={i} className="die">

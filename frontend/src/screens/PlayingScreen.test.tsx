@@ -1941,3 +1941,25 @@ test('the board summary names each player\'s pieces and cells, and the obstacles
   expect(summary).toHaveClass('visually-hidden')
   expect(summary).toHaveTextContent('Player 1: 2 pieces, 7 cells. Player 2: 0 pieces, 0 cells. 2 obstacle cells. 1 wall.')
 })
+
+test('a roll is announced in a polite live region, with the roller\'s name', () => {
+  renderScreen(keyboardState())
+  const announcement = screen.getByTestId('roll-announcement')
+  expect(announcement).toHaveAttribute('aria-live', 'polite')
+  expect(announcement).toHaveTextContent('Player 1 rolled 2 and 1')
+})
+
+test('a Wildcard roll is announced too, although its dice are replaced by the picker', () => {
+  renderScreen(
+    makeState({
+      turn: { currentPlayerId: 1, turnState: 'choosingWildcard', lastRoll: [6, 6], legalPlacements: [] },
+      houseRules: { ...makeGame().houseRules, wildcard: { enabled: true, originalRoll: [6, 6], legalValues: [1, 2, 3], editableIndex: 0 } },
+    }),
+  )
+  expect(screen.getByTestId('roll-announcement')).toHaveTextContent('Player 1 rolled 6 and 6')
+})
+
+test('nothing is announced while there is no roll', () => {
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  expect(screen.getByTestId('roll-announcement')).toBeEmptyDOMElement()
+})
