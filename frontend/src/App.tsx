@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Screen } from './screens'
 import { ConnectionLostModal } from './screens/ConnectionLostModal'
 import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScreen'
+import { NarrowWindowGate } from './screens/NarrowWindowGate'
 import { PlayingScreen } from './screens/PlayingScreen'
 import { ReplayScreen } from './screens/ReplayScreen'
 import { SettingsOverlay } from './screens/SettingsOverlay'
@@ -68,7 +69,7 @@ function App() {
       return <ConnectionLostModal isSeries={gameSocket.state?.series !== null} onNewGame={handleNewGame} />
     }
     return (
-      <>
+      <NarrowWindowGate screen="Playing">
         <PlayingScreen
           state={gameSocket.state}
           error={gameSocket.error}
@@ -92,12 +93,16 @@ function App() {
             onClose={() => setSettingsOpen(false)}
           />
         )}
-      </>
+      </NarrowWindowGate>
     )
   }
 
   if (screen === 'REPLAY' && gameSocket.state) {
-    return <ReplayScreen game={gameSocket.state.game} onBack={() => setScreen('PLAYING')} />
+    return (
+      <NarrowWindowGate screen="Replay">
+        <ReplayScreen game={gameSocket.state.game} onBack={() => setScreen('PLAYING')} />
+      </NarrowWindowGate>
+    )
   }
 }
 

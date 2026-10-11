@@ -387,6 +387,9 @@ npm run dev
 This starts the server (see above) automatically via the Vite dev proxy;
 open the printed `localhost` URL to play.
 
+Playing and Replay need a window at least 1320px wide. Below that a "Widen the Window" notice takes
+their place and the game or replay waits where it was until the window is wide enough again.
+
 Current state: a full vanilla match (Mode Select → roll/place/skip → game
 over → View Board / Replay / New Game) works start to finish, including disconnect handling,
 surrender, and a read-only mid-game Settings/pause screen. Series play (1, 3

@@ -216,6 +216,38 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /^Replay/ })).toBeInTheDocument()
   })
 
+  it('swaps Playing and then Replay for the narrow-window notice below 1320px, and brings them back when widened', () => {
+    const setWidth = (width: number) => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
+      act(() => {
+        window.dispatchEvent(new Event('resize'))
+      })
+    }
+    render(<App />)
+    startGameAndOpen()
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series: null,
+      })
+    })
+
+    setWidth(1100)
+    expect(screen.getByRole('status')).toHaveTextContent('Playing needs a window at least 1320px wide, and yours is 1100px')
+    setWidth(1400)
+    fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+    setWidth(1100)
+    expect(screen.getByRole('status')).toHaveTextContent('Replay needs a window at least 1320px wide, and yours is 1100px')
+    setWidth(1400)
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Replay' })).toBeVisible()
+  })
+
   it("hands the Vs Bot seat to Playing so the human's Roll button is hidden on the bot turn", () => {
     vi.useFakeTimers()
     render(<App />)

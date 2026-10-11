@@ -5,6 +5,7 @@ import { noBreak } from '../noBreak'
 import { formatSigned, reasonText, SELF_ENCLOSED_PENALTY_PER_CELL } from './GameOverOverlay'
 import { ScoreChart } from './ScoreChart'
 import { RULE_ROWS, signed } from '../ruleRows'
+import { useNarrowWindow } from '../useNarrowWindow'
 import './ScoreTable.css'
 import './ReplayScreen.css'
 
@@ -141,6 +142,11 @@ export function ReplayScreen({ game, onBack }: { game: GameWireState; onBack: ()
   const history = game.gameOver.history ?? []
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
+  // Behind the narrow-window notice nobody is watching, so the replay holds the turn it was on.
+  const { narrow } = useNarrowWindow()
+  useEffect(() => {
+    if (narrow) setPlaying(false)
+  }, [narrow])
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(SPEEDS[1])
   const lastPlaced = history[step - 1]?.placed?.topLeft ?? null
   const atEnd = step === history.length

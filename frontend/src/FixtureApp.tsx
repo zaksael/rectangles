@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { buildFixture } from './fixtures/devFixtures'
+import { NarrowWindowGate } from './screens/NarrowWindowGate'
 import { PlayingScreen } from './screens/PlayingScreen'
 import { ReplayScreen } from './screens/ReplayScreen'
 
@@ -12,19 +13,27 @@ export function FixtureApp({ name }: { name: string }) {
     console.info(`fixture "${name}" is active: actions are ignored`)
   }, [name])
   if (!state) return null
-  if (replaying) return <ReplayScreen game={state.game} onBack={() => setReplaying(false)} />
+  if (replaying) {
+    return (
+      <NarrowWindowGate screen="Replay">
+        <ReplayScreen game={state.game} onBack={() => setReplaying(false)} />
+      </NarrowWindowGate>
+    )
+  }
   return (
-    <PlayingScreen
-      state={state}
-      error={null}
-      sendAction={(action) => console.info('fixture ignored action', JSON.stringify(action))}
-      onOpenSettings={() => {}}
-      onNewGame={() => {}}
-      onReplay={(fromResult) => {
-        setFromSeriesResult(fromResult)
-        setReplaying(true)
-      }}
-      initialSeriesResultOpen={fromSeriesResult}
-    />
+    <NarrowWindowGate screen="Playing">
+      <PlayingScreen
+        state={state}
+        error={null}
+        sendAction={(action) => console.info('fixture ignored action', JSON.stringify(action))}
+        onOpenSettings={() => {}}
+        onNewGame={() => {}}
+        onReplay={(fromResult) => {
+          setFromSeriesResult(fromResult)
+          setReplaying(true)
+        }}
+        initialSeriesResultOpen={fromSeriesResult}
+      />
+    </NarrowWindowGate>
   )
 }

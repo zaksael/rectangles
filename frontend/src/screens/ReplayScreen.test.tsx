@@ -342,6 +342,22 @@ test('playback runs every step at the same pace, skips included, stops on the la
   expect(caption()).toHaveTextContent('Turn 3 of 3')
 })
 
+test('a window that goes too narrow pauses autoplay, and widening again leaves it paused', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+  expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
+  const setWidth = (width: number) => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+  }
+  setWidth(1000)
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+  setWidth(1400)
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+})
+
 test('Pause stops the stepping', () => {
   renderPlaying()
   click('Play')
