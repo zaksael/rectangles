@@ -19,15 +19,6 @@ area when the game ends wins.
 - [Tests](#tests)
 - [Rules](#rules)
 - [House Rules](#house-rules)
-  - [Prize](#prize)
-  - [Walls](#walls)
-  - [Obstacles](#obstacles)
-  - [Pitfall](#pitfall)
-  - [Steal](#steal)
-  - [Wildcard Roll](#wildcard-roll)
-  - [Enclosure Penalty](#enclosure-penalty)
-  - [Reroll](#reroll)
-  - [Comeback](#comeback)
 - [Bot opponent](#bot-opponent)
 - [Series mode](#series-mode)
 - [Project structure](#project-structure)
@@ -76,10 +67,10 @@ Window" notice takes their place and the game waits where it was.
   centered on the pointer, and click to place the piece.
 - Rotate the piece with the **Rotate** button or `R`.
 - A roll with no legal placement waits for you to press **Skip** (`S`).
-- A [Wildcard Roll](#wildcard-roll) turn shows a row of value buttons (greyed
+- A [Wildcard Roll](#house-rules) turn shows a row of value buttons (greyed
   out for any value without a legal placement) to choose the editable die's
   value before placement continues.
-- With [Reroll](#reroll) on and a charge left, **Reroll** (`E`) discards the
+- With [Reroll](#house-rules) on and a charge left, **Reroll** (`E`) discards the
   current roll for a fresh one, including alongside a forced skip.
 - The side rail shows both scores with a row for each scoring rule that is
   on, each player's skip streak, a legend of the special cells, and the
@@ -178,7 +169,7 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 - If a roll can't legally be placed anywhere (in either orientation), your
   turn is skipped.
 - Rolling doubles (both dice show the same number) triggers a
-  [Wildcard Roll](#wildcard-roll), if that optional mode is on.
+  [Wildcard Roll](#house-rules), if that optional mode is on.
 - The game ends when any of the following happens:
   - neither player has any legal placement left anywhere on the board,
   - one player becomes completely boxed in by the opponent's territory (no
@@ -188,132 +179,28 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
     match, 5 by default), or
   - one player surrenders, in which case the other player wins outright
     regardless of area covered so far.
-- Otherwise, whoever has placed the most total score (area, plus any prize
-  bonus points — see [Prize](#prize) below) wins; equal
-  scores is a tie.
+- Otherwise, the higher score wins (area, plus or minus the points from any
+  [special cells](#house-rules)); equal scores are a tie.
 
 ## House Rules
 
 Nine optional modes, toggled independently on the Mode Select screen before a
 match begins. All nine start switched on the first time; after that your last
-choice is kept.
+choice is kept. Special cells are seeded in mirrored pairs through the board's centre, kept clear of
+both starting corners and of each other, so neither player starts closer to one than the other. For
+the full wording of every rule see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 
-### Prize
-
-When turned on, four prize cells are seeded on
-the board: two random positions each game, each mirrored through the
-board's center so neither player starts closer to one than the other. Prizes
-are kept clear of both starting corners and spread apart from each other,
-so they never cluster together. Whichever player's
-placed piece happens to cover a prize captures it immediately, earning a
-fixed bonus of 10 points added on top of their area. A single large piece can capture more
-than one prize at once if it covers them both. Shown on the board as a plus
-mark, which disappears once a piece covers it; a ring around whichever
-prize cell(s) your most recent placement captured makes sure a capture
-doesn't go unnoticed.
-
-### Walls
-
-When turned on, several wall lines are
-seeded on the board in mirrored pairs, each pair randomly placed and
-oriented (horizontal or vertical), kept clear of both starting corners, and
-spread apart from any other wall pair so they never cluster together —
-barriers that sit *between* cells rather than cells themselves, so no board
-area is ever sacrificed; every cell stays placeable. A piece simply can't be
-built across a wall line, and a piece on one side doesn't count as touching
-territory on the other, so the only way past one is to build around its
-ends. Each pair's second segment is the exact mirror image of the first
-through the board's center, so the obstacle is symmetric for both players
-regardless of which corner they start from.
-
-### Obstacles
-
-When turned on, four individual
-cells (two mirrored pairs) are seeded on the board in mirrored pairs, randomly placed and kept
-clear of both starting corners, Prize's cells, Walls' lines, and
-any other Obstacle pair, so they never cluster together.
-Unlike Walls, an obstacle cell is unplaceable itself — no piece can ever
-cover it, and it never counts as a legal move for either player. Shown on
-the board as a solid dark square.
-
-### Pitfall
-
-When turned on, four pitfall cells are seeded
-on the board as two mirrored pairs, randomly placed and kept clear of
-both starting corners and every other special cell (Prize's cells,
-Walls' lines, Obstacles), so they never overlap. Covering a pitfall docks the
-capturer 10 points off their own score — the mirror image of Prize's
-bonus, with no effect on the opponent. Scores aren't floored at 0, so
-triggering enough pitfalls can push a player negative. Shown on the board as a
-bar mark, which disappears once a piece covers it, and the score table keeps a
-separate Pitfall row so it's never silently baked into the total.
-
-### Steal
-
-When turned on, two steal cells are seeded on
-the board as a single mirrored pair, randomly placed and kept clear of both
-starting corners and every other special cell (Prize's cells, Walls' lines,
-Obstacles, Pitfall's cells), so they never overlap. Covering a steal cell is a
-zero-sum transfer: you gain 10 points *and* your opponent loses 10, a 20-point
-swing in the score gap for a single cell — higher stakes than Prize's pure
-gain or Pitfall's pure loss. Scores aren't floored at 0, so being on the wrong
-end of enough steals can push you negative. Shown on the board as a
-plus-over-minus mark, which disappears once a piece covers it; the score table's
-Steal row shows each player's net swing (+10 for the capturer, −10 for the
-opponent) so it's never silently baked into the total.
-
-### Wildcard Roll
-
-When turned on, every roll that comes up
-doubles (both dice matching) becomes a wildcard roll. One of the
-two just-rolled numbers (picked at random) becomes yours to change to any
-value 1-6, or leave as rolled — the other number stays fixed. Once you
-finalize your pick, the turn proceeds exactly like a normal roll, placing if
-that pair fits or skipping if it doesn't (including toward the skip streak).
-If no number you could pick would ever fit, the pick is skipped entirely and
-the turn resolves straight to a skip — no pointless click through an
-all-illegal picker.
-
-### Enclosure Penalty
-
-When turned on, any empty cell that's
-fully surrounded by only *your own* territory docks you 1 point — a live
-penalty, recomputed after every move from the current board, not a one-time or
-permanent effect. Filling the hole back in (even partially, breaking the
-enclosure) drops the penalty immediately. A gap bordered by both players,
-by neither (walled off or [Obstacles](#obstacles)-bound), or that touches
-the board's outer edge at all, is never penalized — the edge already does
-part of the enclosing for free, so only a hole your own territory fully
-closes off, with no help from the edge, counts. The enclosed cells are hatched in your colour on the board, and the score
-table keeps a separate Enclosure row so the penalty is never silently baked
-into the total.
-
-### Reroll
-
-Each player gets 2 rerolls per game (not
-per turn, not per series round) to discard their current roll — both
-dice — and roll fresh instead of accepting it. Usable any time a roll is
-pending and you haven't committed to it yet: while choosing where to place,
-while picking a [Wildcard Roll](#wildcard-roll) value, or when a roll would
-otherwise skip your turn. Each use costs exactly one charge, no matter which
-of those three situations you're in. The score table's Rerolls row shows each
-player's remaining charges (e.g. "1 / 2"), and the Reroll button disappears
-once you're out. **Basic** never uses its
-rerolls; **Greedy**/**Blocking** reroll whenever nothing on the board (or in
-[Wildcard Roll](#wildcard-roll)'s value picker) would advance their own
-strategy at all — see [Bot opponent](#bot-opponent).
-
-### Comeback
-
-Once the trailing player's score falls far
-enough behind — the gap crosses 8% of the board's total cells (rounded up:
-29/43/59 points on the 19×19/23×23/27×27 presets) — they're permanently
-granted one extra [Reroll](#reroll) charge for the rest of that game. It's
-its own independent charge, not an extra use of the regular Reroll budget:
-it applies even if Reroll itself is off, and once granted it's never taken
-away, even if that player later retakes the lead. A "Comeback! Player N gets +1 reroll"
-notice marks the moment the charge is granted, and the Reroll button
-appears if it wasn't already available.
+| Rule | What it does | On the board |
+|---|---|---|
+| **Prize** | Four cells (two mirrored pairs). Covering one captures it for +10 points on top of your area; one piece can capture several. | A plus mark that disappears once covered; a ring around what your last placement captured. |
+| **Walls** | Several wall lines (mirrored pairs, horizontal or vertical) between cells, so no area is lost. A piece can't cross a wall, and a piece on one side doesn't touch territory on the other: build around the ends. | Thick lines between cells. |
+| **Obstacles** | Four cells (two mirrored pairs) that no piece can ever cover. | A solid dark square. |
+| **Pitfall** | Four cells (two mirrored pairs). Covering one docks you 10 points; scores aren't floored at 0, so a player can go negative. | A bar mark that disappears once covered; its own Pitfall row in the score table. |
+| **Steal** | Two cells (one mirrored pair). Covering one is zero-sum: you gain 10 and your opponent loses 10, a 20-point swing. Scores can go negative. | A plus-over-minus mark that disappears once covered; the Steal row shows each player's net swing. |
+| **Wildcard Roll** | Every double becomes a wildcard roll: one of the two numbers (picked at random) is yours to change to any value 1–6, the other stays fixed. If no value could fit, the pick is skipped and the turn resolves to a skip. | A row of value buttons, greyed out for values without a legal placement. |
+| **Enclosure Penalty** | Each empty cell fully surrounded by your own territory docks you 1 point, recomputed after every move. Filling the hole drops the penalty. A gap bordered by both players, by neither, or touching the board's edge is never penalized. | Enclosed cells hatched in your colour; the Enclosure row in the score table. |
+| **Reroll** | Two rerolls per player per game (not per series round) to discard both dice and roll again, while placing, while picking a wildcard value, or when a roll would skip your turn. | The Rerolls row shows what's left, and the Reroll button disappears at zero. |
+| **Comeback** | When the trailing player falls behind by 8% of the board's cells (rounded up: 29/43/59 points on 19×19/23×23/27×27), they're permanently granted one extra reroll charge for that game, even if Reroll itself is off. | A "Comeback! Player N gets +1 reroll" notice. |
 
 ## Bot opponent
 
@@ -325,9 +212,9 @@ Player 2 (you are Player 1), and your input is ignored while it takes its turn.
 
 The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
-- **Greedy** — prefers a placement that captures a [Prize](#prize) or
-  [Steal](#steal) cell (Steal weighted double, since capturing it swings the
-  score gap both ways at once), and avoids a [Pitfall](#pitfall) cell when a
+- **Greedy** — prefers a placement that captures a [Prize](#house-rules) or
+  [Steal](#house-rules) cell (Steal weighted double, since capturing it swings the
+  score gap both ways at once), and avoids a [Pitfall](#house-rules) cell when a
   Pitfall-free placement is available; with none of those on the board, or
   when no candidate reaches one, it falls back to denying cells in your
   frontier, same as Blocking.
@@ -336,8 +223,8 @@ The three difficulties:
   a Steal cell you could otherwise have captured; falls back to a random
   pick among equally denying (or non-denying) candidates.
 
-Greedy and Blocking also play [Wildcard Roll](#wildcard-roll) and
-[Reroll](#reroll) with the same underlying strategy: on a wildcard roll they
+Greedy and Blocking also play [Wildcard Roll](#house-rules) and
+[Reroll](#house-rules) with the same underlying strategy: on a wildcard roll they
 pick whichever value scores best on their own metric (a reachable
 Prize/Steal/Pitfall for Greedy, a deniable frontier cell for Blocking); if
 every value ties at zero, Blocking picks randomly among them, while Greedy
