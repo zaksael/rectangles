@@ -140,6 +140,12 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const rotateRef = useRef(rotate)
   rotateRef.current = rotate
 
+  // The board stays a tab stop on every turn so focus survives the bot's move; a piece put down mid-focus has no
+  // focus event to start the next placement, so start it here.
+  useEffect(() => {
+    if (document.activeElement?.classList.contains('board')) handleBoardFocus()
+  }, [dims])
+
   const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false
   const canReroll = state?.game.houseRules.reroll.canReroll ?? false
   const rerollUsable = canReroll && ['choosingPlacement', 'skipped', 'choosingWildcard'].includes(humanTurnState ?? '')
@@ -272,8 +278,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             lastPlaced={lastPlaced}
             onCellHover={placing ? handleCellHover : undefined}
             onCellTap={placing ? handleCellTap : undefined}
-            onKeyDown={placing ? handleBoardKeyDown : undefined}
-            onFocus={placing ? handleBoardFocus : undefined}
+            onKeyDown={handleBoardKeyDown}
+            onFocus={handleBoardFocus}
             describedBy={placing ? 'board-help board-summary' : 'board-summary'}
           />
           {/* The dice are an image, which a screen reader doesn't announce when it changes; only a live roll is read out. */}

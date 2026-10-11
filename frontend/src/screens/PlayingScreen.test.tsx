@@ -888,9 +888,31 @@ test('the board is keyboard-focusable only while a placement can be made', () =>
   expect(screen.getByRole('group', { name: / board$/ })).toHaveAttribute('tabindex', '0')
 })
 
-test('the board is not focusable while awaiting a roll', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
-  expect(screen.getByRole('group', { name: / board$/ })).not.toHaveAttribute('tabindex')
+test('the board stays a tab stop when no placement is due, and its keys do nothing then', () => {
+  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const board = screen.getByRole('group', { name: / board$/ })
+  expect(board).toHaveAttribute('tabindex', '0')
+
+  fireEvent.focus(board)
+  fireEvent.keyDown(board, { key: 'ArrowRight' })
+  fireEvent.keyDown(board, { key: 'Enter' })
+
+  expect(document.querySelector('.preview')).not.toBeInTheDocument()
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('keyboard focus stays on the board between turns, and the next placement starts on the first legal spot', () => {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const { rerender } = render(<PlayingScreen state={keyboardState()} {...props} />)
+  const board = screen.getByRole('group', { name: / board$/ })
+  board.focus()
+
+  rerender(<PlayingScreen state={makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })} {...props} />)
+  expect(board).toHaveFocus()
+
+  rerender(<PlayingScreen state={keyboardState()} {...props} />)
+  expect(board).toHaveFocus()
+  expect(document.querySelector('.preview.legal')).toBeInTheDocument()
 })
 
 test('focusing the board puts the piece on the first legal spot', () => {
