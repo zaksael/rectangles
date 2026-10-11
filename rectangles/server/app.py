@@ -4,10 +4,12 @@ import os
 import re
 import threading
 import time
+from pathlib import Path
 from typing import Callable
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
+from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
 from rectangles.engine.constants import (
@@ -39,6 +41,7 @@ from .schema import (
 
 HOST = os.environ.get("RECTANGLES_SERVER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("RECTANGLES_SERVER_PORT", "8765"))
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 _PRESET_PARAMS = {
     "protocolVersion": (PROTOCOL_VERSION,),
@@ -65,6 +68,14 @@ _INT_PARAM_NAMES = {"prizePoints", "pitfallPoints", "stealPoints"}
 MAX_POINTS = 100
 
 app = FastAPI()
+
+
+def mount_frontend(app: FastAPI, dist_dir: Path) -> None:
+    """Serve a built frontend (`npm run build`) from `/`, beside `/ws`. A no-op when the folder is missing,
+    so development (the Vite proxy) and the tests are unchanged. Mount it after the `/ws` route: a mount at
+    `/` matches every path, so anything registered later would never be reached."""
+    if dist_dir.is_dir():
+        app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
 
 
 def _connect_params_valid(query_params) -> bool:
@@ -311,6 +322,9 @@ async def ws_endpoint(websocket: WebSocket) -> None:
             )
     except WebSocketDisconnect:
         pass
+
+
+mount_frontend(app, FRONTEND_DIST)
 
 
 def run_in_background(host: str = "127.0.0.1", port: int = 0) -> tuple[str, Callable[[], None]]:

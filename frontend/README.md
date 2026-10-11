@@ -8,3 +8,5 @@ npm run dev     # dev server
 npm run build   # tsc -b && vite build
 npm test        # vitest run
 ```
+
+The server serves the built bundle: run `npm run build`, then `uv run python -m rectangles.server.app` from the repo root and open `http://127.0.0.1:8765/`. During development `npm run dev` forwards `/ws` to the server on port 8765.

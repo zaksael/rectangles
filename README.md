@@ -375,17 +375,22 @@ which are grayed out and forced off in this mode.
 
 A React frontend (`frontend/`) is under active development as an eventual
 replacement for the server-backed WebSocket path above. It talks to the same
-`rectangles/server` over `/ws` and is not yet wired into the Python app or
-built by any release process — run it separately for now:
+`rectangles/server` over `/ws`. Build it once and let the server serve it:
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run build
+cd ..
+uv run python -m rectangles.server.app
 ```
 
-This starts the server (see above) automatically via the Vite dev proxy;
-open the printed `localhost` URL to play.
+Then open `http://127.0.0.1:8765/` to play. The server serves `frontend/dist`
+when it exists; without a build it serves only `/ws`.
+
+For development, run the server in one terminal and `npm run dev` in
+`frontend/` in another. The Vite dev server forwards `/ws` to the server on
+port 8765; open the printed `localhost` URL to play.
 
 Playing and Replay need a window at least 1320px wide. Below that a "Widen the Window" notice takes
 their place and the game or replay waits where it was until the window is wide enough again.
@@ -402,7 +407,7 @@ caption, a per-rule score table, a score-history chart and Play/Pause, and flags
 turn where a better move existed (a note with the score or cells denied against the best
 possible, a ring on the chart, and a Show Better Option toggle that outlines the better
 placement on the board). Not yet
-built: Tournament flows, and production serving from the FastAPI backend.
+built: Tournament flows.
 
 ## Tests
 

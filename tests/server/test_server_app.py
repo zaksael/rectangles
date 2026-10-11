@@ -1,6 +1,8 @@
 import asyncio
+from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
@@ -9,7 +11,16 @@ from rectangles.engine.constants import PLAYER_1, PLAYER_2
 from rectangles.engine.game import Game, TurnState
 from rectangles.engine.series import Series
 from rectangles.ui.net_adapter import ServerGameAdapter
-from rectangles.server.app import ActionError, _apply_action, _bot_turn_step, _broadcast_and_run_bots, app, run_in_background
+from rectangles.server.app import (
+    ActionError,
+    _apply_action,
+    _bot_turn_step,
+    _broadcast_and_run_bots,
+    app,
+    mount_frontend,
+    run_in_background,
+    ws_endpoint,
+)
 from rectangles.server.schema import ErrorReason
 
 
@@ -763,3 +774,48 @@ def test_ws_request_analysis_in_the_next_series_round_analyses_that_round(monkey
 
     assert len(calls) == 2
     assert calls[0] is not calls[1]
+
+
+def _built_frontend(tmp_path: Path) -> Path:
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<!doctype html><title>Rectangles</title>")
+    (dist / "assets" / "app.js").write_text("console.log(1)")
+    return dist
+
+
+def _app_with_ws() -> FastAPI:
+    served = FastAPI()
+    served.websocket("/ws")(ws_endpoint)
+    return served
+
+
+def test_mount_frontend_serves_the_index_and_assets_and_leaves_the_websocket_working(tmp_path):
+    served = _app_with_ws()
+    mount_frontend(served, _built_frontend(tmp_path))
+    client = TestClient(served)
+
+    root = client.get("/")
+    asset = client.get("/assets/app.js")
+
+    assert (root.status_code, "Rectangles" in root.text) == (200, True)
+    assert (asset.status_code, asset.text) == (200, "console.log(1)")
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:  # the mount sits after /ws, so it does not swallow it
+        assert ws.receive_json()["type"] == "state"
+
+
+def test_mount_frontend_answers_an_unknown_path_with_404(tmp_path):
+    served = _app_with_ws()
+    mount_frontend(served, _built_frontend(tmp_path))
+
+    assert TestClient(served).get("/nope").status_code == 404
+
+
+def test_mount_frontend_does_nothing_when_the_folder_is_missing(tmp_path):
+    served = _app_with_ws()
+    mount_frontend(served, tmp_path / "no-such-dist")
+    client = TestClient(served)
+
+    assert client.get("/").status_code == 404
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        assert ws.receive_json()["type"] == "state"
