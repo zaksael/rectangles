@@ -1,6 +1,7 @@
 # Rectangles
 
-A two-player pen-and-paper dice game, implemented as a Python/Pygame desktop app.
+A two-player pen-and-paper dice game, implemented as a Python rules engine and WebSocket server with a React
+frontend that runs in the browser.
 
 Two players share one grid board and grow their territory inward from
 opposite corners by rolling dice and placing rectangles. Whoever covers more
@@ -21,13 +22,11 @@ area when the game ends wins.
   - [Comeback](#comeback)
 - [Bot opponent](#bot-opponent)
 - [Series mode](#series-mode)
-- [Tournament mode](#tournament-mode)
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Play](#play)
 - [Development](#development)
-  - [Experimental: server-backed play](#experimental-server-backed-play)
-  - [Web frontend (in progress)](#web-frontend-in-progress)
+  - [Frontend development](#frontend-development)
 - [Tests](#tests)
 - [Project structure](#project-structure)
 
@@ -64,8 +63,9 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 
 ## House Rules
 
-Nine optional modes, each off by default, toggled independently on the
-settings screen before a match begins.
+Nine optional modes, toggled independently on the Mode Select screen before a
+match begins. All nine start switched on the first time; after that your last
+choice is kept.
 
 ### Prize
 
@@ -186,8 +186,8 @@ nudge charge has kicked in.
 
 ## Bot opponent
 
-Pick **Opponent (P2)** on the settings screen: **Human** (default) for local
-pass-and-play, or one of the three bot difficulties below to play solo — the
+Pick the opponent on the Mode Select screen: **Local 2P** for local
+pass-and-play, or **Vs Bot** with one of the three difficulties below to play solo — the
 bot rolls, places a legal piece (or continues past a forced skip), and ends
 its turn on its own, with a short pause between actions. Human input for
 Player 2's controls is ignored while the bot is taking its turn.
@@ -234,180 +234,88 @@ tied series. Both the in-game panel and the between-rounds screen show a
 round-by-round breakdown (each round's score, plus prize bonus points when
 Prize is on) alongside series-wide totals.
 
-## Tournament mode
-
-Play a single-elimination bracket with 4 or 8 participants: board size, skip
-limit, and mode settings are locked in once for the whole tournament, and
-each bracket pairing is played as a full match series (same length as the
-series length picked on the settings screen), not a single game. Fill each
-seat as Human or Bot on the settings screen — a bot seat picks its own
-difficulty independently, so a tournament can mix human and bot opponents
-(or run entirely bot-vs-bot) in any combination. Seeding is random each
-tournament, so the bracket order changes every time.
-
-If a match's series ends in a tied cumulative score, one extra sudden-death
-game decides who advances (if that game is somehow also an exact tie, a
-coin flip breaks it). A **Bracket** button on the game-over screen shows the
-tournament tree at any point — who's played, who advanced, and who's still
-to come — without leaving the game you just finished; the same screen also
-opens automatically once a fresh tournament is seeded (before its first
-match) and once the whole tournament is decided (showing the champion).
-Quitting mid-tournament only preserves the match currently in progress, not
-the rest of the bracket — resuming a save always drops back to a plain
-single match/series.
-
 ## Requirements
 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) for dependency management
+- Node.js and npm, to build the frontend
 
 ## Setup
 
 ```bash
 uv sync
+cd frontend
+npm install
+npm run build
 ```
 
 ## Play
 
 ```bash
-uv run python main.py
-```
-
-The app opens to a game mode screen — pick **Single**, **Series**, or
-**Tournament**. If you quit mid-match, a **Resume Game**/`R` button appears
-there too, skipping mode selection entirely and picking up exactly where you
-left off (including the series score, if one was in progress). **Exit**/`Esc`
-quits.
-
-Picking a mode leads to a settings screen tailored to it — pick a board size
-and skip limit (preset buttons), optionally toggle
-[Prize](#prize), [Walls](#walls),
-[Obstacles](#obstacles), [Pitfall](#pitfall), [Steal](#steal),
-[Wildcard Roll](#wildcard-roll),
-[Enclosure Penalty](#enclosure-penalty), [Reroll](#reroll), and
-[Comeback](#comeback) (or click **Turn All ON**/**Turn All OFF** to flip all
-of them at once), and whatever else
-that mode needs: the [bot opponent](#bot-opponent) (and its difficulty
-preset) for **Single**/**Series**, a series length for **Series**/**Tournament**,
-and, for **Tournament**, a seat count (4 or 8) plus a per-seat Human/Bot row for each
-(see [Series mode](#series-mode)/[Tournament mode](#tournament-mode) above).
-Click **Start**/`Space` to begin, or **Back** to return and pick a different
-mode.
-
-The window can be freely resized in any direction to fit your screen — the
-whole UI (board, panel, settings screen) scales together to fill it, with
-board cells always staying square; a window whose proportions don't match
-adds a plain border on the narrow sides rather than stretching anything.
-In-game, the side panel's own scrollable bits (the turn history, and the
-series stats table during a series) are capped instead: each shows only its
-most recent entries plus a note when there's more, so the panel always fits.
-
-- **Roll Dice** (`D`) to get a piece for your turn.
-- All cells where your rolled piece could legally go are highlighted green;
-  hover over the board to preview exact placement (centered on your cursor),
-  then click a highlighted cell to place the piece.
-- The most recently placed piece is outlined in gold, so you can spot your
-  opponent's last move at a glance.
-- Rotate the piece with the **Rotate** button, `R`, or right-click.
-- A roll with no legal placement skips your turn automatically after a brief
-  pause; click **Continue**/`Space` to skip the wait immediately instead. A
-  banner over the board calls out the skip, and another calls out a wildcard
-  roll, so neither is easy to miss.
-- A [Wildcard Roll](#wildcard-roll) turn shows both dice, with the editable
-  one shown as a black `*` until you pick its value, plus a row of buttons
-  (grayed out for any value that wouldn't have a legal placement) to choose
-  its new value before placement continues.
-- With [Reroll](#reroll) on and a charge left, a **Reroll** button appears
-  alongside the normal action for that turn — next to **Rotate** while
-  choosing placement, alongside the value buttons on a wildcard roll, or
-  in place of the single **Continue** button on a skip (split into
-  **Reroll**/**Skip**). A skip with a reroll available waits for your
-  choice instead of auto-continuing.
-- **New Game** (`N`) at any time during a match to return to the settings
-  screen and start a fresh match, or **Exit** (`Esc`) to quit outright.
-  Once you've placed at least one piece, either of these (and closing the
-  window) asks for confirmation first, so you can't lose progress by
-  accident.
-- **Surrender** (`S`) to concede the match immediately — your opponent
-  wins regardless of the current area tally. Always asks for confirmation
-  first, even before you've placed a single piece.
-- When the game ends, a summary screen shows the winner (or tie), final
-  scores, and the reason the game ended, with **New Game**/`N` and
-  **Exit**/`Esc` buttons. During a series, that button reads **Next Game**
-  and starts the next round instead, until the series itself is decided.
-- **Replay** the finished game turn-by-turn: step through the board with
-  First/Prev/Next/Last (or the arrow/Home/End keys), seeing each turn's
-  roll, placement, each player's running area/prizes at that point, a
-  score-history chart plotting both players' scores across the whole game
-  (every flagged turn also marked on the chart with a dot, so a bad turn
-  is visible at a glance without stepping through the whole game), and —
-  for the turn just taken — a flag if the best other legal option that
-  roll would have scored higher than what was actually played, showing
-  the actual score against the best possible one (e.g. "scored 4 this
-  turn (best possible: 14 — prize)") — or, when the difference is purely
-  strategic denial rather than real points, the cells denied instead
-  (e.g. "denied 1 cell this turn (best possible: 5)"), since denial has
-  no point value of its own. Toggle
-  **Show Better Option** to reveal exactly which placement would have
-  scored higher, outlined right on the board. Hit **Play** to watch it
-  advance automatically at your chosen Slow/Normal/Fast pace — it stops
-  at the last step, and any manual
-  navigation pauses it. **Back**/`Esc` returns to the summary screen.
-- The side panel keeps a running **History** log of every placement and
-  skip, most recent first; scroll the mouse wheel over it to see older
-  entries once a match runs past the visible rows.
-
-## Development
-
-### Experimental: server-backed play
-
-Set `RECTANGLES_USE_SERVER=1` before launching to make **Single** mode play
-over a local WebSocket server instead of in-process — the server starts
-automatically in the background, so nothing else changes about how you run
-the game. Everything else (offline play, Series, Tournament) is unaffected;
-this is off by default. House rule toggles on the settings screen carry over
-to server-backed games the same as offline play, including the board
-geometry they seed (walls, obstacles, prize/pitfall/steal cells) and the
-side panel's score/potential/points display — except Wildcard and Reroll,
-which are grayed out and forced off in this mode.
-
-### Web frontend (in progress)
-
-A React frontend (`frontend/`) is under active development as an eventual
-replacement for the server-backed WebSocket path above. It talks to the same
-`rectangles/server` over `/ws`. Build it once and let the server serve it:
-
-```bash
-cd frontend
-npm install
-npm run build
-cd ..
 uv run python -m rectangles.server.app
 ```
 
-Then open `http://127.0.0.1:8765/` to play. The server serves `frontend/dist`
-when it exists; without a build it serves only `/ws`.
+Then open `http://127.0.0.1:8765/`. The server serves the built frontend from
+`frontend/dist` and the game socket at `/ws`; without a build it serves only
+`/ws`.
 
-For development, run the server in one terminal and `npm run dev` in
-`frontend/` in another. The Vite dev server forwards `/ws` to the server on
-port 8765; open the printed `localhost` URL to play.
+The game opens on Mode Select. Pick the opponent (**Local 2P** or **Vs Bot** and
+its difficulty), a board size and skip limit, how many games to play (1, 3 or
+5, see [Series mode](#series-mode)), and which of the nine
+[house rules](#house-rules) to switch on, then **Start Game**. Your last choices
+are remembered, and **Reset to Defaults** appears once any differ.
 
-Playing and Replay need a window at least 1320px wide. Below that a "Widen the Window" notice takes
-their place and the game or replay waits where it was until the window is wide enough again.
+Playing and Replay need a window at least 1320px wide; below that a "Widen the
+Window" notice takes their place and the game waits where it was.
 
-Current state: a full vanilla match (Mode Select → roll/place/skip → game
-over → View Board / Replay / New Game) works start to finish, including disconnect handling,
-surrender, and a read-only mid-game Settings/pause screen. Series play (1, 3
-or 5 games, picked on Mode Select) runs round by round to a series result.
-All nine house rules (Walls, Obstacles, Prize, Pitfall, Steal, Enclosure
-Penalty, Reroll, Wildcard and Comeback Nudge) are built and toggleable on the
-picker; a first launch starts with all nine on, and later launches keep the
-last choice. Replay steps a finished game (or a series round) turn by turn with a
-caption, a per-rule score table, a score-history chart and Play/Pause, and flags each
-turn where a better move existed (a note with the score or cells denied against the best
-possible, a ring on the chart, and a Show Better Option toggle that outlines the better
-placement on the board). Not yet
-built: Tournament flows.
+- **Roll** (`D`) to get a piece for your turn.
+- Every cell where your rolled piece could legally go is highlighted; hover
+  the board (or tap, then tap again to place) to preview the exact placement,
+  centered on the pointer, and click to place the piece. The keyboard works
+  too: arrows move the cursor, `N` / `Shift+N` jump to the next / previous
+  legal spot, and `Enter` places.
+- Rotate the piece with the **Rotate** button or `R`.
+- A roll with no legal placement waits for you to press **Skip** (`S`).
+- A [Wildcard Roll](#wildcard-roll) turn shows a row of value buttons (greyed
+  out for any value without a legal placement) to choose the editable die's
+  value before placement continues.
+- With [Reroll](#reroll) on and a charge left, **Reroll** (`E`) discards the
+  current roll for a fresh one, including alongside a forced skip.
+- The side rail shows both scores with a row for each scoring rule that is
+  on, each player's skip streak, a legend of the special cells, and the
+  latest moves.
+- **Menu** (`M`) shows the match settings and has **Resume** and
+  **Surrender**; surrender always asks for confirmation first, and your
+  opponent wins regardless of the area tally.
+- When the game ends, a summary shows the winner (or tie), final scores, the
+  score breakdown and the reason the game ended. **View Board** (`V`) looks at
+  the final board with a slim result bar, **Replay** (`R`) steps through the
+  game, and **New Game** (`N`) returns to Mode Select. During a series the
+  button reads **Next Round** until the series itself is decided, then **Series
+  Result**.
+- **Replay** the finished game turn by turn: step with First/Prev/Next/Last
+  (or the arrow, Home and End keys), seeing each turn's roll, placement and
+  each player's score breakdown at that point, plus a score-history chart
+  across the whole game (click or arrow along it to jump to a turn). For the
+  turn just taken, a flag appears if the best other legal option that roll
+  would have scored higher than what was actually played, showing the actual
+  score against the best possible one (e.g. "scored 4 this turn (best
+  possible: 14 — prize)") — or, when the difference is purely strategic
+  denial rather than real points, the cells denied instead (e.g. "denied 1
+  cell this turn (best possible: 5)"). Toggle **Show Better Option** to
+  outline the better placement on the board. **Play** advances automatically
+  at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
+  manual navigation pauses it. **Back**/`Esc` returns to the summary.
+
+## Development
+
+### Frontend development
+
+Run the server in one terminal (`uv run python -m rectangles.server.app`) and
+`npm run dev` in `frontend/` in another. The Vite dev server forwards `/ws` to
+the server on port 8765; open the printed `localhost` URL to play. The server
+accepts a WebSocket only from a page served from its own host and port, which
+the Vite proxy preserves.
 
 ## Tests
 
@@ -419,27 +327,22 @@ uv run pytest
 
 ```
 rectangles/
-├── engine/               # rules engine, no dependency on Pygame
+├── engine/               # rules engine, no UI dependency
 │   ├── analysis.py       # Replay's turn analysis: where a better move existed
 │   ├── board.py          # grid + placement legality
 │   ├── bot.py            # picks a placement for the bot opponent (Basic/Greedy/Blocking)
 │   ├── constants.py      # tunable game/UI values (board sizes, limits, presets)
 │   ├── game.py           # turn state machine, scoring, game-over rules
 │   ├── models.py         # Rectangle, Player, TurnRecord
-│   ├── persistence.py    # save/load a game (and series/tournament, if in progress)
+│   ├── persistence.py    # save/load a game, series or tournament to a file
 │   ├── series.py         # N-round match series (cumulative score, next-round setup)
 │   └── tournament.py     # single-elimination bracket (participants, matches, tiebreaks)
-├── server/               # FastAPI/WebSocket server for online play
-│   ├── app.py            # WebSocket handler, one Game per connection
-│   └── schema.py         # wire message schema, state serialization
-└── ui/                   # Pygame rendering and input (all Pygame code lives here)
-    ├── input/            # event handling, one module per screen
-    ├── render/           # drawing, one module per screen
-    ├── app.py            # top-level app loop, screen dispatch
-    ├── layout.py         # panel/board geometry constants
-    ├── net_adapter.py    # bridges UI to the server over WebSocket
-    └── state.py          # UI-side app/session state
+└── server/               # FastAPI/WebSocket server for online play
+    ├── app.py            # WebSocket handler, one Game per connection; serves frontend/dist
+    └── schema.py         # wire message schema, state serialization
+frontend/                 # React + Vite web client (src/screens, src/components)
 ```
 
-The rules engine (`rectangles/engine/`) has no dependency on Pygame, so it's
-fully unit-testable headlessly — see `tests/`.
+The rules engine (`rectangles/engine/`) has no UI dependency, so it's fully
+unit-testable headlessly — see `tests/`. Frontend tests run with `npm test` in
+`frontend/`.

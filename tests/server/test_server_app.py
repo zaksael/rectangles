@@ -10,7 +10,6 @@ from rectangles.engine.analysis import AnalysisAxis, Candidate, TurnAnalysis
 from rectangles.engine.constants import PLAYER_1, PLAYER_2
 from rectangles.engine.game import Game, TurnState
 from rectangles.engine.series import Series
-from rectangles.ui.net_adapter import ServerGameAdapter
 from rectangles.server.app import (
     ActionError,
     _apply_action,
@@ -18,7 +17,6 @@ from rectangles.server.app import (
     _broadcast_and_run_bots,
     app,
     mount_frontend,
-    run_in_background,
     ws_endpoint,
 )
 from rectangles.server.schema import ErrorReason
@@ -30,19 +28,6 @@ class _FakeWebSocket:
 
     async def send_json(self, data):
         self.sent.append(data)
-
-
-def test_run_in_background_serves_and_stops():
-    url, stop = run_in_background()
-    try:
-        adapter = ServerGameAdapter(f"{url}?protocolVersion=1")
-        assert adapter.board.size == 19
-        adapter.close()
-    finally:
-        stop()
-
-    with pytest.raises((ConnectionError, OSError)):
-        ServerGameAdapter(f"{url}?protocolVersion=1")
 
 
 def test_ws_accepts_and_closes():
