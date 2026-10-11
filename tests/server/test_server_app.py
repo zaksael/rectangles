@@ -4,6 +4,7 @@ import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
+from rectangles.engine.analysis import AnalysisAxis, Candidate, TurnAnalysis
 from rectangles.engine.constants import PLAYER_1, PLAYER_2
 from rectangles.engine.game import Game, TurnState
 from rectangles.engine.series import Series
@@ -675,3 +676,90 @@ def test_apply_action_place_non_integer_fields_are_malformed(fields):
     with pytest.raises(ActionError) as exc_info:
         _apply_action(game, {"protocolVersion": 1, "type": "place", **fields})
     assert exc_info.value.reason == ErrorReason.MALFORMED_MESSAGE
+
+
+_FLAGGED = {3: TurnAnalysis(AnalysisAxis.PRIZE, 0, 10, Candidate((0, 0), 4, 1))}
+_FLAGGED_TURNS = [
+    {"turn": 3, "axis": "prize", "chosen": 0, "best": 10, "topLeft": [0, 0], "width": 4, "height": 1}
+]
+
+
+def _count_analyses(monkeypatch):
+    calls = []
+
+    def fake(game):
+        calls.append(game)
+        return _FLAGGED
+
+    monkeypatch.setattr("rectangles.server.app.turn_analyses", fake)
+    return calls
+
+
+def test_ws_request_analysis_after_game_over_replies_to_the_requester(monkeypatch):
+    _count_analyses(monkeypatch)
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "requestAnalysis"})
+
+        assert ws.receive_json() == {"protocolVersion": 1, "type": "analysis", "turns": _FLAGGED_TURNS}
+
+
+def test_ws_request_analysis_for_a_game_with_nothing_flagged_is_an_empty_list():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "requestAnalysis"})
+
+        assert ws.receive_json()["turns"] == []
+
+
+def test_ws_request_analysis_mid_game_returns_invalid_action():
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "requestAnalysis"})
+        reply = ws.receive_json()
+
+        assert reply["type"] == "error"
+        assert reply["reason"] == ErrorReason.INVALID_ACTION.value
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        assert ws.receive_json()["type"] == "state"  # the game is still playable
+
+
+def test_ws_request_analysis_twice_computes_once(monkeypatch):
+    calls = _count_analyses(monkeypatch)
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()
+        for _ in range(2):
+            ws.send_json({"protocolVersion": 1, "type": "requestAnalysis"})
+            assert ws.receive_json()["turns"] == _FLAGGED_TURNS
+
+    assert len(calls) == 1
+
+
+def test_ws_request_analysis_in_the_next_series_round_analyses_that_round(monkeypatch):
+    calls = _count_analyses(monkeypatch)
+    client = TestClient(app)
+    with client.websocket_connect("/ws?protocolVersion=1&seriesLength=3") as ws:
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "requestAnalysis"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "continueSeries"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "surrender"})
+        ws.receive_json()
+        ws.send_json({"protocolVersion": 1, "type": "requestAnalysis"})
+        ws.receive_json()
+
+    assert len(calls) == 2
+    assert calls[0] is not calls[1]

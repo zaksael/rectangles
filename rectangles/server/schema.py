@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import ClassVar
 
+from rectangles.engine.analysis import TurnAnalysis
 from rectangles.engine.constants import DICE_MAX, DICE_MIN, PLAYER_1, PLAYER_2, CellKind
 from rectangles.engine.game import Game, GameOverReason, TurnState
 from rectangles.engine.models import Player
@@ -313,3 +314,32 @@ class PlaceMsg:
             width=_int(data["width"]),
             height=_int(data["height"]),
         )
+
+
+def serialize_analysis(analyses: dict[int, TurnAnalysis]) -> list[dict]:
+    """One entry per flagged turn, oldest first; `turn` is the 1-based move number (as in `history`)."""
+    return [
+        {
+            "turn": turn,
+            "axis": analysis.axis.value,
+            "chosen": analysis.chosen,
+            "best": analysis.best,
+            "topLeft": list(analysis.better.top_left),
+            "width": analysis.better.width,
+            "height": analysis.better.height,
+        }
+        for turn, analysis in sorted(analyses.items())
+    ]
+
+
+@dataclass(frozen=True)
+class AnalysisMsg:
+    protocol_version: int
+    turns: list[dict]
+
+    def to_json(self) -> dict:
+        return {"protocolVersion": self.protocol_version, "type": "analysis", "turns": self.turns}
+
+    @classmethod
+    def from_json(cls, data: dict) -> "AnalysisMsg":
+        return cls(protocol_version=data["protocolVersion"], turns=data["turns"])

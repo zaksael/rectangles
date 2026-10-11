@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -20,15 +21,18 @@ from rectangles.engine.constants import (
     CellKind,
 )
 from rectangles.engine import bot
+from rectangles.engine.analysis import turn_analyses
 from rectangles.engine.game import Game, TurnState
 from rectangles.engine.series import Series
 from .schema import (
     PROTOCOL_VERSION,
+    AnalysisMsg,
     ChooseWildcardMsg,
     ErrorMsg,
     ErrorReason,
     PlaceMsg,
     StateMsg,
+    serialize_analysis,
     serialize_game,
     serialize_series,
 )
@@ -263,6 +267,7 @@ async def ws_endpoint(websocket: WebSocket) -> None:
     game = series.new_game() if series is not None else _game_from_connect_params(websocket.query_params)
     bot_difficulty = _bot_difficulty_from_connect_params(websocket.query_params)
     series_game_recorded = await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
+    analysis_cache: tuple[Game, list[dict]] | None = None  # the game it was computed for (compared with `is`), its wire turns
     try:
         while True:
             text = await websocket.receive_text()
@@ -284,6 +289,17 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     continue
                 game = series.new_game()
                 series_game_recorded = await _broadcast_and_run_bots(websocket, game, series, bot_difficulty)
+                continue
+            if data.get("type") == "requestAnalysis":
+                if game.state != TurnState.GAME_OVER:
+                    await _send_error(websocket, ErrorReason.INVALID_ACTION, "the game is not over")
+                    continue
+                if analysis_cache is None or analysis_cache[0] is not game:
+                    # Off the event loop: the worst case is ~1s. Safe because a finished game no longer changes.
+                    analyses = await asyncio.to_thread(turn_analyses, game)
+                    analysis_cache = (game, serialize_analysis(analyses))
+                reply = AnalysisMsg(protocol_version=PROTOCOL_VERSION, turns=analysis_cache[1])
+                await websocket.send_json(reply.to_json())
                 continue
             try:
                 _apply_action(game, data)

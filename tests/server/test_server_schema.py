@@ -1,8 +1,10 @@
+from rectangles.engine.analysis import turn_analyses
 from rectangles.engine.constants import PLAYER_1, PLAYER_2, STEAL_POINTS, CellKind
 from rectangles.engine.game import Game, TurnState
-from rectangles.engine.models import Cell, SpecialCell
+from rectangles.engine.models import Cell, Rectangle, SpecialCell, TurnRecord
 from rectangles.engine.series import Series
 from rectangles.server.schema import (
+    AnalysisMsg,
     ChooseWildcardMsg,
     ErrorMsg,
     ErrorReason,
@@ -12,6 +14,7 @@ from rectangles.server.schema import (
     SkipMsg,
     StateMsg,
     SurrenderMsg,
+    serialize_analysis,
     serialize_game,
     serialize_series,
 )
@@ -441,3 +444,41 @@ def test_serialize_game_replays_the_history_once_at_game_over(monkeypatch):
     serialize_game(game)
 
     assert len(calls) == 1
+
+
+def test_serialize_analysis_lists_a_flagged_prize_turn():
+    game = Game(board_size=6, prize_enabled=True)
+    game.board.special_cells = frozenset({SpecialCell(CellKind.PRIZE, Cell(0, 3), pair_id=0)})
+    game.history = [TurnRecord(PLAYER_1, roll=(1, 4), placed=Rectangle((0, 0), 1, 4, PLAYER_1))]
+
+    assert serialize_analysis(turn_analyses(game)) == [
+        {"turn": 1, "axis": "prize", "chosen": 0, "best": 10, "topLeft": [0, 0], "width": 4, "height": 1}
+    ]
+
+
+def test_serialize_analysis_lists_a_denial_turn_in_cells_with_its_move_number():
+    game = Game(board_size=6)
+    game.history = [
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((0, 3), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 4), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((2, 5), 1, 1, PLAYER_1)),
+        TurnRecord(PLAYER_1, roll=(1, 1), placed=Rectangle((3, 5), 1, 1, PLAYER_1)),
+    ]
+
+    assert serialize_analysis(turn_analyses(game)) == [
+        {"turn": 4, "axis": "denial", "chosen": 1, "best": 5, "topLeft": [1, 3], "width": 1, "height": 1}
+    ]
+
+
+def test_serialize_analysis_is_an_empty_list_when_nothing_is_flagged():
+    game = Game(board_size=6)
+    game.history = [TurnRecord(PLAYER_1, roll=(6, 6), placed=None)]
+
+    assert serialize_analysis(turn_analyses(game)) == []
+
+
+def test_analysis_msg():
+    turns = [{"turn": 1, "axis": "prize", "chosen": 0, "best": 10, "topLeft": [0, 0], "width": 4, "height": 1}]
+    msg = AnalysisMsg(protocol_version=1, turns=turns)
+    assert msg.to_json() == {"protocolVersion": 1, "type": "analysis", "turns": turns}
+    assert AnalysisMsg.from_json(msg.to_json()) == msg
