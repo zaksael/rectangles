@@ -46,7 +46,7 @@ export interface PlayerState {
     totalArea: number
     totalScore: number
     breakdown: ScoreParts
-    potential: { area: number; prize: { points: number } }
+    potential: Potential
   }
   houseRules: {
     reroll: { used: number; limit: number }
@@ -73,6 +73,11 @@ export interface ScoreParts {
   enclosure: number
 }
 
+export interface Potential {
+  area: number
+  prize: { points: number }
+}
+
 export interface HistoryEntry {
   playerId: number
   roll: [number, number]
@@ -80,6 +85,7 @@ export interface HistoryEntry {
   wildcardOriginalRoll: [number, number] | null
   score: { '1': number; '2': number }
   breakdown: { '1': ScoreParts; '2': ScoreParts }
+  potential?: { '1': Potential; '2': Potential } // game-over history only, not recentTurns
 }
 
 // A recent turn on every state message: a history entry plus its move number and the mover's own score change.
