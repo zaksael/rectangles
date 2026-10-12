@@ -482,6 +482,39 @@ def test_round_trip_preserves_series(tmp_path):
     assert loaded_series.rounds == series.rounds
 
 
+def test_round_trip_preserves_series_pitfall_and_steal_captures(tmp_path):
+    path = tmp_path / "save.json"
+    series = Series(length=3, board_size=6, skip_limit=2, pitfall_enabled=True, steal_enabled=True)
+    finished = _finished_game(6, 5, 2)
+    finished.players[PLAYER_1].special_captures[CellKind.PITFALL] = 2
+    finished.players[PLAYER_2].special_captures[CellKind.STEAL] = 1
+    series.record_game(finished)
+
+    persistence.save_game(Game(board_size=6, skip_limit=2), series=series, path=path)
+    _, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is not None
+    assert loaded_series.rounds[0].pitfall_captured == {PLAYER_1: 2, PLAYER_2: 0}
+    assert loaded_series.rounds[0].steal_captured == {PLAYER_1: 0, PLAYER_2: 1}
+
+
+def test_load_game_round_without_pitfall_and_steal_keys_defaults_them_to_zero(tmp_path):
+    # A save written before per-round pitfall/steal counts existed.
+    path = tmp_path / "save.json"
+    series = Series(length=3, board_size=6, skip_limit=2)
+    series.record_game(_finished_game(6, 5, 2))
+    data = persistence.to_dict(Game(board_size=6, skip_limit=2), series)
+    for key in ("pitfall_captured", "steal_captured"):
+        del data["series"]["rounds"][0][key]
+    path.write_text(json.dumps(data))
+
+    _, loaded_series = persistence.load_game(path)
+
+    assert loaded_series is not None
+    assert loaded_series.rounds[0].pitfall_captured == {PLAYER_1: 0, PLAYER_2: 0}
+    assert loaded_series.rounds[0].steal_captured == {PLAYER_1: 0, PLAYER_2: 0}
+
+
 def test_load_game_series_without_rounds_key_loads_with_empty_rounds(tmp_path):
     # Simulates a save written by the previous commit, before per-round history existed.
     path = tmp_path / "save.json"

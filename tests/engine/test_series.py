@@ -48,6 +48,19 @@ def test_record_game_stores_area_and_prizes_breakdown_per_round():
     assert series.scores == {PLAYER_1: 28, PLAYER_2: 4}
 
 
+def test_record_game_stores_pitfall_and_steal_captures_per_round():
+    series = Series(length=3, board_size=6, skip_limit=2, pitfall_enabled=True, steal_enabled=True)
+    game = _finished_game(8, 0, 4, 0)
+    game.players[PLAYER_1].special_captures[CellKind.PITFALL] = 1
+    game.players[PLAYER_2].special_captures[CellKind.STEAL] = 2
+
+    series.record_game(game)
+
+    result = series.rounds[0]
+    assert result.pitfall_captured == {PLAYER_1: 1, PLAYER_2: 0}
+    assert result.steal_captured == {PLAYER_1: 0, PLAYER_2: 2}
+
+
 def test_total_prize_captured_sums_across_rounds():
     series = Series(length=3, board_size=6, skip_limit=2, prize_enabled=True, special_cell_points={"prize": 10})
 
