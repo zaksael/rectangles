@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest'
 import { readCss, ruleFor } from './testUtils/styles'
 
-const css = readCss('screens/PlayingScreen.css')
+const css = readCss('PlayingScreen.css')
 
 test('the board, player dots and swatches, and the game-over outcome rule keep their colours under forced colors (they are backgrounds that mode would drop)', () => {
-  const board = ruleFor(readCss('components/Board.css'), '.board')
+  const board = ruleFor(readCss('Board.css'), '.board')
   const dots = ruleFor(css, '.dot,\n.swatch')
   const outcome = ruleFor(css, 'dialog.game-over::before')
 

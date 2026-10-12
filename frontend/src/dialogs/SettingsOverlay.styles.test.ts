@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { contrast, danger, ledger, mixShare, mix, readCss, ruleFor, textContrast, tokensCss } from '../testUtils/styles'
 
-const css = readCss('screens/PlayingScreen.css')
+const css = readCss('PlayingScreen.css')
 
 test('off house-rule labels in the Menu keep AA contrast (4.5:1) on the ledger, dimmer than on rules', () => {
   expect(textContrast(css, '.settings-rule')).toBeGreaterThanOrEqual(4.5)

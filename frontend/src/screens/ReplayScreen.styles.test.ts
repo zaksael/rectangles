@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { contrast, ledger, mix, mixShare, readCss, ruleFor, textContrast, token, tokensCss } from '../testUtils/styles'
 
-const css = readCss('screens/ReplayScreen.css')
+const css = readCss('ReplayScreen.css')
 
 test('the board is fitted to the window with the rail beside it, leaving 52px of chrome: the frame\'s 24px padding and 1px border, and the board\'s own 1px border, each twice', () => {
   expect(ruleFor(css, '.replay')).toMatch(/--chrome:\s*52px/)
@@ -126,7 +126,7 @@ test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.
 
 // --- turn analysis ---
 
-const boardCss = readCss('components/Board.css')
+const boardCss = readCss('Board.css')
 
 test('the note slot reserves two lines so a note coming and going never resizes the chart', () => {
   expect(ruleFor(css, '.replay .analysis-slot')).toMatch(/min-height:\s*44px/)

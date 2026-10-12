@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { Screen } from './game/screens'
 import { ConnectionLostModal } from './dialogs/ConnectionLostModal'
 import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScreen'
 import { NarrowWindowGate } from './dialogs/NarrowWindowGate'
@@ -8,6 +7,8 @@ import { ReplayScreen } from './screens/ReplayScreen'
 import { SettingsOverlay } from './dialogs/SettingsOverlay'
 import { botName, useGameSocket } from './hooks/useGameSocket'
 import { useShiftHeld } from './hooks/useShiftHeld'
+
+type Screen = 'MODE_SELECT' | 'PLAYING' | 'REPLAY'
 
 const PROTOCOL_VERSION = 1
 

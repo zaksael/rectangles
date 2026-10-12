@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { contrast, danger, ledger, mix, mixShare, readCss, ruleFor, textContrast } from '../testUtils/styles'
 
-const css = readCss('screens/ModeSelectScreen.css')
+const css = readCss('ModeSelectScreen.css')
 
 test('the Mode Select changed-from-defaults cue keeps AA contrast (4.5:1) on the ledger', () => {
   expect(textContrast(css, '.changed-count')).toBeGreaterThanOrEqual(4.5)

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { contrast, danger, ledger, readCss, ruleFor, tokensCss } from '../testUtils/styles'
 
-const css = readCss('screens/PlayingScreen.css')
+const css = readCss('PlayingScreen.css')
 
 test('on touch screens the key hint is blanked by colour (also under forced colors), so its height stays reserved and the board keeps its description', () => {
   const block = css.match(/@media \(pointer: coarse\) \{\s*\.board-help \{([^}]*)\}/)![1]

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { readCss, ruleFor } from '../testUtils/styles'
 
-const css = readCss('screens/PlayingScreen.css')
+const css = readCss('PlayingScreen.css')
 
 test('game-over capitals are for structural labels only: the reason and table headers keep them, the swing tag, caption and player labels are normal case at 12px+', () => {
   for (const selector of ['.game-over-swing-tag', '.game-over-caption', '.game-over-scoreboard .who']) {

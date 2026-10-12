@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { readCss, ruleFor, textContrast } from '../testUtils/styles'
 
-const css = readCss('components/ScoreTable.css')
+const css = readCss('ScoreTable.css')
 
 test('the score table sits in a 1px card border in the line colour', () => {
   expect(css).toMatch(/\.score-table\s*\{[^}]*border:\s*1px solid var\(--line\)/)
@@ -32,5 +32,5 @@ test('a resource row (In reach) is set apart by a line-colour hairline and is pl
 })
 
 test('the resource row\'s hairline lives with the shared table, not in Playing\'s own sheet', () => {
-  expect(readCss('screens/PlayingScreen.css')).not.toContain('.res-first')
+  expect(readCss('PlayingScreen.css')).not.toContain('.res-first')
 })

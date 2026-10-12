@@ -1,7 +1,12 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 
 // Helpers for tests that assert on stylesheet text (jsdom has no layout, so the rules themselves are the seam).
-export const readCss = (path: string) => readFileSync(`src/${path}`, 'utf8')
+// Looked up by file name anywhere under src/, so moving a stylesheet between folders breaks no test.
+export const readCss = (name: string) => {
+  const found = readdirSync('src', { recursive: true, encoding: 'utf8' }).filter((f) => f.split('/').pop() === name)
+  if (found.length !== 1) throw new Error(`readCss: expected one ${name} under src/, found ${found.length}`)
+  return readFileSync(`src/${found[0]}`, 'utf8')
+}
 
 const rgb = (hex: string) => [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16))
 export const token = (css: string, name: string) => rgb(css.match(new RegExp(`${name}:\\s*#([0-9a-f]{6})`, 'i'))![1])
