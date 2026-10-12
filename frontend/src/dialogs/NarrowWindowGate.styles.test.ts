@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor, textContrast } from '../testUtils/styles'
+import { readCss, ruleFor, textContrast } from '../dev/testUtils/styles'
 
 const css = readCss('NarrowWindowGate.css')
 

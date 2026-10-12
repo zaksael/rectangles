@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { contrast, danger, ledger, mix, mixShare, readCss, ruleFor, textContrast } from '../testUtils/styles'
+import { contrast, danger, ledger, mix, mixShare, readCss, ruleFor, textContrast } from '../dev/testUtils/styles'
 
 const css = readCss('ModeSelectScreen.css')
 

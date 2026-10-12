@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { GameAction, GameWireState, PlayerState } from '../game/gameTypes'
-import { FakeWebSocket } from '../testUtils/FakeWebSocket'
+import { FakeWebSocket } from '../dev/testUtils/FakeWebSocket'
 import { useGameSocket } from './useGameSocket'
 
 const fakePlayerState: PlayerState = {

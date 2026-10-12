@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { buildFixture, FIXTURE_ANALYSIS } from './fixtures/devFixtures'
+import { buildFixture, FIXTURE_ANALYSIS } from './dev/fixtures/devFixtures'
 import { NarrowWindowGate } from './dialogs/NarrowWindowGate'
 import { PlayingScreen } from './screens/PlayingScreen'
 import { ReplayScreen } from './screens/ReplayScreen'

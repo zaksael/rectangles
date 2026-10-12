@@ -1,5 +1,5 @@
-import type { Analysis, GameWireState, HistoryEntry } from '../game/gameTypes'
-import type { GameState } from '../hooks/useGameSocket'
+import type { Analysis, GameWireState, HistoryEntry } from '../../game/gameTypes'
+import type { GameState } from '../../hooks/useGameSocket'
 import { makeGame, makeSeries, reach } from './gameFixtures'
 
 // One realistic 10x10 mid-game position shared by every fixture; only the turn state differs.

@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, ScoreParts } from '../game/gameTypes'
-import { makeGame, reach } from '../fixtures/gameFixtures'
+import { makeGame, reach } from '../dev/fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
 
 afterEach(() => {

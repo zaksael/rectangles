@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { FakeWebSocket } from './testUtils/FakeWebSocket'
+import { FakeWebSocket } from './dev/testUtils/FakeWebSocket'
 import type { HistoryEntry } from './game/gameTypes'
-import { makeGame, makeSeries, reach } from './fixtures/gameFixtures'
+import { makeGame, makeSeries, reach } from './dev/fixtures/gameFixtures'
 
 beforeEach(() => {
   localStorage.clear()

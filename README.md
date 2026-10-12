@@ -276,6 +276,7 @@ frontend/                 # React + Vite web client
     ├── components/       # the board, score chart and other shared pieces
     ├── hooks/            # the WebSocket connection, placement input and other hooks
     ├── game/             # wire types, house rules and other logic with no React
+    ├── dev/              # fixtures and test helpers, not shipped
     └── tokens.css        # colours, type and shared button styles
 tests/                    # backend tests (engine/, server/); frontend tests sit beside their source
 docs/GAME_SPEC.md         # the full ruleset, independent of this code

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor } from '../testUtils/styles'
+import { readCss, ruleFor } from '../dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 

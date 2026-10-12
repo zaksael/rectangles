@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { contrast, ledger, mix, mixShare, readCss, ruleFor, textContrast, token, tokensCss } from '../testUtils/styles'
+import { contrast, ledger, mix, mixShare, readCss, ruleFor, textContrast, token, tokensCss } from '../dev/testUtils/styles'
 
 const css = readCss('ReplayScreen.css')
 

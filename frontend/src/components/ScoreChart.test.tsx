@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { HistoryEntry } from '../game/gameTypes'
-import { reach } from '../fixtures/gameFixtures'
+import { reach } from '../dev/fixtures/gameFixtures'
 import { ScoreChart } from './ScoreChart'
 
 afterEach(() => {

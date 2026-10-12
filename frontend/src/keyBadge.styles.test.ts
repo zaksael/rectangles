@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { ruleFor, tokensCss } from './testUtils/styles'
+import { ruleFor, tokensCss } from './dev/testUtils/styles'
 
 test('the key chip is hidden at rest and shown while Shift is held, without taking room from the button', () => {
   const chip = ruleFor(tokensCss, '.key-badge')
