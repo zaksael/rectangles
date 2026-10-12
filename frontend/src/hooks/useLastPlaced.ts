@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { GameWireState } from './gameTypes'
+import type { GameWireState } from '../game/gameTypes'
 
 // The wire has no "last move" field, so spot it by whose piece count grew. Returns that piece's top-left
 // (pieces never overlap, so it identifies the piece). It stays put through skips and only changes when a

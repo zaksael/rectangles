@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import { MIN_WINDOW_WIDTH, useNarrowWindow } from '../useNarrowWindow'
+import { MIN_WINDOW_WIDTH, useNarrowWindow } from '../hooks/useNarrowWindow'
 import './NarrowWindowGate.css'
 
 const ADVICE = {

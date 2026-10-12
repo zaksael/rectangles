@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { describeFootprint } from './footprint'
-import { makeGame } from './fixtures/gameFixtures'
+import { makeGame } from '../fixtures/gameFixtures'
 import type { GameWireState } from './gameTypes'
 
 function game(setup: (g: GameWireState) => void = () => {}): GameWireState {

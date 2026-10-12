@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { readCss, ruleFor, textContrast } from '../testUtils/styles'
 
-const css = readCss('screens/ScoreTable.css')
+const css = readCss('components/ScoreTable.css')
 
 test('the score table sits in a 1px card border in the line colour', () => {
   expect(css).toMatch(/\.score-table\s*\{[^}]*border:\s*1px solid var\(--line\)/)

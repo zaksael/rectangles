@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { makeGame, makeSeries } from '../fixtures/gameFixtures'
-import type { GameWireState, RecentTurn } from '../gameTypes'
-import type { GameError, GameState } from '../useGameSocket'
+import type { GameWireState, RecentTurn } from '../game/gameTypes'
+import type { GameError, GameState } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
 
 function makeState(overrides: Parameters<typeof makeGame>[0] = {}): GameState {

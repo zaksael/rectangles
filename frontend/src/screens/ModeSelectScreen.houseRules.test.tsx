@@ -3,8 +3,8 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { ModeSelectScreen } from './ModeSelectScreen'
 
 // Only Pitfall is "implemented" here; the real registry has none yet.
-vi.mock('../houseRules', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../houseRules')>()
+vi.mock('../game/houseRules', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../game/houseRules')>()
   // Mutate in place: implementedHouseRules reads the module's own list.
   for (const rule of actual.HOUSE_RULE_GROUPS.flatMap((g) => g.rules)) {
     rule.implemented = rule.key === 'pitfallEnabled'

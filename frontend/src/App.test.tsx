@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FakeWebSocket } from './testUtils/FakeWebSocket'
-import type { HistoryEntry } from './gameTypes'
+import type { HistoryEntry } from './game/gameTypes'
 import { makeGame, makeSeries, reach } from './fixtures/gameFixtures'
 
 beforeEach(() => {

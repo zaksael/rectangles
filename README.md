@@ -271,10 +271,11 @@ rectangles/
     └── schema.py         # wire message schema, state serialization
 frontend/                 # React + Vite web client
 └── src/
-    ├── screens/          # Mode Select, Playing, Replay, and the dialogs and overlays
-    ├── components/       # the board and other shared pieces
-    ├── useGameSocket.ts  # the WebSocket connection and game state
-    ├── usePlacementInput.ts  # mouse, touch and keyboard placement
+    ├── screens/          # Mode Select, Playing and Replay
+    ├── dialogs/          # confirmations, settings, game-over and connection overlays
+    ├── components/       # the board, score chart and other shared pieces
+    ├── hooks/            # the WebSocket connection, placement input and other hooks
+    ├── game/             # wire types, house rules and other logic with no React
     └── tokens.css        # colours, type and shared button styles
 tests/                    # backend tests (engine/, server/); frontend tests sit beside their source
 docs/GAME_SPEC.md         # the full ruleset, independent of this code

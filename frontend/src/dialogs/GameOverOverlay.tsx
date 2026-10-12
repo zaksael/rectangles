@@ -1,8 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import type { GameWireState, SeriesWireState } from '../gameTypes'
+import type { GameWireState, SeriesWireState } from '../game/gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
-import { noBreak } from '../noBreak'
-import { useAutoOpenDialog } from '../useAutoOpenDialog'
+import { noBreak } from '../game/noBreak'
+import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
 
 export const SELF_ENCLOSED_PENALTY_PER_CELL = 1 // fixed on the server, not sent on the wire or configurable per-game

@@ -12,7 +12,7 @@ import { useGameSocket } from './useGameSocket'
 // (non-mocked) socket test.
 vi.stubGlobal('WebSocket', NodeWebSocket)
 
-const REPO_ROOT = path.resolve(__dirname, '../..')
+const REPO_ROOT = path.resolve(__dirname, '../../..')
 
 function pickFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {

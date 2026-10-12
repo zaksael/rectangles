@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import type { GameAction, GameWireState, SeriesWireState } from '../gameTypes'
-import { HOUSE_RULE_GROUPS } from '../houseRules'
-import { seriesRound } from '../seriesRound'
-import { useAutoOpenDialog } from '../useAutoOpenDialog'
+import type { GameAction, GameWireState, SeriesWireState } from '../game/gameTypes'
+import { HOUSE_RULE_GROUPS } from '../game/houseRules'
+import { seriesRound } from '../game/seriesRound'
+import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 
 interface SettingsOverlayProps {

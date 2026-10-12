@@ -1,4 +1,4 @@
-import { useAutoOpenDialog } from '../useAutoOpenDialog'
+import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
 interface ResetConfirmDialogProps {
   onCancel: () => void

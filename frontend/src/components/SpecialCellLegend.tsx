@@ -1,5 +1,5 @@
-import type { GameWireState } from '../gameTypes'
-import { enabledSpecialRules } from '../specialCells'
+import type { GameWireState } from '../game/gameTypes'
+import { enabledSpecialRules } from '../game/specialCells'
 
 // One line under the board naming each special-cell rule that is on; the mark is drawn by the board's own rules.
 export function SpecialCellLegend({ game }: { game: GameWireState }) {

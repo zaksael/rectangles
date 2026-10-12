@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
-import type { HistoryEntry } from '../gameTypes'
-import { formatSigned } from './GameOverOverlay'
+import type { HistoryEntry } from '../game/gameTypes'
+import { formatSigned } from '../dialogs/GameOverOverlay'
 
 // Plot margins in px: room for the y labels on the left and the turn numbers below.
 const LEFT = 36

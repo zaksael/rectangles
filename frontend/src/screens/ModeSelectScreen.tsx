@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
-import { implementedGroups, implementedHouseRules, type HouseRules } from '../houseRules'
-import { ResetConfirmDialog } from './ResetConfirmDialog'
+import { implementedGroups, implementedHouseRules, type HouseRules } from '../game/houseRules'
+import { ResetConfirmDialog } from '../dialogs/ResetConfirmDialog'
 import './ModeSelectScreen.css'
 
 type Opponent = 'bot' | 'local2p' | null

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { Screen } from './screens'
-import { ConnectionLostModal } from './screens/ConnectionLostModal'
+import type { Screen } from './game/screens'
+import { ConnectionLostModal } from './dialogs/ConnectionLostModal'
 import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScreen'
-import { NarrowWindowGate } from './screens/NarrowWindowGate'
+import { NarrowWindowGate } from './dialogs/NarrowWindowGate'
 import { PlayingScreen } from './screens/PlayingScreen'
 import { ReplayScreen } from './screens/ReplayScreen'
-import { SettingsOverlay } from './screens/SettingsOverlay'
-import { botName, useGameSocket } from './useGameSocket'
-import { useShiftHeld } from './useShiftHeld'
+import { SettingsOverlay } from './dialogs/SettingsOverlay'
+import { botName, useGameSocket } from './hooks/useGameSocket'
+import { useShiftHeld } from './hooks/useShiftHeld'
 
 const PROTOCOL_VERSION = 1
 

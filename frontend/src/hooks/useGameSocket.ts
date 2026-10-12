@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Analysis, ErrorReason, GameAction, GameWireState, SeriesWireState } from './gameTypes'
+import type { Analysis, ErrorReason, GameAction, GameWireState, SeriesWireState } from '../game/gameTypes'
 
 interface GameSocketParams {
   protocolVersion: number

@@ -1,6 +1,6 @@
 import { memo, type CSSProperties, type FocusEventHandler, type KeyboardEventHandler, type MouseEvent, type PointerEvent, type ReactElement } from 'react'
-import type { GameWireState } from '../gameTypes'
-import { specialCellKinds } from '../specialCells'
+import type { GameWireState } from '../game/gameTypes'
+import { specialCellKinds } from '../game/specialCells'
 import './Board.css'
 
 // A grid box, in cells. The stylesheet turns it into pixels from --cell, which fits the viewport.

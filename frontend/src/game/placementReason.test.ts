@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import type { GameWireState } from './gameTypes'
 import { placementReason } from './placementReason'
-import { makeGame } from './fixtures/gameFixtures'
+import { makeGame } from '../fixtures/gameFixtures'
 
 // 6x6 board; player 1 starts top-left, player 2 bottom-right (the fixture's corners are for 3x3).
 function game(setup: (g: GameWireState) => void = () => {}): GameWireState {

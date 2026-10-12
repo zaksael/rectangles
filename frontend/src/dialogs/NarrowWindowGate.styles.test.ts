@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { readCss, ruleFor, textContrast } from '../testUtils/styles'
 
-const css = readCss('screens/NarrowWindowGate.css')
+const css = readCss('dialogs/NarrowWindowGate.css')
 
 test('the notice fills the window and centres its text', () => {
   const block = ruleFor(css, '.narrow-notice')

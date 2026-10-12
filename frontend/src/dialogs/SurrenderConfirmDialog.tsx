@@ -1,5 +1,5 @@
-import { noBreak } from '../noBreak'
-import { useAutoOpenDialog } from '../useAutoOpenDialog'
+import { noBreak } from '../game/noBreak'
+import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
 interface SurrenderConfirmDialogProps {
   opponentName: string

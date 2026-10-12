@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import type { GameAction, GameWireState } from './gameTypes'
+import type { GameAction, GameWireState } from '../game/gameTypes'
 
 const UNSET = Symbol('unset')
 
