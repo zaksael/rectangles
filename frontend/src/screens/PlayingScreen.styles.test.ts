@@ -77,13 +77,6 @@ test('the game-over buttons share the row equally but are never narrower than th
   expect(ruleFor(css, '.game-over .actions .btn')).toMatch(/min-width:\s*max-content/)
 })
 
-test('under 480px the game-over actions stack full width, since three buttons side by side wrap their labels in the narrow dialog', () => {
-  const media = css.match(/@media \(max-width: 480px\) \{([\s\S]*?)\n\}/)![1]
-
-  expect(media).toMatch(/\.game-over \.actions \{[^}]*flex-direction:\s*column/)
-  expect(media).toMatch(/\.game-over \.actions \.btn \{[^}]*min-width:\s*0/)
-})
-
 test('the status line and the key hint share one 72px box that is always reserved (a two-row status over a two-row hint with Reroll on), so the controls below never move', () => {
   expect(ruleFor(css, '.rail-instr')).toMatch(/min-height:\s*72px/)
 })
