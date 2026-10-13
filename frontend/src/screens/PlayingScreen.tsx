@@ -117,11 +117,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     return () => clearTimeout(timer)
   }, [comebackNotice, errorShown])
 
-  const sendActionRef = useRef(sendAction)
-  sendActionRef.current = sendAction
-  const openSettingsRef = useRef(onOpenSettings)
-  openSettingsRef.current = onOpenSettings
-
   const {
     rotate,
     previewTopLeft,
@@ -136,8 +131,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     isBotTurn ? null : (state?.game ?? null),
     sendAction,
   )
-  const rotateRef = useRef(rotate)
-  rotateRef.current = rotate
 
   // The board stays a tab stop on every turn so focus survives the bot's move; a piece put down mid-focus has no
   // focus event to start the next placement, so start it here.
@@ -216,26 +209,28 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const keyHint = humanTurnState && KEY_HINT[humanTurnState]
   const boardHint = keyHint ? (rerollUsable ? `${keyHint}, E rerolls` : keyHint) : '\u00A0'
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (document.querySelector('dialog[open]')) return
-      if (event.ctrlKey || event.metaKey || event.altKey) return
-      const key = event.key.toLowerCase()
-      if (key === 'm') {
-        openSettingsRef.current()
-      } else if (key === 'd' && humanTurnState === 'awaitingRoll') {
-        sendActionRef.current({ type: 'roll' })
-      } else if (key === 'r' && humanTurnState === 'choosingPlacement') {
-        rotateRef.current()
-      } else if (key === 's' && humanTurnState === 'skipped') {
-        sendActionRef.current({ type: 'skip' })
-      } else if (key === 'e' && rerollUsable) {
-        sendActionRef.current({ type: 'reroll' })
-      }
+  // One listener, bound once: the Effect Event always sees this render's turn state and callbacks.
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (document.querySelector('dialog[open]')) return
+    if (event.ctrlKey || event.metaKey || event.altKey) return
+    const key = event.key.toLowerCase()
+    if (key === 'm') {
+      onOpenSettings()
+    } else if (key === 'd' && humanTurnState === 'awaitingRoll') {
+      sendAction({ type: 'roll' })
+    } else if (key === 'r' && humanTurnState === 'choosingPlacement') {
+      rotate()
+    } else if (key === 's' && humanTurnState === 'skipped') {
+      sendAction({ type: 'skip' })
+    } else if (key === 'e' && rerollUsable) {
+      sendAction({ type: 'reroll' })
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [humanTurnState, rerollUsable])
+  })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => handleKeyDown(event)
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const ids = ['1', '2'] as const
   const recentTurns = state?.game.turn.recentTurns ?? []
