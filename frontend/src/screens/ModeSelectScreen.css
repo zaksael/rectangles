@@ -167,7 +167,8 @@
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
-.reset-link {
+.reset-link,
+.group-link {
   background: none;
   border: none;
   padding: 0;
@@ -177,7 +178,8 @@
   color: color-mix(in srgb, var(--ink) 75%, transparent);
   cursor: pointer;
 }
-.reset-link:hover {
+.reset-link:hover,
+.group-link:hover {
   color: var(--ink);
 }
 
@@ -256,6 +258,21 @@
 .rules-group:first-child {
   padding-left: 0;
   border-left: none;
+}
+/* The links drop under the label when a narrow column cannot hold both. */
+.group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: 8px;
+}
+.group-links {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 .rules-grid {
   display: flex;
@@ -365,7 +382,8 @@
   .segmented button {
     padding: 13px 16px;
   }
-  .reset-link {
+  .reset-link,
+  .group-link {
     padding: 12px 0;
   }
 }

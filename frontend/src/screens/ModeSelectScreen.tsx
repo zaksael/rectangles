@@ -192,6 +192,10 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
     setSettings((s) => ({ ...s, houseRules: { ...s.houseRules, [key]: value } }))
   }
 
+  function setGroup(rules: { key: keyof HouseRules }[], value: boolean): void {
+    setSettings((s) => ({ ...s, houseRules: { ...s.houseRules, ...Object.fromEntries(rules.map((r) => [r.key, value])) } }))
+  }
+
   function handleStartGame(): void {
     saveSettings(settings)
     onStartGame(buildStartGameParams(settings))
@@ -333,7 +337,18 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
               <div className="rules-groups">
                 {visibleGroups.map((group) => (
                   <div className="rules-group" key={group.label}>
-                    <span className="group-label">{group.label}</span>
+                    <div className="group-head">
+                      <span className="group-label">{group.label}</span>
+                      <div className="group-links">
+                        <button type="button" className="group-link" aria-label={`All On, ${group.label}`} onClick={() => setGroup(group.rules, true)}>
+                          All On
+                        </button>
+                        <span aria-hidden="true">·</span>
+                        <button type="button" className="group-link" aria-label={`All Off, ${group.label}`} onClick={() => setGroup(group.rules, false)}>
+                          All Off
+                        </button>
+                      </div>
+                    </div>
                     <div className="rules-grid">
                       {group.rules.map(({ key, label, description }) => (
                         <button

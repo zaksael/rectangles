@@ -540,3 +540,82 @@ describe('changed-from-defaults cue', () => {
     expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toBeEnabled()
   })
 })
+
+describe('per-group All On and All Off links', () => {
+  const GROUPS = {
+    'Special cells': ['Prize', 'Pitfall', 'Steal'],
+    'Board setup': ['Walls', 'Obstacles', 'Enclosure penalty'],
+    'Dice & turn': ['Wildcard roll', 'Reroll', 'Comeback'],
+  }
+  const renderRules = (onStartGame = vi.fn()) => {
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  }
+  const checked = (name: string) => screen.getByRole('checkbox', { name }).getAttribute('aria-checked') === 'true'
+
+  test('All Off turns off exactly the rules of its own group', () => {
+    renderRules()
+
+    fireEvent.click(screen.getByRole('button', { name: 'All Off, Board setup' }))
+
+    expect(GROUPS['Board setup'].map(checked)).toEqual([false, false, false])
+    expect([...GROUPS['Special cells'], ...GROUPS['Dice & turn']].map(checked)).toEqual(Array(6).fill(true))
+  })
+
+  test('All On turns a switched-off group back on', () => {
+    renderRules()
+    fireEvent.click(screen.getByRole('button', { name: 'All Off, Dice & turn' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'All On, Dice & turn' }))
+
+    expect(GROUPS['Dice & turn'].map(checked)).toEqual([true, true, true])
+  })
+
+  test('a bulk flip counts toward the changed cue, and flipping back clears the cue and Reset', () => {
+    renderRules()
+    expect(screen.queryByText(/changed from defaults/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'All Off, Board setup' }))
+    expect(screen.getByText(/changed from defaults/)).toHaveTextContent('3 changed from defaults')
+
+    fireEvent.click(screen.getByRole('button', { name: 'All On, Board setup' }))
+    expect(screen.queryByText(/changed from defaults/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reset to Defaults' })).not.toBeInTheDocument()
+  })
+
+  test('Start Game after a bulk flip sends the flipped flags', () => {
+    const onStartGame = vi.fn()
+    renderRules(onStartGame)
+
+    fireEvent.click(screen.getByRole('button', { name: 'All Off, Special cells' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+
+    expect(onStartGame).toHaveBeenCalledWith(expect.objectContaining({ prizeEnabled: false, pitfallEnabled: false, stealEnabled: false, wallsEnabled: true }))
+  })
+
+  test('every link names its group and starts with its visible text, and stays enabled whether the group is on or off', () => {
+    renderRules()
+    for (const group of Object.keys(GROUPS)) {
+      expect(screen.getByRole('button', { name: `All On, ${group}` })).toBeEnabled()
+      expect(screen.getByRole('button', { name: `All Off, ${group}` })).toBeEnabled()
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'All Off, Special cells' }))
+
+    expect(screen.getByRole('button', { name: 'All On, Special cells' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'All Off, Special cells' })).toBeEnabled()
+  })
+})
+
+describe('the group header links (stylesheet)', () => {
+  const css = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
+
+  test('the header wraps so the links drop under a label in a narrow column', () => {
+    expect(css).toMatch(/\.group-head \{[^}]*flex-wrap:\s*wrap/)
+  })
+
+  test('the links share the Reset link\u2019s style and its coarse-pointer padding', () => {
+    expect(css).toMatch(/\.reset-link,\s*\.group-link \{/)
+    expect(css).toMatch(/@media \(any-pointer: coarse\) \{[\s\S]*\.reset-link,\s*\.group-link \{[^}]*padding:\s*12px 0/)
+  })
+})

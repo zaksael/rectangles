@@ -26,7 +26,8 @@ test('the touch-target growth applies to any device with a touch input, so touch
   expect(css).toContain('@media (any-pointer: coarse)')
   expect(css).not.toContain('@media (pointer: coarse)')
   const block = css.match(/@media \(any-pointer: coarse\) \{([\s\S]*?)\n\}/)![1]
-  for (const selector of ['.pill', '.segmented button', '.reset-link']) expect(block).toContain(`${selector} {`)
+  for (const selector of ['.pill', '.segmented button', '.group-link']) expect(block).toContain(`${selector} {`)
+  expect(block).toContain('.reset-link,')
 })
 
 test('a described house rule is already taller than a 44px touch target, so it gets no extra touch padding', () => {
