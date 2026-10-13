@@ -160,7 +160,7 @@ export function useGameSocket(params: GameSocketParams) {
       }
       socket.close()
     }
-  }, [query, params.serverUrl, params.enabled, params.connectionId])
+  }, [query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty])
 
   function disconnect() {
     intentionalCloseRef.current = true

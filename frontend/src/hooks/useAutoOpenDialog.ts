@@ -9,8 +9,9 @@ export function useAutoOpenDialog<T extends HTMLDialogElement>() {
   const opener = useRef(document.activeElement)
   useEffect(() => {
     ref.current?.showModal()
+    const previous = opener.current
     return () => {
-      if (opener.current instanceof HTMLElement && opener.current.isConnected) opener.current.focus()
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
     }
   }, [])
   return ref

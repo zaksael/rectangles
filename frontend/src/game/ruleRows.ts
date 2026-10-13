@@ -1,5 +1,5 @@
 import type { GameWireState } from './gameTypes'
-import { formatSigned } from '../dialogs/GameOverOverlay'
+import { formatSigned } from './resultText'
 
 // One score-table row per scoring rule, in order; a row shows only while its rule is on (Replay and Playing share them).
 export const RULE_ROWS = [

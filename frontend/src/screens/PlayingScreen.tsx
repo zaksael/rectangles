@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Board } from '../components/Board'
 import { SpecialCellLegend } from '../components/SpecialCellLegend'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from '../dialogs/GameOverOverlay'
@@ -142,8 +142,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   // The board stays a tab stop on every turn so focus survives the bot's move; a piece put down mid-focus has no
   // focus event to start the next placement, so start it here.
+  const startPlacement = useEffectEvent(handleBoardFocus)
   useEffect(() => {
-    if (document.activeElement?.classList.contains('board')) handleBoardFocus()
+    if (document.activeElement?.classList.contains('board')) startPlacement()
   }, [dims])
 
   const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false

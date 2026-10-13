@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../game/gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
-import { noBreak } from '../game/noBreak'
+import { formatSigned, key, nameOf, reasonText } from '../game/resultText'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
 
@@ -47,29 +47,6 @@ const MODIFIER_ROWS: ModifierRow[] = [
     value: (game, id) => -(game.players[id].houseRules.selfEnclosedPenalty.cells * SELF_ENCLOSED_PENALTY_PER_CELL),
   },
 ]
-
-export function formatSigned(value: number): string | number {
-  return value < 0 ? `−${-value}` : value
-}
-
-const key = (id: number) => String(id) as '1' | '2'
-
-function nameOf(game: GameWireState, id: number) {
-  return noBreak(game.players[key(id)].name)
-}
-
-export function reasonText(game: GameWireState): string | null {
-  const { reason, playerId } = game.gameOver
-  if (reason === 'boardFull') return 'board settled'
-  if (reason === null || playerId === null) return null
-  const name = nameOf(game, playerId)
-  if (reason === 'playerBlocked') return `${name} had no legal move left`
-  if (reason === 'skipLimit') {
-    const { skipLimit } = game.board
-    return `${name} hit the skip limit (${skipLimit} of ${skipLimit})`
-  }
-  return `${name} surrendered`
-}
 
 function scoreMargin(game: GameWireState): number | null {
   const { winner, reason } = game.gameOver
@@ -135,6 +112,15 @@ function headlineText(game: GameWireState, inSeries = false): string {
 // is ignored rather than starting something new from a stray press.
 const ADVANCE_KEY_GUARD_MS = 500
 
+// When N starts working: the guard after mount, kept in a ref that an effect sets because the clock is not read during render.
+function useArmedAt() {
+  const armedAt = useRef(Infinity)
+  useEffect(() => {
+    armedAt.current = Date.now() + ADVANCE_KEY_GUARD_MS
+  }, [])
+  return armedAt
+}
+
 // V goes back to the board or the result, N starts a new game, R opens the replay; Ctrl, Cmd and Alt combos belong to the browser.
 function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void, onReplay?: () => void) {
   if (event.ctrlKey || event.metaKey || event.altKey) return
@@ -175,7 +161,7 @@ interface ResultDialogProps {
 // The dialog shell both result cards share. Escape shows the board rather than dismissing the result, so the native close is suppressed.
 function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, onReplay, children }: ResultDialogProps) {
   const dialogRef = useAutoOpenDialog()
-  const armedAt = useRef(Date.now() + ADVANCE_KEY_GUARD_MS)
+  const armedAt = useArmedAt()
   return (
     <dialog
       className="modal game-over"
@@ -226,7 +212,7 @@ interface GameOverBarProps {
 
 export function GameOverBar({ game, series = null, seriesResult = false, onViewResult, onNewGame, onNextRound, onSeriesResult }: GameOverBarProps) {
   const advance = advanceFor(seriesResult ? null : series, { onNewGame, onNextRound, onSeriesResult })
-  const armedAt = useRef(Date.now() + ADVANCE_KEY_GUARD_MS)
+  const armedAt = useArmedAt()
   const outcome =
     seriesResult && series
       ? { headline: seriesHeadline(game, series), reason: null, label: 'Series result' }
@@ -243,7 +229,7 @@ export function GameOverBar({ game, series = null, seriesResult = false, onViewR
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onViewResult, advance.onAdvance])
+  }, [armedAt, onViewResult, advance.onAdvance])
   return (
     <div className="rail-turn" role="region" aria-label={outcome.label}>
       <div className="rail-instr">
