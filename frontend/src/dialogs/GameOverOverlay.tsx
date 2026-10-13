@@ -101,6 +101,17 @@ function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null
   return turned.length ? `Trailed by ${trailedBy} on territory, won on ${new Intl.ListFormat('en-GB').format(turned)}.` : null
 }
 
+// The placed move with the largest rise in its mover's own score, when one move holds that gain alone and a special-cell rule is on.
+function bestTurn(game: GameWireState): { turn: number; playerId: number; gain: number } | null {
+  const { history } = game.gameOver
+  const { prize, pitfall, steal } = game.houseRules
+  if (!history || !(prize.enabled || pitfall.enabled || steal.enabled)) return null
+  const gains = history.map((entry, i) => ({ turn: i + 1, playerId: entry.playerId, gain: entry.score[key(entry.playerId)] - (i === 0 ? 0 : history[i - 1].score[key(entry.playerId)]) }))
+  const top = Math.max(...gains.map((g) => g.gain))
+  const best = gains.filter((g) => g.gain === top)
+  return top > 0 && best.length === 1 ? best[0] : null
+}
+
 const pointsText = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`
 
 // The margin is shown bold; `detail` is the comeback sentence that follows it, when there is one.
@@ -270,6 +281,7 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
   const margin = scoreMargin(game)
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin)
+  const best = bestTurn(game)
   const advance = advanceFor(series, { onNewGame, onNextRound, onSeriesResult })
 
   return (
@@ -283,6 +295,11 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
         <p className="game-over-story" id="gameover-story">
           by <b>{story.margin}</b>
           {story.detail && `. ${story.detail}`}
+        </p>
+      )}
+      {best && (
+        <p className="game-over-best">
+          Best turn: <b>{`${nameOf(game, best.playerId)} scored +${best.gain} on turn ${best.turn}`}</b>
         </p>
       )}
       {endReason === 'surrender' && <p className="game-over-caption">Score at surrender</p>}

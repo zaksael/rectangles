@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
-import { makeGame, makeSeries } from '../dev/fixtures/gameFixtures'
+import type { HistoryEntry } from '../game/gameTypes'
+import { makeGame, makeSeries, reach } from '../dev/fixtures/gameFixtures'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)
@@ -601,4 +602,72 @@ test('with no replay handler neither series card shows a Replay button', () => {
   cleanup()
   render(<SeriesResultOverlay game={makeGame()} series={makeSeries({ isComplete: true, winner: 1 })} onNewGame={vi.fn()} onViewBoard={vi.fn()} />)
   expect(screen.queryByRole('button', { name: /^Replay/ })).toBeNull()
+})
+
+// One history entry: who moved and both players' running totals after it (a null `placed` is a skip).
+const moved = (playerId: number, score: [number, number], placed: HistoryEntry['placed'] = { topLeft: [0, 0], width: 2, height: 2 }): HistoryEntry => ({
+  playerId,
+  roll: [2, 2],
+  placed,
+  wildcardOriginalRoll: null,
+  score: { '1': score[0], '2': score[1] },
+  breakdown: { '1': { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }, '2': { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 } },
+  potential: reach(0, 0),
+})
+
+function renderWithHistory(history: HistoryEntry[] | null, winner: number | null = 1, reason: 'boardFull' | 'surrender' = 'boardFull', rules = true) {
+  const game = makeGame({ gameOver: { reason, playerId: null, winner, history } })
+  if (rules) game.houseRules.prize = { enabled: true, cells: [], points: 10 }
+  render(<GameOverOverlay game={game} onNewGame={vi.fn()} onViewBoard={vi.fn()} />)
+  return screen.getByRole('dialog')
+}
+
+test('the best turn is named with its mover, gain and turn number', () => {
+  const dialog = renderWithHistory([moved(1, [12, 0]), moved(2, [12, 38]), moved(1, [20, 38])])
+  expect(dialog).toHaveTextContent('Best turn: Player 2 scored +38 on turn 2')
+})
+
+test('a gain is the mover’s own score change on that move, not its total', () => {
+  // Player 1 moves to 30 (gain 30), Player 2 to 28 (gain 28), Player 1 to 55 (gain 25): the first move is the best.
+  const dialog = renderWithHistory([moved(1, [30, 0]), moved(2, [30, 28]), moved(1, [55, 28])])
+  expect(dialog).toHaveTextContent('Best turn: Player 1 scored +30 on turn 1')
+})
+
+test('a second move that gains more than any other is named, whoever made it', () => {
+  const dialog = renderWithHistory([moved(1, [10, 0]), moved(2, [10, 14]), moved(1, [40, 14])])
+  expect(dialog).toHaveTextContent('Best turn: Player 1 scored +30 on turn 3')
+})
+
+test('two moves sharing the top gain name no best turn', () => {
+  const dialog = renderWithHistory([moved(1, [20, 0]), moved(2, [20, 20]), moved(1, [30, 20])])
+  expect(dialog).not.toHaveTextContent('Best turn')
+})
+
+test('a surrendered game still names its best turn', () => {
+  const dialog = renderWithHistory([moved(1, [12, 0]), moved(2, [12, 38])], 1, 'surrender')
+  expect(dialog).toHaveTextContent('Best turn: Player 2 scored +38 on turn 2')
+})
+
+test('no best turn without a special-cell rule', () => {
+  const dialog = renderWithHistory([moved(1, [12, 0]), moved(2, [12, 38])], 1, 'boardFull', false)
+  expect(dialog).not.toHaveTextContent('Best turn')
+})
+
+test('a skip never wins and a game with no gain names nothing', () => {
+  const dialog = renderWithHistory([moved(1, [0, 0], null), moved(2, [0, 0], null)])
+  expect(dialog).not.toHaveTextContent('Best turn')
+})
+
+test('no best turn before the history arrives', () => {
+  expect(renderWithHistory(null)).not.toHaveTextContent('Best turn')
+})
+
+test('the best turn is not part of the dialog’s description', () => {
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [moved(1, [12, 0]), moved(2, [12, 38])] } })
+  game.houseRules.prize = { enabled: true, cells: [], points: 10 }
+  game.players['1'].score.totalScore = 60
+  game.players['2'].score.totalScore = 40
+  render(<GameOverOverlay game={game} onNewGame={vi.fn()} onViewBoard={vi.fn()} />)
+  expect(screen.getByRole('dialog')).toHaveTextContent('Best turn')
+  expect(screen.getByRole('dialog')).toHaveAccessibleDescription('by 20 points')
 })

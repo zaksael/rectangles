@@ -461,6 +461,21 @@ dialog.game-over h2 {
 .game-over-story b {
   font-weight: 600;
 }
+.game-over-best {
+  font-size: 13px;
+  margin: 0 0 18px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+.game-over-best b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.game-over-story:has(+ .game-over-best) {
+  margin-bottom: 4px;
+}
+.game-over h2:has(+ .game-over-best) {
+  margin-bottom: 6px;
+}
 .game-over table.breakdown tr:has(.game-over-swing-tag) th:first-child {
   position: relative;
 }
