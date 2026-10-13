@@ -314,6 +314,65 @@ const analysisTurns = [{ turn: 3, axis: 'prize', chosen: 0, best: 10, topLeft: [
 const analysisMessage = { protocolVersion: 1, type: 'analysis', turns: analysisTurns }
 const stateMessage = (game: GameWireState = fakeGame) => ({ type: 'state', game, series: null })
 
+test('a fresh connection starts with no status again, until its socket opens', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0 },
+  })
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  expect(result.current.status).toBe('open')
+
+  rerender({ protocolVersion: 1, connectionId: 1 })
+  expect(result.current.status).toBeUndefined()
+
+  act(() => FakeWebSocket.instances[1].emit('open'))
+  expect(result.current.status).toBe('open')
+})
+
+test('turning the connection off keeps the last game state and reads closed, so the board can still be shown', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0, enabled: true },
+  })
+  act(() => {
+    FakeWebSocket.instances[0].emit('open')
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+  })
+
+  rerender({ protocolVersion: 1, connectionId: 0, enabled: false })
+
+  expect(result.current.state).not.toBeNull()
+  expect(result.current.status).toBe('closed-intentional')
+})
+
+test('turning the connection back on with the same params starts with no status, not the closed one', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0, enabled: true },
+  })
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  rerender({ protocolVersion: 1, connectionId: 0, enabled: false })
+  expect(result.current.status).toBe('closed-intentional')
+
+  rerender({ protocolVersion: 1, connectionId: 0, enabled: true })
+
+  expect(result.current.status).toBeUndefined()
+})
+
+test('a fresh connection drops an analysis held from the last game', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0 },
+  })
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: { ...fakeGame, gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] } }, series: null })
+    result.current.requestAnalysis()
+    FakeWebSocket.instances[0].emit('message', analysisMessage)
+  })
+  expect(result.current.analysis?.status).toBe('ready')
+
+  rerender({ protocolVersion: 1, connectionId: 1 })
+
+  expect(result.current.analysis).toBeNull()
+})
+
+
 test('requestAnalysis sends the request and the analysis reads loading', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
   expect(result.current.analysis).toBeNull()

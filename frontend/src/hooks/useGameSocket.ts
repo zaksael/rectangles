@@ -70,7 +70,8 @@ function connectParamsToQuery(params: GameSocketParams): string {
 export function useGameSocket(params: GameSocketParams) {
   const [state, setState] = useState<GameState | null>(null)
   const [error, setError] = useState<GameError | null>(null)
-  const [status, setStatus] = useState<ConnectionStatus | undefined>(undefined)
+  // Each status report names the connection it belongs to, so a late close from the socket before this one cannot read as this one's.
+  const [statusEntry, setStatusEntry] = useState<{ connection: string | null; value: ConnectionStatus } | undefined>(undefined)
   const [analysis, setAnalysisState] = useState<Analysis | null>(null)
   // The latest analysis, readable from handlers that outlive a render (the socket's listeners, requestAnalysis).
   const analysisRef = useRef<Analysis | null>(null)
@@ -90,16 +91,29 @@ export function useGameSocket(params: GameSocketParams) {
   // A primitive dependency: the effect reconnects exactly when a connect param changes.
   const query = connectParamsToQuery(params)
 
+  // Names the connection the params ask for (null while turned off, which keeps the last game on show). A new one starts from a blank
+  // slate: the old game, error, status and analysis belong to the connection before. Set during render, so no stale frame shows.
+  const connection = params.enabled === false ? null : `${params.connectionId}|${params.serverUrl ?? ''}|${query}`
+  const status = connection === null || statusEntry?.connection === connection ? statusEntry?.value : undefined
+  const [seenConnection, setSeenConnection] = useState(connection)
+  if (connection !== seenConnection) {
+    setSeenConnection(connection)
+    if (connection !== null) {
+      setStatusEntry(undefined)
+      setState(null)
+      setError(null)
+      setAnalysisState(null)
+    }
+  }
+
   useEffect(() => {
     if (params.enabled === false) {
       return
     }
     intentionalCloseRef.current = false
     hasOpenedRef.current = false
-    setStatus(undefined)
-    setState(null)
-    setError(null)
-    setAnalysis(null)
+    const setStatus = (value: ConnectionStatus) => setStatusEntry({ connection, value })
+    analysisRef.current = null
     stateQueueRef.current = []
     if (drainTimeoutRef.current !== null) {
       clearTimeout(drainTimeoutRef.current)
@@ -160,12 +174,12 @@ export function useGameSocket(params: GameSocketParams) {
       }
       socket.close()
     }
-  }, [query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty])
+  }, [connection, query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty])
 
   function disconnect() {
     intentionalCloseRef.current = true
     // The socket's `close` event fires asynchronously; until it does, status would still read 'open'.
-    setStatus('closed-intentional')
+    setStatusEntry({ connection, value: 'closed-intentional' })
     socketRef.current?.close()
   }
 
