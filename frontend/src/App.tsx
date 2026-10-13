@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ConnectionLostModal } from './dialogs/ConnectionLostModal'
 import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScreen'
 import { NarrowWindowGate } from './dialogs/NarrowWindowGate'
@@ -34,11 +34,8 @@ function App() {
   const gameSocket = useGameSocket(connectParams)
   useShiftHeld()
 
-  useEffect(() => {
-    if (screen === 'MODE_SELECT' && gameSocket.status === 'open') {
-      setScreen('PLAYING')
-    }
-  }, [screen, gameSocket.status])
+  // The game screen takes over the moment the socket opens (set during render, so Mode Select never shows a frame of the open game).
+  if (screen === 'MODE_SELECT' && gameSocket.status === 'open') setScreen('PLAYING')
 
   function handleStartGame(params: StartGameParams): void {
     setConnectParams((prev) => ({
