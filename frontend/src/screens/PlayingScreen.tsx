@@ -6,6 +6,7 @@ import type { ErrorReason, GameAction, GameWireState, RecentTurn } from '../game
 import { describeFootprint } from '../game/footprint'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../game/placementReason'
 import { useLastPlaced } from '../hooks/useLastPlaced'
+import { useShownRoll } from '../hooks/useShownRoll'
 import { usePlacementInput } from '../hooks/usePlacementInput'
 import type { GameError, GameState } from '../hooks/useGameSocket'
 import { KeyBadge } from '../components/KeyBadge'
@@ -92,12 +93,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // After the last round, the series card sits on top of the round card until the next game.
   const [seriesResultOpen, setSeriesResultOpen] = useState(initialSeriesResultOpen)
   // A new round is a fresh game, so its result starts out shown.
-  useEffect(() => {
-    if (turnState !== 'gameOver') {
-      setResultHidden(false)
-      setSeriesResultOpen(false)
-    }
-  }, [turnState])
+  if (turnState !== 'gameOver' && (resultHidden || seriesResultOpen)) {
+    setResultHidden(false)
+    setSeriesResultOpen(false)
+  }
   const openSeriesResult = () => setSeriesResultOpen(true)
   const nextRound = () => sendAction({ type: 'continueSeries' })
   const grantedRef = useRef<Record<'1' | '2', boolean> | null>(null)
@@ -153,9 +152,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   const lastPlaced = useLastPlaced(state?.game)
 
-  // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
-  const lastRollRef = useRef<{ values: [number, number]; owner: '1' | '2' } | null>(null)
   const roll = state?.game.turn.lastRoll ?? null
+  // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
+  const shownRoll = useShownRoll(roll, String(state?.game.turn.currentPlayerId ?? 1) as '1' | '2', turnState === 'gameOver')
   const wildcard = state?.game.houseRules.wildcard
   const pickIndex = humanTurnState === 'choosingWildcard' && roll ? (wildcard?.editableIndex ?? null) : null
 
@@ -178,10 +177,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
       {roll[1 - pickIndex]}
     </span>
   )
-  // Nobody is to move once the game is over, so the last roll goes, and the next round does not open on it.
-  if (turnState === 'gameOver') lastRollRef.current = null
-  else if (roll && state) lastRollRef.current = { values: roll, owner: String(state.game.turn.currentPlayerId) as '1' | '2' }
-  const shownRoll = lastRollRef.current
   const rollLabel = shownRoll && state ? `${state.game.players[shownRoll.owner].name}${roll ? ' rolled' : '’s last roll'} ${shownRoll.values.join(' and ')}` : ''
 
   // In board view the result bar takes the header's place, so the player cells are not rendered.
