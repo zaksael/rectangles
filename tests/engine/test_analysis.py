@@ -56,7 +56,7 @@ def test_partial_axes_count_prize_cells_under_a_candidate():
 
 def test_ranking_value_weights_prize_points_and_adds_denial_at_one():
     game = Game(board_size=6, prize_enabled=True)
-    axes = AxisBreakdown(prize_cells=2, pitfall_cells=1, denial_cells=7, enclosure_delta=0)
+    axes = AxisBreakdown(prize_cells=2, pitfall_cells=1, steal_cells=0, denial_cells=7, enclosure_delta=0)
 
     expected = 2 * game.points_for(CellKind.PRIZE) - game.points_for(CellKind.PITFALL) + 7
     assert ranking_value(game, axes) == 2 * 10 - 10 + 7 == expected
@@ -94,6 +94,15 @@ def test_turn_analyses_flags_a_hit_pitfall_the_other_orientation_avoids():
     _first_move(game, (1, 4), ((0, 0), 4, 1))
 
     assert turn_analyses(game) == {1: TurnAnalysis(AnalysisAxis.PITFALL, -10, 0, Candidate((0, 0), 1, 4))}
+
+
+def test_turn_analyses_flags_a_missed_steal_capture_at_double_weight():
+    # Same geometry as the missed prize: a Steal swings both totals, so it outranks a 10-point prize (gap 2 x 10); the reported points are the mover's own +10.
+    game = Game(board_size=6, steal_enabled=True)
+    game.board.special_cells = _special(CellKind.STEAL, (0, 3))
+    _first_move(game, (1, 4), ((0, 0), 1, 4))
+
+    assert turn_analyses(game) == {1: TurnAnalysis(AnalysisAxis.STEAL, 0, 10, Candidate((0, 0), 4, 1))}
 
 
 def test_turn_analyses_names_the_axis_with_the_larger_weighted_gap():

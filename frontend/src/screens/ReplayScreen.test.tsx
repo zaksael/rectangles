@@ -564,6 +564,12 @@ test('a flagged turn gets a note naming the points and the axis, with a real min
   expect(screen.getByText('Scored −10 this turn (best possible: 10, Prize)')).toBeTruthy()
 })
 
+test('a steal turn names the Steal axis in points', () => {
+  renderAnalysed(ready(flagged({ axis: 'steal', chosen: 0, best: 10 })), 1)
+
+  expect(screen.getByText('Scored 0 this turn (best possible: 10, Steal)')).toBeTruthy()
+})
+
 test('a denial turn reads in cells, singular for one', () => {
   renderAnalysed(ready(flagged({ axis: 'denial', chosen: 1, best: 5 })), 1)
 

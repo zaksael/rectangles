@@ -19,7 +19,7 @@ export type GameAction =
   | { type: 'chooseWildcard'; value: number }
   | { type: 'place'; topLeft: [number, number]; width: number; height: number }
 
-export type AnalysisAxis = 'prize' | 'pitfall' | 'denial' | 'enclosure'
+export type AnalysisAxis = 'prize' | 'pitfall' | 'steal' | 'denial' | 'enclosure'
 
 // One flagged move: another legal placement would have ranked higher. chosen/best are cells denied for 'denial', points otherwise.
 export interface AnalysisTurn {

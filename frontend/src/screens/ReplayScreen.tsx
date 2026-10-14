@@ -72,7 +72,7 @@ function Caption({ game, history, step }: { game: GameWireState; history: Histor
   )
 }
 
-const AXIS_LABELS: Record<AnalysisTurn['axis'], string> = { prize: 'Prize', pitfall: 'Pitfall', denial: 'Denial', enclosure: 'Enclosure' }
+const AXIS_LABELS: Record<AnalysisTurn['axis'], string> = { prize: 'Prize', pitfall: 'Pitfall', steal: 'Steal', denial: 'Denial', enclosure: 'Enclosure' }
 
 // Denial is counted in cells; the other axes are real points, named by the rule that drove the gap.
 function analysisText({ axis, chosen, best }: AnalysisTurn): string {

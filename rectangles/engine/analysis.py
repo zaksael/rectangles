@@ -21,6 +21,7 @@ class Candidate:
 class AxisBreakdown:
     prize_cells: int
     pitfall_cells: int
+    steal_cells: int
     denial_cells: int
     enclosure_delta: int
 
@@ -52,21 +53,24 @@ def partial_axes(
     pitfall_cells = (
         bot.cell_overlap_score(cell, board.cells_of_kind(CellKind.PITFALL)) if game.pitfall_enabled else 0
     )
+    steal_cells = bot.cell_overlap_score(cell, board.cells_of_kind(CellKind.STEAL)) if game.steal_enabled else 0
     denial_cells = reachable_before - board.reachable_count_if(
         player.id, opponent, candidate.top_left, candidate.width, candidate.height
     )
-    return AxisBreakdown(prize_cells, pitfall_cells, denial_cells, 0)
+    return AxisBreakdown(prize_cells, pitfall_cells, steal_cells, denial_cells, 0)
 
 
 def ranking_value(game: Game, axes: AxisBreakdown) -> int:
     """One turn-quality value on the weights Game.total_score() uses, so candidates rank on one scale.
-    Denial carries weight 1 (no total_score() equivalent): a ranking value only, never shown as score."""
-    return _points(game, axes) + axes.denial_cells
+    A Steal counts twice (it swings both totals, as in bot.special_cell_score). Denial carries weight 1
+    (no total_score() equivalent): a ranking value only, never shown as score."""
+    return _points(game, axes) + axes.steal_cells * game.points_for(CellKind.STEAL) + axes.denial_cells
 
 
 class AnalysisAxis(Enum):
     PRIZE = "prize"
     PITFALL = "pitfall"
+    STEAL = "steal"
     DENIAL = "denial"
     ENCLOSURE = "enclosure"
 
@@ -135,6 +139,7 @@ def _points(game: Game, axes: AxisBreakdown) -> int:
     return (
         axes.prize_cells * game.points_for(CellKind.PRIZE)
         - axes.pitfall_cells * game.points_for(CellKind.PITFALL)
+        + axes.steal_cells * game.points_for(CellKind.STEAL)
         - axes.enclosure_delta * constants.SELF_ENCLOSED_PENALTY_PER_CELL
     )
 
@@ -142,7 +147,7 @@ def _points(game: Game, axes: AxisBreakdown) -> int:
 def _analysis(
     game: Game, chosen: AxisBreakdown, best: AxisBreakdown, better: Candidate
 ) -> TurnAnalysis:
-    # The largest weighted gap names the axis (ties: prize > pitfall > denial > enclosure), and the
+    # The largest weighted gap names the axis (ties: prize > pitfall > steal > denial > enclosure), and the
     # numbers shown are the right kind for it: cells denied for denial, real points otherwise. The
     # ranking value itself blends the two and is never reported.
     gaps = (
@@ -155,6 +160,12 @@ def _analysis(
             if game.pitfall_enabled
             else 0,
             AnalysisAxis.PITFALL,
+        ),
+        (
+            (best.steal_cells - chosen.steal_cells) * 2 * game.points_for(CellKind.STEAL)
+            if game.steal_enabled
+            else 0,
+            AnalysisAxis.STEAL,
         ),
         (best.denial_cells - chosen.denial_cells, AnalysisAxis.DENIAL),
         (
