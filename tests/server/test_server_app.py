@@ -16,11 +16,26 @@ from rectangles.server.app import (
     _apply_action,
     _bot_turn_step,
     _broadcast_and_run_bots,
+    _game_from_connect_params,
     app,
     mount_frontend,
     ws_endpoint,
 )
+from rectangles.server import app as server_app
 from rectangles.server.schema import ErrorReason
+
+
+@pytest.fixture(autouse=True)
+def _player_one_starts(monkeypatch):
+    """Pin the coin flip for the wire tests, which script a Player 1 opening."""
+    real = server_app._game_from_connect_params
+
+    def pinned(query_params):
+        game = real(query_params)
+        game.current_player_id = PLAYER_1
+        return game
+
+    monkeypatch.setattr(server_app, "_game_from_connect_params", pinned)
 
 
 class _FakeWebSocket:
@@ -860,3 +875,10 @@ def test_bot_turn_step_declines_a_finished_game():
     game.state = TurnState.GAME_OVER
 
     assert _bot_turn_step(game, "Basic") is False
+
+
+def test_a_single_game_picks_its_starter_at_random():
+    # 64 coin flips all landing on one side is a 1-in-2**63 miss.
+    starters = {_game_from_connect_params({}).current_player_id for _ in range(64)}
+
+    assert starters == {PLAYER_1, PLAYER_2}

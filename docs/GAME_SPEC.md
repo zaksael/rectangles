@@ -60,7 +60,8 @@ On the active player's turn:
    that player's skip streak (§7).
 5. Play passes to the other player.
 
-Turns always alternate between the two players (Player 1 moves first).
+Turns always alternate between the two players. In a single game, who moves
+first is decided by a coin flip (series alternate it, §11).
 
 ## 4. Placement legality
 

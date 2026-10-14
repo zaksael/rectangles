@@ -14,6 +14,7 @@ from rectangles.engine.constants import (
     BOARD_SIZE,
     BOARD_SIZE_PRESETS,
     BOT_DIFFICULTY_PRESETS,
+    PLAYER_1,
     PLAYER_2,
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
@@ -146,7 +147,10 @@ def _rules_kwargs_from_connect_params(query_params) -> dict:
 
 
 def _game_from_connect_params(query_params) -> Game:
-    return Game(**_rules_kwargs_from_connect_params(query_params))
+    game = Game(**_rules_kwargs_from_connect_params(query_params))
+    # Moving first is an advantage: a series alternates the starter, a single game flips a coin.
+    game.current_player_id = game.rng.choice((PLAYER_1, PLAYER_2))
+    return game
 
 
 def _series_from_connect_params(query_params) -> Series | None:

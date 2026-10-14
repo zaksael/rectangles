@@ -210,6 +210,7 @@ pass-and-play, or **Vs Bot** (Greedy is preselected) with one of the three diffi
 bot rolls, places a legal piece (or continues past a forced skip), and ends
 its turn on its own, with a short pause between actions. The bot always plays
 Player 2 (you are Player 1), and your input is ignored while it takes its turn.
+In a single game a coin flip decides who moves first, so the bot opens half the time.
 
 The three difficulties:
 - **Basic** — picks uniformly at random among its legal placements.
