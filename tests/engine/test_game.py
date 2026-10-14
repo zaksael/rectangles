@@ -1075,11 +1075,20 @@ def test_can_reroll_true_for_a_granted_player_even_with_reroll_disabled():
 
 
 def test_effective_reroll_limit_adds_the_nudge_charge_once_granted():
-    game = Game(board_size=6, comeback_nudge_enabled=True)
+    game = Game(board_size=6, reroll_enabled=True, comeback_nudge_enabled=True)
     p1 = game.players[PLAYER_1]
     assert game.effective_reroll_limit(p1) == REROLL_LIMIT
     p1.comeback_nudge_granted = True
     assert game.effective_reroll_limit(p1) == REROLL_LIMIT + 1
+
+
+def test_effective_reroll_limit_is_one_charge_when_reroll_is_off_and_nudge_granted():
+    game = Game(board_size=6, comeback_nudge_enabled=True)
+    p1 = game.players[PLAYER_1]
+    p1.comeback_nudge_granted = True
+    assert game.effective_reroll_limit(p1) == 1
+    p1.rerolls_used = 1
+    assert game.can_reroll() is False
 
 
 def test_choose_wildcard_value_raises_when_not_choosing_wildcard():

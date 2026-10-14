@@ -374,19 +374,14 @@ class Game:
         return math.ceil(self.board_size**2 * COMEBACK_NUDGE_THRESHOLD_FRACTION)
 
     def effective_reroll_limit(self, player: Player) -> int:
+        limit = REROLL_LIMIT if self.reroll_enabled else 0
         if self.comeback_nudge_enabled and player.comeback_nudge_granted:
-            return REROLL_LIMIT + COMEBACK_NUDGE_EXTRA_REROLLS
-        return REROLL_LIMIT
+            limit += COMEBACK_NUDGE_EXTRA_REROLLS
+        return limit
 
     def can_reroll(self) -> bool:
         player = self.current_player
-        if self.reroll_enabled and player.rerolls_used < REROLL_LIMIT:
-            return True
-        return (
-            self.comeback_nudge_enabled
-            and player.comeback_nudge_granted
-            and player.rerolls_used < self.effective_reroll_limit(player)
-        )
+        return player.rerolls_used < self.effective_reroll_limit(player)
 
     def reroll(self) -> None:
         if self.state not in (
