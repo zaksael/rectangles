@@ -99,6 +99,30 @@ def test_choose_placement_blocking_prefers_denying_an_opponent_reachable_steal_c
     assert choose_placement(game, "Blocking") == ((4, 3), 1, 1)
 
 
+def test_choose_placement_blocking_avoids_a_pitfall_even_on_the_denying_cell():
+    # (2, 3) denies the opponent's frontier, but it is a Pitfall: a 1x1 elsewhere must win.
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1, 0]))
+    game.pitfall_enabled = True
+    game.board.special_cells = _special(CellKind.PITFALL, (2, 3))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.place(game.players[PLAYER_2], (2, 4), 1, 1)
+    game.roll_dice()
+
+    assert choose_placement(game, "Blocking")[0] != (2, 3)
+
+
+def test_choose_placement_blocking_takes_a_prize_over_denying_the_frontier():
+    # (2, 3) denies the opponent's frontier; the Prize at (1, 2) is worth more than that one cell.
+    game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
+    game.prize_enabled = True
+    game.board.special_cells = _special(CellKind.PRIZE, (1, 2))
+    game.board.place(game.players[PLAYER_1], (2, 2), 1, 1)
+    game.board.place(game.players[PLAYER_2], (2, 4), 1, 1)
+    game.roll_dice()
+
+    assert choose_placement(game, "Blocking") == ((1, 2), 1, 1)
+
+
 def test_blocking_score_fn_computes_frontier_once_per_call_not_per_candidate():
     # Regression test: board.frontier() is a full grid scan: computing it inside
     # the per-candidate scoring lambda (instead of once, hoisted, per choose_*

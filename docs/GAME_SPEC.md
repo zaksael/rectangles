@@ -289,7 +289,9 @@ levels may be offered:
   currently-available cells from its opponent (i.e. cells the opponent
   could otherwise have used for at least a 1×1 piece), with an extra bonus
   weight when one of those denied cells is a Steal cell the opponent could
-  otherwise have captured; ties are broken randomly.
+  otherwise have captured. It also scores special cells exactly as Greedy
+  does (Prize and Steal gained, Pitfall avoided), added to that denial
+  value; ties are broken randomly.
 
 Greedy and Blocking apply the same underlying strategy to Wildcard Roll
 (§6.6) and Reroll (§6.8), where enabled:

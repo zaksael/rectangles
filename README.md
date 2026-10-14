@@ -221,8 +221,9 @@ The three difficulties:
   frontier, same as Blocking.
 - **Blocking** — prefers a placement that covers cells in *your* frontier,
   denying you those spots, weighted extra heavily when one of those cells is
-  a Steal cell you could otherwise have captured; falls back to a random
-  pick among equally denying (or non-denying) candidates.
+  a Steal cell you could otherwise have captured. It also grabs Prize and
+  Steal cells and avoids Pitfall cells the way Greedy does, weighing them
+  against the denial; falls back to a random pick among equal candidates.
 
 Greedy and Blocking also play [Wildcard Roll](#house-rules) and
 [Reroll](#house-rules) with the same underlying strategy: on a wildcard roll they

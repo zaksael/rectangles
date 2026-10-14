@@ -60,7 +60,11 @@ def _blocking_score_fn(game: Game) -> Callable[[_Candidate], int]:
     steal_bonus = 2 * game.points_for(CellKind.STEAL)
 
     def score(c: _Candidate) -> int:
-        return blocking_score(c, opponent_frontier) + len(_candidate_cells(c) & opponent_reachable_steal) * steal_bonus
+        return (
+            blocking_score(c, opponent_frontier)
+            + len(_candidate_cells(c) & opponent_reachable_steal) * steal_bonus
+            + special_cell_score(c, game)
+        )
 
     return score
 
@@ -125,9 +129,8 @@ def choose_wildcard_value(game: Game, difficulty: str = "Basic") -> int:
 
 def _gainable_cells(game: Game, difficulty: str) -> set[tuple[int, int]]:
     """The cells whose capture would lift this difficulty's score above zero."""
-    if difficulty == "Blocking":
-        return game.board.frontier(_opponent(game))
-    return game.board.cells_of_kind(CellKind.PRIZE) | game.board.cells_of_kind(CellKind.STEAL)
+    gains = game.board.cells_of_kind(CellKind.PRIZE) | game.board.cells_of_kind(CellKind.STEAL)
+    return gains | game.board.frontier(_opponent(game)) if difficulty == "Blocking" else gains
 
 
 def _gain_in_reach(game: Game, difficulty: str) -> bool:
