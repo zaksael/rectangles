@@ -68,17 +68,11 @@ def test_ws_accepts_and_closes():
         "protocolVersion=1&wallsEnabled=1",
         "protocolVersion=1&obstaclesEnabled=1",
         "protocolVersion=1&prizeEnabled=1",
-        "protocolVersion=1&prizePoints=abc",
         "protocolVersion=1&pitfallEnabled=1",
-        "protocolVersion=1&pitfallPoints=abc",
         "protocolVersion=1&stealEnabled=1",
-        "protocolVersion=1&stealPoints=abc",
-        "protocolVersion=1&prizeEnabled=true&prizePoints=101",
-        "protocolVersion=1&pitfallEnabled=true&pitfallPoints=101",
-        "protocolVersion=1&stealEnabled=true&stealPoints=101",
-        "protocolVersion=1&prizePoints=25",
-        "protocolVersion=1&pitfallEnabled=false&pitfallPoints=25",
-        "protocolVersion=1&stealPoints=25",
+        "protocolVersion=1&prizeEnabled=true&prizePoints=25",
+        "protocolVersion=1&pitfallEnabled=true&pitfallPoints=25",
+        "protocolVersion=1&stealEnabled=true&stealPoints=25",
         "protocolVersion=1&selfEnclosedPenaltyEnabled=1",
         "protocolVersion=1&comebackNudgeEnabled=1",
         "",
@@ -107,12 +101,6 @@ def test_ws_rejects_a_cross_origin_page(origin):
     with pytest.raises(WebSocketDisconnect) as exc:
         _connect_with_origin(origin)
     assert exc.value.code == 1008
-
-
-def test_ws_accepts_points_at_the_upper_bound_of_an_enabled_rule():
-    client = TestClient(app)
-    with client.websocket_connect("/ws?protocolVersion=1&prizeEnabled=true&prizePoints=100") as ws:
-        assert ws.receive_json()["game"]["houseRules"]["prize"]["points"] == 100
 
 
 def test_ws_replies_malformed_message_and_stays_open():
@@ -210,15 +198,6 @@ def test_ws_connect_honors_prize_enabled_param():
         assert game["houseRules"]["prize"]["enabled"] is True
 
 
-def test_ws_connect_honors_prize_points_param():
-    client = TestClient(app)
-    with client.websocket_connect(
-        "/ws?protocolVersion=1&prizeEnabled=true&prizePoints=25"
-    ) as ws:
-        game = ws.receive_json()["game"]
-        assert game["houseRules"]["prize"]["points"] == 25
-
-
 def test_ws_connect_honors_pitfall_enabled_param():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1&pitfallEnabled=true") as ws:
@@ -226,29 +205,11 @@ def test_ws_connect_honors_pitfall_enabled_param():
         assert game["houseRules"]["pitfall"]["enabled"] is True
 
 
-def test_ws_connect_honors_pitfall_points_param():
-    client = TestClient(app)
-    with client.websocket_connect(
-        "/ws?protocolVersion=1&pitfallEnabled=true&pitfallPoints=25"
-    ) as ws:
-        game = ws.receive_json()["game"]
-        assert game["houseRules"]["pitfall"]["points"] == 25
-
-
 def test_ws_connect_honors_steal_enabled_param():
     client = TestClient(app)
     with client.websocket_connect("/ws?protocolVersion=1&stealEnabled=true") as ws:
         game = ws.receive_json()["game"]
         assert game["houseRules"]["steal"]["enabled"] is True
-
-
-def test_ws_connect_honors_steal_points_param():
-    client = TestClient(app)
-    with client.websocket_connect(
-        "/ws?protocolVersion=1&stealEnabled=true&stealPoints=25"
-    ) as ws:
-        game = ws.receive_json()["game"]
-        assert game["houseRules"]["steal"]["points"] == 25
 
 
 def test_ws_connect_honors_self_enclosed_penalty_enabled_param():
@@ -848,13 +809,6 @@ def test_apply_action_unknown_type_is_malformed():
     with pytest.raises(ActionError) as exc_info:
         _apply_action(Game(board_size=19), {"protocolVersion": 1, "type": "nope"})
     assert exc_info.value.reason == ErrorReason.MALFORMED_MESSAGE
-
-
-def test_ws_rejects_a_non_integer_points_value():
-    with pytest.raises(WebSocketDisconnect) as exc:
-        with TestClient(app).websocket_connect("/ws?protocolVersion=1&prizeEnabled=true&prizePoints=abc"):
-            pass
-    assert exc.value.code == 1008
 
 
 def test_bot_turn_step_picks_a_wildcard_value_when_not_rerolling():

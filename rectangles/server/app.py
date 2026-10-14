@@ -19,7 +19,6 @@ from rectangles.engine.constants import (
     SERIES_LENGTH_PRESETS,
     SKIP_LIMIT,
     SKIP_LIMIT_PRESETS,
-    CellKind,
 )
 from rectangles.engine import bot
 from rectangles.engine.analysis import turn_analyses
@@ -63,9 +62,6 @@ _BOOL_PARAM_NAMES = {
     "comebackNudgeEnabled",
 }
 
-_INT_PARAM_NAMES = {"prizePoints", "pitfallPoints", "stealPoints"}
-MAX_POINTS = 100
-
 app = FastAPI()
 
 
@@ -80,7 +76,7 @@ def mount_frontend(app: FastAPI, dist_dir: Path) -> None:
 def _connect_params_valid(query_params) -> bool:
     if "protocolVersion" not in query_params:
         return False
-    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | _BOOL_PARAM_NAMES | _INT_PARAM_NAMES:
+    if not set(query_params.keys()) <= _PRESET_PARAMS.keys() | _BOOL_PARAM_NAMES:
         return False
     for name, presets in _PRESET_PARAMS.items():
         value = query_params.get(name)
@@ -95,17 +91,6 @@ def _connect_params_valid(query_params) -> bool:
     for name in _BOOL_PARAM_NAMES:
         value = query_params.get(name)
         if value is not None and value not in ("true", "false"):
-            return False
-    for name in _INT_PARAM_NAMES:
-        value = query_params.get(name)
-        if value is None:
-            continue
-        if query_params.get(name.removesuffix("Points") + "Enabled") != "true":
-            return False
-        try:
-            if not 0 <= int(value) <= MAX_POINTS:
-                return False
-        except ValueError:
             return False
     return True
 
@@ -133,15 +118,9 @@ def _rules_kwargs_from_connect_params(query_params) -> dict:
     bool_kwargs = {
         _bool_param_to_kwarg(name): query_params.get(name) == "true" for name in _BOOL_PARAM_NAMES
     }
-    special_cell_points = {
-        kind.value: int(query_params[f"{kind.value}Points"])
-        for kind in CellKind
-        if f"{kind.value}Points" in query_params
-    }
     return {
         "board_size": int(query_params.get("boardSize", BOARD_SIZE)),
         "skip_limit": int(query_params.get("skipLimit", SKIP_LIMIT)),
-        "special_cell_points": special_cell_points,
         **bool_kwargs,
     }
 
