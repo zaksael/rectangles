@@ -137,32 +137,13 @@ SERIES_LENGTH_PRESETS = (3, 5)
 # needed anywhere.
 TOURNAMENT_SIZE_PRESETS = (4, 8)
 
-# Chosen up front on the Game Mode select screen, before the settings screen
-# (which then only shows what the chosen mode needs).
-GAME_MODE_PRESETS = ("Single", "Series", "Tournament")
-
 # Bot opponent difficulty: Basic picks a random legal placement, Greedy
 # prefers capturing prizes, Blocking prefers denying the opponent's frontier.
 BOT_DIFFICULTY_PRESETS = ("Basic", "Greedy", "Blocking")
 
-# Replay-screen autoplay step interval, selectable via a speed picker -
-# brackets AUTO_ACTION_DELAY_MS (ui/app.py's bot-turn pacing delay, 500ms) as
-# a reference point for what "one step" already feels like in this app.
-REPLAY_SPEED_PRESETS = ("Slow", "Normal", "Fast")
-REPLAY_SPEED_MS = {"Slow": 1200, "Normal": 600, "Fast": 250}
-
 PLAYER_1 = 1
 PLAYER_2 = 2
 
-# RGB colors, keyed by player id.
-PLAYER_COLORS = {
-    PLAYER_1: (70, 130, 220),
-    PLAYER_2: (220, 120, 60),
-}
-PLAYER_BORDER_COLORS = {
-    PLAYER_1: (35, 75, 140),
-    PLAYER_2: (150, 70, 25),
-}
 PLAYER_NAMES = {
     PLAYER_1: "Player 1",
     PLAYER_2: "Player 2",
