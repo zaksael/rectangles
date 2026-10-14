@@ -230,12 +230,11 @@ pick whichever value scores best on their own metric (a reachable
 Prize/Steal/Pitfall for Greedy, a deniable frontier cell for Blocking); if
 every value ties at zero, Blocking picks randomly among them, while Greedy
 instead prefers whichever value gives the larger piece. With Reroll on,
-Blocking spends a charge to discard a roll that wouldn't deny you anything
-right now. Greedy does the same, but only when it can't do better than a
-score of zero right now — with Prize, Steal, and Pitfall all off (or none of
-them reachable at all), no roll could ever score anyway, so Greedy accepts
-whatever it gets instead of burning charges for nothing. Basic stays fully
-random for both and never rerolls.
+they spend a charge to discard a roll that would cost them points (a forced
+Pitfall), or that scores nothing while a Prize or Steal (Greedy) or a cell of
+your frontier (Blocking) is still within a roll's reach; with nothing in
+reach, as on the opening turns, they accept the roll and keep the charge.
+Basic stays fully random for both and never rerolls.
 
 ## Series mode
 

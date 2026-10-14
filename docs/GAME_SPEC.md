@@ -300,11 +300,14 @@ Greedy and Blocking apply the same underlying strategy to Wildcard Roll
   every turn none of Prize/Steal/Pitfall are in play — Blocking picks among
   the tied values at random, while Greedy instead prefers the value
   yielding the largest piece.
-- With Reroll on, Blocking discards a roll whenever no candidate would
-  deny its opponent anything right now. Greedy does the same only when it
-  can't score better than zero this turn; with none of Prize/Steal/Pitfall
-  in play, nothing could ever score above zero anyway, so Greedy never
-  rerolls.
+- With Reroll on, both discard a roll that would cost them points (a forced
+  Pitfall) and, at a score of zero, a roll when some roll could still score:
+  a Prize or Steal cell within reach of a piece for Greedy, a cell of the
+  opponent's frontier for Blocking. "Within reach" means no more than five
+  cells from the player's territory (or start corner before the first move),
+  since a piece is at most six wide. Otherwise — on the opening turns, or
+  with nothing left to gain — the roll is accepted and the charge saved.
+  A roll that would skip the turn is always discarded when a charge is left.
 
 Basic never rerolls and always picks a wildcard value uniformly at
 random, regardless of house rules.

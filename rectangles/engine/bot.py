@@ -123,6 +123,25 @@ def choose_wildcard_value(game: Game, difficulty: str = "Basic") -> int:
     return _break_tie(game, scored)
 
 
+def _gainable_cells(game: Game, difficulty: str) -> set[tuple[int, int]]:
+    """The cells whose capture would lift this difficulty's score above zero."""
+    if difficulty == "Blocking":
+        return game.board.frontier(_opponent(game))
+    return game.board.cells_of_kind(CellKind.PRIZE) | game.board.cells_of_kind(CellKind.STEAL)
+
+
+def _gain_in_reach(game: Game, difficulty: str) -> bool:
+    """Whether some roll could still cover a gainable cell: a piece is at most DICE_MAX wide and must
+    start touching the mover's territory (or start corner), so only cells within DICE_MAX - 1 of an
+    anchor cell count. Over-counts (ignores legality) but never misses a reachable cell."""
+    player = game.current_player
+    anchors = game.board.frontier(player) or {player.start_corner}
+    reach = DICE_MAX - 1
+    return any(
+        max(abs(tr - ar), abs(tc - ac)) <= reach for tr, tc in _gainable_cells(game, difficulty) for ar, ac in anchors
+    )
+
+
 def should_reroll(game: Game, difficulty: str) -> bool:
     if difficulty not in _SCORE_FNS or not game.can_reroll():
         return False
@@ -130,20 +149,15 @@ def should_reroll(game: Game, difficulty: str) -> bool:
     if game.state == TurnState.SKIPPED:
         return True
 
-    if difficulty == "Greedy" and not (
-        game.board.cells_of_kind(CellKind.PRIZE)
-        or game.board.cells_of_kind(CellKind.STEAL)
-        or game.board.cells_of_kind(CellKind.PITFALL)
-    ):
-        # special_cell_score is structurally 0 all game without any special cells on the board - a reroll can never score better.
-        return False
-
     score_fn = _SCORE_FNS[difficulty](game)
     if game.state == TurnState.CHOOSING_PLACEMENT:
-        return _best_score(_candidates_from_dims(game.legal_cache), score_fn) <= 0
-    if game.state == TurnState.CHOOSING_WILDCARD:
-        return max(
+        best = _best_score(_candidates_from_dims(game.legal_cache), score_fn)
+    elif game.state == TurnState.CHOOSING_WILDCARD:
+        best = max(
             _best_score(_candidates_from_dims(game.legal_placements_for_value(v)), score_fn)
             for v in _legal_wildcard_values(game)
-        ) <= 0
-    return False
+        )
+    else:
+        return False
+    # A forced loss (a Pitfall) is worth a charge; a zero only when some roll could still score.
+    return best < 0 or (best == 0 and _gain_in_reach(game, difficulty))

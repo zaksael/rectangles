@@ -166,6 +166,7 @@ def test_should_reroll_at_zero_score_blocking_true_greedy_false_without_prize():
     # structurally 0 without Prize on, so 0 isn't a signal for it -
     # see the guard test below for the prizes-exist-but-unreachable case.
     game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.board.place(game.players[PLAYER_2], (5, 5), 1, 1)
     game.board.place(game.players[PLAYER_1], (2, 3), 1, 1)
     game.roll_dice()
     assert game.state.name == "CHOOSING_PLACEMENT"
@@ -249,9 +250,38 @@ def test_should_reroll_true_when_skipped_and_reroll_available():
 
 
 def test_should_reroll_true_when_every_wildcard_value_scores_zero():
-    # Blocking, not Greedy - see the guard tests above.
+    # The prize at (5, 5) is within a roll's reach of the corner, but no 5xN piece covers it.
     game = Game(board_size=6, wildcard_enabled=True, reroll_enabled=True, rng=ScriptedRandom([5, 5, 0]))
+    game.prize_enabled = True
+    game.board.special_cells = _special(CellKind.PRIZE, (5, 5))
     game.roll_dice()
     assert game.state.name == "CHOOSING_WILDCARD"
 
-    assert should_reroll(game, "Blocking") is True
+    assert should_reroll(game, "Greedy") is True
+
+
+def test_should_reroll_false_for_blocking_when_the_opponent_frontier_is_out_of_reach():
+    # Opening turn: the opponent hasn't moved, so there is nothing to deny; a reroll can't help.
+    game = Game(board_size=6, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.roll_dice()
+
+    assert should_reroll(game, "Blocking") is False
+
+
+def test_should_reroll_false_for_greedy_when_every_prize_is_beyond_a_roll_of_the_start_corner():
+    # A piece is at most 6 wide, so from the (0, 0) corner no roll reaches a prize at (9, 9).
+    game = Game(board_size=10, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.prize_enabled = True
+    game.board.special_cells = _special(CellKind.PRIZE, (9, 9))
+    game.roll_dice()
+
+    assert should_reroll(game, "Greedy") is False
+
+
+def test_should_reroll_true_for_greedy_when_a_prize_is_within_a_roll_of_the_start_corner():
+    game = Game(board_size=10, reroll_enabled=True, rng=ScriptedRandom([1, 1, 0]))
+    game.prize_enabled = True
+    game.board.special_cells = _special(CellKind.PRIZE, (5, 5))
+    game.roll_dice()
+
+    assert should_reroll(game, "Greedy") is True

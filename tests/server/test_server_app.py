@@ -7,8 +7,9 @@ from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from rectangles.engine.analysis import AnalysisAxis, Candidate, TurnAnalysis
-from rectangles.engine.constants import PLAYER_1, PLAYER_2
+from rectangles.engine.constants import PLAYER_1, PLAYER_2, CellKind
 from rectangles.engine.game import Game, TurnState
+from rectangles.engine.models import Cell, SpecialCell
 from rectangles.engine.series import Series
 from rectangles.server.app import (
     ActionError,
@@ -531,9 +532,10 @@ def test_bot_turn_step_rerolls_from_skipped_instead_of_confirming():
 
 
 def test_bot_turn_step_rerolls_from_choosing_placement_instead_of_placing():
-    # PLAYER_1 hasn't moved, so its frontier is empty and Blocking's
-    # blocking_score is 0 for every candidate - a guaranteed "bad roll".
+    # PLAYER_1's frontier sits within a roll of PLAYER_2's corner, but (5, 5) denies none of it:
+    # Blocking's blocking_score is 0 for every candidate - a "bad roll" with something to gain.
     game = Game(board_size=19, reroll_enabled=True)
+    game.board.place(game.players[PLAYER_1], (14, 18), 1, 1)
     game.current_player_id = PLAYER_2
     game.state = TurnState.CHOOSING_PLACEMENT
     game.last_roll = (1, 1)
@@ -547,16 +549,21 @@ def test_bot_turn_step_rerolls_from_choosing_placement_instead_of_placing():
 
 
 def test_bot_turn_step_rerolls_from_choosing_wildcard_instead_of_picking():
-    # PLAYER_1 hasn't moved, so Blocking's blocking_score is 0 for every
-    # legal wildcard value - a guaranteed "bad roll".
+    # Every legal wildcard value covers a Pitfall (both cells beside PLAYER_2's piece), so Greedy's
+    # best score is negative - a guaranteed "bad roll".
     game = Game(board_size=19, reroll_enabled=True)
+    game.pitfall_enabled = True
+    game.board.special_cells = frozenset(
+        SpecialCell(CellKind.PITFALL, Cell(*cell), pair_id=i) for i, cell in enumerate([(17, 18), (18, 17)])
+    )
+    game.board.place(game.players[PLAYER_2], (18, 18), 1, 1)
     game.current_player_id = PLAYER_2
     game.state = TurnState.CHOOSING_WILDCARD
     game.last_roll = (6, 6)
     game.wildcard_original_roll = (6, 6)
     game.wildcard_index = 0
 
-    result = _bot_turn_step(game, "Blocking")
+    result = _bot_turn_step(game, "Greedy")
 
     assert result is True
     assert game.players[PLAYER_2].rerolls_used == 1
