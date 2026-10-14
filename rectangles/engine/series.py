@@ -57,9 +57,6 @@ class Series:
         self.scores[PLAYER_1] += result.total[PLAYER_1]
         self.scores[PLAYER_2] += result.total[PLAYER_2]
 
-    def total_prize_captured(self, player_id: int) -> int:
-        return sum(r.prize_captured[player_id] for r in self.rounds)
-
     def is_complete(self) -> bool:
         return self.games_played >= self.length
 

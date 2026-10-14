@@ -61,16 +61,6 @@ def test_record_game_stores_pitfall_and_steal_captures_per_round():
     assert result.steal_captured == {PLAYER_1: 0, PLAYER_2: 2}
 
 
-def test_total_prize_captured_sums_across_rounds():
-    series = Series(length=3, board_size=6, skip_limit=2, prize_enabled=True, special_cell_points={"prize": 10})
-
-    series.record_game(_finished_game(8, 2, 4, 0, prize_bonus_points=10))
-    series.record_game(_finished_game(3, 0, 2, 1, prize_bonus_points=10))
-
-    assert series.total_prize_captured(PLAYER_1) == 2
-    assert series.total_prize_captured(PLAYER_2) == 1
-
-
 def test_series_not_complete_until_all_rounds_played_regardless_of_score_gap():
     series = Series(length=3, board_size=6, skip_limit=2)
 
