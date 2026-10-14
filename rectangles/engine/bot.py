@@ -55,16 +55,9 @@ def _blocking_score_fn(game: Game) -> Callable[[_Candidate], int]:
     # Computed once here, not inside the returned lambda - board.frontier() is
     # a full grid scan, and the lambda gets called once per candidate.
     opponent_frontier = game.board.frontier(_opponent(game))
-    # Denying a reachable Steal cell counts double too, same weighting special_cell_score gives capturing one.
-    opponent_reachable_steal = game.board.cells_of_kind(CellKind.STEAL) & opponent_frontier
-    steal_bonus = 2 * game.points_for(CellKind.STEAL)
 
     def score(c: _Candidate) -> int:
-        return (
-            blocking_score(c, opponent_frontier)
-            + len(_candidate_cells(c) & opponent_reachable_steal) * steal_bonus
-            + special_cell_score(c, game)
-        )
+        return blocking_score(c, opponent_frontier) + special_cell_score(c, game)
 
     return score
 

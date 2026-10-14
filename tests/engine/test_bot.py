@@ -86,7 +86,7 @@ def test_choose_placement_blocking_prefers_denying_opponent_frontier():
     assert choose_placement(game, "Blocking") == ((2, 3), 1, 1)
 
 
-def test_choose_placement_blocking_prefers_denying_an_opponent_reachable_steal_cell():
+def test_choose_placement_blocking_captures_a_steal_cell_in_the_opponent_frontier():
     game = Game(board_size=6, rng=ScriptedRandom([1, 1]))
     game.steal_enabled = True
     game.board.special_cells = _special(CellKind.STEAL, (4, 3))
