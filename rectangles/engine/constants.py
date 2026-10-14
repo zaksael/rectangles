@@ -107,7 +107,7 @@ class CellKind(Enum):
 
 class CellEffect(NamedTuple):
     capturer_sign: int  # applied to the capturing player's own count
-    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Prize/Pitfall; nonzero once Steal lands)
+    opponent_sign: int  # applied to the OTHER player's count of this kind (0 for Prize/Pitfall, nonzero for Steal)
     points: int  # magnitude shared by both signs on one kind; overridable per-game via Game(special_cell_points=...)
 
 

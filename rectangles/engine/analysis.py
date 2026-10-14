@@ -45,7 +45,7 @@ def candidate_pool(record: TurnRecord, board: Board, player: Player) -> list[Can
 def partial_axes(
     game: Game, board: Board, player: Player, opponent: Player, candidate: Candidate, reachable_before: int
 ) -> AxisBreakdown:
-    """The cheap axes for one candidate: prize and pitfall are exact cell-overlap counts; denial is a
+    """The cheap axes for one candidate: prize, pitfall and steal are exact cell-overlap counts; denial is a
     reachable-area cutoff with no cheap bound, so it is always paid. Enclosure is left at 0 (it needs
     a flood-fill, which the caller can skip for candidates that cannot win)."""
     cell = (candidate.top_left, candidate.width, candidate.height)

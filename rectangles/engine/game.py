@@ -176,7 +176,7 @@ class Game:
         count: int,
         occupied: set[tuple[int, int]],
     ) -> frozenset[tuple[int, int]]:
-        """Shared by Prize/Obstacles: `count` mirrored single-cell
+        """Shared by Prize/Obstacles/Pitfall/Steal: `count` mirrored single-cell
         pairs, enumerate-then-pick from candidates outside `occupied`, the
         start-corner exclusion zone, MIN_SPECIAL_CELL_DISTANCE of any pair
         already placed *by this call* (so a feature's own pairs spread out -
