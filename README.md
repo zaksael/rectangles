@@ -264,7 +264,6 @@ rectangles/
 │   ├── constants.py      # tunable game/UI values (board sizes, limits, presets)
 │   ├── game.py           # turn state machine, scoring, game-over rules
 │   ├── models.py         # Rectangle, Player, TurnRecord
-│   ├── persistence.py    # save/load a game, series or tournament to a file
 │   ├── series.py         # N-round match series (cumulative score, next-round setup)
 │   └── tournament.py     # single-elimination bracket (participants, matches, tiebreaks)
 └── server/               # FastAPI/WebSocket server for online play
@@ -284,8 +283,8 @@ docs/GAME_SPEC.md         # the full ruleset, independent of this code
 pyproject.toml            # Python dependencies and settings (managed with uv)
 ```
 
-The engine also implements tournaments and save/resume (see sections 12 and 13
-of the [spec](docs/GAME_SPEC.md)); the web client doesn't offer them.
+The engine also implements tournaments (see section 12 of the
+[spec](docs/GAME_SPEC.md)); the web client doesn't offer them.
 
 The rules engine (`rectangles/engine/`) has no UI dependency, so it's fully
 unit-testable headlessly — see `tests/`.

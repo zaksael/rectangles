@@ -20,8 +20,7 @@ or engine. For how to install, run, and play this specific implementation
 - [10. Bot opponent difficulty](#10-bot-opponent-difficulty)
 - [11. Series play](#11-series-play)
 - [12. Tournament play](#12-tournament-play)
-- [13. Saving and resuming](#13-saving-and-resuming)
-- [14. Reference: typical match settings](#14-reference-typical-match-settings)
+- [13. Reference: typical match settings](#13-reference-typical-match-settings)
 
 ## 1. Overview
 
@@ -339,14 +338,7 @@ which opening pairing) is randomized once per tournament. The bracket
 continues, round by round, until one participant has won every pairing they
 were placed in — the tournament champion.
 
-## 13. Saving and resuming
-
-A match in progress (and, if one is underway, its enclosing series) may be
-saved and resumed later exactly where it left off, with no loss of state.
-Resuming a save made mid-tournament restores only the match currently in
-progress, not the rest of the bracket.
-
-## 14. Reference: typical match settings
+## 13. Reference: typical match settings
 
 | Setting | Typical choices | Default (rules engine) |
 |---|---|---|

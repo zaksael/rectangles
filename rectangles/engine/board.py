@@ -26,11 +26,9 @@ class Board:
         return frozenset(sc.location for sc in self.special_cells if sc.kind is kind)
 
     def set_obstacle_cells(self, cells: frozenset[tuple[int, int]]) -> None:
-        # Unlike prize_cells/wall_edges (pure metadata a caller can safely
-        # overwrite as a bare attribute), obstacle cells are baked into
-        # _grid at construction time - persistence.py's load path needs
-        # this to swap a freshly-reset Game's (wrong) rolled obstacles for
-        # the saved ones without leaving the old sentinel cells stuck.
+        # Unlike special_cells/wall_edges (metadata a caller can overwrite as a bare
+        # attribute), obstacle cells are baked into _grid at construction time, so
+        # swapping them must clear the old sentinel cells too.
         for r, c in self.obstacle_cells:
             self._grid[r][c] = None
         self.obstacle_cells = cells
