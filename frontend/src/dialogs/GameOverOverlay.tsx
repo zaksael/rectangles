@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../game/gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
 import { formatSigned, key, nameOf, reasonText } from '../game/resultText'
@@ -223,13 +223,14 @@ export function GameOverBar({ game, series = null, seriesResult = false, onViewR
         }
   const { reason } = outcome
   // The bar is not a dialog, so it listens on the window and stands down while the Menu (or any dialog) is open.
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (!document.querySelector('dialog[open]')) handleResultKey(event, armedAt.current, onViewResult, advance.onAdvance)
+  })
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!document.querySelector('dialog[open]')) handleResultKey(event, armedAt.current, onViewResult, advance.onAdvance)
-    }
+    const onKeyDown = (event: KeyboardEvent) => handleKeyDown(event)
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [armedAt, onViewResult, advance.onAdvance])
+  }, [])
   return (
     <div className="rail-turn" role="region" aria-label={outcome.label}>
       <div className="rail-instr">

@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, ScoreParts } from '../game/gameTypes'
 import { makeGame, reach } from '../dev/fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
@@ -53,6 +53,17 @@ test('Next places the first move, and only that piece carries the last-piece cue
   expect(pieces(container)).toHaveLength(1)
   expect(container.querySelectorAll('.piece-outline.last')).toHaveLength(1)
   expect(screen.getByRole('button', { name: 'First' })).toBeEnabled()
+})
+
+test('the key listeners are bound once, not again on every step', () => {
+  const add = vi.spyOn(window, 'addEventListener')
+  onTestFinished(() => add.mockRestore())
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+  expect(add.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(1)
+  expect(add.mock.calls.filter(([type]) => type === 'keyup')).toHaveLength(1)
 })
 
 test('Last shows every piece and ends the stepping; First and Prev walk back', () => {

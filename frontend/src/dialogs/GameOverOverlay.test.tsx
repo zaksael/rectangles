@@ -220,6 +220,30 @@ function renderBar() {
   return handlers
 }
 
+test('the result bar binds its window key listener once, however often it re-renders', () => {
+  const add = vi.spyOn(window, 'addEventListener')
+  onTestFinished(() => add.mockRestore())
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const { rerender } = render(<GameOverBar game={game} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
+  rerender(<GameOverBar game={game} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
+
+  expect(add.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(1)
+})
+
+test('after a re-render the result bar still calls the latest handlers', () => {
+  useGuardClock()
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const first = { onViewResult: vi.fn(), onNewGame: vi.fn() }
+  const latest = { onViewResult: vi.fn(), onNewGame: vi.fn() }
+  const { rerender } = render(<GameOverBar game={game} {...first} />)
+  rerender(<GameOverBar game={game} {...latest} />)
+
+  fireEvent.keyDown(window, { key: 'v' })
+
+  expect(latest.onViewResult).toHaveBeenCalledTimes(1)
+  expect(first.onViewResult).not.toHaveBeenCalled()
+})
+
 test('on the result bar, v shows the result and n starts a new game', () => {
   useGuardClock()
   const handlers = renderBar()

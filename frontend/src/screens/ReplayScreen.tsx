@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { Board } from '../components/Board'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts } from '../game/gameTypes'
 import { noBreak } from '../game/noBreak'
@@ -224,31 +224,34 @@ export function ReplayScreen({ game, onBack, analysis = null, showBetterOption =
 
   // Keys work from anywhere on the screen (the chart's own arrows come with the chart). Space is swallowed even on a focused
   // button, so it plays instead of also pressing that button; Enter keeps its native action.
+  const actions: Record<string, () => void> = {
+    ArrowRight: () => goTo((s) => s + 1),
+    ArrowDown: () => goTo((s) => s + 1),
+    ArrowLeft: () => goTo((s) => s - 1),
+    ArrowUp: () => goTo((s) => s - 1),
+    Home: () => goTo(() => 0),
+    End: () => goTo(() => history.length),
+    ' ': () => history.length > 0 && togglePlay(),
+    Escape: onBack,
+  }
+  const handled = (e: KeyboardEvent) => !(e.ctrlKey || e.metaKey || e.altKey) && e.key in actions
+  // One pair of listeners, bound once: the Effect Events always see this render's step and callbacks.
+  const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    if (!handled(e)) return
+    e.preventDefault()
+    actions[e.key]()
+  })
+  const handleKeyUp = useEffectEvent((e: KeyboardEvent) => e.key === ' ' && handled(e) && e.preventDefault())
   useEffect(() => {
-    const actions: Record<string, () => void> = {
-      ArrowRight: () => goTo((s) => s + 1),
-      ArrowDown: () => goTo((s) => s + 1),
-      ArrowLeft: () => goTo((s) => s - 1),
-      ArrowUp: () => goTo((s) => s - 1),
-      Home: () => goTo(() => 0),
-      End: () => goTo(() => history.length),
-      ' ': () => history.length > 0 && togglePlay(),
-      Escape: onBack,
-    }
-    const handled = (e: KeyboardEvent) => !(e.ctrlKey || e.metaKey || e.altKey) && e.key in actions
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (!handled(e)) return
-      e.preventDefault()
-      actions[e.key]()
-    }
-    const onKeyUp = (e: KeyboardEvent) => e.key === ' ' && handled(e) && e.preventDefault()
+    const onKeyDown = (e: KeyboardEvent) => handleKeyDown(e)
+    const onKeyUp = (e: KeyboardEvent) => handleKeyUp(e)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  })
+  }, [])
 
   return (
     <div className="replay">
