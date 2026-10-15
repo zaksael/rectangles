@@ -5,9 +5,9 @@ export type ErrorReason =
   | 'illegalWildcardValue'
   | 'malformedMessage'
 
-export type TurnStateName = 'awaitingRoll' | 'choosingWildcard' | 'choosingPlacement' | 'skipped' | 'gameOver'
+type TurnStateName = 'awaitingRoll' | 'choosingWildcard' | 'choosingPlacement' | 'skipped' | 'gameOver'
 
-export type GameOverReasonName = 'boardFull' | 'skipLimit' | 'playerBlocked' | 'surrender'
+type GameOverReasonName = 'boardFull' | 'skipLimit' | 'playerBlocked' | 'surrender'
 
 export type GameAction =
   | { type: 'roll' }
@@ -19,7 +19,7 @@ export type GameAction =
   | { type: 'chooseWildcard'; value: number }
   | { type: 'place'; topLeft: [number, number]; width: number; height: number }
 
-export type AnalysisAxis = 'prize' | 'pitfall' | 'steal' | 'denial' | 'enclosure'
+type AnalysisAxis = 'prize' | 'pitfall' | 'steal' | 'denial' | 'enclosure'
 
 // One flagged move: another legal placement would have ranked higher. chosen/best are cells denied for 'denial', points otherwise.
 export interface AnalysisTurn {
@@ -35,7 +35,7 @@ export interface AnalysisTurn {
 // The replay's turn analysis; a game with nothing flagged is 'ready' with no turns. Absent (null) until asked for.
 export type Analysis = { status: 'loading' } | { status: 'ready'; turns: AnalysisTurn[] } | { status: 'unavailable' }
 
-export interface LegalPlacement {
+interface LegalPlacement {
   width: number
   height: number
   topLefts: [number, number][]
@@ -90,7 +90,7 @@ export interface ScoreParts {
   enclosure: number
 }
 
-export interface Potential {
+interface Potential {
   area: number
   prize: { points: number }
 }
