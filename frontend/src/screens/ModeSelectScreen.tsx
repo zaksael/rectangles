@@ -65,6 +65,8 @@ const BOARD_SIZE_OPTIONS = [19, 23, 27].map((size) => ({ value: size, label: `${
 const SKIP_LIMIT_OPTIONS = [3, 5].map((limit) => ({ value: limit, label: String(limit) }))
 const DIFFICULTIES: BotDifficulty[] = ['Basic', 'Greedy', 'Blocking']
 const GAMES_OPTIONS = ([null, 3, 5] as SeriesLength[]).map((length) => ({ value: length, label: String(length ?? 1) }))
+const oneOf = <T,>(value: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(value as T) ? (value as T) : fallback)
+
 function loadSettings(): ModeSelectSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -72,10 +74,20 @@ function loadSettings(): ModeSelectSettings {
       return DEFAULT_SETTINGS
     }
     const parsed = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return DEFAULT_SETTINGS
+    }
+    // Per field: a value the screen no longer offers (an old size, a renamed difficulty) would make the server refuse every start.
+    const d = DEFAULT_SETTINGS
     return {
-      ...DEFAULT_SETTINGS,
-      ...parsed,
-      houseRules: { ...DEFAULT_SETTINGS.houseRules, ...parsed.houseRules },
+      opponent: oneOf(parsed.opponent, ['bot', 'local2p', null], d.opponent),
+      botDifficulty: oneOf(parsed.botDifficulty, DIFFICULTIES, d.botDifficulty),
+      boardSize: oneOf(parsed.boardSize, BOARD_SIZE_OPTIONS.map((o) => o.value), d.boardSize),
+      skipLimit: oneOf(parsed.skipLimit, SKIP_LIMIT_OPTIONS.map((o) => o.value), d.skipLimit),
+      seriesLength: oneOf(parsed.seriesLength, GAMES_OPTIONS.map((o) => o.value), d.seriesLength),
+      houseRules: Object.fromEntries(
+        HOUSE_RULES.map((r) => [r.key, oneOf(parsed.houseRules?.[r.key], [true, false], d.houseRules[r.key])]),
+      ) as unknown as HouseRules,
     }
   } catch {
     return DEFAULT_SETTINGS

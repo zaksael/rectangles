@@ -345,6 +345,65 @@ test('persists settings to localStorage on Start Game and pre-fills them on the 
   expect(screen.getByRole('radio', { name: '23×23' })).toHaveAttribute('aria-checked', 'true')
 })
 
+describe('stored settings that are no longer valid', () => {
+  const STORAGE_KEY = 'rectangles.modeSelectSettings:v1'
+  // Mounts with `stored` already in localStorage, starts the game, and returns the params it would connect with.
+  function startWithStored(stored: unknown) {
+    localStorage.setItem(STORAGE_KEY, typeof stored === 'string' ? stored : JSON.stringify(stored))
+    const onStartGame = vi.fn()
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+    return onStartGame.mock.calls[0][0]
+  }
+
+  test('a board size that is not a preset falls back to the default size', () => {
+    expect(startWithStored({ opponent: 'local2p', boardSize: 21 })).toMatchObject({ boardSize: 19 })
+  })
+
+  test.each([
+    ['skip limit', { skipLimit: 4 }, { skipLimit: 5 }],
+    ['difficulty', { botDifficulty: 'Expert' }, { botDifficulty: 'Greedy' }],
+  ])('an unknown %s falls back to its default, keeping the other stored values', (_name, stored, expected) => {
+    const params = startWithStored({ opponent: 'bot', boardSize: 27, ...stored })
+
+    expect(params).toMatchObject({ boardSize: 27, ...expected })
+  })
+
+  test('an unknown series length falls back to a single game', () => {
+    expect(startWithStored({ opponent: 'local2p', seriesLength: 7 })).not.toHaveProperty('seriesLength')
+  })
+
+  test('a rule flag that is not a boolean falls back to its default, and an unknown rule is dropped', () => {
+    const params = startWithStored({ opponent: 'local2p', houseRules: { prizeEnabled: 'yes', pitfallEnabled: false, bogusEnabled: true } })
+
+    expect(params).toMatchObject({ prizeEnabled: true, pitfallEnabled: false })
+    expect(params).not.toHaveProperty('bogusEnabled')
+  })
+
+  test('an unknown opponent leaves no mode chosen', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ opponent: 'robot' }))
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Start Game' })).toBeDisabled()
+  })
+
+  test('a fallen-back value is not counted as changed from the defaults', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ opponent: 'local2p', boardSize: 21 }))
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+    expect(screen.queryByText(/changed from defaults/)).not.toBeInTheDocument()
+  })
+
+  test.each(['{not json', 'null', '5', '[]', '"text"'])('stored %s loads the defaults', (raw) => {
+    localStorage.setItem(STORAGE_KEY, raw)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Start Game' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+    expect(screen.getByRole('radio', { name: '19×19' })).toHaveAttribute('aria-checked', 'true')
+  })
+})
+
 test('while isConnecting, Start Game is disabled and reads Connecting…', () => {
   render(<ModeSelectScreen isConnecting connectFailed={false} onStartGame={vi.fn()} />)
 
