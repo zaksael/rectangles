@@ -48,7 +48,8 @@ function App() {
 
   function handleNewGame(): void {
     gameSocket.disconnect()
-    setConnectParams(IDLE_CONNECT_PARAMS)
+    // The counter keeps counting: the next game's connection must never share an id with the one just left.
+    setConnectParams((prev) => ({ ...IDLE_CONNECT_PARAMS, connectionId: prev.connectionId }))
     setSettingsOpen(false)
     setReplayFromSeriesResult(false)
     setScreen('MODE_SELECT')

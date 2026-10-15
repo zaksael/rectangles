@@ -136,6 +136,33 @@ describe('App', () => {
     expect(screen.queryByText('Couldn’t connect — your settings are unchanged, try again')).not.toBeInTheDocument()
   })
 
+  it('a late close from the previous game is not read as the next game failing to connect', () => {
+    render(<App />)
+    startGameAndOpen()
+    const first = FakeWebSocket.instances.at(-1)!
+    first.close = () => {} // a real socket reports `close` some time after `close()`
+    act(() => {
+      first.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series: null,
+      })
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+
+    act(() => {
+      first.emit('close')
+    })
+
+    expect(screen.queryByText('Couldn’t connect — your settings are unchanged, try again')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled()
+  })
+
   it('returns to Mode Select from the game-over dialog on one New Game click, even when the socket closes asynchronously', () => {
     render(<App />)
     startGameAndOpen()
