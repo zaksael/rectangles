@@ -147,6 +147,7 @@ the Vite proxy preserves.
 uv run pytest                  # backend: engine and server
 cd frontend
 npm test                       # frontend (Vitest)
+npm run coverage               # the same suite with a coverage report
 npm run lint
 ```
 

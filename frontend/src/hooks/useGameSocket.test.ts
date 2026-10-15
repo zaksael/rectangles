@@ -250,6 +250,40 @@ test('the queued second state message applies once the pacing delay elapses', ()
   expect(result.current.state).toEqual({ game: secondGame, series: null })
 })
 
+test('a state arriving after the pacing queue went idle shows at once', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    vi.advanceTimersByTime(500)
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: secondGame, series: null })
+  })
+
+  expect(result.current.state).toEqual({ game: secondGame, series: null })
+})
+
+test('reconnecting while a state waits on the pacing delay drops it, and the new game shows at once', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const newGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [1, 1] } }
+  const { result, rerender } = renderHook((connectionId: number) => useGameSocket({ protocolVersion: 1, connectionId }), { initialProps: 1 })
+
+  act(() => {
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: secondGame, series: null })
+  })
+  rerender(2)
+  act(() => {
+    FakeWebSocket.instances[1].emit('message', { protocolVersion: 1, type: 'state', game: newGame, series: null })
+  })
+
+  expect(result.current.state).toEqual({ game: newGame, series: null })
+  act(() => {
+    vi.advanceTimersByTime(1000)
+  })
+  expect(result.current.state).toEqual({ game: newGame, series: null })
+})
+
 test('three back-to-back state messages surface one at a time, in order, not collapsed to the last', () => {
   const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
   const thirdGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [1, 1] } }
