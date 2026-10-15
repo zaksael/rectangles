@@ -136,6 +136,29 @@ test('Rotate swaps the orientation used for placement', () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [2, 2], width: 1, height: 2 })
 })
 
+test('the r key rotates, once per press and not on auto-repeat', () => {
+  const sendAction = renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: {
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 1],
+        legalPlacements: [
+          { width: 2, height: 1, topLefts: [[0, 0]] },
+          { width: 1, height: 2, topLefts: [[2, 2]] },
+        ],
+      },
+    }),
+  )
+
+  fireEvent.keyDown(window, { key: 'r' })
+  fireEvent.keyDown(window, { key: 'r', repeat: true })
+  fireEvent.pointerUp(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="3,2"]')!, { pointerType: 'mouse' })
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [2, 2], width: 1, height: 2 })
+})
+
 test('marks every cell any legal placement of the current orientation would cover as coverable', () => {
   renderScreen(
     makeState({
@@ -1236,6 +1259,16 @@ test('pressing e rerolls when charges remain', () => {
   fireEvent.keyDown(window, { key: 'e' })
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'reroll' })
+})
+
+test('holding e does not reroll again on each auto-repeat', () => {
+  const sendAction = renderScreen(rerollState(true))
+
+  fireEvent.keyDown(window, { key: 'e' })
+  fireEvent.keyDown(window, { key: 'e', repeat: true })
+  fireEvent.keyDown(window, { key: 'e', repeat: true })
+
+  expect(sendAction).toHaveBeenCalledTimes(1)
 })
 
 test('pressing e does nothing once charges are exhausted', () => {

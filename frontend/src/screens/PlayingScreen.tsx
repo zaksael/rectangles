@@ -213,6 +213,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (document.querySelector('dialog[open]')) return
     if (event.ctrlKey || event.metaKey || event.altKey) return
+    // A held key must not burn every reroll or confirm the next player's skip.
+    if (event.repeat) return
     const key = event.key.toLowerCase()
     if (key === 'm') {
       onOpenSettings()
