@@ -117,6 +117,17 @@ test('the chart is drawn at the size its box reports', () => {
   expect(container.querySelector('svg')).toHaveAttribute('viewBox', '0 0 280 200')
 })
 
+test('a box with no size (the screen is hidden behind the narrow-window notice) draws no negative widths or heights', () => {
+  let report: ResizeObserverCallback = () => {}
+  vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
+  const { container } = draw(CLIMB, 1)
+  act(() => report([{ contentRect: { width: 0, height: 0 } } as ResizeObserverEntry], {} as ResizeObserver))
+
+  const sizes = [...container.querySelectorAll('[width], [height]')].flatMap((el) => [el.getAttribute('width'), el.getAttribute('height')]).filter((v) => v !== null)
+  expect(sizes.length).toBeGreaterThan(0)
+  expect(sizes.filter((v) => Number(v) < 0)).toEqual([])
+})
+
 const targets = () => screen.getAllByRole('button', { name: /^Jump to turn/ })
 const key = (target: Element, name: string) => fireEvent.keyDown(target, { key: name })
 

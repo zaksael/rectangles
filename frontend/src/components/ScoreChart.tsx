@@ -47,12 +47,15 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
   const all = [...series['1'], ...series['2']]
   const top = Math.max(GRID_STEP, Math.ceil(Math.max(...all) / GRID_STEP) * GRID_STEP)
   const bottom = Math.min(0, Math.floor(Math.min(...all) / GRID_STEP) * GRID_STEP)
-  const x = (turn: number) => LEFT + (turn / turns) * (width - LEFT - RIGHT)
-  const y = (score: number) => height - BOTTOM - ((score - bottom) / (top - bottom)) * (height - TOP - BOTTOM)
+  // Hidden (behind the narrow-window notice) the box is 0 x 0: the plot must not go negative.
+  const plotWidth = Math.max(0, width - LEFT - RIGHT)
+  const plotHeight = Math.max(0, height - TOP - BOTTOM)
+  const x = (turn: number) => LEFT + (turn / turns) * plotWidth
+  const y = (score: number) => height - BOTTOM - ((score - bottom) / (top - bottom)) * plotHeight
   const linePoints = (id: '1' | '2', from: number, to: number) =>
     series[id].slice(from, to + 1).map((score, i) => `${x(from + i)},${y(score)}`).join(' ')
   const tabStop = roving ?? step
-  const targetWidth = (width - LEFT - RIGHT) / turns
+  const targetWidth = plotWidth / turns
 
   // Arrows, Home and End move focus (not the step); Enter and Space jump. They are the chart's own while it has focus.
   const onKeyDown = (e: KeyboardEvent<SVGRectElement>, turn: number) => {
@@ -126,7 +129,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
                 x={x(turn) - targetWidth / 2}
                 y={TOP}
                 width={targetWidth}
-                height={height - TOP - BOTTOM}
+                height={plotHeight}
                 role="button"
                 tabIndex={turn === tabStop ? 0 : -1}
                 aria-current={turn === step ? 'true' : undefined}
