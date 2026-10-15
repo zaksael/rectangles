@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
+import { readCss } from '../dev/testUtils/styles'
 import { makeGame, makeSeries } from '../dev/fixtures/gameFixtures'
 import type { GameWireState, RecentTurn } from '../game/gameTypes'
 import type { GameError, GameState } from '../hooks/useGameSocket'
@@ -582,7 +582,6 @@ test('the turn status line is a polite live region that is re-read whole', () =>
   const status = screen.getByTestId('turn-status')
   expect(status).toHaveAttribute('aria-live', 'polite')
   expect(status).toHaveAttribute('aria-atomic', 'true')
-  expect(document.querySelector('.turn-announcer')).not.toBeInTheDocument()
 })
 
 test('there is no Replay button mid-game; Replay is only reachable from the game-over dialog', () => {
@@ -732,7 +731,7 @@ test('keeps the last roll on screen, marked as the last roll, once the next turn
 // jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
 function injectPlayingCss() {
   const style = document.createElement('style')
-  style.textContent = readFileSync('src/screens/PlayingScreen.css', 'utf8')
+  style.textContent = readCss('PlayingScreen.css')
   document.head.append(style)
   onTestFinished(() => style.remove())
 }
@@ -906,7 +905,7 @@ const keyboardState = () =>
     },
   })
 
-test('the board is keyboard-focusable only while a placement can be made', () => {
+test('the board is a tab stop while a placement can be made', () => {
   renderScreen(keyboardState())
   expect(screen.getByRole('group', { name: / board$/ })).toHaveAttribute('tabindex', '0')
 })

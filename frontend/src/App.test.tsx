@@ -13,6 +13,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
 it('shows the key badges while Shift is held, from the first screen on', () => {
@@ -132,7 +133,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
 
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
-    expect(screen.queryByText("Couldn't connect — your settings are unchanged, try again")).not.toBeInTheDocument()
+    expect(screen.queryByText('Couldn’t connect — your settings are unchanged, try again')).not.toBeInTheDocument()
   })
 
   it('returns to Mode Select from the game-over dialog on one New Game click, even when the socket closes asynchronously', () => {
@@ -269,7 +270,6 @@ describe('App', () => {
     broadcast(2)
     act(() => vi.advanceTimersByTime(500)) // state broadcasts are paced, so the second one lands after the delay
     expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
-    vi.useRealTimers()
   })
 })
 

@@ -89,7 +89,7 @@ test('a skip step leaves the board as it was and marks no piece', () => {
   expect(container.querySelectorAll('.piece-outline.last')).toHaveLength(0)
 })
 
-test('an all-skips game opens with nothing to step through', () => {
+test('an empty history opens with nothing to step through', () => {
   render(<ReplayScreen game={replayGame([])} onBack={vi.fn()} />)
   expect(screen.getByText('Start of game')).toBeTruthy()
   for (const name of ['First', 'Prev', 'Next', 'Last']) expect(screen.getByRole('button', { name })).toBeDisabled()
@@ -410,7 +410,7 @@ test('changing the speed while playing restarts the wait at the new interval', (
   expect(caption()).toHaveTextContent('Turn 1 of 3')
 })
 
-test('an all-skips game has nothing to play', () => {
+test('an empty history has nothing to play', () => {
   renderPlaying([])
   expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled()
 })

@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest'
+import { readCss } from '../dev/testUtils/styles'
 import { ModeSelectScreen } from './ModeSelectScreen'
 
 beforeEach(() => {
@@ -243,7 +243,7 @@ describe('Opponent cards', () => {
 // jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
 function injectModeSelectCss() {
   const style = document.createElement('style')
-  style.textContent = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
+  style.textContent = readCss('ModeSelectScreen.css')
   document.head.append(style)
   onTestFinished(() => style.remove())
 }
@@ -608,7 +608,7 @@ describe('per-group All On and All Off links', () => {
 })
 
 describe('the group header links (stylesheet)', () => {
-  const css = readFileSync('src/screens/ModeSelectScreen.css', 'utf8')
+  const css = readCss('ModeSelectScreen.css')
 
   test('the header wraps so the links drop under a label in a narrow column', () => {
     expect(css).toMatch(/\.group-head \{[^}]*flex-wrap:\s*wrap/)
