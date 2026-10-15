@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
-import { implementedGroups, implementedHouseRules, type HouseRules } from '../game/houseRules'
+import { HOUSE_RULE_GROUPS, type HouseRules } from '../game/houseRules'
 import { ResetConfirmDialog } from '../dialogs/ResetConfirmDialog'
 import './ModeSelectScreen.css'
 
@@ -49,15 +49,15 @@ const DEFAULT_SETTINGS: ModeSelectSettings = {
 }
 
 // How many visible settings differ from DEFAULT_SETTINGS: what Reset to Defaults would change (the opponent is kept).
+const HOUSE_RULES = HOUSE_RULE_GROUPS.flatMap((g) => g.rules)
+
 function changedCount(s: ModeSelectSettings): number {
   return [
     s.boardSize !== DEFAULT_SETTINGS.boardSize,
     s.skipLimit !== DEFAULT_SETTINGS.skipLimit,
     s.seriesLength !== DEFAULT_SETTINGS.seriesLength,
     s.opponent === 'bot' && s.botDifficulty !== DEFAULT_SETTINGS.botDifficulty,
-    ...implementedGroups()
-      .flatMap((g) => g.rules)
-      .map((r) => s.houseRules[r.key] !== DEFAULT_SETTINGS.houseRules[r.key]),
+    ...HOUSE_RULES.map((r) => s.houseRules[r.key] !== DEFAULT_SETTINGS.houseRules[r.key]),
   ].filter(Boolean).length
 }
 
@@ -100,7 +100,8 @@ function buildStartGameParams(settings: ModeSelectSettings): StartGameParams {
     ...(settings.opponent === 'bot'
       ? { botSeats: BOT_SEATS, botDifficulty: settings.botDifficulty }
       : {}),
-    ...implementedHouseRules(settings.houseRules),
+    // Only the known rules: a stray stored key must not reach the server, which rejects unknown params.
+    ...Object.fromEntries(HOUSE_RULES.map((r) => [r.key, settings.houseRules[r.key]])),
   }
 }
 
@@ -203,7 +204,6 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
 
   const noModeSelected = settings.opponent === null
   const changed = changedCount(settings)
-  const visibleGroups = implementedGroups()
 
   return (
     <div className="mode-select">
@@ -331,51 +331,49 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             </div>
           </div>
 
-          {visibleGroups.length > 0 && (
-            <div className="config-section">
-              <span className="section-label">House rules</span>
-              <div className="rules-groups">
-                {visibleGroups.map((group) => (
-                  <div className="rules-group" key={group.label}>
-                    <div className="group-head">
-                      <span className="group-label">{group.label}</span>
-                      <div className="group-links">
-                        <button type="button" className="group-link" aria-label={`All On, ${group.label}`} onClick={() => setGroup(group.rules, true)}>
-                          All On
-                        </button>
-                        <span aria-hidden="true">·</span>
-                        <button type="button" className="group-link" aria-label={`All Off, ${group.label}`} onClick={() => setGroup(group.rules, false)}>
-                          All Off
-                        </button>
-                      </div>
-                    </div>
-                    <div className="rules-grid">
-                      {group.rules.map(({ key, label, description }) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={settings.houseRules[key] ? 'rule on' : 'rule'}
-                          role="checkbox"
-                          aria-checked={settings.houseRules[key]}
-                          aria-labelledby={`rule-name-${key}`}
-                          aria-describedby={`rule-desc-${key}`}
-                          onClick={() => updateHouseRule(key, !settings.houseRules[key])}
-                        >
-                          <span className="checkbox" aria-hidden="true"></span>
-                          <span className="rule-text">
-                            <span id={`rule-name-${key}`}>{label}</span>
-                            <span id={`rule-desc-${key}`} className="rule-desc">
-                              {description}
-                            </span>
-                          </span>
-                        </button>
-                      ))}
+          <div className="config-section">
+            <span className="section-label">House rules</span>
+            <div className="rules-groups">
+              {HOUSE_RULE_GROUPS.map((group) => (
+                <div className="rules-group" key={group.label}>
+                  <div className="group-head">
+                    <span className="group-label">{group.label}</span>
+                    <div className="group-links">
+                      <button type="button" className="group-link" aria-label={`All On, ${group.label}`} onClick={() => setGroup(group.rules, true)}>
+                        All On
+                      </button>
+                      <span aria-hidden="true">·</span>
+                      <button type="button" className="group-link" aria-label={`All Off, ${group.label}`} onClick={() => setGroup(group.rules, false)}>
+                        All Off
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="rules-grid">
+                    {group.rules.map(({ key, label, description }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={settings.houseRules[key] ? 'rule on' : 'rule'}
+                        role="checkbox"
+                        aria-checked={settings.houseRules[key]}
+                        aria-labelledby={`rule-name-${key}`}
+                        aria-describedby={`rule-desc-${key}`}
+                        onClick={() => updateHouseRule(key, !settings.houseRules[key])}
+                      >
+                        <span className="checkbox" aria-hidden="true"></span>
+                        <span className="rule-text">
+                          <span id={`rule-name-${key}`}>{label}</span>
+                          <span id={`rule-desc-${key}`} className="rule-desc">
+                            {description}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
 

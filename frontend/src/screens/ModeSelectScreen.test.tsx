@@ -32,7 +32,7 @@ test('selecting a mode enables Start Game and clears the hint', () => {
   expect(screen.queryByText('Choose a mode to enable Start Game')).not.toBeInTheDocument()
 })
 
-test('Start Game with default settings passes the documented first-launch connect params, plus implemented house-rule flags', () => {
+test('Start Game with default settings passes the documented first-launch connect params, plus the house-rule flags', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
 
@@ -56,7 +56,7 @@ test('Start Game with default settings passes the documented first-launch connec
   })
 })
 
-test('only house rules with implemented UI are shown', () => {
+test('every house rule is shown', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
