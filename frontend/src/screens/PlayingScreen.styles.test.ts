@@ -3,6 +3,13 @@ import { contrast, danger, ledger, readCss, ruleFor, tokensCss } from '../dev/te
 
 const css = readCss('PlayingScreen.css')
 
+test('the rail buttons invert on hover only where there is a hover, and a disabled one does not', () => {
+  const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)?.[1] ?? ''
+
+  expect(media).toMatch(/\.playing \.rail \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)[^}]*color:\s*var\(--ledger\)/)
+  expect(css.replace(media, '')).not.toMatch(/\.btn:hover/)
+})
+
 test('on touch screens the key hint is blanked by colour (also under forced colors), so its height stays reserved and the board keeps its description', () => {
   const block = css.match(/@media \(pointer: coarse\) \{\s*\.board-help \{([^}]*)\}/)![1]
 

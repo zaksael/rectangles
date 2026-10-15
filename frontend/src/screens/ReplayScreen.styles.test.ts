@@ -10,7 +10,7 @@ test('the board is fitted to the window with the rail beside it, leaving 52px of
 test('the stepping buttons invert on hover only where there is a hover, and a disabled one does not', () => {
   const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]
 
-  expect(media).toMatch(/\.rail \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)/)
+  expect(media).toMatch(/\.replay \.rail \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)/)
   expect(css.replace(media, '')).not.toMatch(/:hover/)
 })
 

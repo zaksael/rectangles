@@ -57,6 +57,14 @@
   padding: 8px 16px;
 }
 
+/* The rail buttons are clicked over and over, so they invert on hover (as Replay's do), but only where there is a hover. */
+@media (hover: hover) {
+  .playing .rail .btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--ledger);
+  }
+}
+
 .playing .rail-head {
   display: flex;
   align-items: center;

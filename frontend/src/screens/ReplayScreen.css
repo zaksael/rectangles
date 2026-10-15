@@ -112,7 +112,7 @@
 
 /* The stepping buttons are clicked over and over while scrubbing, so they invert on hover, but only where there is a hover. */
 @media (hover: hover) {
-  .rail .btn:hover:not(:disabled) {
+  .replay .rail .btn:hover:not(:disabled) {
     background: var(--ink);
     color: var(--ledger);
   }
