@@ -32,3 +32,12 @@
   color: color-mix(in srgb, var(--ink) 82%, transparent);
   margin: 0;
 }
+
+/* The render error card reuses the notice and adds one action under the text. */
+.narrow-notice-actions {
+  margin-top: 20px;
+}
+
+.narrow-notice-actions .btn {
+  padding: 12px 24px; /* the 12px vertical padding every dialog action carries */
+}
