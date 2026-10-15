@@ -132,6 +132,19 @@ test('calls onCellTap with the tapped cell and pointer type', () => {
   expect(onCellTap).toHaveBeenCalledWith([2, 0], 'touch')
 })
 
+test('only the primary button taps a cell, so a right or middle click places nothing', () => {
+  const onCellTap = vi.fn()
+  const { container } = render(<Board game={makeGame()} onCellTap={onCellTap} />)
+  const cell = container.querySelector('[data-cell="2,0"]')!
+
+  fireEvent.pointerUp(cell, { pointerType: 'mouse', button: 2 })
+  fireEvent.pointerUp(cell, { pointerType: 'mouse', button: 1 })
+  expect(onCellTap).not.toHaveBeenCalled()
+
+  fireEvent.pointerUp(cell, { pointerType: 'mouse', button: 0 })
+  expect(onCellTap).toHaveBeenCalledWith([2, 0], 'mouse')
+})
+
 test('marks each cell in coverableCells with the coverable class', () => {
   const { container } = render(
     <Board

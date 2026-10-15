@@ -259,6 +259,7 @@ export function Board({
         if (cell) onCellHover?.(cell)
       }}
       onPointerUp={(e: PointerEvent) => {
+        if (e.button !== 0) return // a right or middle click is not a tap
         const cell = cellFromEvent(e.target)
         if (cell) onCellTap?.(cell, e.pointerType)
       }}
