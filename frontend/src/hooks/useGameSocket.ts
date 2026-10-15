@@ -196,9 +196,9 @@ export function useGameSocket(params: GameSocketParams) {
     socketRef.current?.send(JSON.stringify({ protocolVersion: params.protocolVersion, ...action }))
   }
 
-  // Asks once: a request already out, or an answer already held, is not repeated.
+  // Asks once: a request already out, or an answer already held, is not repeated; one that failed may be asked again.
   function requestAnalysis() {
-    if (analysisRef.current !== null) return
+    if (analysisRef.current !== null && analysisRef.current.status !== 'unavailable') return
     setAnalysis({ status: 'loading' })
     sendAction({ type: 'requestAnalysis' })
   }

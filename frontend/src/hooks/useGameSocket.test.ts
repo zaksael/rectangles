@@ -489,6 +489,46 @@ test('the socket closing while the analysis is loading makes it unavailable', ()
   expect(result.current.analysis).toEqual({ status: 'unavailable' })
 })
 
+const unavailableAfterError = () => {
+  const hook = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  act(() => hook.result.current.requestAnalysis())
+  act(() => FakeWebSocket.instances[0].emit('message', { type: 'error', reason: 'invalidAction', message: 'the game is not over' }))
+  expect(hook.result.current.analysis).toEqual({ status: 'unavailable' })
+  return hook.result
+}
+
+test('asking again once the analysis is unavailable sends a new request', () => {
+  const result = unavailableAfterError()
+
+  act(() => result.current.requestAnalysis())
+
+  expect(FakeWebSocket.instances[0].sent).toEqual([
+    { protocolVersion: 1, type: 'requestAnalysis' },
+    { protocolVersion: 1, type: 'requestAnalysis' },
+  ])
+  expect(result.current.analysis).toEqual({ status: 'loading' })
+})
+
+test('the retried request can succeed', () => {
+  const result = unavailableAfterError()
+  act(() => result.current.requestAnalysis())
+
+  act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
+
+  expect(result.current.analysis).toEqual({ status: 'ready', turns: analysisTurns })
+})
+
+test('asking again while a request is still loading sends nothing', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  act(() => result.current.requestAnalysis())
+
+  act(() => result.current.requestAnalysis())
+
+  expect(FakeWebSocket.instances[0].sent).toHaveLength(1)
+})
+
 test('asking again once the analysis is ready sends nothing', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
   act(() => FakeWebSocket.instances[0].emit('open'))
