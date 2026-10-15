@@ -25,7 +25,8 @@ function moveText(game: GameWireState, entry: HistoryEntry): string {
   if (!placed) return `${name} skipped (rolled ${rollText(entry.roll)})`
   const [row, col] = placed.topLeft
   const wildcard = wildcardOriginalRoll ? ` (wildcard: rolled ${rollText(wildcardOriginalRoll)})` : ''
-  return `${name} placed a ${placed.width}×${placed.height} rectangle at (${row}, ${col})${wildcard}`
+  // 1-based, named as Playing's cursor reads the same cell.
+  return `${name} placed a ${placed.width}×${placed.height} rectangle at row ${row + 1}, column ${col + 1}${wildcard}`
 }
 
 const ZERO_PARTS: ScoreParts = { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }

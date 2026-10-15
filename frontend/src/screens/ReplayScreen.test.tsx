@@ -144,7 +144,7 @@ test('the caption opens on the start of the game', () => {
 test('the caption names the turn, the player, the rectangle and where it went', () => {
   render(<ReplayScreen game={replayGame([place(1, [11, 7], 3, 4)])} onBack={vi.fn()} />)
   next()
-  expect(caption()).toHaveTextContent('Turn 1 of 1Player 1 placed a 3×4 rectangle at (11, 7)')
+  expect(caption()).toHaveTextContent('Turn 1 of 1Player 1 placed a 3×4 rectangle at row 12, column 8')
 })
 
 test('a skip step reads skipped with the roll', () => {
@@ -174,7 +174,7 @@ test('an all-skips game plays through: every step reads skipped, the board stays
 test('a wildcard placement ends with the roll before the edit', () => {
   render(<ReplayScreen game={replayGame([move(1, { topLeft: [0, 0], width: 2, height: 5 }, {}, { wildcardOriginalRoll: [3, 4] })])} onBack={vi.fn()} />)
   next()
-  expect(caption()).toHaveTextContent('Player 1 placed a 2×5 rectangle at (0, 0) (wildcard: rolled 3, 4)')
+  expect(caption()).toHaveTextContent('Player 1 placed a 2×5 rectangle at row 1, column 1 (wildcard: rolled 3, 4)')
 })
 
 test('the caption is a polite live region', () => {
@@ -185,7 +185,7 @@ test('the caption is a polite live region', () => {
 test('a Prize capture is named with its points, and not again on a later step that adds nothing', () => {
   render(<ReplayScreen game={replayGame([place(1, [0, 0], 2, 2, { '1': { area: 4, prize: 5 } }), place(1, [3, 3], 1, 1, { '1': { area: 5, prize: 5 } })])} onBack={vi.fn()} />)
   next()
-  expect(caption()).toHaveTextContent('placed a 2×2 rectangle at (0, 0) — captures Prize (+5)')
+  expect(caption()).toHaveTextContent('placed a 2×2 rectangle at row 1, column 1 — captures Prize (+5)')
   next()
   expect(caption()).not.toHaveTextContent('Prize')
 })
@@ -212,7 +212,7 @@ test('sealing in own cells is named with the cells and the penalty', () => {
 test('several effects share one dash, in order', () => {
   render(<ReplayScreen game={replayGame([place(1, [0, 0], 2, 2, { '1': { area: 4, prize: 5, pitfall: -3 } })])} onBack={vi.fn()} />)
   next()
-  expect(caption()).toHaveTextContent('(0, 0) — captures Prize (+5), hits Pitfall (−3)')
+  expect(caption()).toHaveTextContent('row 1, column 1 — captures Prize (+5), hits Pitfall (−3)')
 })
 
 const lastStepCaption = (reason: GameWireState['gameOver']['reason'], playerId: number | null, winner: number | null) => {
