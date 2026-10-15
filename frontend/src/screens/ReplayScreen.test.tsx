@@ -153,6 +153,24 @@ test('a skip step reads skipped with the roll', () => {
   expect(caption()).toHaveTextContent('Player 2 skipped (rolled 3, 4)')
 })
 
+test('an all-skips game plays through: every step reads skipped, the board stays empty and the last step names the skip limit', () => {
+  const skips = [move(1, null, {}, { roll: [1, 2] }), move(2, null, {}, { roll: [3, 4] }), move(1, null, {}, { roll: [5, 6] }), move(2, null, {}, { roll: [1, 1] })]
+  vi.useFakeTimers()
+  const { container } = render(
+    <ReplayScreen game={replayGame(skips, (g) => { g.gameOver = { ...g.gameOver, reason: 'skipLimit', playerId: 2, winner: 1 } })} onBack={vi.fn()} />,
+  )
+  expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+  act(() => void vi.advanceTimersByTime(600))
+  expect(caption()).toHaveTextContent('Turn 1 of 4Player 1 skipped (rolled 1, 2)')
+  for (let step = 0; step < 3; step++) act(() => void vi.advanceTimersByTime(600)) // one timer per step, re-armed after each render
+
+  expect(caption()).toHaveTextContent('Turn 4 of 4Player 2 skipped (rolled 1, 1) — Player 2 hit the skip limit (5 of 5)')
+  expect(pieces(container)).toHaveLength(0)
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+})
+
 test('a wildcard placement ends with the roll before the edit', () => {
   render(<ReplayScreen game={replayGame([move(1, { topLeft: [0, 0], width: 2, height: 5 }, {}, { wildcardOriginalRoll: [3, 4] })])} onBack={vi.fn()} />)
   next()
