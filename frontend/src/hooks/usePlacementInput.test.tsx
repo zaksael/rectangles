@@ -1,4 +1,5 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, render, renderHook } from '@testing-library/react'
+import { StrictMode, Suspense, useEffect } from 'react'
 import { expect, test, vi } from 'vitest'
 import { makeGame } from '../dev/fixtures/gameFixtures'
 import { usePlacementInput } from './usePlacementInput'
@@ -23,6 +24,71 @@ test('picks the (a, b) orientation when it is legal for the roll', () => {
   const { result } = renderHook(() => usePlacementInput(game, vi.fn()))
 
   expect(result.current.dims).toEqual([2, 3])
+})
+
+const placing = (roll: [number, number]) =>
+  makeGame({
+    board: { size: 9, skipLimit: 5 },
+    turn: {
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: roll,
+      legalPlacements: [
+        { width: roll[0], height: roll[1], topLefts: [[0, 0]] },
+        { width: roll[1], height: roll[0], topLefts: [[2, 2]] },
+      ],
+    },
+  })
+
+// StrictMode renders twice and keeps the hook's state and refs between the two passes, the way a discarded concurrent render does.
+test.each([
+  ['', undefined],
+  [' under StrictMode', StrictMode],
+])('a new roll resets the rotation and clears the cursor%s', (_label, wrapper) => {
+  const { result, rerender } = renderHook(({ game }) => usePlacementInput(game, vi.fn()), { initialProps: { game: placing([2, 3]) }, wrapper })
+  act(() => result.current.rotate())
+  act(() => result.current.handleCellHover([4, 4]))
+  expect(result.current.dims).toEqual([3, 2])
+  expect(result.current.previewTopLeft).not.toBeNull()
+
+  rerender({ game: placing([4, 5]) })
+
+  expect(result.current.dims).toEqual([4, 5])
+  expect(result.current.previewTopLeft).toBeNull()
+})
+
+// A render that suspends is thrown away, and so is the state it set; a ref written in it is not, so the retry saw its own roll as seen.
+test('a render discarded because a child suspended does not swallow the roll change', async () => {
+  let suspendOnce = false
+  const resolved = Promise.resolve()
+  let latest!: ReturnType<typeof usePlacementInput>
+  const Gate = () => {
+    if (suspendOnce) {
+      suspendOnce = false
+      throw resolved // React drops this render, then retries it
+    }
+    return null
+  }
+  const Probe = ({ game }: { game: ReturnType<typeof placing> }) => {
+    const input = usePlacementInput(game, vi.fn())
+    useEffect(() => {
+      latest = input
+    })
+    return <Gate />
+  }
+  const view = (game: ReturnType<typeof placing>) => (
+    <Suspense fallback={null}>
+      <Probe game={game} />
+    </Suspense>
+  )
+  const { rerender } = render(view(placing([2, 3])))
+  act(() => latest.rotate())
+  expect(latest.dims).toEqual([3, 2])
+
+  suspendOnce = true
+  await act(async () => rerender(view(placing([4, 5]))))
+
+  expect(latest.dims).toEqual([4, 5])
 })
 
 test('coverableCells is the union of every cell any legal placement of the current orientation would cover', () => {

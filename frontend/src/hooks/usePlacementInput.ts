@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useMemo, useState, type KeyboardEvent } from 'react'
 import type { GameAction, GameWireState } from '../game/gameTypes'
 
 const UNSET = Symbol('unset')
@@ -82,9 +82,10 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
   const lastRoll = game?.turn.lastRoll
 
   const rollKey = lastRoll ? `${turnState}:${lastRoll[0]},${lastRoll[1]}` : (turnState ?? null)
-  const prevRollKeyRef = useRef<string | null | typeof UNSET>(UNSET)
-  if (prevRollKeyRef.current !== rollKey) {
-    prevRollKeyRef.current = rollKey
+  // State, not a ref: a render React discards takes its state updates with it, and a ref written there would swallow the change.
+  const [seenRollKey, setSeenRollKey] = useState<string | null | typeof UNSET>(UNSET)
+  if (seenRollKey !== rollKey) {
+    setSeenRollKey(rollKey)
     setDims(
       game && turnState === 'choosingPlacement' && lastRoll ? pickInitialDims(lastRoll, game.turn.legalPlacements) : null,
     )
