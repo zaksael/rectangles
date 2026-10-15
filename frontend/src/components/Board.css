@@ -1,10 +1,10 @@
 .board {
   /* Cells shrink so the whole board fits the window height (--chrome is what the screen
-     spends on its header and toolbar), never above 44px or below 20px. --n is set inline. */
+     spends on everything around the board), never above 44px or below 20px. --n is set inline. */
   --cell: clamp(20px, calc((100dvh - var(--chrome, 176px)) / var(--n)), 44px);
   position: relative;
   display: grid;
-  margin-inline: auto; /* the toolbar can be wider than a shrunken board */
+  margin-inline: auto; /* keeps a shrunken board centred in a wider column */
   grid-template-columns: repeat(var(--n), var(--cell));
   grid-template-rows: repeat(var(--n), var(--cell));
   width: fit-content;

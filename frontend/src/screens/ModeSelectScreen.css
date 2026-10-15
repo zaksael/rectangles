@@ -48,8 +48,8 @@
   cursor: pointer;
   /* Suppress the browser's native focus ring, which would otherwise hug
      just this inner wrapper (name/desc only, not the difficulty pills
-     below it) - .mode-card:focus-within already supplies the themed
-     full-card outline whenever this element has focus. */
+     below it) - .mode-card:has(.mode-card-select:focus-visible) supplies
+     the themed full-card outline (keyboard focus only). */
   outline: none;
 }
 .mode-card:hover {

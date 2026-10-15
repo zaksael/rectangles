@@ -683,7 +683,7 @@ dialog.settings {
 }
 .settings-body {
   padding: 16px 24px 24px;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100dvh - 160px);
   overflow-y: auto;
 }
 .match-info {
@@ -760,6 +760,6 @@ dialog.settings {
 
 .board:focus {
   outline: 2px solid var(--ink);
-  outline-offset: -2px; /* inside the board, so the sticky header and toolbar can't clip it */
+  outline-offset: -2px; /* inside the board, so the surrounding frame can't clip it */
 }
 
