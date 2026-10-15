@@ -9,7 +9,7 @@ export const reach = (one: number, two: number): HistoryEntry['potential'] => ({
 export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState {
   return {
     board: { size: 3, skipLimit: 5 },
-    turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] },
+    turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [], recentTurns: [] },
     houseRules: {
       wildcard: { enabled: false, originalRoll: null, legalValues: [], editableIndex: null },
       reroll: { enabled: false, canReroll: false },
