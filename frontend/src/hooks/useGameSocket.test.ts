@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { GameAction, GameWireState, PlayerState } from '../game/gameTypes'
 import { FakeWebSocket } from '../dev/testUtils/FakeWebSocket'
 import { useGameSocket } from './useGameSocket'
@@ -131,6 +131,43 @@ test('exposes the parsed reason/message from a received error message', () => {
     reason: 'illegalPlacement',
     message: 'that cell is already claimed',
   })
+})
+
+// FakeWebSocket.emit('message') with no payload delivers an empty string, which is not JSON.
+test('a frame that is not JSON surfaces a malformedMessage error and is logged, not thrown out of the listener', () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => log.mockRestore())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
+
+  expect(() => act(() => FakeWebSocket.instances[0].emit('message'))).not.toThrow()
+
+  expect(result.current.error).toEqual({ reason: 'malformedMessage', message: 'The server sent a message that could not be read.' })
+  expect(log).toHaveBeenCalledTimes(1)
+})
+
+test('an unreadable frame while the analysis is loading makes it unavailable', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  act(() => result.current.requestAnalysis())
+
+  act(() => FakeWebSocket.instances[0].emit('message'))
+
+  expect(result.current.analysis).toEqual({ status: 'unavailable' })
+})
+
+test('the next valid state after an unreadable frame still applies, so the board recovers', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
+  act(() => FakeWebSocket.instances[0].emit('message'))
+
+  act(() => FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null }))
+
+  expect(result.current.state).toEqual({ game: fakeGame, series: null })
 })
 
 test('status becomes "open" once the socket connects', () => {

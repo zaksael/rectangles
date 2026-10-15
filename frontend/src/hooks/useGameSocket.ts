@@ -148,7 +148,16 @@ export function useGameSocket(params: GameSocketParams) {
       }
     })
     socket.addEventListener('message', (event) => {
-      const data = JSON.parse(event.data)
+      let data
+      try {
+        data = JSON.parse(event.data)
+      } catch (cause) {
+        // States are full snapshots, so the next valid one heals the board; meanwhile say so instead of freezing silently.
+        console.error('Unreadable message from the server', cause)
+        setError({ reason: 'malformedMessage', message: 'The server sent a message that could not be read.' })
+        failPendingAnalysis()
+        return
+      }
       if (data.type === 'state') {
         const botSeat = params.botSeats
         const game: GameWireState =
