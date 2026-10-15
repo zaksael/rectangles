@@ -2,6 +2,7 @@ export class FakeWebSocket {
   static instances: FakeWebSocket[] = []
   url: string
   sent: unknown[] = []
+  private opened = false
   private listeners: Record<string, ((event: { data: string }) => void)[]> = {}
 
   constructor(url: string) {
@@ -9,7 +10,9 @@ export class FakeWebSocket {
     FakeWebSocket.instances.push(this)
   }
 
+  // A real socket throws on send until it has opened.
   send(data: string) {
+    if (!this.opened) throw new DOMException('Still in CONNECTING state', 'InvalidStateError')
     this.sent.push(JSON.parse(data))
   }
 
@@ -24,6 +27,7 @@ export class FakeWebSocket {
   }
 
   emit(type: string, data?: unknown) {
+    if (type === 'open') this.opened = true
     for (const listener of this.listeners[type] ?? []) {
       listener({ data: data === undefined ? '' : JSON.stringify(data) })
     }

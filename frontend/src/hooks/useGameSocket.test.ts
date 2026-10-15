@@ -192,6 +192,7 @@ test.each<[GameAction, unknown]>([
   ],
 ])('sendAction(%o) sends the matching wire message with protocolVersion', (action, expected) => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
 
   act(() => {
     result.current.sendAction(action)
@@ -397,6 +398,7 @@ test('a fresh connection drops an analysis held from the last game', () => {
     initialProps: { protocolVersion: 1, connectionId: 0 },
   })
   act(() => {
+    FakeWebSocket.instances[0].emit('open')
     FakeWebSocket.instances[0].emit('message', { protocolVersion: 1, type: 'state', game: { ...fakeGame, gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] } }, series: null })
     result.current.requestAnalysis()
     FakeWebSocket.instances[0].emit('message', analysisMessage)
@@ -411,6 +413,7 @@ test('a fresh connection drops an analysis held from the last game', () => {
 
 test('requestAnalysis sends the request and the analysis reads loading', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
   expect(result.current.analysis).toBeNull()
 
   act(() => result.current.requestAnalysis())
@@ -421,6 +424,7 @@ test('requestAnalysis sends the request and the analysis reads loading', () => {
 
 test('an analysis message makes the analysis ready with its turns', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
   act(() => result.current.requestAnalysis())
 
   act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
@@ -430,6 +434,7 @@ test('an analysis message makes the analysis ready with its turns', () => {
 
 test('an error reply while the analysis is loading makes it unavailable', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
   act(() => result.current.requestAnalysis())
 
   act(() => FakeWebSocket.instances[0].emit('message', { type: 'error', reason: 'invalidAction', message: 'the game is not over' }))
@@ -449,6 +454,7 @@ test('the socket closing while the analysis is loading makes it unavailable', ()
 
 test('asking again once the analysis is ready sends nothing', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
   act(() => result.current.requestAnalysis())
   act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
 
@@ -459,6 +465,7 @@ test('asking again once the analysis is ready sends nothing', () => {
 
 test('the next game starting clears the previous round\'s analysis', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
   act(() => result.current.requestAnalysis())
   act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
 
@@ -469,6 +476,7 @@ test('the next game starting clears the previous round\'s analysis', () => {
 
 test('a game-over state keeps the analysis', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0].emit('open'))
   act(() => result.current.requestAnalysis())
   act(() => FakeWebSocket.instances[0].emit('message', analysisMessage))
   const over = { ...fakeGame, gameOver: { ...fakeGame.gameOver, reason: 'surrender', history: [] } } as GameWireState

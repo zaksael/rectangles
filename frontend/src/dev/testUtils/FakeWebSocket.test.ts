@@ -12,3 +12,13 @@ test('close() reports the close event on a later tick, as a real socket does aft
   await Promise.resolve()
   expect(onClose).toHaveBeenCalledTimes(1)
 })
+
+test('send() throws while the socket is still connecting, and works once it has opened', () => {
+  const socket = new FakeWebSocket('/ws')
+
+  expect(() => socket.send(JSON.stringify({ type: 'roll' }))).toThrow(/InvalidStateError|CONNECTING/)
+
+  socket.emit('open')
+  socket.send(JSON.stringify({ type: 'roll' }))
+  expect(socket.sent).toEqual([{ type: 'roll' }])
+})
