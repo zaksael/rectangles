@@ -417,8 +417,8 @@ test('a plain game over shows the final score as a group of both totals', () => 
 test('game over shows a Prize breakdown row, in points, when Prize is enabled', () => {
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.prize = { enabled: true, cells: [], points: 5 }
-  game.players['1'].houseRules.prize.captured = 2
-  game.players['2'].houseRules.prize.captured = 1
+  Object.assign(game.players['1'].score.breakdown, { prize: 10 })
+  Object.assign(game.players['2'].score.breakdown, { prize: 5 })
   renderScreen({ game, series: null })
 
   const table = within(screen.getByRole('dialog')).getByRole('table')
@@ -433,8 +433,7 @@ test('game over shows a Prize breakdown row, in points, when Prize is enabled', 
 test('game over shows a Pitfall breakdown row, as a negative deduction, when Pitfall is enabled', () => {
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.pitfall = { enabled: true, cells: [], points: 10 }
-  game.players['1'].houseRules.pitfall.captured = 1
-  game.players['2'].houseRules.pitfall.captured = 0
+  Object.assign(game.players['1'].score.breakdown, { pitfall: -10 })
   renderScreen({ game, series: null })
 
   const table = within(screen.getByRole('dialog')).getByRole('table')
@@ -449,8 +448,8 @@ test('game over shows a Pitfall breakdown row, as a negative deduction, when Pit
 test('game over shows a Steal breakdown row, as each player\'s net swing, when Steal is enabled', () => {
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.steal = { enabled: true, cells: [], points: 10 }
-  game.players['1'].houseRules.steal.captured = 2
-  game.players['2'].houseRules.steal.captured = 1
+  Object.assign(game.players['1'].score.breakdown, { steal: 10 })
+  Object.assign(game.players['2'].score.breakdown, { steal: -10 })
   renderScreen({ game, series: null })
 
   const table = within(screen.getByRole('dialog')).getByRole('table')
@@ -465,8 +464,7 @@ test('game over shows a Steal breakdown row, as each player\'s net swing, when S
 test('game over shows an Enclosure breakdown row, as a negative deduction of 1 per cell, when enabled', () => {
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.selfEnclosedPenalty = { enabled: true }
-  game.players['1'].houseRules.selfEnclosedPenalty.cells = 3
-  game.players['2'].houseRules.selfEnclosedPenalty.cells = 0
+  Object.assign(game.players['1'].score.breakdown, { enclosure: -3 })
   renderScreen({ game, series: null })
 
   const table = within(screen.getByRole('dialog')).getByRole('table')
@@ -772,8 +770,8 @@ test('the breakdown row note and the biggest-swing tag are 12px, and the story b
   const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.prize = { enabled: true, cells: [], points: 5 }
   game.houseRules.steal = { enabled: true, cells: [], points: 10 }
-  game.players['1'].houseRules.prize.captured = 2
-  game.players['1'].houseRules.steal.captured = 2
+  Object.assign(game.players['1'].score.breakdown, { prize: 10, steal: 20 })
+  Object.assign(game.players['2'].score.breakdown, { steal: -20 })
   game.players['1'].score = { ...game.players['1'].score, totalArea: 120, totalScore: 140 }
   game.players['2'].score = { ...game.players['2'].score, totalArea: 120, totalScore: 120 }
   renderScreen({ game, series: null })

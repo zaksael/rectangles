@@ -1,6 +1,9 @@
 import type { GameWireState } from './gameTypes'
 import { formatSigned } from './resultText'
 
+// The Enclosure rate per sealed-in cell: fixed on the server, not sent on the wire.
+export const SELF_ENCLOSED_PENALTY_PER_CELL = 1
+
 // One score-table row per scoring rule, in order; a row shows only while its rule is on (Replay and Playing share them).
 export const RULE_ROWS = [
   { label: 'Prize', part: 'prize', on: (g: GameWireState) => g.houseRules.prize.enabled },

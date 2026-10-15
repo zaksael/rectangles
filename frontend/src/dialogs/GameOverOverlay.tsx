@@ -1,11 +1,10 @@
 import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../game/gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
+import { SELF_ENCLOSED_PENALTY_PER_CELL } from '../game/ruleRows'
 import { formatSigned, key, nameOf, reasonText } from '../game/resultText'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
-
-export const SELF_ENCLOSED_PENALTY_PER_CELL = 1 // fixed on the server, not sent on the wire or configurable per-game
 
 interface ModifierRow {
   label: string
@@ -19,32 +18,25 @@ const MODIFIER_ROWS: ModifierRow[] = [
     label: 'Prize',
     note: (game) => `+${game.houseRules.prize.points} per captured cell`,
     enabled: (game) => game.houseRules.prize.enabled,
-    value: (game, id) => game.players[id].houseRules.prize.captured * game.houseRules.prize.points,
+    value: (game, id) => game.players[id].score.breakdown.prize,
   },
   {
     label: 'Pitfall',
     note: (game) => `−${game.houseRules.pitfall.points} per captured cell`,
     enabled: (game) => game.houseRules.pitfall.enabled,
-    value: (game, id) => -(game.players[id].houseRules.pitfall.captured * game.houseRules.pitfall.points),
+    value: (game, id) => game.players[id].score.breakdown.pitfall,
   },
   {
     label: 'Steal',
     note: (game) => `capturer +${game.houseRules.steal.points}, opponent −${game.houseRules.steal.points}, per capture`,
-    // Zero-sum: each capture adds to the capturer and docks the opponent by the same
-    // amount, so a player's net is their own captures minus the opponent's, in points.
     enabled: (game) => game.houseRules.steal.enabled,
-    value: (game, id) => {
-      const opponent = id === '1' ? '2' : '1'
-      const { captured: own } = game.players[id].houseRules.steal
-      const { captured: theirs } = game.players[opponent].houseRules.steal
-      return (own - theirs) * game.houseRules.steal.points
-    },
+    value: (game, id) => game.players[id].score.breakdown.steal,
   },
   {
     label: 'Enclosure',
     note: () => `−${SELF_ENCLOSED_PENALTY_PER_CELL} per sealed-in cell`,
     enabled: (game) => game.houseRules.selfEnclosedPenalty.enabled,
-    value: (game, id) => -(game.players[id].houseRules.selfEnclosedPenalty.cells * SELF_ENCLOSED_PENALTY_PER_CELL),
+    value: (game, id) => game.players[id].score.breakdown.enclosure,
   },
 ]
 

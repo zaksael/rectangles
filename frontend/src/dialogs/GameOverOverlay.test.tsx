@@ -48,11 +48,36 @@ function withRules(game: ReturnType<typeof makeGame>) {
   game.houseRules.selfEnclosedPenalty = { enabled: true }
 }
 
+// The wire's signed per-player score parts, which the modifier rows read.
+function setParts(game: ReturnType<typeof makeGame>, id: '1' | '2', parts: Partial<ReturnType<typeof makeGame>['players']['1']['score']['breakdown']>) {
+  Object.assign(game.players[id].score.breakdown, parts)
+}
+
+test.each([
+  ['Prize', 'prize', 7, '7'],
+  ['Pitfall', 'pitfall', -7, '−7'],
+  ['Steal', 'steal', 12, '12'],
+  ['Enclosure', 'enclosure', -3, '−3'],
+] as const)('the %s row shows the wire breakdown, whatever the raw capture counts say', (label, part, value, text) => {
+  const dialog = renderOver({ winner: 1, area: [158, 141], score: [160, 141] }, (game) => {
+    withRules(game)
+    game.houseRules.pitfall = { enabled: true, cells: [], points: 10 }
+    setParts(game, '1', { [part]: value })
+  })
+
+  const row = within(dialog).queryByRole('row', { name: new RegExp(`^${label}`) })
+  expect(row).toBeInTheDocument()
+  const [own, theirs] = row!.querySelectorAll('td')
+  expect(own).toHaveTextContent(text)
+  expect(theirs).toHaveTextContent('0')
+})
+
 test('the modifier with the biggest swing is tagged in the table, and not repeated in the story', () => {
   const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 148] }, (game) => {
     withRules(game)
-    game.players['1'].houseRules.prize.captured = 1 // swing 10 (prize 1 vs 0)
-    game.players['1'].houseRules.steal.captured = 1 // swing 20 (+10 vs -10)
+    setParts(game, '1', { prize: 10 }) // swing 10 (10 vs 0)
+    setParts(game, '1', { steal: 10 }) // swing 20 (+10 vs -10)
+    setParts(game, '2', { steal: -10 })
   })
   expect(dialog).toHaveAccessibleDescription('by 14 points')
   expect(within(dialog).getByRole('row', { name: /Steal/ })).toHaveTextContent('Biggest swing')
@@ -65,7 +90,7 @@ test('the modifier with the biggest swing is tagged in the table, and not repeat
 test('a swing under half the margin is not tagged', () => {
   const dialog = renderOver({ winner: 1, area: [200, 150], score: [200, 147] }, (game) => {
     withRules(game)
-    game.players['2'].houseRules.selfEnclosedPenalty.cells = 3 // swing 3 of a 53-point margin
+    setParts(game, '2', { enclosure: -3 }) // swing 3 of a 53-point margin
   })
   expect(dialog).toHaveAccessibleDescription('by 53 points')
   expect(dialog).not.toHaveTextContent('Biggest swing')
@@ -75,8 +100,8 @@ test('a winner who trailed on territory names the modifiers that turned it, inst
   const dialog = renderOver({ winner: 2, area: [150, 144], score: [140, 154] }, (game) => {
     game.houseRules.prize = { enabled: true, cells: [], points: 10 }
     game.houseRules.pitfall = { enabled: true, cells: [], points: 10 }
-    game.players['2'].houseRules.prize.captured = 1
-    game.players['1'].houseRules.pitfall.captured = 1
+    setParts(game, '2', { prize: 10 })
+    setParts(game, '1', { pitfall: -10 })
   })
   expect(dialog).toHaveAccessibleDescription('by 14 points. Trailed by 6 on territory, won on Prize and Pitfall.')
 })
@@ -87,10 +112,8 @@ test('each modifier row states its rule with the point value from the game', () 
     game.houseRules.pitfall = { enabled: true, cells: [], points: 7 }
     game.houseRules.steal = { enabled: true, cells: [], points: 12 }
     game.houseRules.selfEnclosedPenalty = { enabled: true }
-    game.players['1'].houseRules.prize.captured = 1
-    game.players['1'].houseRules.pitfall.captured = 1
-    game.players['1'].houseRules.steal.captured = 1
-    game.players['2'].houseRules.selfEnclosedPenalty.cells = 2
+    setParts(game, '1', { prize: 10, pitfall: -7, steal: 12 })
+    setParts(game, '2', { steal: -12, enclosure: -2 })
   })
   const note = (label: RegExp) => within(dialog).getByRole('row', { name: label }).querySelector('th')?.textContent
   expect(note(/^Prize/)).toContain('+10 per captured cell')
@@ -102,7 +125,7 @@ test('each modifier row states its rule with the point value from the game', () 
 test('a modifier row where both players are at zero is hidden, but a single zero beside a non-zero stays, muted', () => {
   const dialog = renderOver({ winner: 1, area: [158, 141], score: [168, 141] }, (game) => {
     withRules(game)
-    game.players['1'].houseRules.prize.captured = 1 // Prize 10 vs 0 stays; Steal and Enclosure are 0 vs 0
+    setParts(game, '1', { prize: 10 }) // Prize 10 vs 0 stays; Steal and Enclosure are 0 vs 0
   })
   expect(within(dialog).getByRole('row', { name: /^Prize/ })).toBeInTheDocument()
   expect(within(dialog).queryByRole('row', { name: /^Steal/ })).not.toBeInTheDocument()
@@ -115,7 +138,7 @@ test('a modifier row where both players are at zero is hidden, but a single zero
 test('with modifier rows, the table keeps a Territory row', () => {
   const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 141] }, (game) => {
     withRules(game)
-    game.players['1'].houseRules.prize.captured = 1
+    setParts(game, '1', { prize: 10 })
   })
   expect(within(dialog).getByRole('row', { name: /^Territory/ })).toHaveTextContent('Territory152141')
 })
@@ -362,7 +385,7 @@ test('a game with no modifier rows has no table, the scoreboard being the whole 
 test('the scoreboard shows total score, not territory, when modifiers apply', () => {
   const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 141] }, (game) => {
     withRules(game)
-    game.players['1'].houseRules.prize.captured = 1
+    setParts(game, '1', { prize: 10 })
   })
   const group = within(dialog).getByRole('group', { name: 'Final score' })
   expect(group).toHaveTextContent('162')
