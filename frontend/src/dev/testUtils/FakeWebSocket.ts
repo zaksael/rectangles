@@ -13,8 +13,9 @@ export class FakeWebSocket {
     this.sent.push(JSON.parse(data))
   }
 
+  // A real socket reports `close` after the closing handshake, never inside the `close()` call.
   close() {
-    this.emit('close')
+    queueMicrotask(() => this.emit('close'))
   }
 
   addEventListener(type: string, listener: (event: { data: string }) => void) {

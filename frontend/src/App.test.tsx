@@ -140,7 +140,6 @@ describe('App', () => {
     render(<App />)
     startGameAndOpen()
     const first = FakeWebSocket.instances.at(-1)!
-    first.close = () => {} // a real socket reports `close` some time after `close()`
     act(() => {
       first.emit('message', {
         protocolVersion: 1,
@@ -166,8 +165,6 @@ describe('App', () => {
   it('returns to Mode Select from the game-over dialog on one New Game click, even when the socket closes asynchronously', () => {
     render(<App />)
     startGameAndOpen()
-    // Real sockets report `close` some time after `close()` is called, not synchronously.
-    FakeWebSocket.instances.at(-1)!.close = () => {}
     act(() => {
       FakeWebSocket.instances.at(-1)!.emit('message', {
         protocolVersion: 1,
