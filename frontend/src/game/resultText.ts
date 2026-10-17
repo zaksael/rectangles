@@ -13,7 +13,7 @@ export function nameOf(game: GameWireState, id: number) {
 
 export function reasonText(game: GameWireState): string | null {
   const { reason, playerId } = game.gameOver
-  if (reason === 'boardFull') return 'board settled'
+  if (reason === 'boardFull') return 'no room left to build'
   if (reason === null || playerId === null) return null
   const name = nameOf(game, playerId)
   if (reason === 'playerBlocked') return `${name} had no legal move left`

@@ -385,7 +385,7 @@ test('game over shows a dialog with the end reason and the winner', () => {
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const dialog = screen.getByRole('dialog')
-  expect(within(dialog).getByText('board settled')).toBeInTheDocument()
+  expect(within(dialog).getByText('no room left to build')).toBeInTheDocument()
   expect(within(dialog).getByRole('heading', { name: 'Player\u00a01 wins on score' })).toBeInTheDocument()
 })
 
@@ -1476,7 +1476,7 @@ test('the result bar names who surrendered', () => {
 
 test('the result bar states no reason when the board simply settled', () => {
   const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
-  expect(within(bar).queryByText(/board settled/)).not.toBeInTheDocument()
+  expect(within(bar).queryByText(/no room left to build/)).not.toBeInTheDocument()
 })
 
 test.each([
