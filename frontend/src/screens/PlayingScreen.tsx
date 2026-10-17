@@ -10,6 +10,7 @@ import { useShownRoll } from '../hooks/useShownRoll'
 import { usePlacementInput } from '../hooks/usePlacementInput'
 import type { GameError, GameState } from '../hooks/useGameSocket'
 import { KeyBadge } from '../components/KeyBadge'
+import { ReachNoteRow, REACH_NOTE_ID } from '../components/ReachNoteRow'
 import { noBreak } from '../game/noBreak'
 import { RULE_ROWS, signed } from '../game/ruleRows'
 import { seriesRound } from '../game/seriesRound'
@@ -333,9 +334,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                   {ids.map((id) => <td key={id}>{state.game.players[id].score.totalScore}</td>)}
                 </tr>
                 <tr className="res-first">
-                  <th scope="row">In reach</th>
+                  <th scope="row" aria-describedby={REACH_NOTE_ID}>In reach</th>
                   {ids.map((id) => <td key={id}>{state.game.players[id].score.potential.area}</td>)}
                 </tr>
+                <ReachNoteRow />
                 <tr>
                   <th scope="row">Skips</th>
                   {ids.map((id) => (

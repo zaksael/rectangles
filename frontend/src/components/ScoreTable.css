@@ -75,3 +75,15 @@
   font-size: 13px;
   font-weight: 400;
 }
+
+/* The line under a resource row that says what its figure counts: muted, full width, one line. */
+.score-table .note-row td {
+  padding: 0 12px 6px;
+  border-top: 0;
+  text-align: left;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}

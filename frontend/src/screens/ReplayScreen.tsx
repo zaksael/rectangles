@@ -4,6 +4,7 @@ import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, S
 import { noBreak } from '../game/noBreak'
 import { formatSigned, reasonText } from '../game/resultText'
 import { ScoreChart } from '../components/ScoreChart'
+import { ReachNoteRow, REACH_NOTE_ID } from '../components/ReachNoteRow'
 import { RULE_ROWS, SELF_ENCLOSED_PENALTY_PER_CELL, signed } from '../game/ruleRows'
 import { useNarrowWindow } from '../hooks/useNarrowWindow'
 import '../components/ScoreTable.css'
@@ -167,13 +168,14 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
           ))}
         </tr>
         <tr className="res-first">
-          <th scope="row">In reach</th>
+          <th scope="row" aria-describedby={REACH_NOTE_ID}>In reach</th>
           {ids.map((id) => (
             <td key={id} className={at ? undefined : 'zero'}>
               {at ? at.potential[id].area : '–'}
             </td>
           ))}
         </tr>
+        <ReachNoteRow />
       </tfoot>
     </table>
   )

@@ -288,6 +288,14 @@ test('the In reach row shows the empty cells each player can still reach', () =>
   expect(rowValues('In reach')).toEqual(['31', '24'])
 })
 
+test('the In reach row is explained by a line under it that the row header is described by', () => {
+  renderScreen({ game: makeGame(), series: null })
+
+  const note = 'Cells each could still build on; counts overlap'
+  expect(screen.getByText(note)).toBeVisible()
+  expect(screen.getByRole('rowheader', { name: 'In reach' })).toHaveAccessibleDescription(note)
+})
+
 test('the score table uses the shared score-table style', () => {
   renderScreen(makeState())
 

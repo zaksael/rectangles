@@ -327,6 +327,15 @@ test('at the start of the game In reach has no figure: a muted en dash per playe
   for (const cell of within(screen.getByRole('rowheader', { name: 'In reach' }).closest('tr')!).getAllByRole('cell')) expect(cell).not.toHaveClass('zero')
 })
 
+test('In reach is explained by a line under it, at the start of the game as well as mid-game', () => {
+  render(<ReplayScreen game={replayGame([{ ...place(1, [0, 0], 2, 2), potential: reach(21, 20) }])} onBack={vi.fn()} />)
+  const note = 'Cells each could still build on; counts overlap'
+  expect(screen.getByText(note)).toBeVisible()
+  expect(screen.getByRole('rowheader', { name: 'In reach' })).toHaveAccessibleDescription(note)
+  next()
+  expect(screen.getByRole('rowheader', { name: 'In reach' })).toHaveAccessibleDescription(note)
+})
+
 test('the table is labelled by its step, has scoped headers, and is not a live region', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
   expect(screen.getByRole('table', { name: 'Score at the start of the game' })).toBeTruthy()

@@ -31,6 +31,15 @@ test('a resource row (In reach) is set apart by a line-colour hairline and is pl
   expect(inFooter).toMatch(/padding:\s*5px 12px/)
 })
 
+test('the note under a resource row is a muted 12px left-aligned line with no rule of its own', () => {
+  const block = ruleFor(css, '.score-table .note-row td')
+  expect(block).toMatch(/font-size:\s*12px/)
+  expect(block).toMatch(/text-align:\s*left/)
+  expect(block).toMatch(/border-top:\s*0/)
+  expect(block).toMatch(/padding:\s*0 12px 6px/)
+  expect(textContrast(css, '.score-table .note-row td')).toBeGreaterThanOrEqual(4.5)
+})
+
 test('the resource row\'s hairline lives with the shared table, not in Playing\'s own sheet', () => {
   expect(readCss('PlayingScreen.css')).not.toContain('.res-first')
 })
