@@ -1143,12 +1143,18 @@ test('the fixed die is exposed by name so a screen reader hears the number the p
   expect(screen.getByRole('img', { name: 'Fixed die 4' })).toBeInTheDocument()
 })
 
+test('each pill is named for what it sets, not only its digit', () => {
+  renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 2, 3, 4, 5, 6] }))
+
+  expect(within(screen.getByRole('group', { name: 'Wildcard value' })).getByRole('button', { name: 'Set wildcard die to 3' })).toHaveTextContent('3')
+})
+
 test('values with no legal placement are disabled, not removed', () => {
   renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 3, 4, 6] }))
 
   const group = screen.getByRole('group', { name: 'Wildcard value' })
   for (const [name, enabled] of [['1', true], ['2', false], ['3', true], ['4', true], ['5', false], ['6', true]] as const) {
-    const pill = within(group).getByRole('button', { name })
+    const pill = within(group).getByRole('button', { name: `Set wildcard die to ${name}` })
     if (enabled) expect(pill).toBeEnabled()
     else expect(pill).toBeDisabled()
   }
@@ -1157,7 +1163,7 @@ test('values with no legal placement are disabled, not removed', () => {
 test('clicking a pill sends chooseWildcard with that value straight away', () => {
   const sendAction = renderScreen(wildcardState({ editableIndex: 1, legalValues: [1, 3, 4, 6] }))
 
-  fireEvent.click(screen.getByRole('button', { name: '3' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Set wildcard die to 3' }))
 
   expect(sendAction).toHaveBeenCalledWith({ type: 'chooseWildcard', value: 3 })
 })

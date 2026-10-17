@@ -157,6 +157,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         <button
           key={value}
           className="pill"
+          aria-label={`Set wildcard die to ${value}`}
           disabled={!wildcard.legalValues.includes(value)}
           onClick={() => sendAction({ type: 'chooseWildcard', value })}
         >
