@@ -270,7 +270,12 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
       <aside className="rail" aria-label="Replay controls">
         <div className="rail-head">
           <h1 className="rail-title">Replay</h1>
-          {series && <span className="rail-series">{`Round ${series.gamesPlayed} of ${series.length} · Series ${series.scores['1']} – ${series.scores['2']}`}</span>}
+          {series && (
+            <span className="rail-series">
+              <span>{`Round ${series.gamesPlayed} of ${series.length}`}</span>
+              <span>{`Series ${series.scores['1']} – ${series.scores['2']}`}</span>
+            </span>
+          )}
           <button className="btn secondary" onClick={onBack}>Back</button>
         </div>
         <ScoreTable game={game} history={history} step={step} />

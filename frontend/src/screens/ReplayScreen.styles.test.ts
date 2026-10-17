@@ -7,6 +7,10 @@ test('the board is fitted to the window with the rail beside it, leaving 52px of
   expect(ruleFor(css, '.replay')).toMatch(/--chrome:\s*52px/)
 })
 
+test('the round and the series score stack, one above the other', () => {
+  expect(ruleFor(css, '.replay .rail-series')).toMatch(/flex-direction:\s*column/)
+})
+
 test('the stepping buttons invert on hover only where there is a hover, and a disabled one does not', () => {
   const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]
 

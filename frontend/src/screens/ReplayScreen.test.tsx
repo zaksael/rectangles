@@ -381,10 +381,13 @@ test('the screen is a main landmark and the rail a named complementary one', () 
   expect(within(main).getByRole('complementary', { name: 'Replay controls' })).toBeInTheDocument()
 })
 
-test('a series round names its round and the series score beside the title; a single game shows neither', () => {
+test('a series round names its round and the series score on two rows beside the title; a single game shows neither', () => {
   const series = makeSeries({ gamesPlayed: 2, length: 3, scores: { '1': 1, '2': 1 } })
   const { unmount } = render(<ReplayScreen game={replayGame(TWO_MOVES)} series={series} onBack={vi.fn()} />)
-  expect(screen.getByRole('heading', { level: 1, name: 'Replay' }).parentElement).toHaveTextContent('ReplayRound 2 of 3 · Series 1 – 1Back')
+  const round = screen.getByText('Round 2 of 3')
+  const seriesScore = screen.getByText('Series 1 – 1')
+  expect(round.parentElement).toBe(seriesScore.parentElement)
+  expect(screen.getByRole('heading', { level: 1, name: 'Replay' }).parentElement).toHaveTextContent('ReplayRound 2 of 3Series 1 – 1Back')
   unmount()
 
   render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
