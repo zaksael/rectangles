@@ -128,7 +128,7 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
         <tr>
           <td />
           {ids.map((id) => (
-            <th key={id} scope="col">
+            <th key={id} scope="col" className="over">
               <span className={`dot p${id}`} aria-hidden="true" />
               {game.players[id].name}
             </th>

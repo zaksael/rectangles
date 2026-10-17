@@ -317,6 +317,11 @@ test('the table is labelled by its step, has scoped headers, and is not a live r
   expect(table.closest('[aria-live]')).toBeNull()
 })
 
+test('both header dots are filled at every step: the .over class keeps Playing\'s ring rule off a replay, which has no mover', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  for (const header of screen.getAllByRole('columnheader')) expect(header).toHaveClass('over')
+})
+
 test('the opponent is named in the table header as on Playing', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES, (g) => { g.players['2'].name = 'Bot (hard)' })} onBack={vi.fn()} />)
   expect(screen.getByRole('columnheader', { name: 'Bot (hard)' })).toBeTruthy()
