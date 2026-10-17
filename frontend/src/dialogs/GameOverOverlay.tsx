@@ -205,11 +205,12 @@ interface GameOverBarProps {
 export function GameOverBar({ game, series = null, seriesResult = false, onViewResult, onNewGame, onNextRound, onSeriesResult }: GameOverBarProps) {
   const advance = advanceFor(seriesResult ? null : series, { onNewGame, onNextRound, onSeriesResult })
   const armedAt = useArmedAt()
+  const margin = scoreMargin(game)
   const outcome =
     seriesResult && series
       ? { headline: seriesHeadline(game, series), reason: null, label: 'Series result' }
       : {
-          headline: headlineText(game, series !== null),
+          headline: headlineText(game, series !== null) + (margin === null ? '' : ` by ${margin}`),
           reason: game.gameOver.reason === 'boardFull' ? null : reasonText(game),
           label: 'Game result',
         }

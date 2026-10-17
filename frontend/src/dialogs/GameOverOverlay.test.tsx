@@ -243,6 +243,24 @@ function renderBar() {
   return handlers
 }
 
+const barHeadline = (winner: 1 | 2 | null, reason: 'boardFull' | 'surrender', score: [number, number], series: ReturnType<typeof makeSeries> | null = null) => {
+  const game = makeGame({ gameOver: { reason, playerId: reason === 'surrender' ? 2 : null, winner } })
+  game.players['1'].score = { ...game.players['1'].score, totalScore: score[0] }
+  game.players['2'].score = { ...game.players['2'].score, totalScore: score[1] }
+  render(<GameOverBar game={game} series={series} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
+  return screen.getByRole('region', { name: 'Game result' }).querySelector('.turn-status')
+}
+
+test('the result bar states the margin of a win on score, in a series round too, and none for a tie or a surrender', () => {
+  expect(barHeadline(2, 'boardFull', [132, 201])).toHaveTextContent(/^Player.2 wins on score by 69$/u)
+  cleanup()
+  expect(barHeadline(1, 'boardFull', [152, 141], makeSeries())).toHaveTextContent(/^Player.1 wins the round by 11$/u)
+  cleanup()
+  expect(barHeadline(null, 'boardFull', [150, 150])).toHaveTextContent(/^Tied$/)
+  cleanup()
+  expect(barHeadline(1, 'surrender', [3, 40])).toHaveTextContent(/^Player.1 wins$/u)
+})
+
 test('the result bar binds its window key listener once, however often it re-renders', () => {
   const add = vi.spyOn(window, 'addEventListener')
   onTestFinished(() => add.mockRestore())
