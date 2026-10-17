@@ -254,28 +254,22 @@
   }
 }
 
-/* One line naming each special-cell rule that is on; the marks are the board's own .board-cell.<kind> rules. */
-.playing-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
-}
-.playing-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 20px;
+/* A special-cell rule's row label: the board's own .board-cell.<kind> mark before the name, what one capture is worth after it. */
+.playing .score-table tbody th {
+  white-space: nowrap;
 }
 .playing-legend-mark {
   --cell: 18px;
-  flex: none;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
   forced-color-adjust: none; /* the marks are backgrounds, and only .board opts out of forced colors */
+}
+.row-points {
+  margin-left: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
 /* The Moves list fills the rest of the rail: the turn in progress, then the last three turns. */

@@ -1689,7 +1689,9 @@ function specialRules(rules: Partial<Pick<GameWireState['houseRules'], 'prize' |
   return { ...makeGame().houseRules, ...rules }
 }
 
-test('the special-cell legend names each enabled rule, in rule order, with its point value', () => {
+const rowHeaders = () => within(scoreTable()).getAllByRole('rowheader').map((h) => h.textContent)
+
+test('the rule rows carry the special-cell marks: each enabled rule, in rule order, with its mark and what a capture is worth', () => {
   renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
@@ -1701,11 +1703,16 @@ test('the special-cell legend names each enabled rule, in rule order, with its p
     }),
   )
 
-  const items = within(screen.getByRole('list', { name: 'Special cells' })).getAllByRole('listitem')
-  expect(items.map((item) => item.textContent)).toEqual(['Prize +10', 'Pitfall −10', 'Steal ±10'])
+  expect(rowHeaders().filter((h) => /Prize|Pitfall|Steal/.test(h!))).toEqual(['Prize +10', 'Pitfall −10', 'Steal ±10'])
+  expect(scoreRow('Pitfall −10')).toBeInTheDocument()
+  for (const kind of ['prize', 'pitfall', 'steal']) {
+    const mark = document.querySelector(`.score-table th .playing-legend-mark.board-cell.${kind}`)
+    expect(mark).toHaveAttribute('aria-hidden', 'true')
+  }
+  expect(screen.queryByRole('list', { name: 'Special cells' })).not.toBeInTheDocument()
 })
 
-test('the legend reads each rule\'s own point value and lists only the rules that are on', () => {
+test('a rule row reads its own point value, and only the rules that are on have a row', () => {
   renderScreen(
     makeState({
       houseRules: specialRules({
@@ -1715,14 +1722,14 @@ test('the legend reads each rule\'s own point value and lists only the rules tha
     }),
   )
 
-  const items = within(screen.getByRole('list', { name: 'Special cells' })).getAllByRole('listitem')
-  expect(items.map((item) => item.textContent)).toEqual(['Prize +7'])
+  expect(rowHeaders().filter((h) => /Prize|Pitfall|Steal/.test(h!))).toEqual(['Prize +7'])
 })
 
-test('with no special-cell rule on there is no legend', () => {
+test('with no special-cell rule on there is no mark or value in the table', () => {
   renderScreen(makeState())
 
-  expect(screen.queryByRole('list', { name: 'Special cells' })).not.toBeInTheDocument()
+  expect(document.querySelector('.score-table .playing-legend-mark')).toBeNull()
+  expect(rowHeaders()).toEqual(['Area', 'Score', 'In reach', 'Skips'])
 })
 
 function placingOnSpecialBoard(rules: Parameters<typeof specialRules>[0]) {
@@ -1808,7 +1815,7 @@ function breakdownGame(on: { prize?: boolean; pitfall?: boolean; steal?: boolean
 test('each scoring rule that is on gets a row between Area and Score, in the order Prize, Pitfall, Steal, Enclosure, with signed values', () => {
   renderScreen(breakdownGame({ prize: true, pitfall: true, steal: true, enclosure: true }))
 
-  const labels = within(scoreTable()).getAllByRole('rowheader').map((h) => h.textContent)
+  const labels = rowHeaders().map((h) => h!.replace(/ [+−±]\d+$/, '')) // a special-cell row's label ends with its value
   expect(labels).toEqual(['Area', 'Prize', 'Pitfall', 'Steal', 'Enclosure', 'Score', 'In reach', 'Skips'])
   expect(rowValues('Prize')).toEqual(['+5', '0'])
   expect(rowValues('Pitfall')).toEqual(['−3', '−3'])

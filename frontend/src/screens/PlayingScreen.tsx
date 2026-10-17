@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Board } from '../components/Board'
-import { SpecialCellLegend } from '../components/SpecialCellLegend'
+import { RuleRowLabel } from '../components/RuleRowLabel'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from '../dialogs/GameOverOverlay'
 import type { ErrorReason, GameAction, GameWireState, RecentTurn } from '../game/gameTypes'
 import { describeFootprint } from '../game/footprint'
@@ -318,7 +318,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 </tr>
                 {RULE_ROWS.filter((row) => row.on(state.game)).map((row) => (
                   <tr key={row.label}>
-                    <th scope="row">{row.label}</th>
+                    <th scope="row">
+                      <RuleRowLabel row={row} game={state.game} />
+                    </th>
                     {ids.map((id) => {
                       const value = state.game.players[id].score.breakdown[row.part]
                       return (
@@ -354,7 +356,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                 )}
               </tbody>
             </table>
-            <SpecialCellLegend game={state.game} />
             <div className="rail-notice" role="status" aria-live="polite">
               {errorShown ? <div className="toast">{ERROR_TEXT[error.reason]}</div> : comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>

@@ -74,8 +74,8 @@ Window" notice takes their place and the game waits where it was.
 - With [Reroll](#house-rules) on and a charge left, **Reroll** (`E`) discards the
   current roll for a fresh one, including alongside a forced skip.
 - The side rail shows both scores with a row for each scoring rule that is
-  on, each player's skip streak, a legend of the special cells, and the
-  latest moves.
+  on (the Prize, Pitfall and Steal rows show the cell's mark and what a capture
+  is worth), each player's skip streak, and the latest moves.
 - **Menu** (`M`) shows the match settings and has **Resume** and
   **Surrender**; surrender always asks for confirmation first, and your
   opponent wins regardless of the area tally.
