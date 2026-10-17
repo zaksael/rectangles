@@ -1706,7 +1706,7 @@ test('the rule rows carry the special-cell marks: each enabled rule, in rule ord
   expect(rowHeaders().filter((h) => /Prize|Pitfall|Steal/.test(h!))).toEqual(['Prize +10', 'Pitfall −10', 'Steal ±10'])
   expect(scoreRow('Pitfall −10')).toBeInTheDocument()
   for (const kind of ['prize', 'pitfall', 'steal']) {
-    const mark = document.querySelector(`.score-table th .playing-legend-mark.board-cell.${kind}`)
+    const mark = document.querySelector(`.score-table th .rule-mark.board-cell.${kind}`)
     expect(mark).toHaveAttribute('aria-hidden', 'true')
   }
   expect(screen.queryByRole('list', { name: 'Special cells' })).not.toBeInTheDocument()
@@ -1728,7 +1728,7 @@ test('a rule row reads its own point value, and only the rules that are on have 
 test('with no special-cell rule on there is no mark or value in the table', () => {
   renderScreen(makeState())
 
-  expect(document.querySelector('.score-table .playing-legend-mark')).toBeNull()
+  expect(document.querySelector('.score-table .rule-mark')).toBeNull()
   expect(rowHeaders()).toEqual(['Area', 'Score', 'In reach', 'Skips'])
 })
 

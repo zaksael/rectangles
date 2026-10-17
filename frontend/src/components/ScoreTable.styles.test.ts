@@ -40,6 +40,14 @@ test('the note under a resource row is a muted 12px left-aligned line with no ru
   expect(textContrast(css, '.score-table .note-row td')).toBeGreaterThanOrEqual(4.5)
 })
 
+test('a rule row\'s mark keeps its ink under forced colors and its value is a muted 12px figure that never wraps the label', () => {
+  expect(ruleFor(css, '.rule-mark')).toMatch(/forced-color-adjust:\s*none/) // only .board opts out, and the table sits outside it
+  expect(ruleFor(css, '.rule-mark')).toMatch(/--cell:\s*18px/)
+  expect(ruleFor(css, '.row-points')).toMatch(/font-size:\s*12px/)
+  expect(textContrast(css, '.row-points')).toBeGreaterThanOrEqual(4.5)
+  expect(ruleFor(css, '.score-table tbody th')).toMatch(/white-space:\s*nowrap/)
+})
+
 test('the resource row\'s hairline lives with the shared table, not in Playing\'s own sheet', () => {
   expect(readCss('PlayingScreen.css')).not.toContain('.res-first')
 })

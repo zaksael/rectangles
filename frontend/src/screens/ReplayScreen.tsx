@@ -4,6 +4,7 @@ import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, S
 import { noBreak } from '../game/noBreak'
 import { formatSigned, reasonText } from '../game/resultText'
 import { ScoreChart } from '../components/ScoreChart'
+import { RuleRowLabel } from '../components/RuleRowLabel'
 import { ReachNoteRow, REACH_NOTE_ID } from '../components/ReachNoteRow'
 import { RULE_ROWS, SELF_ENCLOSED_PENALTY_PER_CELL, signed } from '../game/ruleRows'
 import { useNarrowWindow } from '../hooks/useNarrowWindow'
@@ -148,7 +149,9 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
         </tr>
         {RULE_ROWS.filter((row) => row.on(game)).map((row) => (
           <tr key={row.label}>
-            <th scope="row">{row.label}</th>
+            <th scope="row">
+              <RuleRowLabel row={row} game={game} />
+            </th>
             {ids.map((id) => {
               const value = at ? at.breakdown[id][row.part] : 0
               return (

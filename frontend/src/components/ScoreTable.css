@@ -87,3 +87,22 @@
   font-weight: 400;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
+
+/* A special-cell rule's row label: the board's own .board-cell.<kind> mark before the name, what one capture is worth after it.
+   Labels never wrap, so the label column grows to fit them. */
+.score-table tbody th {
+  white-space: nowrap;
+}
+.rule-mark {
+  --cell: 18px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+  forced-color-adjust: none; /* the marks are backgrounds, and only .board opts out of forced colors */
+}
+.row-points {
+  margin-left: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}

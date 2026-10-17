@@ -263,13 +263,34 @@ test('only the last step carries the end reason', () => {
 })
 
 const cellsOf = (label: string) =>
-  within(screen.getByRole('rowheader', { name: label }).closest('tr')!)
+  within(screen.getByRole('rowheader', { name: new RegExp(`^${label}( |$)`) }).closest('tr')!)
     .getAllByRole('cell')
     .map((cell) => cell.textContent)
-const rowLabels = () => screen.getAllByRole('rowheader').map((header) => header.textContent)
+const rowHeaders = () => screen.getAllByRole('rowheader').map((header) => header.textContent)
+const rowLabels = () => rowHeaders().map((h) => h!.replace(/ [+−±]\d+$/, '')) // a special-cell row's label ends with its value
 const rulesOn = (...rules: ('prize' | 'pitfall' | 'steal' | 'selfEnclosedPenalty')[]) => (g: GameWireState) => {
   for (const rule of rules) g.houseRules[rule].enabled = true
 }
+
+const withPoints = (...kinds: ('prize' | 'pitfall' | 'steal')[]) => (g: GameWireState) => {
+  for (const kind of kinds) g.houseRules[kind] = { enabled: true, cells: [], points: 10 }
+}
+
+test('a special-cell rule\'s row carries the board\'s mark and what a capture is worth, in rule order', () => {
+  render(<ReplayScreen game={replayGame([place(1, [0, 0], 1, 1)], withPoints('steal', 'prize', 'pitfall'))} onBack={vi.fn()} />)
+
+  expect(rowHeaders().filter((h) => /Prize|Pitfall|Steal/.test(h!))).toEqual(['Prize +10', 'Pitfall −10', 'Steal ±10'])
+  for (const kind of ['prize', 'pitfall', 'steal']) {
+    expect(document.querySelector(`.score-table th .rule-mark.board-cell.${kind}`)).toHaveAttribute('aria-hidden', 'true')
+  }
+})
+
+test('only the rules that are on show a mark, and a rule with no mark of its own stays plain', () => {
+  render(<ReplayScreen game={replayGame([place(1, [0, 0], 1, 1)], (g) => { withPoints('prize')(g); g.houseRules.selfEnclosedPenalty.enabled = true })} onBack={vi.fn()} />)
+
+  expect(rowHeaders()).toEqual(['Area', 'Prize +10', 'Enclosure', 'Total', 'In reach'])
+  expect(document.querySelectorAll('.score-table .rule-mark')).toHaveLength(1)
+})
 
 test('the table starts at zero and follows the step: Area and Total per player', () => {
   render(<ReplayScreen game={replayGame([place(1, [0, 0], 2, 2, { '1': { area: 4 } })])} onBack={vi.fn()} />)
@@ -304,7 +325,7 @@ test('rule rows are signed with a real minus sign, and the total can go below ze
 test('a zero in a rule row is muted, a real amount is not', () => {
   render(<ReplayScreen game={replayGame([place(1, [0, 0], 1, 1, { '1': { area: 1, prize: 5 } })], rulesOn('prize'))} onBack={vi.fn()} />)
   next()
-  const [mine, theirs] = within(screen.getByRole('rowheader', { name: 'Prize' }).closest('tr')!).getAllByRole('cell')
+  const [mine, theirs] = within(screen.getByRole('rowheader', { name: /^Prize/ }).closest('tr')!).getAllByRole('cell')
   expect(mine).not.toHaveClass('zero')
   expect(theirs).toHaveClass('zero')
 })

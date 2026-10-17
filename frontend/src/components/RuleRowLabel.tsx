@@ -8,7 +8,7 @@ export function RuleRowLabel({ row, game }: { row: (typeof RULE_ROWS)[number]; g
   if (!special) return row.label
   return (
     <>
-      <span className={`board-cell ${special.kind} playing-legend-mark`} aria-hidden="true" />
+      <span className={`board-cell ${special.kind} rule-mark`} aria-hidden="true" />
       {row.label} <span className="row-points">{`${special.sign}${special.points}`}</span>
     </>
   )

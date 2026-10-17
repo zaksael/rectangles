@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { contrast, danger, ledger, readCss, ruleFor, textContrast, tokensCss } from '../dev/testUtils/styles'
+import { contrast, danger, ledger, readCss, ruleFor, tokensCss } from '../dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 
@@ -65,14 +65,6 @@ test('a streak one skip from the limit is danger-coloured and bold, and stays AA
   expect(rule).toMatch(/color:\s*var\(--danger\)/)
   expect(rule).toMatch(/font-weight:\s*600/)
   expect(contrast(danger, ledger)).toBeGreaterThanOrEqual(4.5)
-})
-
-test('a rule row\'s mark keeps its ink under forced colors and its value is a muted 12px figure that never wraps the label', () => {
-  expect(ruleFor(css, '.playing-legend-mark')).toMatch(/forced-color-adjust:\s*none/) // only .board opts out, and the table sits outside it
-  expect(ruleFor(css, '.playing-legend-mark')).toMatch(/--cell:\s*18px/)
-  expect(ruleFor(css, '.row-points')).toMatch(/font-size:\s*12px/)
-  expect(textContrast(css, '.row-points')).toBeGreaterThanOrEqual(4.5)
-  expect(ruleFor(css, '.playing .score-table tbody th')).toMatch(/white-space:\s*nowrap/)
 })
 
 test('the turn instruction is 14px on a 20px line at weight 500, so two lines and the hint fit the status box', () => {

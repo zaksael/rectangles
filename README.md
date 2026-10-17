@@ -87,7 +87,8 @@ Window" notice takes their place and the game waits where it was.
   Result**.
 - **Replay** the finished game turn by turn: step with First/Prev/Next/Last,
   seeing each turn's roll, placement and
-  each player's score breakdown at that point, plus a score-history chart
+  each player's score breakdown at that point (the Prize, Pitfall and Steal
+  rows carry the cell's mark and what a capture is worth), plus a score-history chart
   across the whole game (click or arrow along it to jump to a turn). For the
   turn just taken, a flag appears if the best other legal option that roll
   would have scored higher than what was actually played, showing the actual
