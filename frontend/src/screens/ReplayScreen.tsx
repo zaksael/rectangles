@@ -80,8 +80,8 @@ const AXIS_LABELS: Record<AnalysisTurn['axis'], string> = { prize: 'Prize', pitf
 
 // Denial is counted in cells; the other axes are real points, named by the rule that drove the gap.
 function analysisText({ axis, chosen, best }: AnalysisTurn): string {
-  if (axis === 'denial') return `Denied ${chosen} ${chosen === 1 ? 'cell' : 'cells'} this turn (best possible: ${best})`
-  return `Scored ${formatSigned(chosen)} this turn (best possible: ${formatSigned(best)}, ${AXIS_LABELS[axis]})`
+  if (axis === 'denial') return `Denied ${chosen} ${chosen === 1 ? 'cell' : 'cells'} this turn; the best move denied ${best}`
+  return `Scored ${formatSigned(chosen)} this turn; the best move scored ${formatSigned(best)} (${AXIS_LABELS[axis]})`
 }
 
 // The note for a flagged turn, or the one muted line saying why there is none.

@@ -128,8 +128,8 @@ test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.
 
 const boardCss = readCss('Board.css')
 
-test('the note slot reserves two lines so a note coming and going never resizes the chart', () => {
-  expect(ruleFor(css, '.replay .analysis-slot')).toMatch(/min-height:\s*44px/)
+test('the note slot reserves a stacked note (text, then the toggle on its own row) so a note coming and going never resizes the chart', () => {
+  expect(ruleFor(css, '.replay .analysis-slot')).toMatch(/min-height:\s*56px/)
 })
 
 test('the muted note lines and the chart key stay AA (4.5:1) on the ledger', () => {

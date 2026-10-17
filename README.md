@@ -91,10 +91,10 @@ Window" notice takes their place and the game waits where it was.
   across the whole game (click or arrow along it to jump to a turn). For the
   turn just taken, a flag appears if the best other legal option that roll
   would have scored higher than what was actually played, showing the actual
-  score against the best possible one (e.g. "scored 4 this turn (best
-  possible: 14 — prize)") — or, when the difference is purely strategic
-  denial rather than real points, the cells denied instead (e.g. "denied 1
-  cell this turn (best possible: 5)"). Toggle **Show Better Option** to
+  score against the best one (e.g. "Scored 4 this turn; the best move
+  scored 14 (Prize)") — or, when the difference is purely strategic
+  denial rather than real points, the cells denied instead (e.g. "Denied 1
+  cell this turn; the best move denied 5"). Toggle **Show Better Option** to
   outline the better placement on the board. **Play** advances automatically
   at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
   manual navigation pauses it. **Back** returns to the summary.

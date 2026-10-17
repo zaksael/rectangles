@@ -649,31 +649,31 @@ const renderAnalysed = (analysis: Analysis | null, step = 0) => {
 test('a flagged turn gets a note naming the points and the axis, with a real minus sign', () => {
   renderAnalysed(ready(flagged({ chosen: -10, best: 10 })), 1)
 
-  expect(screen.getByText('Scored −10 this turn (best possible: 10, Prize)')).toBeTruthy()
+  expect(screen.getByText('Scored −10 this turn; the best move scored 10 (Prize)')).toBeTruthy()
 })
 
 test('a steal turn names the Steal axis in points', () => {
   renderAnalysed(ready(flagged({ axis: 'steal', chosen: 0, best: 10 })), 1)
 
-  expect(screen.getByText('Scored 0 this turn (best possible: 10, Steal)')).toBeTruthy()
+  expect(screen.getByText('Scored 0 this turn; the best move scored 10 (Steal)')).toBeTruthy()
 })
 
 test('a denial turn reads in cells, singular for one', () => {
   renderAnalysed(ready(flagged({ axis: 'denial', chosen: 1, best: 5 })), 1)
 
-  expect(screen.getByText('Denied 1 cell this turn (best possible: 5)')).toBeTruthy()
+  expect(screen.getByText('Denied 1 cell this turn; the best move denied 5')).toBeTruthy()
 })
 
 test('a denial turn with several cells reads plural', () => {
   renderAnalysed(ready(flagged({ axis: 'denial', chosen: 5, best: 25 })), 1)
 
-  expect(screen.getByText('Denied 5 cells this turn (best possible: 25)')).toBeTruthy()
+  expect(screen.getByText('Denied 5 cells this turn; the best move denied 25')).toBeTruthy()
 })
 
 test('a turn that is not flagged has no note, with other turns flagged', () => {
   renderAnalysed(ready(flagged({ turn: 2 })), 1)
 
-  expect(screen.queryByText(/this turn \(best possible/)).toBeNull()
+  expect(screen.queryByText(/this turn; the best move/)).toBeNull()
 })
 
 test('while the analysis loads the note slot says it is checking, as a status', () => {
@@ -776,7 +776,7 @@ test('a note over 50 characters puts the toggle on its own row', () => {
 })
 
 test('a shorter note keeps the toggle beside it', () => {
-  const { container } = renderToggle()
+  const { container } = renderToggle({ turn: flagged({ axis: 'denial', chosen: 5, best: 25 }) })
 
   expect(container.querySelector('.analysis-row')).not.toBeNull()
   expect(container.querySelector('.analysis-row.stacked')).toBeNull()

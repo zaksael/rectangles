@@ -343,7 +343,7 @@ describe('App replay analysis', () => {
     answer()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
-    expect(screen.getByText('Scored 0 this turn (best possible: 10, Prize)')).toBeInTheDocument()
+    expect(screen.getByText('Scored 0 this turn; the best move scored 10 (Prize)')).toBeInTheDocument()
   })
 
   it('does not ask again when Replay is reopened', () => {

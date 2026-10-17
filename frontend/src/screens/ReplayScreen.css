@@ -239,9 +239,10 @@
 }
 
 /* The turn analysis: a note under the caption for a flagged turn, or the one muted line saying why there is none. The slot
-   keeps two lines whether or not this step has a note, so the chart below never resizes as steps come and go. */
+   keeps the height of a stacked note (a line, then the toggle on its own row) whether or not this step has one, so the chart
+   below never resizes as steps come and go. */
 .replay .analysis-slot {
-  min-height: 44px;
+  min-height: 56px;
   margin-top: -8px;
 }
 
