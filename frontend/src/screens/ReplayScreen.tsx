@@ -257,11 +257,11 @@ export function ReplayScreen({ game, onBack, analysis = null, showBetterOption =
   }, [])
 
   return (
-    <div className="replay">
+    <main className="replay">
       <div className="board-wrap">
         <Board game={gameAt(game, history, step)} lastPlaced={lastPlaced} betterOption={showBetterOption ? flaggedTurn : null} />
       </div>
-      <div className="rail">
+      <aside className="rail" aria-label="Replay controls">
         <div className="rail-head">
           <h1 className="rail-title">Replay</h1>
           <button className="btn secondary" onClick={onBack}>Back</button>
@@ -290,7 +290,7 @@ export function ReplayScreen({ game, onBack, analysis = null, showBetterOption =
             ))}
           </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </main>
   )
 }

@@ -41,6 +41,14 @@ test('renders nothing game-specific before the first state broadcast arrives', (
   expect(screen.queryByRole('group', { name: / board$/ })).not.toBeInTheDocument()
 })
 
+test('the screen is a main landmark and the rail a named complementary one', () => {
+  renderScreen(makeState())
+
+  const main = screen.getByRole('main')
+  expect(within(main).getByRole('complementary', { name: 'Scores and moves' })).toBeInTheDocument()
+  expect(within(main).getByRole('heading', { level: 1, name: 'Playing' })).toBeInTheDocument()
+})
+
 test('highlights the current player in the turn indicator', () => {
   renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 

@@ -344,6 +344,13 @@ test('both header dots are filled at every step: the .over class keeps Playing\'
   for (const header of screen.getAllByRole('columnheader')) expect(header).toHaveClass('over')
 })
 
+test('the screen is a main landmark and the rail a named complementary one', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+
+  const main = screen.getByRole('main')
+  expect(within(main).getByRole('complementary', { name: 'Replay controls' })).toBeInTheDocument()
+})
+
 test('the opponent is named in the table header as on Playing', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES, (g) => { g.players['2'].name = 'Bot (hard)' })} onBack={vi.fn()} />)
   expect(screen.getByRole('columnheader', { name: 'Bot (hard)' })).toBeTruthy()

@@ -259,7 +259,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const title = state?.series ? `Round ${seriesRound(state.game, state.series)} of ${state.series.length}` : 'Game'
 
   return (
-    <div className="playing">
+    <main className="playing">
       <h1 className="visually-hidden">Playing</h1>
       {state && (
         <div className="board-wrap">
@@ -286,7 +286,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
         </div>
       )}
-      <div className="rail">
+      <aside className="rail" aria-label="Scores and moves">
         <div className="rail-head">
           <h2 className="rail-title">{title}</h2>
           {state?.series && <span className="rail-series">{`Series ${state.series.scores['1']} – ${state.series.scores['2']}`}</span>}
@@ -439,13 +439,13 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             </div>
           </>
         )}
-      </div>
+      </aside>
       {state && turnState === 'gameOver' && !resultHidden &&
         (seriesResultOpen && state.series ? (
           <SeriesResultOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onReplay={onReplay && (() => onReplay(true))} />
         ) : (
           <GameOverOverlay game={state.game} series={state.series} onNewGame={onNewGame} onViewBoard={() => setResultHidden(true)} onNextRound={nextRound} onSeriesResult={openSeriesResult} onReplay={onReplay && (() => onReplay(false))} />
         ))}
-    </div>
+    </main>
   )
 }
