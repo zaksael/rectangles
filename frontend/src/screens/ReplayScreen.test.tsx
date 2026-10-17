@@ -698,7 +698,7 @@ test('a game with nothing flagged says none were found on every step', () => {
 test('no analysis asked for shows nothing in the note slot', () => {
   renderAnalysed(null, 1)
 
-  expect(screen.queryByText(/better moves|Turn analysis|this turn \(best/)).toBeNull()
+  expect(screen.queryByText(/better moves|Turn analysis|this turn; the best/)).toBeNull()
 })
 
 

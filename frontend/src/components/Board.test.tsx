@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import { makeGame } from '../dev/fixtures/gameFixtures'
 import { Board } from './Board'
@@ -365,4 +365,33 @@ test('an obstacle excludes the far side from the enclosing-owner check, same as 
   const { container } = render(<Board game={game} />)
 
   expect(container.querySelector('.enclosed-hatch[data-cell="2,2"]')).toBeInTheDocument()
+})
+
+const withOutline = (size: number, topLeft: [number, number], width: number, height: number) =>
+  render(<Board game={makeGame({ board: { size, skipLimit: 5 } })} betterOption={{ topLeft, width, height }} />)
+
+test('the better-move outline is a picture named with its place and carries a visible Better move tag', () => {
+  withOutline(19, [7, 14], 5, 3)
+
+  const outline = screen.getByRole('img', { name: 'Better move: 5×3 at row 8, column 15' })
+  expect(outline).toHaveClass('better-option')
+  expect(within(outline).getByText('Better move')).toBeVisible()
+})
+
+test('the tag drops below an outline on the first row and stays above any other', () => {
+  const { container, unmount } = withOutline(19, [0, 2], 3, 2)
+  expect(container.querySelector('.better-option')).toHaveClass('flip')
+  unmount()
+
+  const { container: other } = withOutline(19, [1, 2], 3, 2)
+  expect(other.querySelector('.better-option')).not.toHaveClass('flip')
+})
+
+test('the tag hangs from the right corner when the outline centres in the right half, else from the left', () => {
+  const { container, unmount } = withOutline(19, [10, 8], 2, 2) // 8 * 2 + 2 = 18 <= 19: centre left of the middle
+  expect(container.querySelector('.better-option')).not.toHaveClass('end')
+  unmount()
+
+  const { container: right } = withOutline(19, [10, 9], 2, 2) // 9 * 2 + 2 = 20 > 19
+  expect(right.querySelector('.better-option')).toHaveClass('end')
 })

@@ -162,6 +162,18 @@ test('the better placement is a 3px dashed ink outline with a light ink tint, ab
   expect(block).toMatch(/z-index:\s*2/)
 })
 
+test('the Better move tag is a 12px ink label on the outline\'s top-left corner, below it on the first row and from the right corner in the right half', () => {
+  const tag = ruleFor(boardCss, '.better-option .tag')
+  expect(tag).toMatch(/background:\s*var\(--ink\)/)
+  expect(tag).toMatch(/color:\s*var\(--ledger\)/)
+  expect(tag).toMatch(/font-size:\s*12px/)
+  expect(tag).toMatch(/bottom:\s*100%/)
+  expect(tag).toMatch(/left:\s*-3px/)
+  expect(ruleFor(boardCss, '.better-option.flip .tag')).toMatch(/top:\s*100%/)
+  expect(ruleFor(boardCss, '.better-option.end .tag')).toMatch(/right:\s*-3px/)
+  expect(contrast(ledger, token(tokensCss, '--ink'))).toBeGreaterThanOrEqual(4.5)
+})
+
 test('the key hint is muted like the chart hint, and a touch screen, which has no keyboard, does not show it', () => {
   expect(ruleFor(css, '.replay .controls-hint')).toMatch(/color:\s*color-mix\(in srgb, var\(--ink\) 75%, transparent\)/)
   expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.replay \.controls-hint \{[^}]*display:\s*none/)

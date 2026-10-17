@@ -271,7 +271,17 @@ export function Board({
           style={gridBox(previewTopLeft[0], previewTopLeft[1], previewDims[0], previewDims[1])}
         />
       )}
-      {betterOption && <div className="better-option" style={gridBox(betterOption.topLeft[0], betterOption.topLeft[1], betterOption.width, betterOption.height)} />}
+      {betterOption && (
+        <div
+          // The tag drops below an outline on the first row and hangs from the right corner in the right half, so it stays on the board.
+          className={`better-option${betterOption.topLeft[0] === 0 ? ' flip' : ''}${betterOption.topLeft[1] * 2 + betterOption.width > size ? ' end' : ''}`}
+          style={gridBox(betterOption.topLeft[0], betterOption.topLeft[1], betterOption.width, betterOption.height)}
+          role="img"
+          aria-label={`Better move: ${betterOption.width}×${betterOption.height} at row ${betterOption.topLeft[0] + 1}, column ${betterOption.topLeft[1] + 1}`}
+        >
+          <span className="tag">Better move</span>
+        </div>
+      )}
     </div>
   )
 }

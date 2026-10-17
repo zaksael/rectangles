@@ -191,6 +191,31 @@
   z-index: 2;
 }
 
+.better-option .tag {
+  position: absolute;
+  bottom: 100%;
+  left: -3px;
+  margin-bottom: 3px;
+  padding: 2px 6px;
+  background: var(--ink);
+  color: var(--ledger);
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.better-option.flip .tag {
+  bottom: auto;
+  top: 100%;
+  margin: 3px 0 0;
+}
+
+.better-option.end .tag {
+  left: auto;
+  right: -3px;
+}
+
 .preview.legal {
   background: color-mix(in srgb, var(--mover) 50%, transparent);
   border: 2px dashed var(--ink);
