@@ -234,6 +234,28 @@ test('the last step names the end reason in the game-over dialog\'s words', () =
   expect(lastStepCaption('surrender', 2, 1)).toHaveTextContent('— Player 2 surrendered, Player 1 wins')
 })
 
+const resultCaption = (reason: GameWireState['gameOver']['reason'], winner: number | null, scores: [number, number]) => {
+  const last = move(2, null, { '1': { area: scores[0] }, '2': { area: scores[1] } })
+  const game = replayGame([place(1, [0, 0], 2, 2), last], (g) => {
+    g.gameOver = { ...g.gameOver, reason, playerId: reason === 'boardFull' ? null : 2, winner }
+  })
+  render(<ReplayScreen game={game} onBack={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Last' }))
+  return caption()
+}
+
+test('the last step follows the end reason with who won by how much, or tied; a surrender names its winner only', () => {
+  expect(resultCaption('boardFull', 1, [30, 18])).toHaveTextContent('— board settled, Player 1 wins by 12')
+  cleanup()
+  expect(resultCaption('playerBlocked', 2, [10, 14])).toHaveTextContent('— Player 2 had no legal move left, Player 2 wins by 4')
+  cleanup()
+  expect(resultCaption('skipLimit', 1, [20, 5])).toHaveTextContent('— Player 2 hit the skip limit (5 of 5), Player 1 wins by 15')
+  cleanup()
+  expect(resultCaption('boardFull', null, [16, 16])).toHaveTextContent('— board settled, tied')
+  cleanup()
+  expect(resultCaption('surrender', 1, [3, 40])).toHaveTextContent(/— Player 2 surrendered, Player 1 wins$/)
+})
+
 test('only the last step carries the end reason', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
   next()

@@ -47,15 +47,18 @@ function effectTexts(game: GameWireState, history: HistoryEntry[], step: number)
   return texts
 }
 
-// The last step ends on why the game stopped; a surrender also says who won.
-function endText(game: GameWireState): string | null {
+// The last step ends on why the game stopped, then who won; a surrender names its winner only, since the surrender decides it, not the score.
+function endText(game: GameWireState, history: HistoryEntry[]): string | null {
   const reason = reasonText(game)
   const { winner } = game.gameOver
-  return game.gameOver.reason === 'surrender' && winner !== null ? `${reason}, ${noBreak(game.players[String(winner) as '1' | '2'].name)} wins` : reason
+  if (game.gameOver.reason === 'surrender' && winner !== null) return `${reason}, ${noBreak(game.players[String(winner) as '1' | '2'].name)} wins`
+  const { score } = history[history.length - 1]
+  const result = winner === null ? 'tied' : `${noBreak(game.players[String(winner) as '1' | '2'].name)} wins by ${Math.abs(score['1'] - score['2'])}`
+  return reason && `${reason}, ${result}`
 }
 
 function Caption({ game, history, step }: { game: GameWireState; history: HistoryEntry[]; step: number }) {
-  const notes = step === 0 ? [] : [...effectTexts(game, history, step), step === history.length ? endText(game) : null].filter(Boolean)
+  const notes = step === 0 ? [] : [...effectTexts(game, history, step), step === history.length ? endText(game, history) : null].filter(Boolean)
   return (
     <p className="caption" data-testid="replay-caption" aria-live="polite">
       {step === 0 ? (
