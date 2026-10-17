@@ -361,6 +361,12 @@ test('a series round names its round and the series score beside the title; a si
   expect(screen.getByRole('heading', { level: 1, name: 'Replay' }).parentElement).toHaveTextContent(/^ReplayBack$/)
 })
 
+test('the keys the screen answers to are named under the controls', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+
+  expect(screen.getByText('Arrows step, Home/End jump, Space plays, Esc goes back')).toBeInTheDocument()
+})
+
 test('the opponent is named in the table header as on Playing', () => {
   render(<ReplayScreen game={replayGame(TWO_MOVES, (g) => { g.players['2'].name = 'Bot (hard)' })} onBack={vi.fn()} />)
   expect(screen.getByRole('columnheader', { name: 'Bot (hard)' })).toBeTruthy()

@@ -291,6 +291,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
               </button>
             ))}
           </div>
+          <p className="controls-hint">Arrows step, Home/End jump, Space plays, Esc goes back</p>
         </div>
       </aside>
     </main>

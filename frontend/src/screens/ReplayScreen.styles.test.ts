@@ -161,3 +161,8 @@ test('the better placement is a 3px dashed ink outline with a light ink tint, ab
   expect(block).toMatch(/background:\s*color-mix\(in srgb, var\(--ink\) 12%, transparent\)/)
   expect(block).toMatch(/z-index:\s*2/)
 })
+
+test('the key hint is muted like the chart hint, and a touch screen, which has no keyboard, does not show it', () => {
+  expect(ruleFor(css, '.replay .controls-hint')).toMatch(/color:\s*color-mix\(in srgb, var\(--ink\) 75%, transparent\)/)
+  expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.replay \.controls-hint \{[^}]*display:\s*none/)
+})

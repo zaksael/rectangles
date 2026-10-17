@@ -89,6 +89,20 @@
   margin-top: auto;
 }
 
+.replay .controls-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+/* A touch screen has no keyboard, so the line gives its height back to the chart. */
+@media (pointer: coarse) {
+  .replay .controls-hint {
+    display: none;
+  }
+}
+
 .replay .transport,
 .replay .speed {
   display: grid;
