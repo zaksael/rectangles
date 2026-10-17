@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, ScoreParts } from '../game/gameTypes'
-import { makeGame, reach } from '../dev/fixtures/gameFixtures'
+import { makeGame, makeSeries, reach } from '../dev/fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
 
 afterEach(() => {
@@ -349,6 +349,16 @@ test('the screen is a main landmark and the rail a named complementary one', () 
 
   const main = screen.getByRole('main')
   expect(within(main).getByRole('complementary', { name: 'Replay controls' })).toBeInTheDocument()
+})
+
+test('a series round names its round and the series score beside the title; a single game shows neither', () => {
+  const series = makeSeries({ gamesPlayed: 2, length: 3, scores: { '1': 1, '2': 1 } })
+  const { unmount } = render(<ReplayScreen game={replayGame(TWO_MOVES)} series={series} onBack={vi.fn()} />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Replay' }).parentElement).toHaveTextContent('ReplayRound 2 of 3 · Series 1 – 1Back')
+  unmount()
+
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Replay' }).parentElement).toHaveTextContent(/^ReplayBack$/)
 })
 
 test('the opponent is named in the table header as on Playing', () => {

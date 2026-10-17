@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import { Board } from '../components/Board'
-import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts } from '../game/gameTypes'
+import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts, SeriesWireState } from '../game/gameTypes'
 import { noBreak } from '../game/noBreak'
 import { formatSigned, reasonText } from '../game/resultText'
 import { ScoreChart } from '../components/ScoreChart'
@@ -188,13 +188,14 @@ const SPEEDS = [
 
 interface ReplayScreenProps {
   game: GameWireState
+  series?: SeriesWireState | null
   onBack: () => void
   analysis?: Analysis | null
   showBetterOption?: boolean
   onToggleBetterOption?: () => void
 }
 
-export function ReplayScreen({ game, onBack, analysis = null, showBetterOption = false, onToggleBetterOption = () => {} }: ReplayScreenProps) {
+export function ReplayScreen({ game, series = null, onBack, analysis = null, showBetterOption = false, onToggleBetterOption = () => {} }: ReplayScreenProps) {
   const history = game.gameOver.history ?? []
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -264,6 +265,7 @@ export function ReplayScreen({ game, onBack, analysis = null, showBetterOption =
       <aside className="rail" aria-label="Replay controls">
         <div className="rail-head">
           <h1 className="rail-title">Replay</h1>
+          {series && <span className="rail-series">{`Round ${series.gamesPlayed} of ${series.length} · Series ${series.scores['1']} – ${series.scores['2']}`}</span>}
           <button className="btn secondary" onClick={onBack}>Back</button>
         </div>
         <ScoreTable game={game} history={history} step={step} />

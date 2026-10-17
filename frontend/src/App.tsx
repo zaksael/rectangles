@@ -104,6 +104,7 @@ function App() {
       <NarrowWindowGate screen="Replay">
         <ReplayScreen
           game={gameSocket.state.game}
+          series={gameSocket.state.series}
           onBack={() => setScreen('PLAYING')}
           analysis={gameSocket.analysis}
           showBetterOption={showBetterOption}

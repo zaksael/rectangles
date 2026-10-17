@@ -44,6 +44,13 @@
   line-height: 1.2;
 }
 
+.replay .rail-series {
+  margin-left: 12px;
+  margin-right: auto;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+}
+
 .replay .caption {
   margin: 0;
   font-size: 13px;

@@ -19,6 +19,7 @@ export function FixtureApp({ name }: { name: string }) {
       <NarrowWindowGate screen="Replay">
         <ReplayScreen
           game={state.game}
+          series={state.series}
           onBack={() => setReplaying(false)}
           analysis={FIXTURE_ANALYSIS}
           showBetterOption={showBetterOption}
