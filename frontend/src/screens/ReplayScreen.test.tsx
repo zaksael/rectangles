@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, ScoreParts } from '../game/gameTypes'
-import { makeGame, makeSeries, reach } from '../dev/fixtures/gameFixtures'
+import { makeGame, makeHistoryEntry, makeSeries, reach } from '../dev/fixtures/gameFixtures'
 import { ReplayScreen } from './ReplayScreen'
 
 afterEach(() => {
@@ -20,7 +20,7 @@ const move = (
   extra: Partial<HistoryEntry> = {},
 ): HistoryEntry => {
   const b = { '1': parts(breakdown['1']), '2': parts(breakdown['2']) }
-  return { playerId, roll: [2, 2], placed, wildcardOriginalRoll: null, score: { '1': total(b['1']), '2': total(b['2']) }, breakdown: b, potential: reach(0, 0), ...extra }
+  return makeHistoryEntry({ playerId, placed, score: { '1': total(b['1']), '2': total(b['2']) }, breakdown: b, ...extra })
 }
 
 const place = (playerId: number, topLeft: [number, number], width: number, height: number, breakdown = {}): HistoryEntry =>

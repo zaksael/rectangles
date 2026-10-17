@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { HistoryEntry } from '../game/gameTypes'
-import { makeGame, makeSeries, reach } from '../dev/fixtures/gameFixtures'
+import { makeGame, makeHistoryEntry, makeSeries } from '../dev/fixtures/gameFixtures'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)
@@ -670,15 +670,8 @@ test('with no replay handler neither series card shows a Replay button', () => {
 })
 
 // One history entry: who moved and both players' running totals after it (a null `placed` is a skip).
-const moved = (playerId: number, score: [number, number], placed: HistoryEntry['placed'] = { topLeft: [0, 0], width: 2, height: 2 }): HistoryEntry => ({
-  playerId,
-  roll: [2, 2],
-  placed,
-  wildcardOriginalRoll: null,
-  score: { '1': score[0], '2': score[1] },
-  breakdown: { '1': { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }, '2': { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 } },
-  potential: reach(0, 0),
-})
+const moved = (playerId: number, score: [number, number], placed: HistoryEntry['placed'] = { topLeft: [0, 0], width: 2, height: 2 }): HistoryEntry =>
+  makeHistoryEntry({ playerId, placed, score: { '1': score[0], '2': score[1] } })
 
 function renderWithHistory(history: HistoryEntry[] | null, winner: number | null = 1, reason: 'boardFull' | 'surrender' = 'boardFull', rules = true) {
   const game = makeGame({ gameOver: { reason, playerId: null, winner, history } })

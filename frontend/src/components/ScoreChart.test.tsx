@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { HistoryEntry } from '../game/gameTypes'
-import { reach } from '../dev/fixtures/gameFixtures'
+import { makeHistoryEntry } from '../dev/fixtures/gameFixtures'
 import { ScoreChart } from './ScoreChart'
 
 afterEach(() => {
@@ -9,16 +9,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const zero = { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }
-const entry = (one: number, two: number): HistoryEntry => ({
-  playerId: 1,
-  roll: [1, 1],
-  placed: null,
-  wildcardOriginalRoll: null,
-  score: { '1': one, '2': two },
-  breakdown: { '1': zero, '2': zero },
-  potential: reach(0, 0),
-})
+const entry = (one: number, two: number): HistoryEntry => makeHistoryEntry({ roll: [1, 1], score: { '1': one, '2': two } })
 
 // Scores per turn after turn 0; the chart is 320x300 here, so the plot runs x 36..310 and y 274 (bottom) to 10 (top).
 const NAMES = { '1': 'Player 1', '2': 'Player 2' }

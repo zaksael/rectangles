@@ -6,6 +6,12 @@ export const reach = (one: number, two: number): HistoryEntry['potential'] => ({
   '2': { area: two, prize: { points: 0 } },
 })
 
+// A history entry: player 1's skip with zero scores; override what a test cares about.
+export const makeHistoryEntry = (overrides: Partial<HistoryEntry> = {}): HistoryEntry => {
+  const zero = { area: 0, prize: 0, pitfall: 0, steal: 0, enclosure: 0 }
+  return { playerId: 1, roll: [2, 2], placed: null, wildcardOriginalRoll: null, score: { '1': 0, '2': 0 }, breakdown: { '1': zero, '2': zero }, potential: reach(0, 0), ...overrides }
+}
+
 export function makeGame(overrides: Partial<GameWireState> = {}): GameWireState {
   return {
     board: { size: 3, skipLimit: 5 },
