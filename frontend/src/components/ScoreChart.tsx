@@ -8,6 +8,8 @@ const RIGHT = 10
 const TOP = 10
 const BOTTOM = 26
 const GRID_STEP = 25
+// Axis numbers keep at least this many pixels between neighbours.
+const MIN_LABEL_GAP = 24
 const DEFAULT_SIZE = { width: 320, height: 300 }
 
 const IDS = ['1', '2'] as const
@@ -54,6 +56,8 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
   const y = (score: number) => height - BOTTOM - ((score - bottom) / (top - bottom)) * plotHeight
   const linePoints = (id: '1' | '2', from: number, to: number) =>
     series[id].slice(from, to + 1).map((score, i) => `${x(from + i)},${y(score)}`).join(' ')
+  // Number every labelEvery-th gridline (zero is always one); the lines all stay.
+  const labelEvery = Math.max(1, Math.ceil(MIN_LABEL_GAP / ((plotHeight * GRID_STEP) / (top - bottom))))
   const tabStop = roving ?? step
   const targetWidth = plotWidth / turns
 
@@ -109,13 +113,15 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
             {gridValues.map((value) => (
               <g key={value}>
                 <line x1={LEFT} x2={width - RIGHT} y1={y(value)} y2={y(value)} stroke={value === 0 && bottom < 0 ? 'var(--ink)' : 'var(--line)'} strokeWidth={1} />
-                <text x={LEFT - 12} y={y(value) + 4} textAnchor="end" className="chart-axis" aria-hidden="true">
-                  {formatSigned(value)}
-                </text>
+                {(value / GRID_STEP) % labelEvery === 0 && (
+                  <text x={LEFT - 12} y={y(value) + 4} textAnchor="end" className="chart-axis" aria-hidden="true">
+                    {formatSigned(value)}
+                  </text>
+                )}
               </g>
             ))}
             {Array.from({ length: turns + 1 }, (_, turn) => turn)
-              .filter((turn) => turn % 5 === 0 || turn === turns)
+              .filter((turn) => turn % 5 === 0 || (turn === turns && x(turn) - x(turn - (turn % 5)) >= MIN_LABEL_GAP))
               .map((turn) => (
                 <text key={turn} x={x(turn)} y={height - 8} textAnchor="middle" className="chart-axis" aria-hidden="true">
                   {turn}

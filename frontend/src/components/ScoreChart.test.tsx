@@ -53,6 +53,28 @@ test('turn numbers run every 5 turns and at the last turn', () => {
   expect(turnLabels(draw([[0, 0], [0, 0], [0, 0]]).container)).toEqual(['0', '3'])
 })
 
+test('the last turn has no number when it would sit within 24px of the 5-turn one before it', () => {
+  // 27 turns over the 274px plot is about 10px a turn, so 27 is 20px from 25; 28 is 30px from 25.
+  const turnsOf = (count: number) => Array.from({ length: count }, (): [number, number] => [0, 0])
+  expect(turnLabels(draw(turnsOf(27)).container)).toEqual(['0', '5', '10', '15', '20', '25'])
+  cleanup()
+  expect(turnLabels(draw(turnsOf(28)).container)).toEqual(['0', '5', '10', '15', '20', '25', '28'])
+})
+
+test('a box too short for every y number shows every other one, and zero keeps its number', () => {
+  let report: ResizeObserverCallback = () => {}
+  vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
+  const { container } = draw([[225, 0]], 1)
+  // A 160px box leaves a 124px plot: ten gridlines are about 14px apart, so only every second one is numbered.
+  act(() => report([{ contentRect: { width: 320, height: 160 } } as ResizeObserverEntry], {} as ResizeObserver))
+  expect(yLabels(container)).toEqual(['0', '50', '100', '150', '200'])
+  expect(container.querySelectorAll('svg line[stroke="var(--line)"]')).toHaveLength(10)
+  cleanup()
+  const { container: negative } = draw([[100, -50]], 1)
+  act(() => report([{ contentRect: { width: 320, height: 120 } } as ResizeObserverEntry], {} as ResizeObserver))
+  expect(yLabels(negative)).toEqual(['−50', '0', '50', '100'])
+})
+
 test('each line is solid up to the current turn and faded after it', () => {
   const { container } = draw(CLIMB, 1)
   expect(points(container, '.chart-line.p1.played')).toBe('36,274 173,142')
