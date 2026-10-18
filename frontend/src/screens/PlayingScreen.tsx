@@ -141,6 +141,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }, [dims])
 
   const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false
+  // A Comeback grant makes Reroll usable with the rule off, so its charges are counted from the first turn.
+  const comebackEnabled = state?.game.houseRules.comebackNudge.enabled ?? false
   const canReroll = state?.game.houseRules.reroll.canReroll ?? false
   const rerollUsable = canReroll && ['choosingPlacement', 'skipped', 'choosingWildcard'].includes(humanTurnState ?? '')
 
@@ -348,7 +350,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                     </td>
                   ))}
                 </tr>
-                {rerollEnabled && (
+                {(rerollEnabled || comebackEnabled) && (
                   <tr>
                     <th scope="row">Rerolls</th>
                     {ids.map((id) => <td key={id}>{reroll(id).limit - reroll(id).used} / {reroll(id).limit}</td>)}

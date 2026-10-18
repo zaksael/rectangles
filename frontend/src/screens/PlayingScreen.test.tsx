@@ -1313,6 +1313,23 @@ test('there is no Rerolls row when the house rule is off', () => {
   expect(within(scoreTable()).queryByRole('row', { name: /^Rerolls/ })).not.toBeInTheDocument()
 })
 
+test('with Reroll off and Comeback on the Rerolls row is there from the start and a grant only changes its number', () => {
+  const comebackOnly = () => {
+    const state = makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } })
+    state.game.houseRules.comebackNudge.enabled = true
+    return state
+  }
+  const update = renderPlaying(comebackOnly())
+  expect(rowValues('Rerolls')).toEqual(['0 / 0', '0 / 0'])
+
+  const granted = comebackOnly()
+  granted.game.players['1'].houseRules.reroll = { used: 0, limit: 1 }
+  granted.game.players['1'].houseRules.comebackNudge.granted = true
+  update(granted)
+
+  expect(rowValues('Rerolls')).toEqual(['1 / 1', '0 / 0'])
+})
+
 test('the key hint names the reroll key, comma-joined, while placing, and is blank while skipping', () => {
   renderScreen(rerollState(true))
   expect(screen.getByText('Arrows move, N next, Enter places, R rotates, E rerolls')).toBeInTheDocument()
