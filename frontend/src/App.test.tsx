@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FakeWebSocket } from './dev/testUtils/FakeWebSocket'
@@ -240,6 +240,44 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Replay/ })).toBeInTheDocument()
+  })
+
+  const openReplay = () => {
+    render(<App />)
+    startGameAndOpen()
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series: null,
+      })
+    })
+    fireEvent.click(screen.getByRole('button', { name: /^Replay/ }))
+  }
+  const dropSocket = () => act(() => {
+    FakeWebSocket.instances.at(-1)!.emit('close')
+  })
+
+  it('says the connection was lost when the socket closes unexpectedly during Replay', () => {
+    openReplay()
+
+    dropSocket()
+
+    expect(screen.getByRole('status')).toHaveTextContent('Connection lost. This replay still works.')
+    expect(screen.getByRole('heading', { name: 'Replay' })).toBeInTheDocument()
+  })
+
+  it('starts over from the Replay connection notice: New Game returns to a clean Mode Select', () => {
+    openReplay()
+    dropSocket()
+
+    fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: 'New Game' }))
+
+    expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
   })
 
   it('swaps Playing and then Replay for the narrow-window notice below 1320px, and brings them back when widened', () => {

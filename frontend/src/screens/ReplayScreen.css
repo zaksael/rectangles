@@ -37,6 +37,24 @@
   justify-content: space-between;
 }
 
+/* Once the socket has dropped: the replay needs no server, so this says so and offers a fresh game. */
+.replay .conn-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.replay .conn-notice .btn {
+  flex: none;
+}
+
 .replay .rail-title {
   margin: 0;
   font-size: 20px;

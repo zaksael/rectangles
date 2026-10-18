@@ -198,9 +198,12 @@ interface ReplayScreenProps {
   analysis?: Analysis | null
   showBetterOption?: boolean
   onToggleBetterOption?: () => void
+  // The socket dropped: the replay needs no server, so it says so and carries on.
+  connectionLost?: boolean
+  onNewGame?: () => void
 }
 
-export function ReplayScreen({ game, series = null, onBack, analysis = null, showBetterOption = false, onToggleBetterOption = () => {} }: ReplayScreenProps) {
+export function ReplayScreen({ game, series = null, onBack, analysis = null, showBetterOption = false, onToggleBetterOption = () => {}, connectionLost = false, onNewGame = () => {} }: ReplayScreenProps) {
   const history = game.gameOver.history ?? []
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -278,6 +281,12 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
           )}
           <button className="btn secondary" onClick={onBack}>Back</button>
         </div>
+        {connectionLost && (
+          <div className="conn-notice" role="status">
+            <span>Connection lost. This replay still works.</span>
+            <button className="btn secondary" onClick={onNewGame}>New Game</button>
+          </div>
+        )}
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} />
         {analysis && (

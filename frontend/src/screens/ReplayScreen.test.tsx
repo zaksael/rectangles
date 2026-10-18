@@ -46,6 +46,30 @@ test('opens on the start of the game: empty board, no way back from step 0', () 
   expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
 })
 
+test('shows no connection notice while the connection is up', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
+
+  expect(screen.queryByText(/Connection lost/)).not.toBeInTheDocument()
+})
+
+test('the replay still steps and jumps while the connection notice shows', () => {
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} connectionLost />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  expect(screen.getByText('Turn 1 of 2')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Last' }))
+  expect(screen.getByText('Turn 2 of 2')).toBeTruthy()
+})
+
+test('Back still goes back while the connection notice shows', () => {
+  const onBack = vi.fn()
+  render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={onBack} connectionLost />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+  expect(onBack).toHaveBeenCalledTimes(1)
+})
+
 test('Next places the first move, and only that piece carries the last-piece cue', () => {
   const { container } = render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
   fireEvent.click(screen.getByRole('button', { name: 'Next' }))

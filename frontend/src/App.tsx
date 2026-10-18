@@ -109,6 +109,8 @@ function App() {
           analysis={gameSocket.analysis}
           showBetterOption={showBetterOption}
           onToggleBetterOption={() => setShowBetterOption((on) => !on)}
+          connectionLost={gameSocket.status === 'closed-unexpected'}
+          onNewGame={handleNewGame}
         />
       </NarrowWindowGate>
     )

@@ -77,6 +77,14 @@ test('chart axis numbers are 12px mono and stay AA (4.5:1) on the ledger', () =>
   expect(contrast(mix(ink, mixShare(block, 'fill', '--ink'), ledger), ledger)).toBeGreaterThanOrEqual(4.5)
 })
 
+test('the connection notice text stays AA (4.5:1) on the ledger and is outlined in the same danger colour', () => {
+  const block = ruleFor(css, '.replay .conn-notice')
+
+  expect(block).toMatch(/color:\s*var\(--danger\)/)
+  expect(block).toMatch(/border:\s*1px solid var\(--danger\)/)
+  expect(contrast(token(tokensCss, '--danger'), ledger)).toBeGreaterThanOrEqual(4.5)
+})
+
 test('the chart label and the empty-chart text stay AA (4.5:1) on the ledger', () => {
   expect(textContrast(css, '.replay .chart-label')).toBeGreaterThanOrEqual(4.5)
   expect(textContrast(css, '.replay .chart-empty')).toBeGreaterThanOrEqual(4.5)
