@@ -65,12 +65,22 @@ _BOOL_PARAM_NAMES = {
 app = FastAPI()
 
 
+class _HardenedStaticFiles(StaticFiles):
+    """StaticFiles that forbids framing the page and sniffing a response's content type."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
 def mount_frontend(app: FastAPI, dist_dir: Path) -> None:
     """Serve a built frontend (`npm run build`) from `/`, beside `/ws`. A no-op when the folder is missing,
     so development (the Vite proxy) and the tests are unchanged. Mount it after the `/ws` route: a mount at
     `/` matches every path, so anything registered later would never be reached."""
     if dist_dir.is_dir():
-        app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
+        app.mount("/", _HardenedStaticFiles(directory=dist_dir, html=True), name="frontend")
 
 
 def _connect_params_valid(query_params) -> bool:

@@ -788,6 +788,16 @@ def test_mount_frontend_serves_the_index_and_assets_and_leaves_the_websocket_wor
         assert ws.receive_json()["type"] == "state"
 
 
+@pytest.mark.parametrize("path", ["/", "/assets/app.js"])
+def test_mount_frontend_responses_forbid_framing_and_sniffing(tmp_path, path):
+    served = _app_with_ws()
+    mount_frontend(served, _built_frontend(tmp_path))
+
+    headers = TestClient(served).get(path).headers
+
+    assert (headers.get("x-frame-options"), headers.get("x-content-type-options")) == ("DENY", "nosniff")
+
+
 def test_mount_frontend_answers_an_unknown_path_with_404(tmp_path):
     served = _app_with_ws()
     mount_frontend(served, _built_frontend(tmp_path))
