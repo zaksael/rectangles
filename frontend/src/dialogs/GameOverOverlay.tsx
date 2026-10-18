@@ -75,10 +75,10 @@ function bestTurn(game: GameWireState): { turn: number; playerId: number; gain: 
   const { history } = game.gameOver
   const { prize, pitfall, steal } = game.houseRules
   if (!history || !(prize.enabled || pitfall.enabled || steal.enabled)) return null
-  const gains = history.map((entry, i) => ({ turn: i + 1, playerId: entry.playerId, gain: entry.score[key(entry.playerId)] - (i === 0 ? 0 : history[i - 1].score[key(entry.playerId)]) }))
+  const gains = history.map((entry, i) => ({ turn: i + 1, playerId: entry.playerId, gain: entry.score[key(entry.playerId)] - (i === 0 ? 0 : history[i - 1]!.score[key(entry.playerId)]) }))
   const top = Math.max(...gains.map((g) => g.gain))
   const best = gains.filter((g) => g.gain === top)
-  return top > 0 && best.length === 1 ? best[0] : null
+  return top > 0 && best.length === 1 ? best[0]! : null
 }
 
 const pointsText = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`

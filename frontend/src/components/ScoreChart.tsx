@@ -25,7 +25,7 @@ function useBoxSize() {
   const [size, setSize] = useState(DEFAULT_SIZE)
   useLayoutEffect(() => {
     if (!ref.current || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(([entry]) => setSize({ width: entry.contentRect.width, height: entry.contentRect.height }))
+    const observer = new ResizeObserver((entries) => setSize({ width: entries[0]!.contentRect.width, height: entries[0]!.contentRect.height }))
     observer.observe(ref.current)
     return () => observer.disconnect()
   }, [])
@@ -61,7 +61,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
   // Turn numbers every 5 turns, or the least multiple of 5 that keeps them MIN_LABEL_GAP apart in a long game.
   const turnStep = 5 * Math.max(1, Math.ceil(MIN_LABEL_GAP / ((5 * plotWidth) / turns)))
   // Number every labelEvery-th gridline, the first of LABEL_STRIDES that keeps numbers MIN_LABEL_GAP apart (zero is always one); the lines all stay.
-  const labelEvery = LABEL_STRIDES.find((k) => (k * plotHeight * GRID_STEP) / (top - bottom) >= MIN_LABEL_GAP) ?? LABEL_STRIDES[LABEL_STRIDES.length - 1]
+  const labelEvery = LABEL_STRIDES.find((k) => (k * plotHeight * GRID_STEP) / (top - bottom) >= MIN_LABEL_GAP) ?? LABEL_STRIDES[LABEL_STRIDES.length - 1]!
   const tabStop = roving ?? step
   const targetWidth = plotWidth / turns
 
@@ -69,7 +69,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
   const onKeyDown = (e: KeyboardEvent<SVGRectElement>, turn: number) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return
     const to: Record<string, number> = { ArrowRight: turn + 1, ArrowDown: turn + 1, ArrowLeft: turn - 1, ArrowUp: turn - 1, Home: 0, End: turns }
-    if (e.key in to) targets.current[Math.max(0, Math.min(turns, to[e.key]))]?.focus()
+    if (e.key in to) targets.current[Math.max(0, Math.min(turns, to[e.key]!))]?.focus()
     else if (e.key === 'Enter' || e.key === ' ') onJump(turn)
     else return
     e.preventDefault()
@@ -91,7 +91,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
                 <span key={id}>
                   <span className={`dot p${id}`} aria-hidden="true" />
                   <span className="visually-hidden">{`${names[id]} `}</span>
-                  {formatSigned(series[id][step])}
+                  {formatSigned(series[id][step]!)}
                 </span>
               ))}
               <span>{`Turn ${step}`}</span>
@@ -143,7 +143,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
                 role="button"
                 tabIndex={turn === tabStop ? 0 : -1}
                 aria-current={turn === step ? 'true' : undefined}
-                aria-label={`Jump to turn ${turn}, ${names['1']} ${formatSigned(series['1'][turn])}, ${names['2']} ${formatSigned(series['2'][turn])}`}
+                aria-label={`Jump to turn ${turn}, ${names['1']} ${formatSigned(series['1'][turn]!)}, ${names['2']} ${formatSigned(series['2'][turn]!)}`}
                 onClick={() => onJump(turn)}
                 onFocus={() => setRoving(turn)}
                 onKeyDown={(e) => onKeyDown(e, turn)}
@@ -172,7 +172,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
                       key={`ring-${turn}`}
                       className={`chart-ring p${id}`}
                       cx={x(turn)}
-                      cy={y(series[id][turn])}
+                      cy={y(series[id][turn]!)}
                       r={turn === step ? 8.5 : 6}
                       fill="none"
                       stroke="var(--ink)"

@@ -130,7 +130,7 @@ export interface GameWireState {
     }
     reroll: { enabled: boolean; canReroll: boolean }
     comebackNudge: { enabled: boolean }
-    walls: { enabled: boolean; edges: [number, number][][] }
+    walls: { enabled: boolean; edges: [[number, number], [number, number]][] }
     obstacles: { enabled: boolean; cells: [number, number][] }
     prize: SpecialCellHouseRule
     pitfall: SpecialCellHouseRule

@@ -155,7 +155,7 @@ function cellFromEvent(target: EventTarget): [number, number] | null {
   const key = (target as HTMLElement).closest('[data-cell]')?.getAttribute('data-cell')
   if (!key) return null
   const [r, c] = key.split(',').map(Number)
-  return [r, c]
+  return [r!, c!]
 }
 
 export function Board({

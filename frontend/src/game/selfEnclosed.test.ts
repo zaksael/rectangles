@@ -9,7 +9,7 @@ type Case = (typeof cases)[number]
 function hatched(board: Case) {
   const owners = new Map(board.owners.map(([r, c, p]) => [`${r},${c}`, p] as [string, number]))
   const obstacles = new Set(board.obstacles.map(([r, c]) => `${r},${c}`))
-  const cells = selfEnclosedOwners(board.size, owners, obstacles, board.walls as [number, number][][])
+  const cells = selfEnclosedOwners(board.size, owners, obstacles, board.walls as [[number, number], [number, number]][])
   return { '1': cells.filter(([, , p]) => p === 1).length, '2': cells.filter(([, , p]) => p === 2).length }
 }
 

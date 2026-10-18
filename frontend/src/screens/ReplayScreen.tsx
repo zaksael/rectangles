@@ -35,10 +35,10 @@ const ZERO_PARTS: ScoreParts = { area: 0, prize: 0, pitfall: 0, steal: 0, enclos
 
 // What the placing player's score parts gained or lost on this step, named the way the rules read.
 function effectTexts(game: GameWireState, history: HistoryEntry[], step: number): string[] {
-  const entry = history[step - 1]
+  const entry = history[step - 1]!
   const me = String(entry.playerId) as '1' | '2'
   const opponent = noBreak(game.players[me === '1' ? '2' : '1'].name)
-  const before = step === 1 ? ZERO_PARTS : history[step - 2].breakdown[me]
+  const before = step === 1 ? ZERO_PARTS : history[step - 2]!.breakdown[me]
   const now = entry.breakdown[me]
   const gained = (part: keyof ScoreParts) => now[part] - before[part]
   const texts: string[] = []
@@ -54,7 +54,7 @@ function endText(game: GameWireState, history: HistoryEntry[]): string | null {
   const reason = reasonText(game)
   const { winner } = game.gameOver
   if (game.gameOver.reason === 'surrender' && winner !== null) return `${reason}, ${noBreak(game.players[String(winner) as '1' | '2'].name)} wins`
-  const { score } = history[history.length - 1]
+  const { score } = history[history.length - 1]!
   const result = winner === null ? 'tied' : `${noBreak(game.players[String(winner) as '1' | '2'].name)} wins by ${Math.abs(score['1'] - score['2'])}`
   return reason && `${reason}, ${result}`
 }
@@ -70,7 +70,7 @@ function Caption({ game, history, step }: { game: GameWireState; history: Histor
       ) : (
         <>
           <span className="step">{`Turn ${step} of ${history.length}`}</span>
-          {moveText(game, history[step - 1]) + (notes.length ? ` — ${notes.join(', ')}` : '')}
+          {moveText(game, history[step - 1]!) + (notes.length ? ` — ${notes.join(', ')}` : '')}
         </>
       )}
     </p>
@@ -251,7 +251,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
     if (!handled(e)) return
     e.preventDefault()
-    actions[e.key]()
+    actions[e.key]!()
   })
   const handleKeyUp = useEffectEvent((e: KeyboardEvent) => e.key === ' ' && handled(e) && e.preventDefault())
   useEffect(() => {

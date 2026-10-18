@@ -140,8 +140,8 @@ function handleRadioArrowKey(e: KeyboardEvent<HTMLElement>): void {
   const radios = [...group.querySelectorAll<HTMLElement>('[role="radio"]')].filter((r) => r.closest(RADIO_GROUP) === group)
   const next = radios[(radios.indexOf(e.currentTarget) + step + radios.length) % radios.length]
   e.preventDefault()
-  next.click()
-  next.focus()
+  next!.click()
+  next!.focus()
 }
 
 interface SegmentedFieldProps<T> {

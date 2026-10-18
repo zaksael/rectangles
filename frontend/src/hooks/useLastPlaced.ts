@@ -21,7 +21,7 @@ export function useLastPlaced(game: GameWireState | null | undefined): [number, 
         for (const id of ['1', '2'] as const) {
           if (now[id] > counts[id]) {
             const pieces = game.players[id].board.pieces
-            setLast(pieces[pieces.length - 1].topLeft)
+            setLast(pieces[pieces.length - 1]!.topLeft)
           }
         }
       }

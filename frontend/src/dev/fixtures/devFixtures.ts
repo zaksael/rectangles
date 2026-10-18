@@ -136,7 +136,7 @@ const BUILDERS: Record<string, () => GameState> = {
 }
 
 export function buildFixture(name: string): GameState | null {
-  return Object.hasOwn(BUILDERS, name) ? BUILDERS[name]() : null
+  return Object.hasOwn(BUILDERS, name) ? BUILDERS[name]!() : null
 }
 
 export function fixtureNameFromSearch(search: string): string | null {

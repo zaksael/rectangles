@@ -14,7 +14,7 @@ export function selfEnclosedOwners(
   size: number,
   owners: Map<string, number>,
   obstacleCells: Set<string>,
-  wallEdges: [number, number][][],
+  wallEdges: [[number, number], [number, number]][],
 ): [number, number, 1 | 2][] {
   const wallSet = new Set(wallEdges.map(([a, b]) => wallKey(a, b)))
   const visited = new Set<string>()
