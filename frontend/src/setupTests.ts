@@ -11,6 +11,8 @@ Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1400 })
 if (!HTMLDialogElement.prototype.showModal) {
   HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
     this.setAttribute('open', '')
+    // The dialog focusing steps: a browser focuses the first focusable element once the dialog is open (React's autoFocus runs while it is still closed, where nothing can take focus).
+    this.querySelector<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])')?.focus()
   }
   HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
     this.removeAttribute('open')
