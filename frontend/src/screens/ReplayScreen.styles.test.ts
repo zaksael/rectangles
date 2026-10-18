@@ -12,7 +12,7 @@ test('the round and the series score stack, one above the other', () => {
 })
 
 test('the stepping buttons invert on hover only where there is a hover, and a disabled one does not', () => {
-  const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]
+  const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]!
 
   expect(media).toMatch(/\.replay \.rail \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)/)
   expect(css.replace(media, '')).not.toMatch(/:hover/)

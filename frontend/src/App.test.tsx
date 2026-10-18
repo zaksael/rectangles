@@ -72,7 +72,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
     act(() => {
-      FakeWebSocket.instances[0].emit('close')
+      FakeWebSocket.instances[0]!.emit('close')
     })
 
     expect(screen.getByText('Couldn’t connect — your settings are unchanged, try again')).toBeInTheDocument()

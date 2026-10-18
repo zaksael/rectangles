@@ -643,7 +643,7 @@ test('clicking a turn on the chart jumps there and stops autoplay', () => {
   vi.useFakeTimers()
   render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
   click('Play')
-  fireEvent.click(jumpTargets()[2])
+  fireEvent.click(jumpTargets()[2]!)
   expect(caption()).toHaveTextContent('Turn 2 of 3')
   expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
   tick(10_000)
@@ -652,22 +652,22 @@ test('clicking a turn on the chart jumps there and stops autoplay', () => {
 
 test('with focus on the chart, arrows move around it instead of stepping the replay', () => {
   render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
-  jumpTargets()[0].focus()
-  fireEvent.keyDown(jumpTargets()[0], { key: 'ArrowRight' })
+  jumpTargets()[0]!.focus()
+  fireEvent.keyDown(jumpTargets()[0]!, { key: 'ArrowRight' })
   expect(jumpTargets()[1]).toHaveFocus()
   expect(caption()).toHaveTextContent('Start of game')
-  fireEvent.keyDown(jumpTargets()[1], { key: 'Enter' })
+  fireEvent.keyDown(jumpTargets()[1]!, { key: 'Enter' })
   expect(caption()).toHaveTextContent('Turn 1 of 3')
 })
 
 test('Space on the chart jumps instead of playing, and Escape still goes back', () => {
   const onBack = vi.fn()
   render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={onBack} />)
-  jumpTargets()[2].focus()
-  fireEvent.keyDown(jumpTargets()[2], { key: ' ' })
+  jumpTargets()[2]!.focus()
+  fireEvent.keyDown(jumpTargets()[2]!, { key: ' ' })
   expect(caption()).toHaveTextContent('Turn 2 of 3')
   expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
-  fireEvent.keyDown(jumpTargets()[2], { key: 'Escape' })
+  fireEvent.keyDown(jumpTargets()[2]!, { key: 'Escape' })
   expect(onBack).toHaveBeenCalledOnce()
 })
 

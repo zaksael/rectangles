@@ -778,8 +778,8 @@ test('the winner’s score cell has a 4px top border and 4px less top padding, s
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const [winner, other] = [...document.querySelectorAll('.game-over-scoreboard > div')].map((d) => getComputedStyle(d))
-  expect([winner.borderTopWidth, winner.borderTopStyle, winner.paddingTop]).toEqual(['4px', 'solid', '6px'])
-  expect([other.borderTopWidth, other.paddingTop]).toEqual(['0px', '10px'])
+  expect([winner!.borderTopWidth, winner!.borderTopStyle, winner!.paddingTop]).toEqual(['4px', 'solid', '6px'])
+  expect([other!.borderTopWidth, other!.paddingTop]).toEqual(['0px', '10px'])
 })
 
 test('the breakdown row note and the biggest-swing tag are 12px, and the story bolds only its margin', () => {
@@ -990,7 +990,7 @@ test('moving onto an illegal spot explains why, and Enter does not place', () =>
 test('the board explains its keys to assistive tech', () => {
   renderScreen(keyboardState())
 
-  const help = document.getElementById(screen.getByRole('group', { name: / board$/ }).getAttribute('aria-describedby')!.split(' ')[0])
+  const help = document.getElementById(screen.getByRole('group', { name: / board$/ }).getAttribute('aria-describedby')!.split(' ')[0]!)
   expect(help).toHaveTextContent('Arrows move, N next, Enter places, R rotates')
 })
 
@@ -1922,7 +1922,7 @@ test.each([
 ] as const)('the live row reads by turn state (%s)', (turnState, text) => {
   renderScreen(movesState([], turnState))
 
-  expect(within(moves()[0]).getByText(text)).toBeInTheDocument()
+  expect(within(moves()[0]!).getByText(text)).toBeInTheDocument()
 })
 
 test('while placing, the live row names the piece being placed', () => {
@@ -1934,7 +1934,7 @@ test('while placing, the live row names the piece being placed', () => {
 test('a wildcard turn names the roll that was edited', () => {
   renderScreen(movesState([recentTurn(1, 1, [6, 6], 36, [3, 3])]))
 
-  expect(within(moves()[1]).getByText('Placed 6 × 6, wildcard (rolled 3·3)')).toBeInTheDocument()
+  expect(within(moves()[1]!).getByText('Placed 6 × 6, wildcard (rolled 3·3)')).toBeInTheDocument()
 })
 
 test('the list shows the live row and the last three turns, no more', () => {

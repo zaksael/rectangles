@@ -202,9 +202,9 @@ test('places a vertical wall on the column boundary and a horizontal one on the 
 
   const [vertical, horizontal] = container.querySelectorAll<HTMLElement>('.wall')
   expect(vertical).toHaveClass('wall-v')
-  expect(box(vertical)).toMatchObject({ r: '0', c: '2' })
+  expect(box(vertical!)).toMatchObject({ r: '0', c: '2' })
   expect(horizontal).toHaveClass('wall-h')
-  expect(box(horizontal)).toMatchObject({ r: '2', c: '0' })
+  expect(box(horizontal!)).toMatchObject({ r: '2', c: '0' })
 })
 
 test.each(['legal', 'danger', 'pending'] as const)('renders the preview box with the %s class for that previewKind', (kind) => {

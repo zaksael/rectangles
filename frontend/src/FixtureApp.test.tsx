@@ -9,6 +9,6 @@ test('renders the real Playing screen for a fixture and only logs an action', ()
   render(<FixtureApp name="wildcard" />)
   fireEvent.click(screen.getByRole('button', { name: 'Set wildcard die to 3' }))
   expect(info).toHaveBeenCalledTimes(2) // one line when the fixture loads, one for the ignored action
-  expect(info.mock.calls[1].join(' ')).toContain('chooseWildcard')
+  expect(info.mock.calls[1]!.join(' ')).toContain('chooseWildcard')
   info.mockRestore()
 })

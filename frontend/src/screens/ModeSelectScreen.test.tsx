@@ -101,7 +101,7 @@ test('selecting Local 2P hides the difficulty pills and omits botSeats/botDiffic
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
   expect(onStartGame).toHaveBeenCalledWith(expect.not.objectContaining({ botSeats: expect.anything() }))
-  expect(onStartGame.mock.calls[0][0]).not.toHaveProperty('botDifficulty')
+  expect(onStartGame.mock.calls[0]![0]).not.toHaveProperty('botDifficulty')
 })
 
 test('the difficulty-pills row stays mounted (reserving its space) even when it is hidden', () => {
@@ -191,10 +191,10 @@ describe.each(['Board size', 'Skip limit', 'Games', 'Difficulty'])('%s radio opt
     const radios = renderRadios(group)
     const tabStops = () => radios.filter((r) => r.tabIndex === 0)
 
-    fireEvent.click(radios[1])
+    fireEvent.click(radios[1]!)
     expect(tabStops()).toEqual([radios[1]])
 
-    fireEvent.click(radios[0])
+    fireEvent.click(radios[0]!)
     expect(tabStops()).toEqual([radios[0]])
   })
 })
@@ -207,16 +207,16 @@ describe('Opponent cards', () => {
 
   test('the tab stop starts on the first card and follows the selected one', () => {
     const [bot, local] = renderCards()
-    expect([bot.tabIndex, local.tabIndex]).toEqual([0, -1])
+    expect([bot!.tabIndex, local!.tabIndex]).toEqual([0, -1])
 
-    fireEvent.click(local)
+    fireEvent.click(local!)
 
-    expect([bot.tabIndex, local.tabIndex]).toEqual([-1, 0])
+    expect([bot!.tabIndex, local!.tabIndex]).toEqual([-1, 0])
   })
 
   test('the Difficulty pills sit in a labelled group, not a second radiogroup nested in Opponent, and state their own position', () => {
     const [bot] = renderCards()
-    fireEvent.click(bot)
+    fireEvent.click(bot!)
 
     expect(screen.queryByRole('radiogroup', { name: 'Difficulty' })).not.toBeInTheDocument()
     const pills = within(screen.getByRole('group', { name: 'Difficulty' })).getAllByRole('radio')
@@ -230,11 +230,11 @@ describe('Opponent cards', () => {
   test('an arrow from the first card selects and focuses the other, and wraps back', () => {
     const [bot, local] = renderCards()
 
-    fireEvent.keyDown(bot, { key: 'ArrowRight' })
+    fireEvent.keyDown(bot!, { key: 'ArrowRight' })
     expect(local).toHaveAttribute('aria-checked', 'true')
     expect(local).toHaveFocus()
 
-    fireEvent.keyDown(local, { key: 'ArrowRight' })
+    fireEvent.keyDown(local!, { key: 'ArrowRight' })
     expect(bot).toHaveAttribute('aria-checked', 'true')
     expect(bot).toHaveFocus()
   })
@@ -261,15 +261,15 @@ describe('selection cue on the opponent cards', () => {
     const marker = (card: HTMLElement) => card.querySelector('.mode-marker')!
     const tint = 'color-mix(in srgb, var(--ink) 6%, transparent)'
 
-    expect(marker(bot)).toHaveAttribute('aria-hidden', 'true')
-    expect(marker(local)).toHaveAttribute('aria-hidden', 'true')
-    fireEvent.click(local)
-    expect(getComputedStyle(marker(local)).backgroundColor).toBe('var(--ink)')
-    expect(getComputedStyle(local).backgroundColor).toBe(tint)
-    expect(getComputedStyle(marker(bot)).backgroundColor).not.toBe('var(--ink)')
-    expect(getComputedStyle(bot).backgroundColor).not.toBe(tint)
+    expect(marker(bot!)).toHaveAttribute('aria-hidden', 'true')
+    expect(marker(local!)).toHaveAttribute('aria-hidden', 'true')
+    fireEvent.click(local!)
+    expect(getComputedStyle(marker(local!)).backgroundColor).toBe('var(--ink)')
+    expect(getComputedStyle(local!).backgroundColor).toBe(tint)
+    expect(getComputedStyle(marker(bot!)).backgroundColor).not.toBe('var(--ink)')
+    expect(getComputedStyle(bot!).backgroundColor).not.toBe(tint)
     // The hollow marker's border is 55% ink like the card's, which clears the 3:1 floor for a control boundary.
-    expect(getComputedStyle(marker(bot)).borderTopColor).toBe('color-mix(in srgb, var(--ink) 55%, transparent)')
+    expect(getComputedStyle(marker(bot!)).borderTopColor).toBe('color-mix(in srgb, var(--ink) 55%, transparent)')
   })
 
   // jsdom can't evaluate :focus-visible or :has, so the keyboard-only ring is asserted on the stylesheet's selectors.
@@ -316,7 +316,7 @@ test('a single game sends no seriesLength', () => {
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
-  expect(onStartGame.mock.calls[0][0]).not.toHaveProperty('seriesLength')
+  expect(onStartGame.mock.calls[0]![0]).not.toHaveProperty('seriesLength')
 })
 
 test.each([3, 5])('choosing %i games sends seriesLength', (length) => {
@@ -327,7 +327,7 @@ test.each([3, 5])('choosing %i games sends seriesLength', (length) => {
   fireEvent.click(within(gamesGroup()).getByRole('radio', { name: String(length) }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
 
-  expect(onStartGame.mock.calls[0][0]).toMatchObject({ seriesLength: length })
+  expect(onStartGame.mock.calls[0]![0]).toMatchObject({ seriesLength: length })
 })
 
 test('persists settings to localStorage on Start Game and pre-fills them on the next mount', () => {
@@ -353,7 +353,7 @@ describe('stored settings that are no longer valid', () => {
     const onStartGame = vi.fn()
     render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
-    return onStartGame.mock.calls[0][0]
+    return onStartGame.mock.calls[0]![0]
   }
 
   test('a board size that is not a preset falls back to the default size', () => {

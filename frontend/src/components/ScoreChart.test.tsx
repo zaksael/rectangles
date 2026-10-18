@@ -196,7 +196,7 @@ test('a bot is named in the jump targets and the group', () => {
 test('clicking a turn jumps to it', () => {
   const onJump = vi.fn()
   draw(CLIMB, 0, onJump)
-  fireEvent.click(targets()[2])
+  fireEvent.click(targets()[2]!)
   expect(onJump).toHaveBeenCalledWith(2)
 })
 
@@ -210,46 +210,46 @@ test('the chart is one tab stop, on the current turn', () => {
 test('arrow keys move focus between turns without jumping, and the tab stop goes with the focus', () => {
   const onJump = vi.fn()
   draw(CLIMB, 1, onJump)
-  targets()[1].focus()
-  key(targets()[1], 'ArrowRight')
+  targets()[1]!.focus()
+  key(targets()[1]!, 'ArrowRight')
   expect(targets()[2]).toHaveFocus()
   expect(targets().map((t) => t.getAttribute('tabindex'))).toEqual(['-1', '-1', '0'])
-  key(targets()[2], 'ArrowLeft')
-  key(targets()[1], 'ArrowUp')
+  key(targets()[2]!, 'ArrowLeft')
+  key(targets()[1]!, 'ArrowUp')
   expect(targets()[0]).toHaveFocus()
-  key(targets()[0], 'ArrowDown')
+  key(targets()[0]!, 'ArrowDown')
   expect(targets()[1]).toHaveFocus()
-  key(targets()[1], 'End')
+  key(targets()[1]!, 'End')
   expect(targets()[2]).toHaveFocus()
-  key(targets()[2], 'Home')
+  key(targets()[2]!, 'Home')
   expect(targets()[0]).toHaveFocus()
   expect(onJump).not.toHaveBeenCalled()
 })
 
 test('the arrows stop at either end', () => {
   draw(CLIMB, 0)
-  targets()[0].focus()
-  key(targets()[0], 'ArrowLeft')
+  targets()[0]!.focus()
+  key(targets()[0]!, 'ArrowLeft')
   expect(targets()[0]).toHaveFocus()
-  key(targets()[0], 'End')
-  key(targets()[2], 'ArrowRight')
+  key(targets()[0]!, 'End')
+  key(targets()[2]!, 'ArrowRight')
   expect(targets()[2]).toHaveFocus()
 })
 
 test('Enter and Space jump to the focused turn', () => {
   const onJump = vi.fn()
   draw(CLIMB, 0, onJump)
-  targets()[2].focus()
-  key(targets()[2], 'Enter')
-  key(targets()[2], ' ')
+  targets()[2]!.focus()
+  key(targets()[2]!, 'Enter')
+  key(targets()[2]!, ' ')
   expect(onJump.mock.calls).toEqual([[2], [2]])
 })
 
 test('leaving the chart gives the tab stop back to the current turn', () => {
   draw(CLIMB, 1)
-  targets()[1].focus()
-  key(targets()[1], 'ArrowRight')
-  act(() => targets()[2].blur())
+  targets()[1]!.focus()
+  key(targets()[1]!, 'ArrowRight')
+  act(() => targets()[2]!.blur())
   expect(targets().map((t) => t.getAttribute('tabindex'))).toEqual(['-1', '0', '-1'])
 })
 
@@ -289,9 +289,9 @@ test('a flagged turn rings the mover\'s own dot, centred on it', () => {
   const dot = container.querySelectorAll('.chart-dot.p2')[2]
 
   expect(rings(container)).toHaveLength(1)
-  expect(ring.classList.contains('p2')).toBe(true)
-  expect(ring.getAttribute('cx')).toBe(dot.getAttribute('cx'))
-  expect(ring.getAttribute('cy')).toBe(dot.getAttribute('cy'))
+  expect(ring!.classList.contains('p2')).toBe(true)
+  expect(ring!.getAttribute('cx')).toBe(dot!.getAttribute('cx'))
+  expect(ring!.getAttribute('cy')).toBe(dot!.getAttribute('cy'))
 })
 
 test('flagged turns add a key saying a better move existed', () => {
@@ -303,5 +303,5 @@ test('the ring on the current turn is larger than the others', () => {
   const { container } = drawFlagged([1, 2], 2)
   const [first, second] = rings(container)
 
-  expect(Number(second.getAttribute('r'))).toBeGreaterThan(Number(first.getAttribute('r')))
+  expect(Number(second!.getAttribute('r'))).toBeGreaterThan(Number(first!.getAttribute('r')))
 })
