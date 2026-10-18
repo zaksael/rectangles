@@ -145,11 +145,9 @@
   }
 }
 
+/* No box of its own: the head and the chart are rail children, so the chart can shrink to its floor (a wrapper would stop at the chart's 300px base size and spill over the controls). */
 .replay .chart-wrap {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
+  display: contents;
 }
 
 .replay .chart-label {
@@ -166,7 +164,7 @@
   min-height: 160px;
   max-height: 300px;
   overflow: hidden;
-  margin-top: 6px;
+  margin-top: -10px; /* the rail's 16px gap less the 6px the head sits above it */
 }
 
 .replay .chart {

@@ -62,6 +62,12 @@ test('the chart is 300px tall but is the one thing that gives up height, down to
   expect(block).toMatch(/overflow:\s*hidden/) // so the drawing never props the box open
 })
 
+test('the chart wrapper has no box, so the chart shrinks to its 160px floor instead of spilling over the controls', () => {
+  const block = ruleFor(css, '.replay .chart-wrap')
+
+  expect(block).toMatch(/display:\s*contents/)
+})
+
 test('chart axis numbers are 12px mono and stay AA (4.5:1) on the ledger', () => {
   const block = ruleFor(css, '.replay .chart-axis')
   const ink = token(tokensCss, '--ink')
