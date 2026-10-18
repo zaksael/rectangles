@@ -82,7 +82,7 @@ def real_games() -> list[dict]:
 
 if __name__ == "__main__":
     cases = hand_built() + real_games()
-    OUT.write_text(json.dumps(cases, indent=1) + "\n")
+    OUT.write_text("[\n" + ",\n".join(json.dumps(c) for c in cases) + "\n]\n")  # one board per line: a readable diff, not 10k lines
     print(f"wrote {OUT}: {len(cases)} boards; expected counts:")
     for c in cases:
         print(f"  {c['expected']['1']:>3} {c['expected']['2']:>3}  {c['name']}")
