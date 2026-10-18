@@ -20,7 +20,7 @@ const fakePlayerState: PlayerState = {
 
 const fakeGame: GameWireState = {
   board: { size: 19, skipLimit: 5 },
-  turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] },
+  turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] },
   houseRules: {
     wildcard: { enabled: false, originalRoll: null, legalValues: [], editableIndex: null },
     reroll: { enabled: false, canReroll: false },
@@ -33,7 +33,7 @@ const fakeGame: GameWireState = {
     selfEnclosedPenalty: { enabled: false },
   },
   players: { '1': fakePlayerState, '2': { ...fakePlayerState, name: 'Player 2' } },
-  gameOver: { reason: null, playerId: null, winner: null },
+  gameOver: { history: null, reason: null, playerId: null, winner: null },
 }
 
 beforeEach(() => {

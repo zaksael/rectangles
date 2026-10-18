@@ -19,7 +19,7 @@ function renderOver(
   tweak: (game: ReturnType<typeof makeGame>) => void = () => {},
   handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() },
 ) {
-  const game = makeGame({ gameOver: { reason, playerId, winner } })
+  const game = makeGame({ gameOver: { history: null, reason, playerId, winner } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: area[0], totalScore: score[0] }
   game.players['2'].score = { ...game.players['2'].score, totalArea: area[1], totalScore: score[1] }
   tweak(game)
@@ -239,12 +239,12 @@ test('a browser combo such as Ctrl+N is left alone on the overlay', () => {
 
 function renderBar() {
   const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn() }
-  render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} {...handlers} />)
+  render(<GameOverBar game={makeGame({ gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })} {...handlers} />)
   return handlers
 }
 
 const barHeadline = (winner: 1 | 2 | null, reason: 'boardFull' | 'surrender', score: [number, number], series: ReturnType<typeof makeSeries> | null = null) => {
-  const game = makeGame({ gameOver: { reason, playerId: reason === 'surrender' ? 2 : null, winner } })
+  const game = makeGame({ gameOver: { history: null, reason, playerId: reason === 'surrender' ? 2 : null, winner } })
   game.players['1'].score = { ...game.players['1'].score, totalScore: score[0] }
   game.players['2'].score = { ...game.players['2'].score, totalScore: score[1] }
   render(<GameOverBar game={game} series={series} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
@@ -264,7 +264,7 @@ test('the result bar states the margin of a win on score, in a series round too,
 test('the result bar binds its window key listener once, however often it re-renders', () => {
   const add = vi.spyOn(window, 'addEventListener')
   onTestFinished(() => add.mockRestore())
-  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   const { rerender } = render(<GameOverBar game={game} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
   rerender(<GameOverBar game={game} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
 
@@ -273,7 +273,7 @@ test('the result bar binds its window key listener once, however often it re-ren
 
 test('after a re-render the result bar still calls the latest handlers', () => {
   useGuardClock()
-  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   const first = { onViewResult: vi.fn(), onNewGame: vi.fn() }
   const latest = { onViewResult: vi.fn(), onNewGame: vi.fn() }
   const { rerender } = render(<GameOverBar game={game} {...first} />)
@@ -428,7 +428,7 @@ function renderRound(
   { winner, reason = 'boardFull', playerId = null, area, series }: Result & { series: ReturnType<typeof makeSeries> },
   handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onNextRound: vi.fn() },
 ) {
-  const game = makeGame({ gameOver: { reason, playerId, winner } })
+  const game = makeGame({ gameOver: { history: null, reason, playerId, winner } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: area[0], totalScore: area[0] }
   game.players['2'].score = { ...game.players['2'].score, totalArea: area[1], totalScore: area[1] }
   render(<GameOverOverlay game={game} series={series} {...handlers} />)
@@ -510,7 +510,7 @@ test('the last round of a series has no Next Round, since the series is over', (
 test('the series result bar offers View Result and Next Round, and the headline names the round', () => {
   useGuardClock()
   const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn() }
-  render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries()} {...handlers} />)
+  render(<GameOverBar game={makeGame({ gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries()} {...handlers} />)
   const bar = screen.getByRole('region', { name: 'Game result' })
   expect(within(bar).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Result', 'Next Round'])
   expect(within(bar).getByText(/^Player.1 wins the round$/u)).toBeTruthy()
@@ -541,7 +541,7 @@ test('the last round of a series offers Series Result, which opens the series ca
 test('after the last round, the round bar offers Series Result in place of Next Round', () => {
   useGuardClock()
   const handlers = { onViewResult: vi.fn(), onNewGame: vi.fn(), onNextRound: vi.fn(), onSeriesResult: vi.fn() }
-  render(<GameOverBar game={makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries({ gamesPlayed: 3, isComplete: true })} {...handlers} />)
+  render(<GameOverBar game={makeGame({ gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })} series={makeSeries({ gamesPlayed: 3, isComplete: true })} {...handlers} />)
   const bar = screen.getByRole('region', { name: 'Game result' })
   fireEvent.click(within(bar).getByRole('button', { name: /Series Result/ }))
   vi.advanceTimersByTime(KEY_GUARD_MS)

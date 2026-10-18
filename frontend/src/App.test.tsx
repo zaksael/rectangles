@@ -145,7 +145,7 @@ describe('App', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: null,
@@ -170,7 +170,7 @@ describe('App', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: null,
@@ -190,7 +190,7 @@ describe('App', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: makeSeries({ gamesPlayed: 3, isComplete, winner: isComplete ? 1 : null }),
@@ -227,7 +227,7 @@ describe('App', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: null,
@@ -250,7 +250,7 @@ describe('App', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: null,
@@ -294,7 +294,7 @@ describe('App', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
         }),
         series: null,
@@ -321,7 +321,7 @@ describe('App', () => {
         FakeWebSocket.instances.at(-1)!.emit('message', {
           protocolVersion: 1,
           type: 'state',
-          game: makeGame({ turn: { currentPlayerId, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
+          game: makeGame({ turn: { recentTurns: [], currentPlayerId, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
           series: null,
         })
       })
@@ -352,7 +352,7 @@ describe('App replay analysis', () => {
         protocolVersion: 1,
         type: 'state',
         game: makeGame({
-          turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
           gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [oneMove] },
         }),
         series: null,

@@ -119,7 +119,7 @@ export interface GameWireState {
     lastRoll: [number, number] | null
     legalPlacements: LegalPlacement[]
     // The last six turns, oldest first.
-    recentTurns?: RecentTurn[]
+    recentTurns: RecentTurn[]
   }
   houseRules: {
     wildcard: {
@@ -143,7 +143,7 @@ export interface GameWireState {
     playerId: number | null
     winner: number | null
     // One entry per move, sent only once the game is over.
-    history?: HistoryEntry[] | null
+    history: HistoryEntry[] | null
   }
 }
 

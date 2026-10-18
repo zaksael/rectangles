@@ -13,7 +13,7 @@ test('returns inert values when there is no game yet', () => {
 
 test('picks the (a, b) orientation when it is legal for the roll', () => {
   const game = makeGame({
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -29,7 +29,7 @@ test('picks the (a, b) orientation when it is legal for the roll', () => {
 const placing = (roll: [number, number]) =>
   makeGame({
     board: { size: 9, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: roll,
@@ -94,7 +94,7 @@ test('a render discarded because a child suspended does not swallow the roll cha
 test('coverableCells is the union of every cell any legal placement of the current orientation would cover', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 1],
@@ -132,7 +132,7 @@ test('coverableCells is empty when there is no active placement', () => {
 
 test('rotate swaps width and height', () => {
   const game = makeGame({
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -153,7 +153,7 @@ test('rotate swaps width and height', () => {
 test('hovering a cell previews the piece centered on it, clamped to the board', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -173,7 +173,7 @@ test('hovering a cell previews the piece centered on it, clamped to the board', 
 test('previewKind is "legal" when hovering a legal top-left', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -190,7 +190,7 @@ test('previewKind is "legal" when hovering a legal top-left', () => {
 test('previewKind is "danger" when hovering a top-left with no legal placement there', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -207,7 +207,7 @@ test('previewKind is "danger" when hovering a top-left with no legal placement t
 test('mouse: tapping a legal cell sends a place action for the computed top-left', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -225,7 +225,7 @@ test('mouse: tapping a legal cell sends a place action for the computed top-left
 test('mouse: tapping an illegal cell for the current orientation sends nothing', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -243,7 +243,7 @@ test('mouse: tapping an illegal cell for the current orientation sends nothing',
 test('touch: first tap on a legal cell previews it without placing', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -263,7 +263,7 @@ test('touch: first tap on a legal cell previews it without placing', () => {
 test('touch: the pending preview is shown even over an illegal cell', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -280,7 +280,7 @@ test('touch: the pending preview is shown even over an illegal cell', () => {
 test('touch: a second tap on the same cell confirms the placement', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -300,7 +300,7 @@ test('touch: a second tap on the same cell confirms the placement', () => {
 test('touch: tapping a different cell relocates the preview instead of placing', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -319,7 +319,7 @@ test('touch: tapping a different cell relocates the preview instead of placing',
 
 test('falls back to the (b, a) orientation when only that one is legal', () => {
   const game = makeGame({
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 3],
@@ -336,7 +336,7 @@ test('falls back to the (b, a) orientation when only that one is legal', () => {
 const jumpGame = () =>
   makeGame({
     board: { size: 6, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 1],

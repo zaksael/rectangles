@@ -50,35 +50,35 @@ test('the screen is a main landmark and the rail a named complementary one', () 
 })
 
 test('highlights the current player in the turn indicator', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(screen.getByRole('columnheader', { name: 'Player 1' })).not.toHaveClass('current')
   expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveClass('current')
 })
 
 test('shows a Roll button while awaiting a roll, which sends the roll action', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.click(screen.getByRole('button', { name: 'Roll' }))
   expect(sendAction).toHaveBeenCalledWith({ type: 'roll' })
 })
 
 test('pressing d rolls while awaiting a roll', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'd' })
   expect(sendAction).toHaveBeenCalledWith({ type: 'roll' })
 })
 
 test('pressing d does nothing once a roll is already showing', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 5], legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 5], legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'd' })
   expect(sendAction).not.toHaveBeenCalled()
 })
 
 test('shows the last roll as dice once past awaitingRoll, with Roll hidden', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 5], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 5], legalPlacements: [] } }))
 
   const dice = screen.getByText('2').closest('.dice')
   expect(dice).toContainElement(screen.getByText('5'))
@@ -86,7 +86,7 @@ test('shows the last roll as dice once past awaitingRoll, with Roll hidden', () 
 })
 
 test('shows no dice while awaiting a roll', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(screen.queryByRole('img', { name: /rolled/i })).not.toBeInTheDocument()
 })
@@ -96,7 +96,7 @@ test.each([
   ['choosingPlacement', ['Rotate']],
   ['skipped', ['Skip']],
 ] as const)('only the applicable action button is shown in the action row (%s)', (turnState, shown) => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
   const names = within(document.querySelector('.rail-actions') as HTMLElement)
     .getAllByRole('button')
@@ -108,7 +108,7 @@ test('clicking a legal cell while choosing placement sends the place action', ()
   const sendAction = renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -126,7 +126,7 @@ test('Rotate swaps the orientation used for placement', () => {
   const sendAction = renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -148,7 +148,7 @@ test('the r key rotates, once per press and not on auto-repeat', () => {
   const sendAction = renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -171,7 +171,7 @@ test('marks every cell any legal placement of the current orientation would cove
   renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -190,7 +190,7 @@ test('hovering an illegal cell shows the preview in the danger state', () => {
   renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -208,7 +208,7 @@ test('touch: two taps on the same cell are needed to place', () => {
   const sendAction = renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -227,7 +227,7 @@ test('touch: two taps on the same cell are needed to place', () => {
 
 test('shows a Skip button when the turn was skipped, which sends the skip action', () => {
   const sendAction = renderScreen(
-    makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }),
+    makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }),
   )
 
   fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
@@ -243,7 +243,7 @@ test('the rail opens with the Game title and the Menu button', () => {
 })
 
 test('the score table has a column per player, with the mover marked', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(within(scoreTable()).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Player 1', 'Player 2'])
   expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveAttribute('aria-current', 'true')
@@ -346,14 +346,14 @@ test('a newer error replaces the toast and restarts the 4 second timer', () => {
 })
 
 test("marks only the current player's column with aria-current", () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(screen.getByRole('columnheader', { name: 'Player 1' })).not.toHaveAttribute('aria-current')
   expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveAttribute('aria-current', 'true')
 })
 
 test('the dice have an accessible name describing the roll', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 1], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 1], legalPlacements: [] } }))
 
   expect(screen.getByRole('img', { name: 'Player 1 rolled 3 and 1' })).toBeInTheDocument()
 })
@@ -372,7 +372,7 @@ test('the Playing screen has a level-1 heading', () => {
 
 test('the d hotkey does not roll while a modal dialog is open', () => {
   const sendAction = renderScreen(
-    makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
+    makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }),
   )
   const dialog = document.createElement('dialog')
   document.body.appendChild(dialog)
@@ -387,10 +387,10 @@ test('the d hotkey does not roll while a modal dialog is open', () => {
   dialog.remove()
 })
 
-const gameOverTurn = { currentPlayerId: 1, turnState: 'gameOver' as const, lastRoll: null, legalPlacements: [] }
+const gameOverTurn = { currentPlayerId: 1, turnState: 'gameOver' as const, lastRoll: null, legalPlacements: [], recentTurns: [] }
 
 test('game over shows a dialog with the end reason and the winner', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const dialog = screen.getByRole('dialog')
   expect(within(dialog).getByText('no room left to build')).toBeInTheDocument()
@@ -407,22 +407,22 @@ test.each([
   ['skipLimit', 1, 'Player 1 hit the skip limit (5 of 5)'],
   ['surrender', 2, 'Player 2 surrendered'],
 ] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason, playerId, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason, playerId, winner: 1 } }))
   expect(within(screen.getByRole('dialog')).getByText(text)).toBeInTheDocument()
 })
 
 test('a surrender win reads plain "wins", not "on score"', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'surrender', playerId: 2, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'surrender', playerId: 2, winner: 1 } }))
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Player\u00a01 wins' })).toBeInTheDocument()
 })
 
 test('game over reads "Tied" when there is no winner', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: null } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: null } }))
   expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Tied' })).toBeInTheDocument()
 })
 
 test('a plain game over shows the final score as a group of both totals', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: 5, totalScore: 5 }
   game.players['2'].score = { ...game.players['2'].score, totalArea: 4, totalScore: 4 }
   renderScreen({ game, series: null })
@@ -431,7 +431,7 @@ test('a plain game over shows the final score as a group of both totals', () => 
 })
 
 test('game over shows a Prize breakdown row, in points, when Prize is enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.prize = { enabled: true, cells: [], points: 5 }
   Object.assign(game.players['1'].score.breakdown, { prize: 10 })
   Object.assign(game.players['2'].score.breakdown, { prize: 5 })
@@ -447,7 +447,7 @@ test('game over shows a Prize breakdown row, in points, when Prize is enabled', 
 })
 
 test('game over shows a Pitfall breakdown row, as a negative deduction, when Pitfall is enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.pitfall = { enabled: true, cells: [], points: 10 }
   Object.assign(game.players['1'].score.breakdown, { pitfall: -10 })
   renderScreen({ game, series: null })
@@ -462,7 +462,7 @@ test('game over shows a Pitfall breakdown row, as a negative deduction, when Pit
 })
 
 test('game over shows a Steal breakdown row, as each player\'s net swing, when Steal is enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.steal = { enabled: true, cells: [], points: 10 }
   Object.assign(game.players['1'].score.breakdown, { steal: 10 })
   Object.assign(game.players['2'].score.breakdown, { steal: -10 })
@@ -478,7 +478,7 @@ test('game over shows a Steal breakdown row, as each player\'s net swing, when S
 })
 
 test('game over shows an Enclosure breakdown row, as a negative deduction of 1 per cell, when enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.selfEnclosedPenalty = { enabled: true }
   Object.assign(game.players['1'].score.breakdown, { enclosure: -3 })
   renderScreen({ game, series: null })
@@ -494,7 +494,7 @@ test('game over shows an Enclosure breakdown row, as a negative deduction of 1 p
 
 test('the game-over dialog offers New Game', () => {
   const onNewGame = vi.fn()
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }), vi.fn(), null, onNewGame)
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }), vi.fn(), null, onNewGame)
 
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New Game' }))
 
@@ -502,7 +502,7 @@ test('the game-over dialog offers New Game', () => {
 })
 
 function gameOverState() {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.players['1'].score = { ...game.players['1'].score, totalArea: 158, totalScore: 158 }
   game.players['2'].score = { ...game.players['2'].score, totalArea: 141, totalScore: 141 }
   return { game, series: null }
@@ -542,13 +542,14 @@ test('the result bar offers New Game', () => {
 })
 
 test('game-over player names use a non-breaking space so they never wrap mid-name', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
   expect(within(screen.getByRole('dialog')).getByRole('heading').textContent).toBe('Player\u00a01 wins on score')
 })
 
 const renderVsBot = (state: GameState) => renderScreen(state, vi.fn(), null, vi.fn(), 2)
 
 const botPlacementTurn = {
+  recentTurns: [],
   currentPlayerId: 2,
   turnState: 'choosingPlacement' as const,
   lastRoll: [2, 1] as [number, number],
@@ -569,7 +570,7 @@ test("on the bot's turn, hovering shows no preview or coverable overlay and tapp
 })
 
 test("on the bot's turn the Roll button is hidden and d does not roll", () => {
-  const sendAction = renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const sendAction = renderVsBot(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'd' })
 
@@ -578,7 +579,7 @@ test("on the bot's turn the Roll button is hidden and d does not roll", () => {
 })
 
 test("on the bot's turn the Skip button is hidden", () => {
-  renderVsBot(makeState({ turn: { currentPlayerId: 2, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderVsBot(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
   expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument()
 })
 
@@ -591,7 +592,7 @@ test("on the human's turn against a bot, placement still works", () => {
 })
 
 test('the turn status line is a polite live region that is re-read whole', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   const status = screen.getByTestId('turn-status')
   expect(status).toHaveAttribute('aria-live', 'polite')
@@ -606,7 +607,7 @@ test('there is no Replay button mid-game; Replay is only reachable from the game
 test.each(['awaitingRoll', 'choosingPlacement', 'skipped', 'gameOver'] as const)(
   'Menu sits in the rail head beside the title while %s',
   (turnState) => {
-    renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+    renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
     const head = screen.getByRole('heading', { name: 'Game' }).parentElement as HTMLElement
     expect(within(head).getByRole('button', { name: 'Menu' })).toBeInTheDocument()
@@ -614,7 +615,7 @@ test.each(['awaitingRoll', 'choosingPlacement', 'skipped', 'gameOver'] as const)
 )
 
 test('the turn status line tells the current player what to do: roll', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 2: roll (D)')
 })
@@ -623,7 +624,7 @@ test('the turn status line names the rectangle to place, following Rotate', () =
   renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 1],
@@ -641,7 +642,7 @@ test('the turn status line names the rectangle to place, following Rotate', () =
 })
 
 const deadRoll = (consecutiveSkips: number) => {
-  const game = makeGame({ board: { size: 3, skipLimit: 5 }, turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } })
+  const game = makeGame({ board: { size: 3, skipLimit: 5 }, turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } })
   game.players['1'].board.consecutiveSkips = consecutiveSkips
   return game
 }
@@ -666,7 +667,7 @@ test('the skip cue follows the reroll wording, and the skip that reaches the lim
 })
 
 test('the turn status line says when a dead roll must be skipped', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
 })
@@ -693,7 +694,7 @@ function botGame({ current, turnState, lastRoll = null }: BotTurn): GameState {
   const base = makeGame().players
   const wildcard = { enabled: true, originalRoll: null, legalValues: [], editableIndex: null }
   return makeState({
-    turn: { currentPlayerId: current, turnState, lastRoll, legalPlacements: [] },
+    turn: { recentTurns: [], currentPlayerId: current, turnState, lastRoll, legalPlacements: [] },
     players: { ...base, '2': { ...base['2'], name: 'Bot (Greedy)' } },
     houseRules: { ...makeGame().houseRules, wildcard },
   })
@@ -716,13 +717,13 @@ test("the bot's last roll is labelled with the bot's name for assistive tech", (
 })
 
 test('there is no turn status line once the game is over', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
 
   expect(screen.queryByTestId('turn-status')).not.toBeInTheDocument()
 })
 
 const rolledState = (turnState: 'choosingPlacement' | 'awaitingRoll', lastRoll: [number, number] | null) =>
-  makeState({ turn: { currentPlayerId: 1, turnState, lastRoll, legalPlacements: [] } })
+  makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll, legalPlacements: [] } })
 
 function renderRerenderable(state: GameState) {
   const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
@@ -774,7 +775,7 @@ test('the last roll is marked by a dashed border alone, not by dimming its digit
 test('the winner’s score cell has a 4px top border and 4px less top padding, so the scoreboard keeps its height', () => {
   injectPlayingCss()
 
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const [winner, other] = [...document.querySelectorAll('.game-over-scoreboard > div')].map((d) => getComputedStyle(d))
   expect([winner.borderTopWidth, winner.borderTopStyle, winner.paddingTop]).toEqual(['4px', 'solid', '6px'])
@@ -783,7 +784,7 @@ test('the winner’s score cell has a 4px top border and 4px less top padding, s
 
 test('the breakdown row note and the biggest-swing tag are 12px, and the story bolds only its margin', () => {
   injectPlayingCss()
-  const game = makeGame({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } })
+  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
   game.houseRules.prize = { enabled: true, cells: [], points: 5 }
   game.houseRules.steal = { enabled: true, cells: [], points: 10 }
   Object.assign(game.players['1'].score.breakdown, { prize: 10, steal: 20 })
@@ -800,7 +801,7 @@ test('the breakdown row note and the biggest-swing tag are 12px, and the story b
 
 test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the lower number', () => {
   injectPlayingCss()
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
 
   const total = document.querySelector('.game-over-scoreboard .trail .n')!
   expect(getComputedStyle(total).color).toBe('color-mix(in srgb, var(--ink) 70%, transparent)')
@@ -808,7 +809,7 @@ test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the l
 
 test('a headline followed straight by the scoreboard keeps 18px below it', () => {
   injectPlayingCss()
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { reason: 'boardFull', playerId: null, winner: null } }))
+  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: null } }))
 
   expect(getComputedStyle(screen.getByRole('heading', { name: 'Tied' })).marginBottom).toBe('18px')
 })
@@ -884,7 +885,7 @@ test("moves the last-placed outline to the opponent's next piece", () => {
 const hoverState = () =>
   makeState({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 1],
@@ -911,7 +912,7 @@ test('hovering a legal spot shows no reason', () => {
 const keyboardState = () =>
   makeState({
     board: { size: 5, skipLimit: 5 },
-    turn: {
+    turn: { recentTurns: [],
       currentPlayerId: 1,
       turnState: 'choosingPlacement',
       lastRoll: [2, 1],
@@ -925,7 +926,7 @@ test('the board is a tab stop while a placement can be made', () => {
 })
 
 test('the board stays a tab stop when no placement is due, and its keys do nothing then', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
   const board = screen.getByRole('group', { name: / board$/ })
   expect(board).toHaveAttribute('tabindex', '0')
 
@@ -943,7 +944,7 @@ test('keyboard focus stays on the board between turns, and the next placement st
   const board = screen.getByRole('group', { name: / board$/ })
   board.focus()
 
-  rerender(<PlayingScreen state={makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })} {...props} />)
+  rerender(<PlayingScreen state={makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })} {...props} />)
   expect(board).toHaveFocus()
 
   rerender(<PlayingScreen state={keyboardState()} {...props} />)
@@ -1000,7 +1001,7 @@ test('the placement keys are visible under the board, not only announced', () =>
 })
 
 test('the key hint under the board is blank on the roll turn and on the bot\'s turn', () => {
-  const roll = makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const roll = makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const { unmount } = render(<PlayingScreen state={roll} error={null} sendAction={vi.fn()} onOpenSettings={vi.fn()} onNewGame={vi.fn()} />)
   expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
   unmount()
@@ -1010,13 +1011,13 @@ test('the key hint under the board is blank on the roll turn and on the bot\'s t
 })
 
 test('a blank key hint holds a non-breaking space, so the line keeps its height and the board never jumps', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(document.getElementById('board-help')!.textContent).toBe('\u00A0')
 })
 
 test('the key hint under the board is blank on a dead roll, the status line carries the key', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(document.getElementById('board-help')).toHaveTextContent(/^\s*$/)
 })
@@ -1026,7 +1027,7 @@ test.each([
   ['choosingPlacement', 'Rotate', 'r'],
   ['skipped', 'Skip', 's'],
 ] as const)('%s: the %s button exposes its keyboard shortcut to assistive tech', (turnState, name, key) => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(screen.getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', key)
 })
@@ -1036,7 +1037,7 @@ test.each([
   ['choosingPlacement', 'Rotate', 'R'],
   ['skipped', 'Skip', 'S'],
 ] as const)('%s: the %s button carries a hidden %s key chip for the held-Shift cue', (turnState, name, key) => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } }))
 
   const chip = screen.getByRole('button', { name }).querySelector('kbd.key-badge')
   expect(chip?.textContent).toBe(key)
@@ -1052,13 +1053,13 @@ test('Reroll carries an E key chip', () => {
 })
 
 test('Menu carries an M key chip', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(screen.getByRole('button', { name: 'Menu' }).querySelector('kbd.key-badge')?.textContent).toBe('M')
 })
 
 test('pressing s skips a dead roll', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 's' })
 
@@ -1075,7 +1076,7 @@ test('pressing s does nothing when the roll is playable', () => {
 
 test.each(['awaitingRoll', 'choosingPlacement', 'skipped'] as const)('pressing m opens the Menu in turn state %s', (turnState) => {
   const onOpenSettings = vi.fn()
-  const state = makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
+  const state = makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
   render(<PlayingScreen state={state} error={null} sendAction={vi.fn()} onOpenSettings={onOpenSettings} onNewGame={vi.fn()} />)
 
   fireEvent.keyDown(window, { key: 'm' })
@@ -1090,13 +1091,13 @@ test('the Menu button exposes its keyboard shortcut to assistive tech', () => {
 })
 
 test('Roll sits in the action row, which is where its heavier border is scoped', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(screen.getByRole('button', { name: 'Roll' }).parentElement).toHaveClass('rail-actions')
 })
 
 test('the dice name who rolled them for assistive tech but draw no dot or label', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [4, 2], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [4, 2], legalPlacements: [] } }))
 
   const dice = screen.getByRole('img', { name: 'Player 2 rolled 4 and 2' })
   expect(dice.querySelector('.dot')).not.toBeInTheDocument()
@@ -1106,7 +1107,7 @@ test('the dice name who rolled them for assistive tech but draw no dot or label'
 test("a dimmed last roll keeps its roller's name for assistive tech through the next player's turn", () => {
   const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
 
-  update(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  update(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   expect(screen.getByRole('img', { name: 'Player 1’s last roll 3 and 5' })).toHaveTextContent(/^35$/)
 })
@@ -1138,7 +1139,7 @@ const wildcardState = ({
   legalValues: number[]
   currentPlayerId?: number
 }) => {
-  const state = makeState({ turn: { currentPlayerId, turnState: 'choosingWildcard', lastRoll: [4, 4], legalPlacements: [] } })
+  const state = makeState({ turn: { recentTurns: [], currentPlayerId, turnState: 'choosingWildcard', lastRoll: [4, 4], legalPlacements: [] } })
   state.game.houseRules.wildcard = { enabled: true, originalRoll: [4, 4], legalValues, editableIndex }
   return state
 }
@@ -1200,7 +1201,7 @@ test('the wildcard turn status describes the pick and the key hint stays blank',
 })
 
 test('a wildcard roll where no value fits skips the picker and goes straight to Skip', () => {
-  const state = makeState({ turn: { currentPlayerId: 1, turnState: 'skipped', lastRoll: [4, 4], legalPlacements: [] } })
+  const state = makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [4, 4], legalPlacements: [] } })
   state.game.houseRules.wildcard = { enabled: true, originalRoll: [4, 4], legalValues: [], editableIndex: null }
   renderScreen(state)
 
@@ -1217,13 +1218,13 @@ test("on the bot's turn a pending wildcard shows plain dice and no picker", () =
 })
 
 const rerollState = (canReroll: boolean, turnState: 'choosingPlacement' | 'skipped' | 'choosingWildcard' = 'choosingPlacement') => {
-  const state = makeState({ turn: { currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
+  const state = makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: [3, 4], legalPlacements: [] } })
   state.game.houseRules.reroll = { enabled: true, canReroll }
   return state
 }
 
 test('there is no Reroll button when the house rule is off', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(screen.queryByRole('button', { name: 'Reroll' })).not.toBeInTheDocument()
 })
@@ -1308,14 +1309,14 @@ test('the Rerolls row shows each player\'s charges left against the limit', () =
 })
 
 test('there is no Rerolls row when the house rule is off', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
   expect(within(scoreTable()).queryByRole('row', { name: /^Rerolls/ })).not.toBeInTheDocument()
 })
 
 test('with Reroll off and Comeback on the Rerolls row is there from the start and a grant only changes its number', () => {
   const comebackOnly = () => {
-    const state = makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } })
+    const state = makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } })
     state.game.houseRules.comebackNudge.enabled = true
     return state
   }
@@ -1358,7 +1359,7 @@ test('the turn status line skips the reroll mention once charges are exhausted',
 })
 
 function comebackStates() {
-  const turn = { currentPlayerId: 1, turnState: 'choosingPlacement' as const, lastRoll: [3, 4] as [number, number], legalPlacements: [] }
+  const turn = { currentPlayerId: 1, turnState: 'choosingPlacement' as const, lastRoll: [3, 4] as [number, number], legalPlacements: [], recentTurns: [] }
   const before = makeState({ turn })
   const after = makeState({ turn })
   after.game.players['2'].houseRules.comebackNudge.granted = true
@@ -1459,7 +1460,7 @@ test('player names in the status line and the Comeback notice never wrap mid-nam
 })
 
 test.each(['ctrlKey', 'metaKey', 'altKey'] as const)('a shortcut key held with %s is left to the browser', (modifier) => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'd', [modifier]: true })
 
@@ -1467,7 +1468,7 @@ test.each(['ctrlKey', 'metaKey', 'altKey'] as const)('a shortcut key held with %
 })
 
 test('shortcuts still work with Caps Lock or Shift held', () => {
-  const sendAction = renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  const sendAction = renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
   fireEvent.keyDown(window, { key: 'D' })
 
@@ -1495,12 +1496,12 @@ function resultBar(gameOver: GameOver, tweak: (game: GameState['game']) => void 
 }
 
 test('the result bar names who surrendered', () => {
-  const bar = resultBar({ reason: 'surrender', playerId: 2, winner: 1 })
+  const bar = resultBar({ history: null, reason: 'surrender', playerId: 2, winner: 1 })
   expect(within(bar).getByText('Player 2 surrendered')).toBeInTheDocument()
 })
 
 test('the result bar states no reason when the board simply settled', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
+  const bar = resultBar({ history: null, reason: 'boardFull', playerId: null, winner: 1 })
   expect(within(bar).queryByText(/no room left to build/)).not.toBeInTheDocument()
 })
 
@@ -1508,24 +1509,24 @@ test.each([
   ['playerBlocked', 1, 'Player 1 had no legal move left'],
   ['skipLimit', 2, 'Player 2 hit the skip limit (5 of 5)'],
 ] as const)('the result bar names the player for a %s ending', (reason, playerId, text) => {
-  const bar = resultBar({ reason, playerId, winner: 3 - playerId })
+  const bar = resultBar({ history: null, reason, playerId, winner: 3 - playerId })
   expect(within(bar).getByText(text)).toBeInTheDocument()
 })
 
 test('the end reason sits under the outcome, in the same block', () => {
-  const bar = resultBar({ reason: 'playerBlocked', playerId: 1, winner: 2 })
+  const bar = resultBar({ history: null, reason: 'playerBlocked', playerId: 1, winner: 2 })
   const reason = within(bar).getByText('Player 1 had no legal move left')
   expect(reason.previousElementSibling).toHaveTextContent('Player 2 wins on score')
 })
 
 test('a tie ended by the skip limit still names the reason on the bar', () => {
-  const bar = resultBar({ reason: 'skipLimit', playerId: 1, winner: null })
+  const bar = resultBar({ history: null, reason: 'skipLimit', playerId: 1, winner: null })
   expect(within(bar).getByText('Tied')).toBeInTheDocument()
   expect(within(bar).getByText('Player 1 hit the skip limit (5 of 5)')).toBeInTheDocument()
 })
 
 test('mid-game, the header marks the player whose turn it is', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
   expect(document.querySelector('[aria-current]')).toHaveTextContent('Player 2')
 })
 
@@ -1537,14 +1538,14 @@ test('once the game is over, the table marks no current player and draws both do
 })
 
 test('in board view the rail keeps its score table and Moves list beside the result', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
+  const bar = resultBar({ history: null, reason: 'boardFull', playerId: null, winner: 1 })
   expect(bar).toBeInTheDocument()
   expect(screen.getByRole('table', { name: 'Score' })).toBeInTheDocument()
   expect(screen.getByRole('log', { name: 'Moves' })).toBeInTheDocument()
 })
 
 test('the result sits in the turn block\'s reserved slots: the headline in the status box, the reason under it, the actions in the action row', () => {
-  const bar = resultBar({ reason: 'skipLimit', playerId: 2, winner: 1 })
+  const bar = resultBar({ history: null, reason: 'skipLimit', playerId: 2, winner: 1 })
 
   expect(bar).toHaveClass('rail-turn')
   expect(within(bar.querySelector('.rail-instr') as HTMLElement).getByText('Player 1 wins on score')).toBeInTheDocument()
@@ -1572,7 +1573,7 @@ test('View Result brings the dialog back, and View Board swaps it for the result
 })
 
 test('the table keeps the real score, Player 1 first, even when the winner trails after a surrender', () => {
-  const bar = resultBar({ reason: 'surrender', playerId: 2, winner: 1 }, (game) => {
+  const bar = resultBar({ history: null, reason: 'surrender', playerId: 2, winner: 1 }, (game) => {
     game.players['1'].score = { ...game.players['1'].score, totalScore: 120 }
     game.players['2'].score = { ...game.players['2'].score, totalScore: 158 }
   })
@@ -1581,7 +1582,7 @@ test('the table keeps the real score, Player 1 first, even when the winner trail
 })
 
 test('focus lands on View Result in the bar after View Board', () => {
-  const bar = resultBar({ reason: 'boardFull', playerId: null, winner: 1 })
+  const bar = resultBar({ history: null, reason: 'boardFull', playerId: null, winner: 1 })
   expect(within(bar).getByRole('button', { name: 'View Result' })).toHaveFocus()
 })
 
@@ -1592,7 +1593,7 @@ test('focus lands on View Result in the bar after Escape', () => {
 })
 
 test('the table shows total score beside territory when modifiers make them differ', () => {
-  resultBar({ reason: 'boardFull', playerId: null, winner: 1 }, (game) => {
+  resultBar({ history: null, reason: 'boardFull', playerId: null, winner: 1 }, (game) => {
     game.players['1'].score = { ...game.players['1'].score, totalScore: 162, breakdown: { ...game.players['1'].score.breakdown, area: 152 } }
     game.players['2'].score = { ...game.players['2'].score, totalScore: 141, breakdown: { ...game.players['2'].score.breakdown, area: 141 } }
   })
@@ -1601,7 +1602,7 @@ test('the table shows total score beside territory when modifiers make them diff
 })
 
 test('in series play a caption gives the round and the running series score', () => {
-  renderScreen({ ...makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }), series: makeSeries({ gamesPlayed: 1, scores: { '1': 18, '2': 14 } }) })
+  renderScreen({ ...makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }), series: makeSeries({ gamesPlayed: 1, scores: { '1': 18, '2': 14 } }) })
 
   expect(screen.getByRole('heading', { name: 'Round 2 of 3' })).toBeInTheDocument()
   expect(screen.getByText('Series 18 – 14')).toBeInTheDocument()
@@ -1753,7 +1754,7 @@ function placingOnSpecialBoard(rules: Parameters<typeof specialRules>[0]) {
   renderScreen(
     makeState({
       board: { size: 5, skipLimit: 5 },
-      turn: {
+      turn: { recentTurns: [],
         currentPlayerId: 1,
         turnState: 'choosingPlacement',
         lastRoll: [2, 2],
@@ -1946,7 +1947,7 @@ test('the list shows the live row and the last three turns, no more', () => {
 
 test('once the game is over there is no live row and the last four turns show', () => {
   const turns = [1, 2, 3, 4, 5, 6].map((n) => recentTurn(n, n % 2 ? 1 : 2, [1, n], n))
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [], recentTurns: turns }, gameOver: { reason: 'boardFull', playerId: null, winner: 1 } }))
+  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [], recentTurns: turns }, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
 
   expect(moves().map((row) => row.firstChild?.textContent)).toEqual(['6', '5', '4', '3'])
   expect(document.querySelector('.move.live')).toBeNull()
@@ -1959,7 +1960,7 @@ test('before any move the list says nothing has been played', () => {
 })
 
 test('the focus order is the board, then Menu, then the action buttons', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
   const board = screen.getByRole('group', { name: / board$/ })
   const menu = screen.getByRole('button', { name: 'Menu' })
@@ -2024,7 +2025,7 @@ test('the board summary names each player\'s pieces and cells, and the obstacles
     score: { ...base.players[id].score, totalArea: area },
   })
   const state = makeState({
-    turn: { currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 1], legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }] },
+    turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 1], legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }] },
     players: {
       '1': player('1', [{ topLeft: [0, 0], width: 2, height: 3, owner: 1 }, { topLeft: [0, 2], width: 1, height: 1, owner: 1 }], 7),
       '2': player('2', [], 0),
@@ -2050,7 +2051,7 @@ test('a roll is announced in a polite live region, with the roller\'s name', () 
 test('a Wildcard roll is announced too, although its dice are replaced by the picker', () => {
   renderScreen(
     makeState({
-      turn: { currentPlayerId: 1, turnState: 'choosingWildcard', lastRoll: [6, 6], legalPlacements: [] },
+      turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingWildcard', lastRoll: [6, 6], legalPlacements: [] },
       houseRules: { ...makeGame().houseRules, wildcard: { enabled: true, originalRoll: [6, 6], legalValues: [1, 2, 3], editableIndex: 0 } },
     }),
   )
@@ -2058,6 +2059,6 @@ test('a Wildcard roll is announced too, although its dice are replaced by the pi
 })
 
 test('nothing is announced while there is no roll', () => {
-  renderScreen(makeState({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
   expect(screen.getByTestId('roll-announcement')).toBeEmptyDOMElement()
 })

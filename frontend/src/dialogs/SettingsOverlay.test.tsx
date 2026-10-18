@@ -42,7 +42,7 @@ test('shows the running round and the series score, Player 1 first, when reached
 })
 
 test('once a round has ended, the Menu still names that round, not the next one', () => {
-  const game = makeGame({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } })
+  const game = makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } })
   renderOverlay({ game, series: makeSeries({ gamesPlayed: 3, isComplete: true, scores: { '1': 459, '2': 440 } }) })
 
   expect(screen.getByText('Series').nextSibling).toHaveTextContent('Round 3 of 3 — 459–440')
@@ -168,7 +168,7 @@ test('Surrender copy says the round, not the match, mid-series', () => {
 })
 
 test('the Surrender button is gone once the game is over', () => {
-  renderOverlay({ game: makeGame({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }) })
+  renderOverlay({ game: makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }) })
   expect(screen.queryByRole('button', { name: 'Surrender' })).not.toBeInTheDocument()
 })
 
@@ -187,7 +187,7 @@ test("on the human's turn, Surrender has no note and no stale description", () =
 })
 
 test('at game over there is no Surrender and no note, even if the bot was due to move', () => {
-  renderOverlay({ botSeat: 1, game: makeGame({ turn: { currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }) })
+  renderOverlay({ botSeat: 1, game: makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }) })
   expect(screen.queryByText('Available on your turn')).not.toBeInTheDocument()
 })
 
@@ -202,8 +202,8 @@ test("clicking Surrender on the bot's turn opens no dialog and sends nothing", (
 
 test("when the bot's turn ends with the menu open, Surrender becomes available at once", () => {
   const props = { series: null, opponentLabel: 'Bot (Greedy)', sendAction: vi.fn(), onClose: vi.fn(), botSeat: 1 }
-  const botTurn = makeGame({ turn: { currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
-  const humanTurn = makeGame({ turn: { currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const botTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const humanTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const { rerender } = render(<SettingsOverlay game={botTurn} {...props} />)
   expect(screen.getByRole('button', { name: 'Surrender' })).toHaveAttribute('aria-disabled', 'true')
 
