@@ -138,13 +138,13 @@ test('a short Moves list sheds its fourth row under 197px and its third under 15
 })
 
 test('every modal is centred inside the device safe area, not the full viewport', () => {
-  expect(ruleFor(css, 'dialog.modal')).toMatch(
+  expect(ruleFor(tokensCss, 'dialog.modal')).toMatch(
     /inset:\s*env\(safe-area-inset-top\)\s+env\(safe-area-inset-right\)\s+env\(safe-area-inset-bottom\)\s+env\(safe-area-inset-left\)/,
   )
 })
 
 test('a modal is never wider or taller than the safe area less a 16px margin', () => {
-  const block = ruleFor(css, 'dialog.modal')
+  const block = ruleFor(tokensCss, 'dialog.modal')
   expect(block).toMatch(/max-width:\s*calc\(100vw - 32px - env\(safe-area-inset-left\) - env\(safe-area-inset-right\)\)/)
   expect(block).toMatch(/max-height:\s*calc\(100dvh - 32px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/)
 })

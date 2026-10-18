@@ -25,7 +25,7 @@ export const contrast = (a: number[], b: number[]) => (Math.max(luminance(a), lu
 // `fg` at `share` (0-1) over `bg`, as `color-mix(in srgb, fg N%, transparent)` renders on an opaque background.
 export const mix = (fg: number[], share: number, bg: number[]) => fg.map((v, i) => v * share + bg[i] * (1 - share))
 
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+export const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 // The body of the rule whose selector starts a line, e.g. ruleFor(css, '.start-error'); else the first rule whose comma list contains it.
 export function ruleFor(css: string, selector: string) {

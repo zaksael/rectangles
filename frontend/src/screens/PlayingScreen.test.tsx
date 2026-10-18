@@ -742,10 +742,10 @@ test('keeps the last roll on screen, marked as the last roll, once the next turn
   expect(dice.querySelector('.dot')).not.toBeInTheDocument()
 })
 
-// jsdom skips the imported stylesheet, so tests that assert computed style inject the real file.
+// jsdom skips the imported stylesheet, so tests that assert computed style inject the real files, the shared tokens first as in the bundle.
 function injectPlayingCss() {
   const style = document.createElement('style')
-  style.textContent = readCss('PlayingScreen.css')
+  style.textContent = `${readCss('tokens.css')}\n${readCss('PlayingScreen.css')}`
   document.head.append(style)
   onTestFinished(() => style.remove())
 }

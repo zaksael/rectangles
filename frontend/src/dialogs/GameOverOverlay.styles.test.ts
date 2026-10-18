@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor } from '../dev/testUtils/styles'
+import { readCss, ruleFor, tokensCss } from '../dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 
@@ -10,7 +10,7 @@ test('game-over capitals are for structural labels only: the reason and table he
     expect(block, selector).not.toMatch(/letter-spacing/)
     expect(Number(block.match(/font(?:-size)?:\s*(?:\d+ )?(\d+)px/)![1]), selector).toBeGreaterThanOrEqual(12)
   }
-  expect(ruleFor(css, 'dialog.modal .reason')).toMatch(/text-transform:\s*uppercase/)
+  expect(ruleFor(tokensCss, 'dialog.modal .reason')).toMatch(/text-transform:\s*uppercase/)
   expect(ruleFor(css, '.game-over table.breakdown thead th')).toMatch(/text-transform:\s*uppercase/)
 })
 

@@ -205,3 +205,44 @@ dialog button:focus,
     padding: 10px 14px;
   }
 }
+
+/* The modal dialogs (connection lost, Surrender, Reset, Settings, game-over): one shell, each dialog sets its own width. */
+dialog.modal {
+  box-sizing: border-box;
+  /* A modal's auto margins centre it between its insets: pull them in to the notch and corner insets so it
+     centres in the visible area (all zero on a desktop, so nothing moves there). */
+  inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  max-width: calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  background: var(--ledger);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+  overscroll-behavior: contain;
+}
+dialog.modal .reason {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+dialog.modal::backdrop {
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+dialog.modal h2 {
+  font-family: 'Source Serif 4', serif;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+dialog.modal .actions {
+  display: flex;
+  gap: 12px;
+}
+dialog.modal .actions .btn {
+  flex: 1;
+  padding: 12px;
+}
