@@ -131,7 +131,9 @@ export function useGameSocket(params: GameSocketParams) {
       if (!next.game.gameOver.history) setAnalysis(null)
       drainTimeoutRef.current = setTimeout(drainNext, STATE_PACING_DELAY_MS)
     }
-    const socket = new WebSocket(`${params.serverUrl ?? ''}/ws?${query}`)
+    // Spelled out, not '/ws': browsers before 2024 reject a relative WebSocket URL with a SyntaxError.
+    const base = params.serverUrl ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+    const socket = new WebSocket(`${base}/ws?${query}`)
     socketRef.current = socket
     socket.addEventListener('open', () => {
       hasOpenedRef.current = true

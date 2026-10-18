@@ -47,14 +47,19 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-test('opens a socket to /ws with the given connect params in the query string', () => {
+// An old browser rejects a relative WebSocket URL, so the page's own host is spelled out.
+const pageAt = (protocol: string, host: string) => vi.stubGlobal('location', { protocol, host })
+
+test('opens a socket to /ws on the page\'s own host with the given connect params in the query string', () => {
+  pageAt('http:', 'game.test:8765')
   renderHook(() => useGameSocket({ protocolVersion: 1, boardSize: 19 }))
 
   expect(FakeWebSocket.instances).toHaveLength(1)
-  expect(FakeWebSocket.instances[0].url).toBe('/ws?protocolVersion=1&boardSize=19')
+  expect(FakeWebSocket.instances[0].url).toBe('ws://game.test:8765/ws?protocolVersion=1&boardSize=19')
 })
 
 test('includes skipLimit/seriesLength/botSeats/botDifficulty/house-rule flags in the connect query when given', () => {
+  pageAt('http:', 'game.test:8765')
   renderHook(() =>
     useGameSocket({
       protocolVersion: 1,
@@ -76,11 +81,18 @@ test('includes skipLimit/seriesLength/botSeats/botDifficulty/house-rule flags in
   )
 
   expect(FakeWebSocket.instances[0].url).toBe(
-    '/ws?protocolVersion=1&boardSize=19&skipLimit=5&seriesLength=3&botSeats=2&botDifficulty=Greedy' +
+    'ws://game.test:8765/ws?protocolVersion=1&boardSize=19&skipLimit=5&seriesLength=3&botSeats=2&botDifficulty=Greedy' +
       '&wildcardEnabled=false&rerollEnabled=true&wallsEnabled=true&obstaclesEnabled=false' +
       '&prizeEnabled=true&pitfallEnabled=false&stealEnabled=true&selfEnclosedPenaltyEnabled=true' +
       '&comebackNudgeEnabled=false',
   )
+})
+
+test('uses wss on an https page', () => {
+  pageAt('https:', 'game.test')
+  renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  expect(FakeWebSocket.instances[0].url).toBe('wss://game.test/ws?protocolVersion=1')
 })
 
 test('prefixes the socket URL with serverUrl when given', () => {
