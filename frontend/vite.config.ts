@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // One jsdom per worker instead of one per file (about half the run time); setupTests cleans up after each test, and a test that leaks global state would show up as an order-dependent failure.
+    isolate: false,
     setupFiles: './src/setupTests.ts',
   },
 })
