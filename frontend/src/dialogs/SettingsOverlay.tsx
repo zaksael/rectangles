@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { GameAction, GameWireState, SeriesWireState } from '../game/gameTypes'
+import { BOT_SPEEDS, type BotSpeedLabel } from '../game/botSpeed'
 import { HOUSE_RULE_GROUPS } from '../game/houseRules'
 import { seriesRound } from '../game/seriesRound'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
@@ -12,9 +13,11 @@ interface SettingsOverlayProps {
   sendAction: (action: GameAction) => void
   onClose: () => void
   botSeat?: number
+  // Given in a Vs Bot match only: the Menu's one adjustable item.
+  botSpeed?: { current: BotSpeedLabel; onChange: (label: BotSpeedLabel) => void }
 }
 
-export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClose, botSeat }: SettingsOverlayProps) {
+export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClose, botSeat, botSpeed }: SettingsOverlayProps) {
   const dialogRef = useAutoOpenDialog()
   const enabledCount = Object.values(game.houseRules).filter((rule) => rule.enabled).length
   const [confirmingSurrender, setConfirmingSurrender] = useState(false)
@@ -78,6 +81,18 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
                 </ul>
               </section>
             ))}
+          </div>
+        )}
+        {botSpeed && (
+          <div className="settings-speed">
+            <h3>Bot speed</h3>
+            <div className="speed-options" role="group" aria-label="Bot speed">
+              {BOT_SPEEDS.map((speed) => (
+                <button key={speed.label} className="btn secondary" aria-pressed={speed.label === botSpeed.current} onClick={() => botSpeed.onChange(speed.label)}>
+                  {speed.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         <div className="settings-footer">

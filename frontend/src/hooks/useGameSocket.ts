@@ -17,6 +17,8 @@ interface GameSocketParams {
   stealEnabled?: boolean
   selfEnclosedPenaltyEnabled?: boolean
   comebackNudgeEnabled?: boolean
+  // The wait between two queued states; not a connect param, so changing it never reconnects.
+  pacingDelayMs?: number
   serverUrl?: string
   enabled?: boolean
   connectionId?: number
@@ -52,7 +54,7 @@ export interface GameError {
 
 type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'connect-failed'
 
-const STATE_PACING_DELAY_MS = 500
+const DEFAULT_PACING_DELAY_MS = 500
 
 export const botName = (difficulty?: string) => `Bot (${difficulty})`
 
@@ -80,6 +82,11 @@ export function useGameSocket(params: GameSocketParams) {
   const hasOpenedRef = useRef(false)
   const stateQueueRef = useRef<GameState[]>([])
   const drainTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Read when each wait starts, so a change applies from the next one without a new connection.
+  const pacingDelayRef = useRef(DEFAULT_PACING_DELAY_MS)
+  useEffect(() => {
+    pacingDelayRef.current = params.pacingDelayMs ?? DEFAULT_PACING_DELAY_MS
+  }, [params.pacingDelayMs])
   function setAnalysis(next: Analysis | null) {
     analysisRef.current = next
     setAnalysisState(next)
@@ -129,7 +136,7 @@ export function useGameSocket(params: GameSocketParams) {
       setState(next)
       // A state with no history is a game still in play: any analysis held belongs to the round before.
       if (!next.game.gameOver.history) setAnalysis(null)
-      drainTimeoutRef.current = setTimeout(drainNext, STATE_PACING_DELAY_MS)
+      drainTimeoutRef.current = setTimeout(drainNext, pacingDelayRef.current)
     }
     // Spelled out, not '/ws': browsers before 2024 reject a relative WebSocket URL with a SyntaxError.
     const base = params.serverUrl ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`

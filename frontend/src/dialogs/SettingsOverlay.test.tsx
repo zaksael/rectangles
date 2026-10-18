@@ -227,3 +227,30 @@ test("the Surrender confirm dialog keeps the solid red button, where the action 
   expect(confirm).toHaveClass('destructive')
   expect(confirm).not.toHaveClass('quiet')
 })
+
+test('a Vs Bot Menu shows the Bot speed group with the current speed pressed', () => {
+  renderOverlay({ botSpeed: { current: 'Normal', onChange: vi.fn() } })
+
+  const group = screen.queryByRole('group', { name: 'Bot speed' })
+  expect(group).toBeInTheDocument()
+  expect(within(group!).getAllByRole('button').map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+    ['Slow', 'false'],
+    ['Normal', 'true'],
+    ['Fast', 'false'],
+  ])
+})
+
+test('a Menu without a bot has no Bot speed group', () => {
+  renderOverlay()
+
+  expect(screen.queryByRole('group', { name: 'Bot speed' })).not.toBeInTheDocument()
+})
+
+test('pressing a speed reports it', () => {
+  const onChange = vi.fn()
+  renderOverlay({ botSpeed: { current: 'Normal', onChange } })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Fast' }))
+
+  expect(onChange).toHaveBeenCalledWith('Fast')
+})

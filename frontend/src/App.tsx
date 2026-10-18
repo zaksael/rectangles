@@ -4,6 +4,7 @@ import { ModeSelectScreen, type StartGameParams } from './screens/ModeSelectScre
 import { NarrowWindowGate } from './dialogs/NarrowWindowGate'
 import { PlayingScreen } from './screens/PlayingScreen'
 import { ReplayScreen } from './screens/ReplayScreen'
+import { BOT_SPEEDS, loadBotSpeed, saveBotSpeed } from './game/botSpeed'
 import { SettingsOverlay } from './dialogs/SettingsOverlay'
 import { botName, useGameSocket } from './hooks/useGameSocket'
 import { useShiftHeld } from './hooks/useShiftHeld'
@@ -31,7 +32,10 @@ function App() {
   const [showBetterOption, setShowBetterOption] = useState(false)
   const [connectParams, setConnectParams] = useState(IDLE_CONNECT_PARAMS)
 
-  const gameSocket = useGameSocket(connectParams)
+  // Kept here so it survives leaving a game; remembered between page loads.
+  const [botSpeed, setBotSpeed] = useState(loadBotSpeed)
+
+  const gameSocket = useGameSocket({ ...connectParams, pacingDelayMs: connectParams.botSeats === undefined ? undefined : botSpeed.ms })
   useShiftHeld()
 
   // The game screen takes over the moment the socket opens (set during render, so Mode Select never shows a frame of the open game).
@@ -92,6 +96,17 @@ function App() {
             opponentLabel={connectParams.botSeats ? botName(connectParams.botDifficulty) : 'Local 2P'}
             sendAction={gameSocket.sendAction}
             botSeat={connectParams.botSeats}
+            botSpeed={
+              connectParams.botSeats === undefined
+                ? undefined
+                : {
+                    current: botSpeed.label,
+                    onChange: (label) => {
+                      saveBotSpeed(label)
+                      setBotSpeed(BOT_SPEEDS.find((speed) => speed.label === label)!)
+                    },
+                  }
+            }
             onClose={() => setSettingsOpen(false)}
           />
         )}

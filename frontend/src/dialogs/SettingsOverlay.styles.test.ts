@@ -59,3 +59,8 @@ test('an off Menu rule is dimmed and struck through, an on rule is plain ink, an
   expect(ruleFor(css, '.settings-rule.on')).toMatch(/color:\s*var\(--ink\)/)
   expect(ruleFor(css, '.settings-rule.on')).toMatch(/text-decoration:\s*none/)
 })
+
+test('the Bot speed heading is an 11px label like the rule headings and keeps AA contrast (4.5:1)', () => {
+  expect(ruleFor(css, '.settings-speed h3')).toMatch(/font-size:\s*11px/)
+  expect(textContrast(css, '.settings-speed h3')).toBeGreaterThanOrEqual(4.5)
+})

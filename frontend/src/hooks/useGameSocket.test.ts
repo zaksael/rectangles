@@ -300,6 +300,43 @@ test('the queued second state message applies once the pacing delay elapses', ()
   expect(result.current.state).toEqual({ game: secondGame, series: null })
 })
 
+test('a slower pacing delay holds the queued state until that delay has elapsed', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1, pacingDelayMs: 1000 }))
+
+  act(() => {
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: secondGame, series: null })
+    vi.advanceTimersByTime(999)
+  })
+  expect(result.current.state).toEqual({ game: fakeGame, series: null })
+
+  act(() => {
+    vi.advanceTimersByTime(1)
+  })
+  expect(result.current.state).toEqual({ game: secondGame, series: null })
+})
+
+test('changing the pacing delay mid-game applies to the next wait and keeps the same connection', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const thirdGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [5, 6] } }
+  const { result, rerender } = renderHook((pacingDelayMs: number) => useGameSocket({ protocolVersion: 1, pacingDelayMs }), { initialProps: 1000 })
+
+  act(() => {
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: secondGame, series: null })
+  })
+  rerender(150)
+  act(() => {
+    vi.advanceTimersByTime(1000)
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: thirdGame, series: null })
+    vi.advanceTimersByTime(150)
+  })
+
+  expect(result.current.state).toEqual({ game: thirdGame, series: null })
+  expect(FakeWebSocket.instances).toHaveLength(1)
+})
+
 test('a state arriving after the pacing queue went idle shows at once', () => {
   const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))

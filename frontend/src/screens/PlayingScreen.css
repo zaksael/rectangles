@@ -649,7 +649,8 @@ dialog.settings {
   padding-left: 0;
   border-left: 0;
 }
-.settings-rules h3 {
+.settings-rules h3,
+.settings-speed h3 {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 500;
@@ -672,6 +673,24 @@ dialog.settings {
 .settings-rule.on {
   color: var(--ink);
   text-decoration: none;
+}
+/* The Bot speed group (Vs Bot only): the Menu's one adjustable item, set above the footer divider. */
+.settings-speed {
+  margin-top: 24px;
+}
+.speed-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-width: 280px;
+}
+.speed-options .btn {
+  padding: 8px 0;
+  min-width: 0;
+}
+.speed-options .btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--ledger);
 }
 /* Separates Resume/Surrender from the read-only match info above them. */
 .settings-footer {

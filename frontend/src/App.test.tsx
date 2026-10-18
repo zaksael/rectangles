@@ -108,6 +108,33 @@ describe('App', () => {
     expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
   })
 
+  it('a speed picked in the Menu is remembered and shown pressed when the Menu reopens', () => {
+    render(<App />)
+    startGameAndOpen()
+    sendState()
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fast' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+
+    expect(screen.getByRole('button', { name: 'Fast' })).toHaveAttribute('aria-pressed', 'true')
+    expect(localStorage.getItem('rectangles.botSpeed:v1')).toBe('Fast')
+  })
+
+  it('a Local 2P Menu has no Bot speed group', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('open')
+    })
+    sendState()
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+
+    expect(screen.queryByRole('group', { name: 'Bot speed' })).not.toBeInTheDocument()
+  })
+
   it('dismisses an open Menu overlay once the connection-lost modal appears', () => {
     render(<App />)
     startGameAndOpen()
