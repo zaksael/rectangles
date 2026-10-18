@@ -22,17 +22,6 @@
   }
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .playing .board-wrap {
   display: flex;
   align-items: center; /* a board shorter than the rail sits vertically centred */
