@@ -111,28 +111,6 @@
 .difficulty-pills.hidden {
   visibility: hidden;
 }
-.pill {
-  appearance: none;
-  font-family: "IBM Plex Sans", sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);
-  padding: 4px 10px;
-  cursor: pointer;
-}
-.pill.active {
-  background: var(--ink);
-  color: var(--ledger);
-  border-color: var(--ink);
-}
-.pill:hover:not(.active) {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-}
-.pill:active:not(.active) {
-  background: color-mix(in srgb, var(--ink) 16%, transparent);
-}
 
 /* Keyboard focus only (:focus-visible), so a mouse click leaves no ring and the selection cue stays unambiguous.
    Vs Bot's radio is the inner .mode-card-select, so its ring still wraps the whole card via :has(); Local 2P's
@@ -376,9 +354,6 @@
    input (a touchscreen laptop's primary pointer is fine, so `pointer` alone
    misses it) without touching layout on mouse-only devices. */
 @media (any-pointer: coarse) {
-  .pill {
-    padding: 10px 14px;
-  }
   .segmented button {
     padding: 13px 16px;
   }

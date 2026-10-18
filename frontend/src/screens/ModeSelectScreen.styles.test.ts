@@ -26,8 +26,9 @@ test('the touch-target growth applies to any device with a touch input, so touch
   expect(css).toContain('@media (any-pointer: coarse)')
   expect(css).not.toContain('@media (pointer: coarse)')
   const block = css.match(/@media \(any-pointer: coarse\) \{([\s\S]*?)\n\}/)![1]
-  for (const selector of ['.pill', '.segmented button', '.group-link']) expect(block).toContain(`${selector} {`)
+  for (const selector of ['.segmented button', '.group-link']) expect(block).toContain(`${selector} {`)
   expect(block).toContain('.reset-link,')
+  expect(block).not.toContain('.pill {') // the shared pill grows in tokens.css
 })
 
 test('a described house rule is already taller than a 44px touch target, so it gets no extra touch padding', () => {
@@ -43,10 +44,7 @@ test('a house rule puts its checkbox on the name line, spaces blocks 10px apart,
   expect(textContrast(css, '.rule-desc')).toBeGreaterThanOrEqual(4.5)
 })
 
-test('the shared .pill (difficulty and Wildcard pills) is at least 12px, with no per-screen override', () => {
-  const shared = ruleFor(css, '.pill')
-
-  expect(Number(shared.match(/font-size:\s*(\d+)px/)![1])).toBeGreaterThanOrEqual(12)
+test('the difficulty pills take the shared .pill look with no per-screen override', () => {
   expect(css).not.toMatch(/\.difficulty-pills \.pill \{/)
 })
 

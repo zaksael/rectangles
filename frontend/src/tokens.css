@@ -167,3 +167,34 @@ dialog button:focus,
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Small toggle buttons: the difficulty pills on Mode Select and the Wildcard value pills on Playing. */
+.pill {
+  appearance: none;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.pill.active {
+  background: var(--ink);
+  color: var(--ledger);
+  border-color: var(--ink);
+}
+.pill:hover:not(.active) {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.pill:active:not(.active) {
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+/* Any touch input (a touchscreen laptop's primary pointer is fine, so `pointer` alone misses it) gets a bigger hit area. */
+@media (any-pointer: coarse) {
+  .pill {
+    padding: 10px 14px;
+  }
+}
