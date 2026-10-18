@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor, tokensCss } from '../dev/testUtils/styles'
+import { readCss, ruleFor, textContrast, tokensCss } from '../dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 
@@ -34,4 +34,12 @@ test('a breakdown header keeps its dot and name on one line, so the dot never st
 
 test('a breakdown header keeps 16px between one player\'s name and the next player\'s dot', () => {
   expect(ruleFor(css, '.game-over table.breakdown thead th')).toMatch(/padding-left:\s*16px/)
+})
+
+test('the dice line is at least 12px and its muted ink still passes AA on the ledger', () => {
+  const block = ruleFor(css, '.game-over-luck')
+
+  expect(Number(block.match(/font-size:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(12)
+  expect(block).toMatch(/color:\s*color-mix\(in srgb, var\(--ink\) \d+%, transparent\)/)
+  expect(textContrast(css, '.game-over-luck')).toBeGreaterThanOrEqual(4.5)
 })

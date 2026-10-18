@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../game/gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
+import { rolledArea } from '../game/luck'
 import { SELF_ENCLOSED_PENALTY_PER_CELL } from '../game/ruleRows'
 import { formatSigned, key, nameOf, reasonText } from '../game/resultText'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
@@ -82,6 +83,7 @@ function bestTurn(game: GameWireState): { turn: number; playerId: number; gain: 
 }
 
 const pointsText = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`
+const cellWord = (n: number) => (n === 1 ? 'cell' : 'cells')
 
 // The margin is shown bold; `detail` is the comeback sentence that follows it, when there is one.
 interface Story {
@@ -262,6 +264,8 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
   const swing = margin === null ? null : biggestSwing(game, rows, margin)
   const story = storyText(game, rows, margin)
   const best = bestTurn(game)
+  const { history } = game.gameOver
+  const dice = history && history.length > 0 ? ([1, 2] as const).map((id) => rolledArea(history, id)) : null
   const advance = advanceFor(series, { onNewGame, onNextRound, onSeriesResult })
 
   return (
@@ -332,6 +336,11 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
             ))}
           </tbody>
         </table>
+      )}
+      {dice && (
+        <p className="game-over-luck">
+          Dice: {nameOf(game, 1)} rolled <b>{dice[0]}</b> {cellWord(dice[0]!)}, {nameOf(game, 2)} rolled <b>{dice[1]}</b> {cellWord(dice[1]!)}
+        </p>
       )}
       <div className="actions">
         <button className="btn primary" onClick={onViewBoard} aria-keyshortcuts="v" autoFocus>

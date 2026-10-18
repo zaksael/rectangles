@@ -729,3 +729,75 @@ test('the best turn is not part of the dialog’s description', () => {
   expect(screen.getByRole('dialog')).toHaveTextContent('Best turn')
   expect(screen.getByRole('dialog')).toHaveAccessibleDescription('by 20 points')
 })
+
+// A history of dealt rolls only: who rolled what (the scores do not matter to the dice line).
+const dealt = (playerId: number, roll: [number, number]) => makeHistoryEntry({ playerId, roll })
+
+test("the dice line reports each player's total rolled cells, by name", () => {
+  const dialog = renderWithHistory([dealt(1, [3, 4]), dealt(2, [5, 5]), dealt(1, [6, 6])], 1, 'boardFull', false)
+
+  expect(dialog).toHaveTextContent('Dice: Player 1 rolled 48 cells, Player 2 rolled 25 cells')
+})
+
+function renderDice(withTable: boolean) {
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [dealt(1, [3, 4]), dealt(2, [5, 5])] } })
+  if (withTable) {
+    game.houseRules.prize = { enabled: true, cells: [], points: 10 }
+    game.players['1'].score.breakdown.prize = 10
+  }
+  render(<GameOverOverlay game={game} onNewGame={vi.fn()} onViewBoard={vi.fn()} />)
+  return screen.getByText(/^Dice:/)
+}
+
+const follows = (earlier: Element, later: Element) => Boolean(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+test('the dice line sits under the breakdown table, so the score and its breakdown stay together', () => {
+  const line = renderDice(true)
+
+  expect(follows(screen.getByRole('table'), line)).toBe(true)
+})
+
+test('with no breakdown table the dice line sits under the score box', () => {
+  const line = renderDice(false)
+
+  expect(screen.queryByRole('table')).toBeNull()
+  expect(follows(screen.getByRole('group', { name: 'Final score' }), line)).toBe(true)
+})
+
+test('the dice line is absent when the game has no history', () => {
+  const dialog = renderWithHistory(null, 1, 'boardFull', false)
+
+  expect(dialog).not.toHaveTextContent('Dice:')
+})
+
+test('the dice line is absent when the history is empty, as after a surrender before the first move', () => {
+  const dialog = renderWithHistory([], 2, 'surrender', false)
+
+  expect(dialog).not.toHaveTextContent('Dice:')
+})
+
+test('a series round card shows the round’s dice line', () => {
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [dealt(1, [2, 3]), dealt(2, [4, 1])] } })
+  render(<GameOverOverlay game={game} series={makeSeries({ gamesPlayed: 1 })} onNewGame={vi.fn()} onViewBoard={vi.fn()} onNextRound={vi.fn()} />)
+
+  expect(screen.getByRole('dialog')).toHaveTextContent('Dice: Player 1 rolled 6 cells, Player 2 rolled 4 cells')
+})
+
+test('a surrender card shows the dice line', () => {
+  const dialog = renderWithHistory([dealt(1, [3, 3]), dealt(2, [2, 2])], 2, 'surrender', false)
+
+  expect(dialog).toHaveTextContent('Dice: Player 1 rolled 9 cells, Player 2 rolled 4 cells')
+})
+
+test('the slim result bar carries no dice line', () => {
+  const game = makeGame({ gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [dealt(1, [3, 4]), dealt(2, [5, 5])] } })
+  render(<GameOverBar game={game} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
+
+  expect(screen.getByRole('region')).not.toHaveTextContent('Dice:')
+})
+
+test('a single rolled cell reads as "1 cell", not "1 cells"', () => {
+  const dialog = renderWithHistory([dealt(1, [1, 1]), dealt(2, [2, 2])], 1, 'boardFull', false)
+
+  expect(dialog).toHaveTextContent('Dice: Player 1 rolled 1 cell, Player 2 rolled 4 cells')
+})
