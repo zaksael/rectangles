@@ -53,47 +53,60 @@ test('turn numbers run every 5 turns and at the last turn', () => {
   expect(turnLabels(draw([[0, 0], [0, 0], [0, 0]]).container)).toEqual(['0', '3'])
 })
 
+const turnsOf = (count: number) => Array.from({ length: count }, (): [number, number] => [0, 0])
+const upTo = (last: number, step: number) => Array.from({ length: last / step + 1 }, (_, i) => String(i * step))
+
+// Draws the chart in a box of the given size, as the ResizeObserver would report it.
+function drawInBox(scores: [number, number][], width: number, height: number) {
+  let report: ResizeObserverCallback = () => {}
+  vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
+  const { container } = draw(scores, 1)
+  act(() => report([{ contentRect: { width, height } } as ResizeObserverEntry], {} as ResizeObserver))
+  return container
+}
+
+// 28 turns over the 274px plot are about 10px a turn, so 28 is 30px past 25.
+test('the last turn is numbered when it sits 24px or more past the 5-turn one before it', () => {
+  expect(turnLabels(draw(turnsOf(28)).container)).toEqual([...upTo(25, 5), '28'])
+})
+
+// 27 turns: 27 is 20px past 25.
 test('the last turn has no number when it would sit within 24px of the 5-turn one before it', () => {
-  // 27 turns over the 274px plot is about 10px a turn, so 27 is 20px from 25; 28 is 30px from 25.
-  const turnsOf = (count: number) => Array.from({ length: count }, (): [number, number] => [0, 0])
-  expect(turnLabels(draw(turnsOf(27)).container)).toEqual(['0', '5', '10', '15', '20', '25'])
-  cleanup()
-  expect(turnLabels(draw(turnsOf(28)).container)).toEqual(['0', '5', '10', '15', '20', '25', '28'])
+  expect(turnLabels(draw(turnsOf(27)).container)).toEqual(upTo(25, 5))
 })
 
-test('a long game numbers every 10 turns, or 15 and more, so numbers stay 24px apart', () => {
-  const turnsOf = (count: number) => Array.from({ length: count }, (): [number, number] => [0, 0])
-  // 90 turns over the 274px plot is about 3px a turn, so 5 turns are 15px and 10 turns 30px.
-  expect(turnLabels(draw(turnsOf(90)).container)).toEqual(['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'])
-  cleanup()
-  // 87 is 22px past 80, so it goes unnumbered; 90 turns' 90 is a multiple of 10 and stays.
-  expect(turnLabels(draw(turnsOf(87)).container)).toEqual(['0', '10', '20', '30', '40', '50', '60', '70', '80'])
-  cleanup()
-  // 200 turns: 10 turns are 14px, so the step goes to 20 (27px).
-  expect(turnLabels(draw(turnsOf(200)).container)).toEqual(['0', '20', '40', '60', '80', '100', '120', '140', '160', '180', '200'])
+// 90 turns are about 3px each, so 5 turns are 15px apart and 10 turns 30px.
+test('a long game numbers every 10 turns when every 5 would be under 24px apart', () => {
+  expect(turnLabels(draw(turnsOf(90)).container)).toEqual(upTo(90, 10))
 })
 
-test('a box too short for every y number shows every other one, and zero keeps its number', () => {
-  let report: ResizeObserverCallback = () => {}
-  vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
-  const { container } = draw([[225, 0]], 1)
-  // A 160px box leaves a 124px plot: ten gridlines are about 14px apart, so only every second one is numbered.
-  act(() => report([{ contentRect: { width: 320, height: 160 } } as ResizeObserverEntry], {} as ResizeObserver))
-  expect(yLabels(container)).toEqual(['0', '50', '100', '150', '200'])
-  expect(container.querySelectorAll('svg line[stroke="var(--line)"]')).toHaveLength(10)
-  cleanup()
-  const { container: negative } = draw([[100, -50]], 1)
-  act(() => report([{ contentRect: { width: 320, height: 120 } } as ResizeObserverEntry], {} as ResizeObserver))
-  expect(yLabels(negative)).toEqual(['−50', '0', '50', '100'])
+// 87 turns: 87 is 22px past 80.
+test('in a long game the last turn has no number when it sits within 24px of the previous numbered turn', () => {
+  expect(turnLabels(draw(turnsOf(87)).container)).toEqual(upTo(80, 10))
 })
 
+// 200 turns are under 1.4px each, so 10 turns are 14px apart and 20 turns 27px.
+test('a very long game numbers every 20 turns', () => {
+  expect(turnLabels(draw(turnsOf(200)).container)).toEqual(upTo(200, 20))
+})
+
+// A 160px box leaves a 124px plot: ten gridlines are about 14px apart, so every second one is 28px.
+test('a box too short for every y number numbers every other gridline', () => {
+  expect(yLabels(drawInBox([[225, 0]], 320, 160))).toEqual(['0', '50', '100', '150', '200'])
+})
+
+test('every gridline is still drawn when the y numbers are thinned', () => {
+  expect(drawInBox([[225, 0]], 320, 160).querySelectorAll('svg line[stroke="var(--line)"]')).toHaveLength(10)
+})
+
+// A 120px box leaves 84px for 6 intervals: 14px each, so every second gridline is numbered.
+test('zero keeps its y number when the numbers are thinned and the axis runs below zero', () => {
+  expect(yLabels(drawInBox([[100, -50]], 320, 120))).toEqual(['−50', '0', '50', '100'])
+})
+
+// A 160px box: fifteen gridlines are about 8px apart, so every second (17px) is too tight and every fourth (33px) fits.
 test('y numbers step in round amounts (25, 50, 100, 250), never 75', () => {
-  let report: ResizeObserverCallback = () => {}
-  vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
-  const { container } = draw([[375, 0]], 1)
-  // A 160px box: fifteen gridlines are about 8px apart, so every second (17px) is too tight and every fourth (33px) fits.
-  act(() => report([{ contentRect: { width: 320, height: 160 } } as ResizeObserverEntry], {} as ResizeObserver))
-  expect(yLabels(container)).toEqual(['0', '100', '200', '300'])
+  expect(yLabels(drawInBox([[375, 0]], 320, 160))).toEqual(['0', '100', '200', '300'])
 })
 
 test('each line is solid up to the current turn and faded after it', () => {
