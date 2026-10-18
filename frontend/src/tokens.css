@@ -49,9 +49,16 @@ body {
   border-radius: 0;
 }
 
+/* Player colour is a background, which forced colors would turn white: the dots and swatches opt out. */
 .dot,
 .swatch {
   border-radius: 50%;
+  forced-color-adjust: none;
+}
+.dot {
+  width: 11px;
+  height: 11px;
+  flex: none;
 }
 
 /* Spacing: no formal scale; reuse one of these before introducing a new number.

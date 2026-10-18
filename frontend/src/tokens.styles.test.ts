@@ -13,7 +13,7 @@ test('tokens.css defines .visually-hidden: one pixel, clipped and out of the flo
 })
 
 // Classes the screens share live in tokens.css; a screen stylesheet that defines one again would split its look in two.
-test.each(['visually-hidden', 'pill'])('no screen stylesheet defines .%s', (name) => {
+test.each(['visually-hidden', 'pill', 'dot'])('no screen stylesheet defines .%s', (name) => {
   const sheets = readdirSync('src', { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.css') && f !== 'tokens.css')
 
   const definers = sheets.filter((f) => new RegExp(`^\\.${name}\\b`, 'm').test(readFileSync(`src/${f}`, 'utf8')))
@@ -37,4 +37,12 @@ test('on any touch input (touchscreen laptops too) a .pill grows its hit area to
   const block = tokensCss.match(/@media \(any-pointer: coarse\) \{\s*\.pill \{([^}]*)\}/)?.[1] ?? '(no .pill rule in an any-pointer: coarse block)'
 
   expect(block).toMatch(/padding:\s*10px 14px/)
+})
+
+test('a player .dot is 11px square and never shrinks in a flex row', () => {
+  const block = ruleFor(tokensCss, '.dot')
+
+  expect(block).toMatch(/width:\s*11px/)
+  expect(block).toMatch(/height:\s*11px/)
+  expect(block).toMatch(/flex:\s*none/)
 })

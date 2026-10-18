@@ -72,17 +72,6 @@
   color: color-mix(in srgb, var(--ink) 82%, transparent);
 }
 
-/* Player colour is a background, which forced colors would turn white: the dots and swatches opt out. */
-.dot,
-.swatch {
-  forced-color-adjust: none;
-}
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  flex: none;
-}
 .p1 .dot {
   background: var(--p1);
 }
