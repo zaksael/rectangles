@@ -10,6 +10,8 @@ const BOTTOM = 26
 const GRID_STEP = 25
 // Axis numbers keep at least this many pixels between neighbours.
 const MIN_LABEL_GAP = 24
+// Gridlines per y number: steps of 25, 50, 100, 250, 500, 1000 points.
+const LABEL_STRIDES = [1, 2, 4, 10, 20, 40]
 const DEFAULT_SIZE = { width: 320, height: 300 }
 
 const IDS = ['1', '2'] as const
@@ -56,8 +58,10 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
   const y = (score: number) => height - BOTTOM - ((score - bottom) / (top - bottom)) * plotHeight
   const linePoints = (id: '1' | '2', from: number, to: number) =>
     series[id].slice(from, to + 1).map((score, i) => `${x(from + i)},${y(score)}`).join(' ')
-  // Number every labelEvery-th gridline (zero is always one); the lines all stay.
-  const labelEvery = Math.max(1, Math.ceil(MIN_LABEL_GAP / ((plotHeight * GRID_STEP) / (top - bottom))))
+  // Turn numbers every 5 turns, or the least multiple of 5 that keeps them MIN_LABEL_GAP apart in a long game.
+  const turnStep = 5 * Math.max(1, Math.ceil(MIN_LABEL_GAP / ((5 * plotWidth) / turns)))
+  // Number every labelEvery-th gridline, the first of LABEL_STRIDES that keeps numbers MIN_LABEL_GAP apart (zero is always one); the lines all stay.
+  const labelEvery = LABEL_STRIDES.find((k) => (k * plotHeight * GRID_STEP) / (top - bottom) >= MIN_LABEL_GAP) ?? LABEL_STRIDES[LABEL_STRIDES.length - 1]
   const tabStop = roving ?? step
   const targetWidth = plotWidth / turns
 
@@ -121,7 +125,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
               </g>
             ))}
             {Array.from({ length: turns + 1 }, (_, turn) => turn)
-              .filter((turn) => turn % 5 === 0 || (turn === turns && x(turn) - x(turn - (turn % 5)) >= MIN_LABEL_GAP))
+              .filter((turn) => turn % turnStep === 0 || (turn === turns && x(turn) - x(turn - (turn % turnStep)) >= MIN_LABEL_GAP))
               .map((turn) => (
                 <text key={turn} x={x(turn)} y={height - 8} textAnchor="middle" className="chart-axis" aria-hidden="true">
                   {turn}

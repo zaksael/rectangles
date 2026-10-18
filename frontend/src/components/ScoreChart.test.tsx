@@ -61,6 +61,18 @@ test('the last turn has no number when it would sit within 24px of the 5-turn on
   expect(turnLabels(draw(turnsOf(28)).container)).toEqual(['0', '5', '10', '15', '20', '25', '28'])
 })
 
+test('a long game numbers every 10 turns, or 15 and more, so numbers stay 24px apart', () => {
+  const turnsOf = (count: number) => Array.from({ length: count }, (): [number, number] => [0, 0])
+  // 90 turns over the 274px plot is about 3px a turn, so 5 turns are 15px and 10 turns 30px.
+  expect(turnLabels(draw(turnsOf(90)).container)).toEqual(['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'])
+  cleanup()
+  // 87 is 22px past 80, so it goes unnumbered; 90 turns' 90 is a multiple of 10 and stays.
+  expect(turnLabels(draw(turnsOf(87)).container)).toEqual(['0', '10', '20', '30', '40', '50', '60', '70', '80'])
+  cleanup()
+  // 200 turns: 10 turns are 14px, so the step goes to 20 (27px).
+  expect(turnLabels(draw(turnsOf(200)).container)).toEqual(['0', '20', '40', '60', '80', '100', '120', '140', '160', '180', '200'])
+})
+
 test('a box too short for every y number shows every other one, and zero keeps its number', () => {
   let report: ResizeObserverCallback = () => {}
   vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
@@ -73,6 +85,15 @@ test('a box too short for every y number shows every other one, and zero keeps i
   const { container: negative } = draw([[100, -50]], 1)
   act(() => report([{ contentRect: { width: 320, height: 120 } } as ResizeObserverEntry], {} as ResizeObserver))
   expect(yLabels(negative)).toEqual(['−50', '0', '50', '100'])
+})
+
+test('y numbers step in round amounts (25, 50, 100, 250), never 75', () => {
+  let report: ResizeObserverCallback = () => {}
+  vi.stubGlobal('ResizeObserver', class { constructor(cb: ResizeObserverCallback) { report = cb } observe() {} disconnect() {} unobserve() {} })
+  const { container } = draw([[375, 0]], 1)
+  // A 160px box: fifteen gridlines are about 8px apart, so every second (17px) is too tight and every fourth (33px) fits.
+  act(() => report([{ contentRect: { width: 320, height: 160 } } as ResizeObserverEntry], {} as ResizeObserver))
+  expect(yLabels(container)).toEqual(['0', '100', '200', '300'])
 })
 
 test('each line is solid up to the current turn and faded after it', () => {
