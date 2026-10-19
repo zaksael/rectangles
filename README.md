@@ -67,7 +67,7 @@ Window" notice takes their place and the game waits where it was.
   the board (or tap, then tap again to place) to preview the exact placement,
   centered on the pointer, and click to place the piece.
 - Rotate the piece with the **Rotate** button or `R`.
-- A roll with no legal placement waits for you to press **Skip** (`S`).
+- A roll with no legal placement waits for you to press **Skip** (`S`) while you can still reroll it; with no reroll to use, the game skips it for you after a moment (`S` skips at once).
 - A [Wildcard Roll](#house-rules) turn shows a row of value buttons (greyed
   out for any value without a legal placement) to choose the editable die's
   value before placement continues.

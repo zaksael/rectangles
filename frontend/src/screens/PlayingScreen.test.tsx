@@ -650,7 +650,7 @@ const deadRoll = (consecutiveSkips: number) => {
 test('a dead roll names which skip this would be, against the limit', () => {
   renderScreen({ game: deadRoll(1), series: null })
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S) · skip 2 of 5')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skipping… (S) · skip 2 of 5')
 })
 
 test('the skip cue follows the reroll wording, and the skip that reaches the limit says it ends the game', () => {
@@ -669,7 +669,7 @@ test('the skip cue follows the reroll wording, and the skip that reaches the lim
 test('the turn status line says when a dead roll must be skipped', () => {
   renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skipping… (S)')
 })
 
 test("the turn status line shows the bot is playing on the bot's turn", () => {
@@ -1066,6 +1066,55 @@ test('pressing s skips a dead roll', () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
 })
 
+test('a dead roll with no reroll left skips by itself after a pause', () => {
+  vi.useFakeTimers()
+  const sendAction = renderScreen({ game: deadRoll(1), series: null })
+
+  act(() => vi.advanceTimersByTime(1499))
+  expect(sendAction).not.toHaveBeenCalled()
+  act(() => vi.advanceTimersByTime(1))
+  expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
+})
+
+test('a dead roll with a reroll usable is left for the player to decide', () => {
+  vi.useFakeTimers()
+  const game = deadRoll(1)
+  game.houseRules.reroll = { enabled: true, canReroll: true }
+  const sendAction = renderScreen({ game, series: null })
+
+  act(() => vi.advanceTimersByTime(10_000))
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test("a bot's dead roll is not skipped by the screen", () => {
+  vi.useFakeTimers()
+  const sendAction = renderScreen({ game: deadRoll(1), series: null }, vi.fn(), null, vi.fn(), 1)
+
+  act(() => vi.advanceTimersByTime(10_000))
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
+test('a dead roll that moves on within the pause is not skipped', () => {
+  vi.useFakeTimers()
+  const sendAction = vi.fn()
+  const view = render(
+    <PlayingScreen state={{ game: deadRoll(1), series: null }} error={null} sendAction={sendAction} onOpenSettings={vi.fn()} onNewGame={vi.fn()} />,
+  )
+
+  act(() => vi.advanceTimersByTime(1000))
+  view.rerender(
+    <PlayingScreen
+      state={makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })}
+      error={null}
+      sendAction={sendAction}
+      onOpenSettings={vi.fn()}
+      onNewGame={vi.fn()}
+    />,
+  )
+  act(() => vi.advanceTimersByTime(10_000))
+  expect(sendAction).not.toHaveBeenCalled()
+})
+
 test('pressing s does nothing when the roll is playable', () => {
   const sendAction = renderScreen(keyboardState())
 
@@ -1207,7 +1256,7 @@ test('a wildcard roll where no value fits skips the picker and goes straight to 
 
   expect(screen.queryByRole('group', { name: 'Wildcard value' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled()
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skipping… (S)')
 })
 
 test("on the bot's turn a pending wildcard shows plain dice and no picker", () => {
@@ -1355,7 +1404,7 @@ test('the turn status line offers reroll as an alternative to a forced skip', ()
 test('the turn status line skips the reroll mention once charges are exhausted', () => {
   renderScreen(rerollState(false, 'skipped'))
 
-  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skip (S)')
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skipping… (S)')
 })
 
 function comebackStates() {

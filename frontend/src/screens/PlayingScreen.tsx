@@ -32,6 +32,8 @@ interface PlayingScreenProps {
 }
 
 const ERROR_TOAST_MS = 4000
+// How long a dead roll with nothing to reroll stays on screen before the skip is sent.
+const AUTO_SKIP_MS = 1500
 // A Comeback grant is easy to miss, so its notice stays twice as long as an error toast.
 const COMEBACK_TOAST_MS = 8000
 
@@ -145,6 +147,14 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const comebackEnabled = state?.game.houseRules.comebackNudge.enabled ?? false
   const canReroll = state?.game.houseRules.reroll.canReroll ?? false
   const rerollUsable = canReroll && ['choosingPlacement', 'skipped', 'choosingWildcard'].includes(humanTurnState ?? '')
+  // Skipping is the only legal action then, so it is sent after a pause; a new state restarts the pause.
+  const autoSkip = humanTurnState === 'skipped' && !canReroll
+  const sendSkip = useEffectEvent(() => sendAction({ type: 'skip' }))
+  useEffect(() => {
+    if (!autoSkip) return
+    const timer = setTimeout(sendSkip, AUTO_SKIP_MS)
+    return () => clearTimeout(timer)
+  }, [autoSkip, state])
 
   const lastPlaced = useLastPlaced(state?.game)
 
@@ -203,7 +213,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     }
     else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value${canReroll ? ', or reroll (E)' : ''}`
     else if (turnState === 'skipped') {
-      turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : `${currentName}: no legal move, skip (S)`
+      turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : `${currentName}: no legal move, skipping… (S)`
       const { skipLimit } = state.game.board
       const nextSkip = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.consecutiveSkips + 1
       turnStatus += nextSkip >= skipLimit ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${nextSkip} of ${skipLimit}`
