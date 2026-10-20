@@ -16,6 +16,7 @@ area when the game ends wins.
 - [Accessibility](#accessibility)
 - [Development](#development)
   - [Frontend development](#frontend-development)
+  - [Scala server](#scala-server)
 - [Tests](#tests)
 - [Rules](#rules)
 - [House Rules](#house-rules)
@@ -141,6 +142,17 @@ Run the server in one terminal (`uv run python -m rectangles.server.app`) and
 the server on port 8765; open the printed `localhost` URL to play. The server
 accepts a WebSocket only from a page served from its own host and port, which
 the Vite proxy preserves.
+
+### Scala server
+
+`server-scala/` holds a Scala port of the engine and server, built next to the
+Python one and not yet playable. It is an sbt build with two subprojects, `core`
+(rules) and `server` (HTTP and WebSocket).
+
+- JDK 25 (pinned in `.sdkmanrc` and `.java-version`), sbt 2.0.10 (`server-scala/project/build.properties`) and Scala 3.8.3.
+- Homebrew's `sbt` wrapper defaults `JAVA_HOME` to its own newest JDK, so export `JAVA_HOME` for JDK 25 first (`export JAVA_HOME=$(/usr/libexec/java_home -v 25)`).
+- Run the tests from `server-scala/` with `sbt testFull`. Plain `sbt test` caches its result, so a re-run with no changes prints no summary.
+- `sbt -batch` already goes through sbt 2's built-in thin client: a warm run takes about half a second, a cold start about 35 seconds. There is no separate `sbtn` to install.
 
 ## Tests
 

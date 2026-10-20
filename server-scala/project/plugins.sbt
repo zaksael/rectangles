@@ -1,0 +1,5 @@
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.9")
+addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.6.3")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.13.0")
+addSbtPlugin("com.indoorvivants" % "sbt-revolver" % "0.11.2")
