@@ -17,7 +17,10 @@ import org.scalatest.matchers.should.Matchers
 import dev.zaksael.rectangles.server.http.WsRoutes
 
 class WsRoutesSpec extends AnyFlatSpec with Matchers:
-  /** The first text message a client receives after connecting; fails after 5 seconds if there is none. */
+  /**
+   * The first text message a client receives after connecting; fails after 5 seconds if there is
+   * none.
+   */
   private def firstMessage(port: Int): String =
     val received = new CompletableFuture[String]
     val listener = new WebSocket.Listener:
