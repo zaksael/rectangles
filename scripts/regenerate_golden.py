@@ -104,8 +104,11 @@ SCENARIOS = [
     *[
         Scenario(name, {"boardSize": 19, flag: "true"}, seed=10 + i)
         for i, (name, flag) in enumerate(RULES.items())
-        if name not in ("reroll", "wildcard")
+        if name not in ("reroll", "wildcard", "self-enclosed", "comeback")
     ],
+    # These two rules show up in the wire only once a game gets that far, so their seeds were picked for it (and must_see keeps them honest).
+    Scenario("self-enclosed", {"boardSize": 19, "selfEnclosedPenaltyEnabled": "true"}, seed=19, moves=14, must_see=('"enclosure": -',)),
+    Scenario("comeback", {"boardSize": 19, "comebackNudgeEnabled": "true"}, seed=17, must_see=('"granted": true',)),
     Scenario("reroll", {"boardSize": 19, "rerollEnabled": "true"}, seed=30, use_reroll=True, must_see=('"canReroll": true',)),
     Scenario("wildcard", {"boardSize": 19, "wildcardEnabled": "true"}, seed=31, moves=40, must_see=("choosingWildcard", "illegalWildcardValue")),
     Scenario("all-rules", {"boardSize": 19, **ALL_RULES}, seed=40, moves=16, use_reroll=True),
