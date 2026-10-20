@@ -36,9 +36,6 @@ object Constants:
 
   val OBSTACLE_CELL_PAIRS: Int = 2
 
-  /** Owner value a board grid uses for an obstacle cell. */
-  val OBSTACLE_OWNER: Int = -1
-
   val SELF_ENCLOSED_PENALTY_PER_CELL: Int = 1
 
   val REROLL_LIMIT: Int = 2

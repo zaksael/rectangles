@@ -1,6 +1,9 @@
 package dev.zaksael.rectangles.domain
 
-final case class Cell(row: Int, col: Int)
+final case class Cell(row: Int, col: Int):
+  /** The four cells sharing an edge, on or off the board. */
+  def neighbors: Vector[Cell] =
+    Vector(Cell(row - 1, col), Cell(row + 1, col), Cell(row, col - 1), Cell(row, col + 1))
 
 final case class Rectangle(topLeft: Cell, width: Int, height: Int, owner: PlayerId):
   def area: Int = width * height

@@ -20,7 +20,11 @@ val scalatest = "org.scalatest" %% "scalatest" % "3.2.19" % Test
 
 lazy val core = project
   .in(file("core"))
-  .settings(strict, name := "rectangles-core", libraryDependencies += scalatest)
+  .settings(
+    strict,
+    name := "rectangles-core",
+    libraryDependencies ++= Seq("io.circe" %% "circe-parser" % "0.14.17" % Test, scalatest),
+  )
 
 lazy val server = project
   .in(file("server"))
