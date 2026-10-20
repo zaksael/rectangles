@@ -172,7 +172,7 @@ npm run lint
 Coverage is about 99% on the backend and 97% on the frontend (measured with `pytest-cov` and
 `@vitest/coverage-v8`, neither a project dependency).
 
-On every push and pull request that touches `frontend/`, GitHub Actions runs the lint, the Vitest suite and the production build. The two integration tests that start the Python server are left to local runs.
+On every push and pull request, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`; and the Docker build, followed by starting the container and connecting to it. The two frontend integration tests, the Python suite and the golden-fixture check are left to local runs.
 
 ## Rules
 

@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint -- --deny-warnings
+      # The two integration tests need a full server; they join the scala job once the Scala server passes them.
+      - run: npm test -- --exclude '**/*.integration.test.ts'
+      - run: npm run build
+
+  scala:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: server-scala
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # `clean` between the lint checks and the tests: sbt 2 links compile outputs to a read-only cache that a second compile cannot overwrite.
+      - run: sbt -batch "scalafmtCheckAll; scalafixAll --check; clean; testFull; server/stage"
+
+  docker:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: docker build -t rectangles-server .
+      - name: Run the container and connect
+        run: |
+          docker run -d --name rectangles -p 8765:8765 rectangles-server
+          for i in $(seq 1 30); do curl -fs localhost:8765/health && break; sleep 1; done
+          curl -fs localhost:8765/health | grep -x ok
+          node -e "
+            const s = new WebSocket('ws://127.0.0.1:8765/ws?protocolVersion=1')
+            s.onmessage = (e) => { console.log(String(e.data)); process.exit(String(e.data).includes('\"type\":\"state\"') ? 0 : 1) }
+            s.onerror = () => process.exit(1)
+            setTimeout(() => process.exit(1), 10000)"
+      - if: failure()
+        run: docker logs rectangles
