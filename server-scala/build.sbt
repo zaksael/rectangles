@@ -1,5 +1,5 @@
 ThisBuild / organization := "dev.zaksael"
-ThisBuild / scalaVersion := "3.8.3"
+ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / version := "0.1.0"
 
 ThisBuild / scalacOptions ++= Seq(
@@ -25,7 +25,18 @@ lazy val core = project
 lazy val server = project
   .in(file("server"))
   .dependsOn(core)
-  .settings(strict, name := "rectangles-server", libraryDependencies += scalatest)
+  .settings(
+    strict,
+    name := "rectangles-server",
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-ember-server" % "0.23.38",
+      "org.http4s" %% "http4s-dsl" % "0.23.38",
+      "com.github.pureconfig" %% "pureconfig-core" % "0.17.11",
+      "org.logging4s" %% "logging4s-cats" % "5.0.0",
+      "org.logging4s" %% "logging4s-console" % "5.0.0",
+      scalatest
+    )
+  )
 
 lazy val root = project
   .in(file("."))
