@@ -31,6 +31,7 @@ lazy val server = project
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % "0.23.38",
       "org.http4s" %% "http4s-dsl" % "0.23.38",
+      "io.circe" %% "circe-core" % "0.14.17",
       "com.github.pureconfig" %% "pureconfig-core" % "0.17.11",
       "org.logging4s" %% "logging4s-cats" % "5.0.0",
       "org.logging4s" %% "logging4s-console" % "5.0.0",
