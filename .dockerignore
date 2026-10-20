@@ -1,0 +1,8 @@
+# Send only what the image builds from.
+*
+!frontend
+!server-scala
+**/node_modules
+**/target
+**/.DS_Store
+frontend/dist
