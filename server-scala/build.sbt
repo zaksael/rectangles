@@ -34,6 +34,7 @@ lazy val server = project
       "com.github.pureconfig" %% "pureconfig-core" % "0.17.11",
       "org.logging4s" %% "logging4s-cats" % "5.0.0",
       "org.logging4s" %% "logging4s-console" % "5.0.0",
+      "org.slf4j" % "slf4j-simple" % "2.0.17" % Runtime,
       scalatest
     )
   )
