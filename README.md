@@ -151,6 +151,7 @@ Python one and not yet playable. It is an sbt build with two subprojects, `core`
 
 - JDK 25 (pinned in `.sdkmanrc` and `.java-version`), sbt 2.0.10 (`server-scala/project/build.properties`) and Scala 3.8.3.
 - Homebrew's `sbt` wrapper defaults `JAVA_HOME` to its own newest JDK, so export `JAVA_HOME` for JDK 25 first (`export JAVA_HOME=$(/usr/libexec/java_home -v 25)`).
+- Check the style from `server-scala/` with `sbt "scalafmtCheckAll; scalafixAll --check"` (format with `sbt scalafmtAll`, fix with `sbt scalafixAll`); the compiler runs with warnings fatal, and `var`, `null` and `throw` are compile errors.
 - Run the tests from `server-scala/` with `sbt testFull`. Plain `sbt test` caches its result, so a re-run with no changes prints no summary.
 - `sbt -batch` already goes through sbt 2's built-in thin client: a warm run takes about half a second, a cold start about 35 seconds. There is no separate `sbtn` to install.
 
