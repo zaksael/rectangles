@@ -25,9 +25,12 @@ lazy val core = project
 lazy val server = project
   .in(file("server"))
   .dependsOn(core)
+  .enablePlugins(JavaAppPackaging)
   .settings(
     strict,
     name := "rectangles-server",
+    executableScriptName := "rectangles-server",
+    Universal / UniversalPlugin.autoImport.stagingDirectory := (ThisBuild / baseDirectory).value / "target" / "stage",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % "0.23.38",
       "org.http4s" %% "http4s-dsl" % "0.23.38",
