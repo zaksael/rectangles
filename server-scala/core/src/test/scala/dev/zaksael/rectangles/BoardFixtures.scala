@@ -2,6 +2,7 @@ package dev.zaksael.rectangles
 
 import dev.zaksael.rectangles.domain.Board
 import dev.zaksael.rectangles.domain.Cell
+import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.Player
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.rules.Placement
@@ -29,3 +30,8 @@ object Scene:
   def on(board: Board): Scene =
     val (p1, p2) = makePlayers(board.size)
     Scene(board, p1, p2)
+
+/** The state with a piece put on the board for `who`, without rolling or checking legality. */
+def placed(state: GameState, who: PlayerId, topLeft: Cell, width: Int, height: Int): GameState =
+  val result = Placement.place(state.board, state.players(who), topLeft, width, height)
+  state.copy(board = result.board, players = state.players.updated(who, result.player))
