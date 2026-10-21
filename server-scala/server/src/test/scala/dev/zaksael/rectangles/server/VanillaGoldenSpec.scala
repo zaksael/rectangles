@@ -35,7 +35,7 @@ class VanillaGoldenSpec extends AnyFlatSpec with Matchers with EitherValues with
         (if checked.turn == TurnState.GameOver then checked else Turns.endTurn(checked), dice)
       case _ => (Turns.surrender(state), dice)
 
-  "the vanilla golden game" should "serialize like the Python recording at every step before it ends" in {
+  "the vanilla golden game" should "serialize like the Python recording at every step" in {
     val golden = Golden.load("vanilla").value
     val rules  = Rules(boardSize = golden.connect("boardSize").toInt)
     val start =
@@ -44,10 +44,8 @@ class VanillaGoldenSpec extends AnyFlatSpec with Matchers with EitherValues with
       golden.steps.zipWithIndex.foldLeft(start) { case ((state, dice, found), (step, index)) =>
         val (next, nextDice) = step.send.fold((state, dice))(apply(state, dice, _))
         val expected         = step.receive.head.hcursor.downField("game").focus.value
-        val ended = expected.hcursor.downField("turn").get[String]("turnState").value == "gameOver"
         val stepDiff =
-          if ended then Nil
-          else JsonDiff.diff(expected, Serialize.game(next)).map(path => s"step $index $path")
+          JsonDiff.diff(expected, Serialize.game(next)).map(path => s"step $index $path")
         (next, nextDice, found ++ stepDiff)
       }
     differences shouldBe empty

@@ -1,6 +1,7 @@
 package dev.zaksael.rectangles.server.protocol
 
 import io.circe.Json
+import io.circe.parser.parse
 import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -90,4 +91,71 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
       "1" -> Json.fromInt(7),
       "2" -> Json.fromInt(5),
     )
+  }
+
+  "the game-over history" should "be null while playing and a list of steps once the game is over" in {
+    val playing = move(game(11), Cell(0, 0), 2, 3)
+    at(Serialize.game(playing), "gameOver").get[Json]("history").value shouldBe Json.Null
+
+    val expected = parse(
+      """[{"playerId":1,"roll":[2,3],"placed":{"topLeft":[0,0],"width":2,"height":3},
+        |"wildcardOriginalRoll":null,"score":{"1":6,"2":0},
+        |"breakdown":{"1":{"area":6,"prize":0,"pitfall":0,"steal":0,"enclosure":0},
+        |"2":{"area":0,"prize":0,"pitfall":0,"steal":0,"enclosure":0}},
+        |"potential":{"1":{"area":115,"prize":{"points":0}},"2":{"area":115,"prize":{"points":0}}}}]""".stripMargin
+    ).value
+    at(
+      Serialize.game(Turns.surrender(playing)),
+      "gameOver",
+    ).get[Json]("history").value shouldBe expected
+  }
+
+  private def gameOver(state: GameState) = at(Serialize.game(state), "gameOver")
+
+  "the game-over block" should "name a surrender, who surrendered and the opponent as winner" in {
+    val over = Turns.surrender(placed(game(8), PlayerId.One, Cell(0, 0), 5, 5))
+    gameOver(over).get[String]("reason").value shouldBe "surrender"
+    gameOver(over).get[Int]("playerId").value shouldBe 1
+    gameOver(over).get[Int]("winner").value shouldBe 2
+  }
+
+  it should "name the skip limit and the player who reached it" in {
+    val skipping =
+      placed(placed(game(8), PlayerId.One, Cell(0, 0), 1, 1), PlayerId.Two, Cell(7, 7), 1, 1)
+    val streak = skipping.copy(players =
+      skipping.players.updated(
+        PlayerId.One,
+        skipping.players(PlayerId.One).copy(consecutiveSkips = 5),
+      )
+    )
+    val over = Turns.checkGameOver(streak)
+    gameOver(over).get[String]("reason").value shouldBe "skipLimit"
+    gameOver(over).get[Int]("playerId").value shouldBe 1
+  }
+
+  it should "name a boxed-in player" in {
+    val boxedIn = placed(
+      placed(placed(game(4), PlayerId.One, Cell(0, 0), 1, 1), PlayerId.Two, Cell(1, 0), 1, 1),
+      PlayerId.Two,
+      Cell(0, 1),
+      1,
+      1,
+    )
+    val over = Turns.checkGameOver(boxedIn)
+    gameOver(over).get[String]("reason").value shouldBe "playerBlocked"
+    gameOver(over).get[Int]("playerId").value shouldBe 1
+  }
+
+  it should "have no player for a full board, and the larger area as winner" in {
+    val over = Turns.checkGameOver(placed(game(1), PlayerId.One, Cell(0, 0), 1, 1))
+    gameOver(over).get[String]("reason").value shouldBe "boardFull"
+    gameOver(over).get[Json]("playerId").value shouldBe Json.Null
+    gameOver(over).get[Int]("winner").value shouldBe 1
+  }
+
+  it should "have no winner for a tie, and none while the game is on" in {
+    val tied =
+      placed(placed(game(2), PlayerId.One, Cell(0, 0), 1, 2), PlayerId.Two, Cell(0, 1), 1, 2)
+    gameOver(Turns.checkGameOver(tied)).get[Json]("winner").value shouldBe Json.Null
+    gameOver(game(8)).get[Json]("winner").value shouldBe Json.Null
   }

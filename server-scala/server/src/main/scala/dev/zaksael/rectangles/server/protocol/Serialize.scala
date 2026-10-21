@@ -5,12 +5,14 @@ import io.circe.Json
 import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.Constants
+import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rectangle
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.ScoreBreakdown
 import dev.zaksael.rectangles.domain.TurnState
+import dev.zaksael.rectangles.rules.Potential
 import dev.zaksael.rectangles.rules.Scoring
 
 object Serialize:
@@ -20,33 +22,51 @@ object Serialize:
    * The `game` part of a `state` message. The house-rule parts that have no rule yet are written in
    * their switched-off form; each rule fills its part in with its own task.
    */
-  def game(state: GameState): Json = Json.obj(
-    "board" -> Json.obj(
-      "size"      -> Json.fromInt(state.board.size),
-      "skipLimit" -> Json.fromInt(state.rules.skipLimit),
-    ),
-    "turn" -> Json.obj(
-      "currentPlayerId" -> Json.fromInt(state.current.value),
-      "turnState"       -> Json.fromString(turnState(state.turn)),
-      "lastRoll"        -> state.lastRoll.fold(Json.Null)(roll),
-      "legalPlacements" -> Json.arr(legalPlacements(state)*),
-      "recentTurns"     -> Json.arr(recentTurns(state)*),
-    ),
-    "houseRules" -> houseRules(state),
-    "players"    -> byPlayer(player(state, _)),
-    "gameOver" -> Json.obj(
-      "reason"   -> Json.Null,
-      "playerId" -> Json.Null,
-      "winner"   -> Json.Null,
-      "history"  -> Json.Null,
-    ),
-  )
+  def game(state: GameState): Json =
+    val steps = moves(state)
+    Json.obj(
+      "board" -> Json.obj(
+        "size"      -> Json.fromInt(state.board.size),
+        "skipLimit" -> Json.fromInt(state.rules.skipLimit),
+      ),
+      "turn" -> Json.obj(
+        "currentPlayerId" -> Json.fromInt(state.current.value),
+        "turnState"       -> Json.fromString(turnState(state.turn)),
+        "lastRoll"        -> state.lastRoll.fold(Json.Null)(roll),
+        "legalPlacements" -> Json.arr(legalPlacements(state)*),
+        "recentTurns"     -> Json.arr(steps.takeRight(RecentTurns)*),
+      ),
+      "houseRules" -> houseRules(state),
+      "players"    -> byPlayer(player(state, _)),
+      "gameOver" -> Json.obj(
+        "reason" -> state.gameOver.fold(Json.Null)(reason => Json.fromString(reasonName(reason))),
+        "playerId" -> state.gameOver.flatMap(reasonPlayer).fold(Json.Null)(who =>
+          Json.fromInt(who.value)
+        ),
+        "winner" -> (if state.turn == TurnState.GameOver then Scoring.winner(state) else None)
+          .fold(Json.Null)(who => Json.fromInt(who.value)),
+        "history" -> (if state.turn == TurnState.GameOver then history(state, steps) else Json.Null),
+      ),
+    )
 
   private def turnState(turn: TurnState): String = turn match
     case TurnState.AwaitingRoll      => "awaitingRoll"
     case TurnState.ChoosingPlacement => "choosingPlacement"
     case TurnState.Skipped           => "skipped"
     case TurnState.GameOver          => "gameOver"
+
+  private def reasonName(reason: GameOverReason): String = reason match
+    case GameOverReason.BoardFull        => "boardFull"
+    case GameOverReason.SkipLimit(_)     => "skipLimit"
+    case GameOverReason.PlayerBlocked(_) => "playerBlocked"
+    case GameOverReason.Surrendered(_)   => "surrender"
+
+  /** The player the reason is about; a full board has none. */
+  private def reasonPlayer(reason: GameOverReason): Option[PlayerId] = reason match
+    case GameOverReason.BoardFull          => None
+    case GameOverReason.SkipLimit(who)     => Some(who)
+    case GameOverReason.PlayerBlocked(who) => Some(who)
+    case GameOverReason.Surrendered(who)   => Some(who)
 
   private def byPlayer(value: PlayerId => Json): Json =
     Json.obj(PlayerId.values.toSeq.map(who => who.value.toString -> value(who))*)
@@ -113,8 +133,8 @@ object Serialize:
       "selfEnclosedPenalty" -> enabled(state.rules.selfEnclosedPenalty),
     )
 
-  /** The last few moves, oldest first; `points` is the mover's own score change on that move. */
-  private def recentTurns(state: GameState): Seq[Json] =
+  /** Every move, oldest first; `points` is the mover's own score change on that move. */
+  private def moves(state: GameState): Vector[Json] =
     val steps = Scoring.breakdownHistory(state)
     state.history
       .zip(steps)
@@ -132,11 +152,31 @@ object Serialize:
           "points"               -> Json.fromInt(step(record.playerId).total - before),
         )
       }
-      .takeRight(RecentTurns)
+
+  /**
+   * The moves again for the game-over screen: without `turn` and `points`, with both players'
+   * potential after each.
+   */
+  private def history(state: GameState, steps: Vector[Json]): Json =
+    Json.arr(
+      steps
+        .zip(Scoring.potentialHistory(state))
+        .map { case (step, potentials) =>
+          step.mapObject(_.remove("turn").remove("points").add(
+            "potential",
+            byPlayer(who => potential(potentials(who))),
+          ))
+        }*
+    )
+
+  private def potential(figures: Potential): Json = Json.obj(
+    "area"  -> Json.fromInt(figures.area),
+    "prize" -> Json.obj("points" -> Json.fromInt(figures.prizePoints)),
+  )
 
   private def player(state: GameState, who: PlayerId): Json =
-    val self      = state.players(who)
-    val potential = Scoring.potential(state.board, self)
+    val self    = state.players(who)
+    val figures = Scoring.potential(state.board, self)
     def captured(kind: CellKind) =
       Json.obj("captured" -> Json.fromInt(self.specialCaptures.getOrElse(kind, 0)))
     Json.obj(
@@ -152,10 +192,7 @@ object Serialize:
         "totalArea"  -> Json.fromInt(self.totalArea),
         "totalScore" -> Json.fromInt(Scoring.total(state, who)),
         "breakdown"  -> breakdown(Scoring.breakdown(state, who)),
-        "potential" -> Json.obj(
-          "area"  -> Json.fromInt(potential.area),
-          "prize" -> Json.obj("points" -> Json.fromInt(potential.prizePoints)),
-        ),
+        "potential"  -> potential(figures),
       ),
       "houseRules" -> Json.obj(
         "reroll" -> Json.obj("used" -> Json.fromInt(self.rerollsUsed), "limit" -> Json.fromInt(0)),
