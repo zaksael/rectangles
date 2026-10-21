@@ -1,6 +1,7 @@
 package dev.zaksael.rectangles.rules
 
 import dev.zaksael.rectangles.domain.Board
+import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.Player
 import dev.zaksael.rectangles.domain.PlayerId
@@ -15,10 +16,12 @@ object Scoring:
 
   def total(state: GameState, who: PlayerId): Int = breakdown(state, who).total
 
-  def winner(state: GameState): Option[PlayerId] =
-    val one = total(state, PlayerId.One)
-    val two = total(state, PlayerId.Two)
-    if one > two then Some(PlayerId.One) else if two > one then Some(PlayerId.Two) else None
+  def winner(state: GameState): Option[PlayerId] = state.gameOver match
+    case Some(GameOverReason.Surrendered(who)) => Some(who.other)
+    case _ =>
+      val one = total(state, PlayerId.One)
+      val two = total(state, PlayerId.Two)
+      if one > two then Some(PlayerId.One) else if two > one then Some(PlayerId.Two) else None
 
   def breakdownHistory(state: GameState): Vector[Map[PlayerId, ScoreBreakdown]] =
     replay(state).map(step => step.players.keys.map(who => who -> breakdown(step, who)).toMap)

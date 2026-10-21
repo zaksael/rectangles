@@ -3,6 +3,13 @@ package dev.zaksael.rectangles.domain
 enum TurnState:
   case AwaitingRoll, ChoosingPlacement, Skipped, GameOver
 
+/** Why a game ended; the player is the one the reason is about. */
+enum GameOverReason:
+  case BoardFull
+  case SkipLimit(who: PlayerId)
+  case PlayerBlocked(who: PlayerId)
+  case Surrendered(who: PlayerId)
+
 final case class GameState(
     rules: Rules,
     board: Board,
@@ -12,6 +19,7 @@ final case class GameState(
     lastRoll: Option[Roll],
     legal: Map[Roll, Set[Cell]],
     history: Vector[TurnRecord],
+    gameOver: Option[GameOverReason] = None,
 )
 
 object GameState:

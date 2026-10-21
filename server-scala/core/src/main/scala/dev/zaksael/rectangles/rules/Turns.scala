@@ -2,7 +2,9 @@ package dev.zaksael.rectangles.rules
 
 import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.Constants
+import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
+import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.domain.TurnState
@@ -54,7 +56,8 @@ object Turns:
         Right(
           state.copy(
             board = result.board,
-            players = state.players.updated(state.current, result.player),
+            players =
+              state.players.updated(state.current, result.player.copy(consecutiveSkips = 0)),
             history = state.history :+ record,
           )
         )
@@ -68,3 +71,22 @@ object Turns:
         legal = Map.empty,
         turn = TurnState.AwaitingRoll,
       )
+
+  /** Ends the game when the board is full, a player is boxed in or the skip limit is reached. */
+  def checkGameOver(state: GameState): GameState =
+    val noFrontier = PlayerId.values.filter(who => state.board.frontier(who).isEmpty)
+    if noFrontier.length == PlayerId.values.length then ended(state, GameOverReason.BoardFull)
+    else
+      noFrontier.find(who => state.players(who).hasMoved) match
+        case Some(who) => ended(state, GameOverReason.PlayerBlocked(who))
+        case None =>
+          PlayerId.values
+            .find(who => state.players(who).consecutiveSkips >= state.rules.skipLimit)
+            .fold(state)(who => ended(state, GameOverReason.SkipLimit(who)))
+
+  private def ended(state: GameState, reason: GameOverReason): GameState =
+    state.copy(turn = TurnState.GameOver, gameOver = Some(reason))
+
+  def surrender(state: GameState): GameState =
+    if state.turn == TurnState.GameOver then state
+    else ended(state, GameOverReason.Surrendered(state.current))
