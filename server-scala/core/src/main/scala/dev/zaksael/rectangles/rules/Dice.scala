@@ -4,3 +4,8 @@ package dev.zaksael.rectangles.rules
 trait Dice:
   /** A value in `lo` to `hi`, both included. */
   def between(lo: Int, hi: Int): (Int, Dice)
+
+  /** One of `options`, each equally likely. */
+  def choose[A](options: Seq[A]): (A, Dice) =
+    val (index, next) = between(0, options.size - 1)
+    (options(index), next)
