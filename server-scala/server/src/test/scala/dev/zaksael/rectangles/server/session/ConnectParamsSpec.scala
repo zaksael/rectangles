@@ -38,6 +38,8 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       "protocolVersion=1&botSeats=2&botDifficulty=Expert",
       "protocolVersion=1&wildcard=1",
       "protocolVersion=1&wildcardEnabled=true",
+      "protocolVersion=1&wildcardEnabled=1",
+      "protocolVersion=1&wildcardEnabled=maybe",
       "protocolVersion=1&rerollEnabled=true",
       "protocolVersion=1&wallsEnabled=true",
       "protocolVersion=1&obstaclesEnabled=true",
@@ -91,4 +93,20 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
     game.downField("turn").get[String]("turnState").value shouldBe "awaitingRoll"
     game.downField("turn").get[Json]("lastRoll").value shouldBe Json.Null
     game.downField("gameOver").get[Json]("reason").value shouldBe Json.Null
+  }
+
+  "a connect with every house rule explicitly off" should "ask for the default rules, as the web client sends it" in {
+    val flags = Seq(
+      "wildcardEnabled",
+      "rerollEnabled",
+      "wallsEnabled",
+      "obstaclesEnabled",
+      "prizeEnabled",
+      "pitfallEnabled",
+      "stealEnabled",
+      "selfEnclosedPenaltyEnabled",
+      "comebackNudgeEnabled",
+    )
+    val query = ("protocolVersion=1" +: flags.map(flag => s"$flag=false")).mkString("&")
+    ConnectParams.parse(Query.unsafeFromString(query).params) shouldBe Some(Rules())
   }

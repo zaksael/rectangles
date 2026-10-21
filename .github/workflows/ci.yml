@@ -19,7 +19,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint -- --deny-warnings
-      # The two integration tests need a full server; they join the scala job once the Scala server passes them.
+      # The integration tests need a full server; they run in the scala job against the Scala launcher (wireContract joins it once series and analysis exist).
       - run: npm test -- --exclude '**/*.integration.test.ts'
       - run: npm run build
 
@@ -38,6 +38,18 @@ jobs:
       - uses: sbt/setup-sbt@v1
       # `clean` between the lint checks and the tests: sbt 2 links compile outputs to a read-only cache that a second compile cannot overwrite.
       - run: sbt -batch "scalafmtCheckAll; scalafixAll --check; clean; testFull; server/stage"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frontend test against the staged Scala server
+        working-directory: frontend
+        env:
+          RECTANGLES_SERVER_CMD: ${{ github.workspace }}/server-scala/target/stage/bin/rectangles-server
+        run: |
+          npm ci
+          npx vitest run src/hooks/useGameSocket.integration.test.ts
 
   docker:
     runs-on: ubuntu-24.04

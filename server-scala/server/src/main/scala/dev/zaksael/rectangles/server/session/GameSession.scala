@@ -10,7 +10,7 @@ import dev.zaksael.rectangles.server.protocol.Serialize
 import dev.zaksael.rectangles.server.protocol.StateMsg
 
 /** One connection's game: the current play behind a `Ref`, and the replies to client text. */
-final class GameSession private (play: Ref[IO, Play]):
+final class GameSession private (play: Ref[IO, Play]) extends Session:
   def state: IO[Json] = play.get.map(current => stateMessage(current.state))
 
   /**
