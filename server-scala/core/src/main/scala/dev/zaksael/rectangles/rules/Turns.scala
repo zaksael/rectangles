@@ -90,3 +90,7 @@ object Turns:
   def surrender(state: GameState): GameState =
     if state.turn == TurnState.GameOver then state
     else ended(state, GameOverReason.Surrendered(state.current))
+
+  /** Acknowledges a skipped turn; the skip itself was recorded when the roll found no placement. */
+  def confirmSkip(state: GameState): Either[RuleError, GameState] =
+    Either.cond(state.turn == TurnState.Skipped, state, RuleError.WrongState)
