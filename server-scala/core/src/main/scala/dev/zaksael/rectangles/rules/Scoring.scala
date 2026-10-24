@@ -13,6 +13,11 @@ import dev.zaksael.rectangles.domain.ScoreBreakdown
 final case class Potential(area: Int, prizePoints: Int)
 
 object Scoring:
+  /** Empty cells only `who` encloses; always 0 with the penalty rule off. */
+  def selfEnclosedCells(state: GameState, who: PlayerId): Int =
+    if state.rules.selfEnclosedPenalty then state.board.selfEnclosedCellCounts.getOrElse(who, 0)
+    else 0
+
   def breakdown(state: GameState, who: PlayerId): ScoreBreakdown =
     val mine   = state.players(who)
     val theirs = state.players(who.other)
@@ -25,6 +30,7 @@ object Scoring:
       prize = points(CellKind.Prize),
       pitfall = points(CellKind.Pitfall),
       steal = points(CellKind.Steal),
+      enclosure = -selfEnclosedCells(state, who) * Constants.SELF_ENCLOSED_PENALTY_PER_CELL,
     )
 
   def total(state: GameState, who: PlayerId): Int = breakdown(state, who).total

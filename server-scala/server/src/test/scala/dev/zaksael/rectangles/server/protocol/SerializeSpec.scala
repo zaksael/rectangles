@@ -320,3 +320,22 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
       score.downField("breakdown").as[Map[String, Int]].value.values.sum shouldBe
         score.get[Int]("totalScore").value
   }
+
+  "the self-enclosed penalty section" should "carry the flag" in {
+    at(
+      Serialize.game(GameState.initial(Rules(selfEnclosedPenalty = true))),
+      "houseRules",
+      "selfEnclosedPenalty",
+    )
+      .focus shouldBe Some(parse("""{"enabled": true}""").value)
+  }
+
+  it should "give each player the cells only they enclose" in {
+    val ring = List(Cell(1, 2), Cell(3, 2), Cell(2, 1), Cell(2, 3))
+    val walled = ring.foldLeft(GameState.initial(Rules(boardSize = 6, selfEnclosedPenalty = true))) {
+      (state, topLeft) => placed(state, PlayerId.One, topLeft, 1, 1)
+    }
+    val state = placed(walled, PlayerId.Two, Cell(5, 5), 1, 1)
+    at(Serialize.game(state), "players", "1", "houseRules", "selfEnclosedPenalty").focus shouldBe
+      Some(parse("""{"cells": 1}""").value)
+  }

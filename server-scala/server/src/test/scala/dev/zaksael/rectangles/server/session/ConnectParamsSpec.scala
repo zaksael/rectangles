@@ -40,6 +40,9 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       Some(Rules(pitfall = true))
     ConnectParams.parse(Map("protocolVersion" -> "1", "stealEnabled" -> "true")) shouldBe
       Some(Rules(steal = true))
+    ConnectParams.parse(
+      Map("protocolVersion" -> "1", "selfEnclosedPenaltyEnabled" -> "true")
+    ) shouldBe Some(Rules(selfEnclosedPenalty = true))
   }
 
   "a connect with a parameter that is not allowed" should "be refused" in {
@@ -60,7 +63,7 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       "protocolVersion=1&pitfallEnabled=1",
       "protocolVersion=1&stealEnabled=1",
       "protocolVersion=1&prizeEnabled=true&prizePoints=25",
-      "protocolVersion=1&selfEnclosedPenaltyEnabled=true",
+      "protocolVersion=1&selfEnclosedPenaltyEnabled=1",
       "protocolVersion=1&comebackNudgeEnabled=true",
       "",
       "protocolVersion=2",

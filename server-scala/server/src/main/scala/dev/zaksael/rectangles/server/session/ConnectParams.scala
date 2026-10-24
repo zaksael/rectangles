@@ -21,7 +21,7 @@ object ConnectParams:
     "prizeEnabled"               -> Flag(_.copy(prize = true), supported = true),
     "pitfallEnabled"             -> Flag(_.copy(pitfall = true), supported = true),
     "stealEnabled"               -> Flag(_.copy(steal = true), supported = true),
-    "selfEnclosedPenaltyEnabled" -> Flag(_.copy(selfEnclosedPenalty = true), supported = false),
+    "selfEnclosedPenaltyEnabled" -> Flag(_.copy(selfEnclosedPenalty = true), supported = true),
     "comebackNudgeEnabled"       -> Flag(_.copy(comebackNudge = true), supported = false),
   )
   private val known = Set("protocolVersion", "boardSize", "skipLimit") ++ ruleFlags.keySet

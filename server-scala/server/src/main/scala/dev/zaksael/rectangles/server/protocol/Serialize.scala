@@ -207,10 +207,13 @@ object Serialize:
       ),
       "houseRules" -> Json.obj(
         "reroll" -> Json.obj("used" -> Json.fromInt(self.rerollsUsed), "limit" -> Json.fromInt(0)),
-        "comebackNudge"       -> Json.obj("granted" -> Json.fromBoolean(self.comebackNudgeGranted)),
-        "selfEnclosedPenalty" -> Json.obj("cells" -> Json.fromInt(0)),
-        "prize"               -> captured(CellKind.Prize),
-        "pitfall"             -> captured(CellKind.Pitfall),
-        "steal"               -> captured(CellKind.Steal),
+        "comebackNudge" -> Json.obj("granted" -> Json.fromBoolean(self.comebackNudgeGranted)),
+        "selfEnclosedPenalty" -> Json.obj("cells" -> Json.fromInt(Scoring.selfEnclosedCells(
+          state,
+          who,
+        ))),
+        "prize"   -> captured(CellKind.Prize),
+        "pitfall" -> captured(CellKind.Pitfall),
+        "steal"   -> captured(CellKind.Steal),
       ),
     )
