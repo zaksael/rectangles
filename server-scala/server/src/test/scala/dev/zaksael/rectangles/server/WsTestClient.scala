@@ -52,11 +52,16 @@ object WsTestClient:
       query: String,
       headers: Map[String, String] = Map.empty,
   ): Either[Int, WsTestClient] =
-    val inbox  = new LinkedBlockingQueue[String]
-    val closed = new CompletableFuture[Int]
+    val inbox   = new LinkedBlockingQueue[String]
+    val closed  = new CompletableFuture[Int]
+    val partial = new java.lang.StringBuilder
     val listener = new WebSocket.Listener:
+      // A message can arrive in several pieces; it is queued once the last one is in.
       override def onText(ws: WebSocket, data: CharSequence, last: Boolean): CompletionStage[?] =
-        inbox.add(data.toString): Unit
+        partial.append(data)
+        if last then
+          inbox.add(partial.toString): Unit
+          partial.setLength(0)
         ws.request(1)
         CompletableFuture.completedFuture(())
       override def onClose(ws: WebSocket, statusCode: Int, reason: String): CompletionStage[?] =

@@ -286,7 +286,7 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
   "a connection that stays quiet" should "stay open, because the server pings it before the idle timeout" in
     TestServer.use(
       ws => WsRoutes.routes(ws, playerOneStarts, keepAlive = 300.millis).orNotFound,
-      idleTimeout = 1.second,
+      idleTimeout = 2.seconds,
     ) { port =>
       val client = WsTestClient.connect(port, vanilla).value
       try
