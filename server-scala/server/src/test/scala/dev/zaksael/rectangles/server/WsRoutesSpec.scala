@@ -71,6 +71,17 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       s"""{"protocolVersion":1,"type":"place","topLeft":[$row,$col],"width":$width,"height":$height}""",
     )
 
+  "a client that connects with walls on" should "get a game with wall edges" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      val client = WsTestClient.connect(port, s"$vanilla&wallsEnabled=true").value
+      try
+        val walls =
+          client.next().hcursor.downField("game").downField("houseRules").downField("walls")
+        walls.get[Boolean]("enabled").value shouldBe true
+        walls.get[List[Json]]("edges").value should not be empty
+      finally client.close()
+    }
+
   "a roll" should "answer with a state that holds the roll" in
     connected() { client =>
       client.next()

@@ -23,10 +23,14 @@ class JsonDiffSpec extends AnyFlatSpec with Matchers with EitherValues:
     JsonDiff.diff(json("""{"a":[1,{"b":null}]}"""), json("""{"a":[1,{"b":null}]}""")) shouldBe empty
   }
 
-  it should "compare a topLefts list without regard to order" in {
+  it should "compare a topLefts or edges list without regard to order" in {
     JsonDiff.diff(
       json("""{"topLefts":[[0,1],[2,3]]}"""),
       json("""{"topLefts":[[2,3],[0,1]]}"""),
+    ) shouldBe empty
+    JsonDiff.diff(
+      json("""{"edges":[[[0,1],[0,2]],[[2,3],[3,3]]]}"""),
+      json("""{"edges":[[[2,3],[3,3]],[[0,1],[0,2]]]}"""),
     ) shouldBe empty
     JsonDiff.diff(
       json("""{"x":[[0,1],[2,3]]}"""),

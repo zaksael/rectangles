@@ -7,19 +7,24 @@ import dev.zaksael.rectangles.rules.Setup
 import dev.zaksael.rectangles.server.protocol.Protocol
 
 object ConnectParams:
-  /** The web client sends every house-rule flag; until a rule exists only "false" is allowed. */
-  private val ruleFlags = Set(
-    "wildcardEnabled",
-    "rerollEnabled",
-    "wallsEnabled",
-    "obstaclesEnabled",
-    "prizeEnabled",
-    "pitfallEnabled",
-    "stealEnabled",
-    "selfEnclosedPenaltyEnabled",
-    "comebackNudgeEnabled",
+  /** A house-rule flag: how it turns its rule on, and whether the server builds that rule yet. */
+  final private case class Flag(turnOn: Rules => Rules, supported: Boolean)
+
+  /**
+   * The web client sends every house-rule flag; a rule not built yet is only allowed as "false".
+   */
+  private val ruleFlags: Map[String, Flag] = Map(
+    "wildcardEnabled"            -> Flag(_.copy(wildcard = true), supported = false),
+    "rerollEnabled"              -> Flag(_.copy(reroll = true), supported = false),
+    "wallsEnabled"               -> Flag(_.copy(walls = true), supported = true),
+    "obstaclesEnabled"           -> Flag(_.copy(obstacles = true), supported = false),
+    "prizeEnabled"               -> Flag(_.copy(prize = true), supported = false),
+    "pitfallEnabled"             -> Flag(_.copy(pitfall = true), supported = false),
+    "stealEnabled"               -> Flag(_.copy(steal = true), supported = false),
+    "selfEnclosedPenaltyEnabled" -> Flag(_.copy(selfEnclosedPenalty = true), supported = false),
+    "comebackNudgeEnabled"       -> Flag(_.copy(comebackNudge = true), supported = false),
   )
-  private val known = Set("protocolVersion", "boardSize", "skipLimit") ++ ruleFlags
+  private val known = Set("protocolVersion", "boardSize", "skipLimit") ++ ruleFlags.keySet
 
   /** The rules a connect asks for, or None when any parameter is unknown or not allowed. */
   def parse(params: Map[String, String]): Option[Rules] =
@@ -27,11 +32,19 @@ object ConnectParams:
       params.get(name).fold(Some(default))(_.toIntOption.filter(allowed.contains))
     for
       _ <- Option.when(params.keySet.subsetOf(known))(())
-      _ <- Option.when(ruleFlags.forall(flag => params.get(flag).forall(_ == "false")))(())
       _ <- params.get("protocolVersion").flatMap(_.toIntOption).filter(_ == Protocol.Version)
       boardSize <- preset("boardSize", Constants.BOARD_SIZE_PRESETS, Constants.BOARD_SIZE)
       skipLimit <- preset("skipLimit", Constants.SKIP_LIMIT_PRESETS, Constants.SKIP_LIMIT)
-    yield Rules(boardSize = boardSize, skipLimit = skipLimit)
+      rules <- ruleFlags.foldLeft(Option(Rules(boardSize = boardSize, skipLimit = skipLimit))) {
+        case (rules, (name, flag)) =>
+          rules.flatMap(current =>
+            params.get(name) match
+              case None | Some("false")           => Some(current)
+              case Some("true") if flag.supported => Some(flag.turnOn(current))
+              case _                              => None
+          )
+      }
+    yield rules
 
   /** A new game for `rules`; a coin flip from `dice` says who moves first. */
   def start(rules: Rules, dice: Dice): Play =

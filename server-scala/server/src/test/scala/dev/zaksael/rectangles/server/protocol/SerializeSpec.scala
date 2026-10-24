@@ -6,8 +6,10 @@ import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import dev.zaksael.rectangles.domain.Board
 import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.CellKind
+import dev.zaksael.rectangles.domain.Edge
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Roll
@@ -158,4 +160,21 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
       placed(placed(game(2), PlayerId.One, Cell(0, 0), 1, 2), PlayerId.Two, Cell(0, 1), 1, 2)
     gameOver(Turns.checkGameOver(tied)).get[Json]("winner").value shouldBe Json.Null
     gameOver(game(8)).get[Json]("winner").value shouldBe Json.Null
+  }
+
+  "the walls section" should "carry the flag and each edge as its two sorted cells" in {
+    val walled = GameState.initial(Rules(walls = true)).copy(board =
+      Board(wallEdges =
+        Set(Edge.between(Cell(5, 6), Cell(5, 5)), Edge.between(Cell(1, 0), Cell(0, 0)))
+      )
+    )
+    val walls = at(Serialize.game(walled), "houseRules", "walls")
+    walls.get[Boolean]("enabled").value shouldBe true
+    walls.get[List[List[List[Int]]]]("edges").value shouldBe
+      List(List(List(0, 0), List(1, 0)), List(List(5, 5), List(5, 6)))
+  }
+
+  it should "be off with no edges by default" in {
+    at(Serialize.game(game()), "houseRules", "walls").focus shouldBe
+      Some(parse("""{"enabled": false, "edges": []}""").value)
   }

@@ -122,7 +122,14 @@ object Serialize:
         "canReroll" -> Json.False,
       ),
       "comebackNudge" -> enabled(state.rules.comebackNudge),
-      "walls" -> Json.obj("enabled" -> Json.fromBoolean(state.rules.walls), "edges" -> Json.arr()),
+      "walls" -> Json.obj(
+        "enabled" -> Json.fromBoolean(state.rules.walls),
+        "edges" -> Json.arr(
+          state.board.wallEdges.toSeq.sortBy(e => (e.a.row, e.a.col, e.b.row, e.b.col)).map(edge =>
+            Json.arr(cell(edge.a), cell(edge.b))
+          )*
+        ),
+      ),
       "obstacles" -> Json.obj(
         "enabled" -> Json.fromBoolean(state.rules.obstacles),
         "cells"   -> Json.arr(),

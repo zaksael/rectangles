@@ -6,7 +6,7 @@ object JsonDiff:
   /**
    * Arrays under these keys are compared without regard to order (Python builds them from sets).
    */
-  private val unordered = Set("topLefts")
+  private val unordered = Set("topLefts", "edges")
 
   def diff(expected: Json, actual: Json, path: String = "$", key: String = ""): List[String] =
     (expected.asObject, actual.asObject, expected.asArray, actual.asArray) match
