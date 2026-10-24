@@ -14,7 +14,18 @@ final case class Potential(area: Int, prizePoints: Int)
 
 object Scoring:
   def breakdown(state: GameState, who: PlayerId): ScoreBreakdown =
-    ScoreBreakdown(area = state.players(who).totalArea)
+    val mine   = state.players(who)
+    val theirs = state.players(who.other)
+    val points = Constants.SPECIAL_CELL_KINDS.map { (kind, effect) =>
+      kind -> (effect.capturerSign * mine.specialCaptures.getOrElse(kind, 0) +
+        effect.opponentSign * theirs.specialCaptures.getOrElse(kind, 0)) * effect.points
+    }
+    ScoreBreakdown(
+      area = mine.totalArea,
+      prize = points(CellKind.Prize),
+      pitfall = points(CellKind.Pitfall),
+      steal = points(CellKind.Steal),
+    )
 
   def total(state: GameState, who: PlayerId): Int = breakdown(state, who).total
 

@@ -52,6 +52,18 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     potential.downField("prize").get[Int]("points").value shouldBe 10
   }
 
+  it should "carry the prizes it has captured" in {
+    val base = game()
+    val state = base.copy(players =
+      base.players.updated(
+        PlayerId.One,
+        base.players(PlayerId.One).copy(specialCaptures = Map(CellKind.Prize -> 2)),
+      )
+    )
+    at(Serialize.game(state), "players", "1", "houseRules", "prize").focus shouldBe
+      Some(parse("""{"captured": 2}""").value)
+  }
+
   "the recent turns" should "be empty before any move" in {
     at(Serialize.game(game(11)), "turn").get[List[Json]]("recentTurns").value shouldBe empty
   }

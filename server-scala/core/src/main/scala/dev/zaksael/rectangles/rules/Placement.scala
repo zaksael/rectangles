@@ -29,12 +29,20 @@ object Placement:
     covered.forall(board.isEmpty) && !straddlesWall &&
     (if player.hasMoved then touchesOwn else anchored)
 
-  /** Places the piece without checking it is legal: call `canPlace` first. */
+  /**
+   * Places the piece without checking it is legal: call `canPlace` first. Special cells it covers
+   * count for the player, whatever the rule flags say.
+   */
   def place(board: Board, player: Player, topLeft: Cell, width: Int, height: Int): PlacementResult =
     val rectangle = Rectangle(topLeft, width, height, player.id)
+    val covered   = rectangle.cells.toSet
+    val captures =
+      board.specialCells.filter(sc => covered(sc.location)).foldLeft(player.specialCaptures) {
+        (counts, sc) => counts.updated(sc.kind, counts.getOrElse(sc.kind, 0) + 1)
+      }
     PlacementResult(
-      board.copy(owners = board.owners ++ rectangle.cells.map(_ -> player.id)),
-      player.copy(pieces = player.pieces :+ rectangle),
+      board.copy(owners = board.owners ++ covered.map(_ -> player.id)),
+      player.copy(pieces = player.pieces :+ rectangle, specialCaptures = captures),
       rectangle,
     )
 

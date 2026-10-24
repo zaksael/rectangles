@@ -6,12 +6,14 @@ import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.ScriptedDice
 import dev.zaksael.rectangles.domain.Cell
+import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rectangle
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.ScoreBreakdown
+import dev.zaksael.rectangles.domain.SpecialCell
 import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.placed
 
@@ -55,4 +57,77 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
     val live = state.players.view.mapValues(Scoring.potential(state.board, _)).toMap
     live shouldBe Map(PlayerId.One -> Potential(29, 0), PlayerId.Two -> Potential(29, 0))
     Scoring.potentialHistory(played).lastOption shouldBe Some(live)
+  }
+
+  private def withPrizes(size: Int, cells: Cell*): GameState =
+    val state = game(size)
+    state.copy(board =
+      state.board.copy(specialCells =
+        cells.zipWithIndex.map((cell, index) => SpecialCell(CellKind.Prize, cell, index)).toSet
+      )
+    )
+
+  private def capturedPrizes(state: GameState, who: PlayerId, count: Int): GameState =
+    state.copy(players =
+      state.players.updated(
+        who,
+        state.players(who).copy(specialCaptures = Map(CellKind.Prize -> count)),
+      )
+    )
+
+  "the total score" should "decide a winner that area alone would not" in {
+    val state = capturedPrizes(
+      placed(placed(game(), PlayerId.One, Cell(0, 0), 5, 2), PlayerId.Two, Cell(6, 4), 4, 2),
+      PlayerId.Two,
+      1,
+    )
+    state.players(PlayerId.One).totalArea should be > state.players(PlayerId.Two).totalArea
+    Scoring.winner(state) shouldBe Some(PlayerId.Two)
+  }
+
+  "a surrender" should "give the win to the opponent whatever the prize bonus" in {
+    val state = capturedPrizes(placed(game(), PlayerId.One, Cell(0, 0), 5, 5), PlayerId.One, 3)
+    Scoring.winner(Turns.surrender(state)) shouldBe Some(PlayerId.Two)
+  }
+
+  "a player's potential" should "hold the open cells it can reach and the prize points among them" in {
+    val state = placed(withPrizes(4, Cell(0, 1), Cell(3, 2)), PlayerId.One, Cell(0, 0), 1, 1)
+    Scoring.potential(state.board, state.players(PlayerId.One)) shouldBe Potential(15, 20)
+  }
+
+  it should "leave out a prize already captured" in {
+    val state = placed(withPrizes(4, Cell(0, 1)), PlayerId.One, Cell(0, 0), 2, 1)
+    Scoring.potential(state.board, state.players(PlayerId.One)).prizePoints shouldBe 0
+  }
+
+  "the breakdown history" should "credit a prize to the capturer only" in {
+    val (rolled, _) = Turns.rollDice(withPrizes(11, Cell(0, 0)), ScriptedDice.of(2, 2)).value
+    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
+    Scoring.breakdownHistory(state) shouldBe Vector(
+      Map(
+        PlayerId.One -> ScoreBreakdown(area = 4, prize = 10),
+        PlayerId.Two -> ScoreBreakdown(),
+      )
+    )
+  }
+
+  it should "end at the live breakdown of both players" in {
+    val (rolled, _) = Turns.rollDice(withPrizes(11, Cell(5, 5)), ScriptedDice.of(6, 6)).value
+    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 6, 6).value
+    Scoring.breakdownHistory(state).lastOption shouldBe Some(
+      Map(
+        PlayerId.One -> Scoring.breakdown(state, PlayerId.One),
+        PlayerId.Two -> Scoring.breakdown(state, PlayerId.Two),
+      )
+    )
+    Scoring.breakdown(state, PlayerId.One).prize shouldBe 10
+  }
+
+  "the potential history" should "count a prize both players can still reach" in {
+    val (rolled, _) = Turns.rollDice(withPrizes(11, Cell(5, 5)), ScriptedDice.of(2, 2)).value
+    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
+    Scoring.potentialHistory(state).map(step =>
+      PlayerId.values.toList.map(step(_).prizePoints)
+    ) shouldBe
+      Vector(List(10, 10))
   }
