@@ -225,3 +225,36 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     at(Serialize.game(game()), "houseRules", "prize").focus shouldBe
       Some(parse("""{"enabled": false, "cells": [], "points": 10}""").value)
   }
+
+  "the pitfall section" should "carry the flag, its cells sorted and the penalty points" in {
+    val pitted = GameState.initial(Rules(pitfall = true)).copy(board =
+      Board(specialCells =
+        Set(
+          SpecialCell(CellKind.Pitfall, Cell(9, 9), 0),
+          SpecialCell(CellKind.Pitfall, Cell(3, 4), 1),
+          SpecialCell(CellKind.Prize, Cell(1, 1), 2),
+        )
+      )
+    )
+    val pitfall = at(Serialize.game(pitted), "houseRules", "pitfall")
+    pitfall.get[Boolean]("enabled").value shouldBe true
+    pitfall.get[List[List[Int]]]("cells").value shouldBe List(List(3, 4), List(9, 9))
+    pitfall.get[Int]("points").value shouldBe 10
+  }
+
+  it should "be off with no cells by default" in {
+    at(Serialize.game(game()), "houseRules", "pitfall").focus shouldBe
+      Some(parse("""{"enabled": false, "cells": [], "points": 10}""").value)
+  }
+
+  it should "count the pitfalls a player has captured" in {
+    val base = game()
+    val state = base.copy(players =
+      base.players.updated(
+        PlayerId.One,
+        base.players(PlayerId.One).copy(specialCaptures = Map(CellKind.Pitfall -> 3)),
+      )
+    )
+    at(Serialize.game(state), "players", "1", "houseRules", "pitfall").focus shouldBe
+      Some(parse("""{"captured": 3}""").value)
+  }

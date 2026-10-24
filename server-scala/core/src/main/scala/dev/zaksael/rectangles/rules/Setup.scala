@@ -11,8 +11,9 @@ import dev.zaksael.rectangles.domain.SpecialCell
 
 object Setup:
   /**
-   * A new game for `rules`, its prize cells, walls and obstacles drawn in that order, each avoiding
-   * the ones before; with no pinned `starter`, a coin flip from `dice` says who moves first.
+   * A new game for `rules`, its prize cells, walls, obstacles and pitfalls drawn in that order,
+   * each avoiding the ones before; with no pinned `starter`, a coin flip from `dice` says who moves
+   * first.
    */
   def newGame(rules: Rules, starter: Option[PlayerId], dice: Dice): (GameState, Dice) =
     val (prize, afterPrize) =
@@ -36,12 +37,22 @@ object Setup:
           afterWalls,
         )
       else (Set.empty[Cell], afterWalls)
+    val (pitfall, afterPitfall) =
+      if rules.pitfall then
+        Generation.mirroredCellPairs(
+          rules.boardSize,
+          Constants.PITFALL_CELL_PAIRS,
+          prize ++ Generation.wallCells(walls) ++ obstacles,
+          afterObstacles,
+        )
+      else (Set.empty[Cell], afterObstacles)
     val (first, next) =
-      starter.map((_, afterObstacles)).getOrElse(afterObstacles.choose(PlayerId.values.toSeq))
+      starter.map((_, afterPitfall)).getOrElse(afterPitfall.choose(PlayerId.values.toSeq))
     val game = GameState.initial(rules, first)
-    val specialCells = prize.toSeq.sortBy(c => (c.row, c.col)).zipWithIndex.map { (cell, index) =>
-      SpecialCell(CellKind.Prize, cell, index)
-    }
+    val specialCells = List(CellKind.Prize -> prize, CellKind.Pitfall -> pitfall)
+      .flatMap((kind, cells) => cells.toSeq.sortBy(c => (c.row, c.col)).map(kind -> _))
+      .zipWithIndex
+      .map { case ((kind, cell), index) => SpecialCell(kind, cell, index) }
     (
       game.copy(board =
         game.board.copy(

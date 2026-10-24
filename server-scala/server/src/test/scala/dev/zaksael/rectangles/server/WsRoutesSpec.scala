@@ -104,6 +104,17 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       finally client.close()
     }
 
+  "a client that connects with pitfalls on" should "get a game with pitfall cells" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      val client = WsTestClient.connect(port, s"$vanilla&pitfallEnabled=true").value
+      try
+        val pitfall =
+          client.next().hcursor.downField("game").downField("houseRules").downField("pitfall")
+        pitfall.get[Boolean]("enabled").value shouldBe true
+        pitfall.get[List[Json]]("cells").value should not be empty
+      finally client.close()
+    }
+
   "a roll" should "answer with a state that holds the roll" in
     connected() { client =>
       client.next()
