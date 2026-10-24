@@ -27,6 +27,8 @@ object Actions:
         Turns.confirmSkip(play.state).left.map(rejected).map(skipped =>
           play.copy(state = advance(skipped))
         )
+      case ClientMessage.Reroll =>
+        Turns.reroll(play.state, play.dice).left.map(rejected).map(Play.apply.tupled)
       case ClientMessage.Surrender => Right(play.copy(state = Turns.surrender(play.state)))
       case _ =>
         Left(ErrorMsg(ErrorReason.InvalidAction, s"cannot apply $message to ${play.state.turn}"))

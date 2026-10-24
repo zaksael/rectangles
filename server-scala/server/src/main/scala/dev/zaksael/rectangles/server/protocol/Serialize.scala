@@ -13,6 +13,7 @@ import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.ScoreBreakdown
 import dev.zaksael.rectangles.domain.TurnState
 import dev.zaksael.rectangles.rules.Potential
+import dev.zaksael.rectangles.rules.Rerolls
 import dev.zaksael.rectangles.rules.Scoring
 
 object Serialize:
@@ -121,7 +122,7 @@ object Serialize:
       ),
       "reroll" -> Json.obj(
         "enabled"   -> Json.fromBoolean(state.rules.reroll),
-        "canReroll" -> Json.False,
+        "canReroll" -> Json.fromBoolean(Rerolls.canReroll(state)),
       ),
       "comebackNudge" -> enabled(state.rules.comebackNudge),
       "walls" -> Json.obj(
@@ -206,7 +207,10 @@ object Serialize:
         "potential"  -> potential(figures),
       ),
       "houseRules" -> Json.obj(
-        "reroll" -> Json.obj("used" -> Json.fromInt(self.rerollsUsed), "limit" -> Json.fromInt(0)),
+        "reroll" -> Json.obj(
+          "used"  -> Json.fromInt(self.rerollsUsed),
+          "limit" -> Json.fromInt(Rerolls.limit(state.rules)),
+        ),
         "comebackNudge" -> Json.obj("granted" -> Json.fromBoolean(self.comebackNudgeGranted)),
         "selfEnclosedPenalty" -> Json.obj("cells" -> Json.fromInt(Scoring.selfEnclosedCells(
           state,

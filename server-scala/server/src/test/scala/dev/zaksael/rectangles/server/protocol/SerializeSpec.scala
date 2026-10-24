@@ -339,3 +339,21 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     at(Serialize.game(state), "players", "1", "houseRules", "selfEnclosedPenalty").focus shouldBe
       Some(parse("""{"cells": 1}""").value)
   }
+
+  "the reroll section" should "carry the flag and whether a reroll can be spent" in {
+    at(
+      Serialize.game(GameState.initial(Rules(reroll = true))),
+      "houseRules",
+      "reroll",
+    ).focus shouldBe
+      Some(parse("""{"enabled": true, "canReroll": true}""").value)
+  }
+
+  it should "give each player the charges used and the limit" in {
+    val base = GameState.initial(Rules(reroll = true))
+    val used = base.copy(players =
+      base.players.updated(PlayerId.One, base.players(PlayerId.One).copy(rerollsUsed = 1))
+    )
+    at(Serialize.game(used), "players", "1", "houseRules", "reroll").focus shouldBe
+      Some(parse("""{"used": 1, "limit": 2}""").value)
+  }

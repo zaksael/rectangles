@@ -96,6 +96,21 @@ class ActionsSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).left.value.reason shouldBe ErrorReason.InvalidAction
   }
 
+  "a reroll" should "be refused before any roll" in {
+    val open = Play(GameState.initial(Rules(boardSize = 19, reroll = true)), dice())
+    Actions(open, ClientMessage.Reroll).left.value.reason shouldBe ErrorReason.InvalidAction
+  }
+
+  it should "spend a charge and roll again" in {
+    val stuck = GameState.initial(Rules(boardSize = 19, reroll = true)).copy(
+      turn = TurnState.Skipped,
+      lastRoll = Some(Roll(6, 6)),
+    )
+    val rerolled = Actions(Play(stuck, dice(2, 3)), ClientMessage.Reroll).value
+    rerolled.state.players(PlayerId.One).rerollsUsed shouldBe 1
+    rerolled.state.lastRoll shouldBe Some(Roll(2, 3))
+  }
+
   "a surrender" should "end the game with the surrendering player named" in {
     val over = Actions(play(), ClientMessage.Surrender).value
     over.state.turn shouldBe TurnState.GameOver

@@ -136,6 +136,17 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       finally client.close()
     }
 
+  "a client that connects with rerolls on" should "get a game where a reroll can be spent" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      val client = WsTestClient.connect(port, s"$vanilla&rerollEnabled=true").value
+      try
+        val reroll =
+          client.next().hcursor.downField("game").downField("houseRules").downField("reroll")
+        reroll.get[Boolean]("enabled").value shouldBe true
+        reroll.get[Boolean]("canReroll").value shouldBe true
+      finally client.close()
+    }
+
   "a roll" should "answer with a state that holds the roll" in
     connected() { client =>
       client.next()

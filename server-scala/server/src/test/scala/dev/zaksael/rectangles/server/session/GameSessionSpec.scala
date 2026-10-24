@@ -57,3 +57,25 @@ class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues:
     reason(error) shouldBe "invalidAction"
     turnState(open.state.unsafeRunSync()) shouldBe "choosingPlacement"
   }
+
+  "a dead roll with a reroll charge left" should "wait for the skip to be sent before recording it" in {
+    val stuck = GameSession
+      .create(
+        Play(
+          GameState.initial(Rules(boardSize = 2, reroll = true)),
+          ReplayDice(List(Draw.RandInt(1, 6, 6), Draw.RandInt(1, 6, 6))),
+        )
+      )
+      .unsafeRunSync()
+    val rolled = stuck.handle("""{"protocolVersion":1,"type":"roll"}""").unsafeRunSync()
+    turnState(rolled) shouldBe "skipped"
+    rolled.hcursor.downField(
+      "game"
+    ).downField("turn").get[List[Json]]("recentTurns").value shouldBe empty
+    val skipped = stuck.handle("""{"protocolVersion":1,"type":"skip"}""").unsafeRunSync()
+    val game    = skipped.hcursor.downField("game")
+    game.downField("turn").get[List[Json]]("recentTurns").value should have size 1
+    game.downField(
+      "players"
+    ).downField("1").downField("board").get[Int]("consecutiveSkips").value shouldBe 1
+  }
