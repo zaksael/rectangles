@@ -111,6 +111,7 @@ SCENARIOS = [
     Scenario("comeback", {"boardSize": 19, "comebackNudgeEnabled": "true"}, seed=17, must_see=('"granted": true',)),
     Scenario("reroll", {"boardSize": 19, "rerollEnabled": "true"}, seed=30, use_reroll=True, must_see=('"canReroll": true',)),
     Scenario("wildcard", {"boardSize": 19, "wildcardEnabled": "true"}, seed=31, moves=40, must_see=("choosingWildcard", "illegalWildcardValue")),
+    Scenario("prize-walls-obstacles", {"boardSize": 19, "prizeEnabled": "true", "wallsEnabled": "true", "obstaclesEnabled": "true"}, seed=41, moves=8),
     Scenario("all-rules", {"boardSize": 19, **ALL_RULES}, seed=40, moves=16, use_reroll=True),
     Scenario("series", {"boardSize": 19, "seriesLength": 3}, seed=50, moves=3, rounds=3, must_see=('"series": {',)),
     Scenario("bot-random-starter", {"boardSize": 19, "botSeats": 2, "botDifficulty": "Greedy"}, seed=60, moves=8, pinned=False),

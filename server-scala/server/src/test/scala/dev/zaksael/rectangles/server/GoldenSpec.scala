@@ -23,7 +23,7 @@ class GoldenSpec extends AnyFlatSpec with Matchers with EitherValues:
 
   it should "sit beside every other set, and all of them load" in {
     val names = Files.list(Golden.dir).iterator().asScala.map(_.getFileName.toString).toList
-    names.size shouldBe 15
+    names.size shouldBe 16
     names.foreach(file => Golden.load(file.stripSuffix(".json")).isRight shouldBe true)
   }
 

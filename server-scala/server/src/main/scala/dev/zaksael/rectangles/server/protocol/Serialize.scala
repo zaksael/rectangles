@@ -107,8 +107,10 @@ object Serialize:
     def enabled(on: Boolean) = Json.obj("enabled" -> Json.fromBoolean(on))
     def special(on: Boolean, kind: CellKind) = Json.obj(
       "enabled" -> Json.fromBoolean(on),
-      "cells"   -> Json.arr(),
-      "points"  -> Json.fromInt(Constants.SPECIAL_CELL_KINDS(kind).points),
+      "cells" -> Json.arr(
+        state.board.cellsOfKind(kind).toSeq.sortBy(c => (c.row, c.col)).map(cell)*
+      ),
+      "points" -> Json.fromInt(Constants.SPECIAL_CELL_KINDS(kind).points),
     )
     Json.obj(
       "wildcard" -> Json.obj(

@@ -18,7 +18,7 @@ object ConnectParams:
     "rerollEnabled"              -> Flag(_.copy(reroll = true), supported = false),
     "wallsEnabled"               -> Flag(_.copy(walls = true), supported = true),
     "obstaclesEnabled"           -> Flag(_.copy(obstacles = true), supported = true),
-    "prizeEnabled"               -> Flag(_.copy(prize = true), supported = false),
+    "prizeEnabled"               -> Flag(_.copy(prize = true), supported = true),
     "pitfallEnabled"             -> Flag(_.copy(pitfall = true), supported = false),
     "stealEnabled"               -> Flag(_.copy(steal = true), supported = false),
     "selfEnclosedPenaltyEnabled" -> Flag(_.copy(selfEnclosedPenalty = true), supported = false),

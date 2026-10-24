@@ -35,3 +35,7 @@ object Scene:
 def placed(state: GameState, who: PlayerId, topLeft: Cell, width: Int, height: Int): GameState =
   val result = Placement.place(state.board, state.players(who), topLeft, width, height)
   state.copy(board = result.board, players = state.players.updated(who, result.player))
+
+/** The larger of the row and column distances between two cells. */
+def chebyshev(a: Cell, b: Cell): Int =
+  math.max(math.abs(a.row - b.row), math.abs(a.col - b.col))
