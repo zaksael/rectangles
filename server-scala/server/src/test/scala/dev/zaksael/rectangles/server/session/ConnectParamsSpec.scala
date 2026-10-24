@@ -34,6 +34,8 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       Some(Rules(walls = true))
     ConnectParams.parse(Map("protocolVersion" -> "1", "rerollEnabled" -> "true")) shouldBe
       Some(Rules(reroll = true))
+    ConnectParams.parse(Map("protocolVersion" -> "1", "comebackNudgeEnabled" -> "true")) shouldBe
+      Some(Rules(comebackNudge = true))
     ConnectParams.parse(Map("protocolVersion" -> "1", "obstaclesEnabled" -> "true")) shouldBe
       Some(Rules(obstacles = true))
     ConnectParams.parse(Map("protocolVersion" -> "1", "prizeEnabled" -> "true")) shouldBe
@@ -66,7 +68,7 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       "protocolVersion=1&stealEnabled=1",
       "protocolVersion=1&prizeEnabled=true&prizePoints=25",
       "protocolVersion=1&selfEnclosedPenaltyEnabled=1",
-      "protocolVersion=1&comebackNudgeEnabled=true",
+      "protocolVersion=1&comebackNudgeEnabled=1",
       "",
       "protocolVersion=2",
       "protocolVersion=1&boardSize=abc",

@@ -78,11 +78,13 @@ object Turns:
           Placement.place(state.board, state.players(state.current), topLeft, width, height)
         val record = TurnRecord(state.current, rolled, Some(result.rectangle))
         Right(
-          state.copy(
-            board = result.board,
-            players =
-              state.players.updated(state.current, result.player.copy(consecutiveSkips = 0)),
-            history = state.history :+ record,
+          Rerolls.maybeGrantNudge(
+            state.copy(
+              board = result.board,
+              players =
+                state.players.updated(state.current, result.player.copy(consecutiveSkips = 0)),
+              history = state.history :+ record,
+            )
           )
         )
 

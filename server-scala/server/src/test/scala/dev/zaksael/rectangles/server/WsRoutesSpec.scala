@@ -147,6 +147,16 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       finally client.close()
     }
 
+  "a client that connects with the comeback nudge on" should "get a game with the rule enabled" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      val client = WsTestClient.connect(port, s"$vanilla&comebackNudgeEnabled=true").value
+      try
+        val rule =
+          client.next().hcursor.downField("game").downField("houseRules").downField("comebackNudge")
+        rule.get[Boolean]("enabled").value shouldBe true
+      finally client.close()
+    }
+
   "a roll" should "answer with a state that holds the roll" in
     connected() { client =>
       client.next()

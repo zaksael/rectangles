@@ -357,3 +357,29 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     at(Serialize.game(used), "players", "1", "houseRules", "reroll").focus shouldBe
       Some(parse("""{"used": 1, "limit": 2}""").value)
   }
+
+  "the comeback nudge section" should "carry the flag" in {
+    at(
+      Serialize.game(GameState.initial(Rules(comebackNudge = true))),
+      "houseRules",
+      "comebackNudge",
+    )
+      .focus shouldBe Some(parse("""{"enabled": true}""").value)
+  }
+
+  "a player's reroll limit" should "gain the comeback nudge charge once granted" in {
+    val base = GameState.initial(Rules(reroll = true, comebackNudge = true))
+    val state = base.copy(players =
+      base.players.updated(
+        PlayerId.One,
+        base.players(PlayerId.One).copy(comebackNudgeGranted = true),
+      )
+    )
+    at(
+      Serialize.game(state),
+      "players",
+      "1",
+      "houseRules",
+      "reroll",
+    ).get[Int]("limit").value shouldBe 3
+  }

@@ -209,7 +209,7 @@ object Serialize:
       "houseRules" -> Json.obj(
         "reroll" -> Json.obj(
           "used"  -> Json.fromInt(self.rerollsUsed),
-          "limit" -> Json.fromInt(Rerolls.limit(state.rules)),
+          "limit" -> Json.fromInt(Rerolls.limit(state.rules, self)),
         ),
         "comebackNudge" -> Json.obj("granted" -> Json.fromBoolean(self.comebackNudgeGranted)),
         "selfEnclosedPenalty" -> Json.obj("cells" -> Json.fromInt(Scoring.selfEnclosedCells(
