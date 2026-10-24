@@ -132,7 +132,9 @@ object Serialize:
       ),
       "obstacles" -> Json.obj(
         "enabled" -> Json.fromBoolean(state.rules.obstacles),
-        "cells"   -> Json.arr(),
+        "cells" -> Json.arr(
+          state.board.obstacleCells.toSeq.sortBy(c => (c.row, c.col)).map(cell)*
+        ),
       ),
       "prize"               -> special(state.rules.prize, CellKind.Prize),
       "pitfall"             -> special(state.rules.pitfall, CellKind.Pitfall),

@@ -178,3 +178,17 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     at(Serialize.game(game()), "houseRules", "walls").focus shouldBe
       Some(parse("""{"enabled": false, "edges": []}""").value)
   }
+
+  "the obstacles section" should "carry the flag and its cells sorted by row then column" in {
+    val blocked = GameState.initial(Rules(obstacles = true)).copy(board =
+      Board(obstacleCells = Set(Cell(9, 9), Cell(3, 4), Cell(3, 2)))
+    )
+    val obstacles = at(Serialize.game(blocked), "houseRules", "obstacles")
+    obstacles.get[Boolean]("enabled").value shouldBe true
+    obstacles.get[List[List[Int]]]("cells").value shouldBe List(List(3, 2), List(3, 4), List(9, 9))
+  }
+
+  it should "be off with no cells by default" in {
+    at(Serialize.game(game()), "houseRules", "obstacles").focus shouldBe
+      Some(parse("""{"enabled": false, "cells": []}""").value)
+  }

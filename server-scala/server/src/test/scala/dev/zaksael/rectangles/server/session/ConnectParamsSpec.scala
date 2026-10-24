@@ -32,6 +32,8 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
   "a connect with a house rule turned on" should "ask for that rule" in {
     ConnectParams.parse(Map("protocolVersion" -> "1", "wallsEnabled" -> "true")) shouldBe
       Some(Rules(walls = true))
+    ConnectParams.parse(Map("protocolVersion" -> "1", "obstaclesEnabled" -> "true")) shouldBe
+      Some(Rules(obstacles = true))
   }
 
   "a connect with a parameter that is not allowed" should "be refused" in {
@@ -47,7 +49,7 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       "protocolVersion=1&wildcardEnabled=maybe",
       "protocolVersion=1&rerollEnabled=true",
       "protocolVersion=1&wallsEnabled=1",
-      "protocolVersion=1&obstaclesEnabled=true",
+      "protocolVersion=1&obstaclesEnabled=1",
       "protocolVersion=1&prizeEnabled=true",
       "protocolVersion=1&pitfallEnabled=true",
       "protocolVersion=1&stealEnabled=true",

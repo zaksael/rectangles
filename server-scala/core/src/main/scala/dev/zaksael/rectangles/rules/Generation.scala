@@ -20,8 +20,38 @@ object Generation:
   def nearAny(cell: Cell, others: Set[Cell]): Boolean =
     others.exists(chebyshev(cell, _) < Constants.MIN_SPECIAL_CELL_DISTANCE)
 
-  private def edgeCells(edges: Seq[Edge]): Set[Cell] =
-    edges.flatMap(edge => Set(edge.a, edge.b)).toSet
+  /** Every cell a wall edge touches. */
+  def wallCells(edges: Set[Edge]): Set[Cell] = edges.flatMap(edge => Set(edge.a, edge.b))
+
+  /**
+   * Up to `count` mirrored single-cell pairs outside `occupied`, each picked from the cells clear
+   * of the start corners, of their own mirror and of the pairs this call already picked; a pair
+   * with no such cell is skipped without a draw.
+   */
+  def mirroredCellPairs(
+      size: Int,
+      count: Int,
+      occupied: Set[Cell],
+      dice: Dice,
+  ): (Set[Cell], Dice) =
+    val (_, _, picked, after) =
+      (0 until count).foldLeft((Set.empty[Cell], occupied, Set.empty[Cell], dice)) {
+        case ((ownPicked, taken, result, current), _) =>
+          val candidates =
+            for
+              row <- 0 until size
+              col <- 0 until size
+              cell = Cell(row, col)
+              if !taken(cell) && !nearStartCorner(cell, size) &&
+                !nearAny(cell, Set(mirrorCell(cell, size))) && !nearAny(cell, ownPicked)
+            yield cell
+          if candidates.isEmpty then (ownPicked, taken, result, current)
+          else
+            val (cell, next) = current.choose(candidates)
+            val pair         = Set(cell, mirrorCell(cell, size))
+            (ownPicked ++ pair, taken ++ pair, result ++ pair, next)
+      }
+    (picked, after)
 
   /** The wall segments and their mirror images, avoiding `occupied` cells. */
   def wallEdges(rules: Rules, occupied: Set[Cell], dice: Dice): (Set[Edge], Dice) =
@@ -40,7 +70,7 @@ object Generation:
             fixed <- 0 until size - 1
             from  <- 0 to size - Constants.WALL_LINE_LENGTH
             line     = segment(orientation == 0, fixed, from)
-            cells    = edgeCells(line)
+            cells    = wallCells(line.toSet)
             mirrored = cells.map(mirrorCell(_, size))
             if !cells.exists(nearAny(_, mirrored)) &&
               !cells.exists(nearStartCorner(_, size)) && cells.intersect(taken).isEmpty &&
@@ -52,7 +82,7 @@ object Generation:
           val line          = candidates(index)
           val mirroredLine =
             line.map(edge => Edge.between(mirrorCell(edge.a, size), mirrorCell(edge.b, size)))
-          val placed = edgeCells(line ++ mirroredLine)
+          val placed = wallCells((line ++ mirroredLine).toSet)
           (ownPlaced ++ placed, taken ++ placed, edges ++ line ++ mirroredLine, last)
     }
     (result, after)
