@@ -28,11 +28,11 @@ object GoldenReplay:
    * when they match. A step listed in `pending` (with the task that will answer it) is not sent.
    */
   def run(game: GoldenGame, pending: Map[Int, String] = Map.empty): List[String] =
-    ConnectParams.parse(game.connect).fold(List("connect refused")) { rules =>
+    ConnectParams.parse(game.connect).fold(List("connect refused")) { connect =>
       val replay = ReplayDice(game.draws.toList)
       val seen   = AtomicReference(replay)
       val (state, dice) = Setup.newGame(
-        rules,
+        connect.rules,
         Option.when(game.pinnedStarter)(PlayerId.One),
         RecordingDice(replay, seen),
       )
@@ -51,14 +51,15 @@ object GoldenReplay:
     }
 
   /** An error reply is compared on type and reason only: its message embeds Python enum names. */
-  private def compare(expected: Vector[Json], actual: Json): List[String] = expected match
-    case Vector(want) if want.hcursor.get[String]("type").contains("error") =>
-      List("type", "reason").flatMap { key =>
-        JsonDiff.diff(
-          want.hcursor.get[Json](key).getOrElse(Json.Null),
-          actual.hcursor.get[Json](key).getOrElse(Json.Null),
-          s"$$.$key",
-        )
-      }
-    case Vector(want) => JsonDiff.diff(want, actual)
-    case other        => List(s"recorded ${other.size} replies, a session gives one")
+  private def compare(expected: Vector[Json], actual: Vector[Json]): List[String] =
+    (expected, actual) match
+      case (Vector(want), Vector(got)) if want.hcursor.get[String]("type").contains("error") =>
+        List("type", "reason").flatMap { key =>
+          JsonDiff.diff(
+            want.hcursor.get[Json](key).getOrElse(Json.Null),
+            got.hcursor.get[Json](key).getOrElse(Json.Null),
+            s"$$.$key",
+          )
+        }
+      case (Vector(want), Vector(got)) => JsonDiff.diff(want, got)
+      case _ => List(s"recorded ${expected.size} replies, the session gave ${actual.size}")

@@ -18,9 +18,9 @@ import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
-import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.rules.SplitMix64
 import dev.zaksael.rectangles.server.http.WsRoutes
+import dev.zaksael.rectangles.server.session.Connect
 import dev.zaksael.rectangles.server.session.GameSession
 import dev.zaksael.rectangles.server.session.Play
 import dev.zaksael.rectangles.server.session.Session
@@ -29,8 +29,11 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
   private val vanilla = "protocolVersion=1"
 
   /** Player One starts, as the scripted wire cases expect (the real route flips a coin). */
-  private val playerOneStarts: Rules => IO[Session] = rules =>
-    GameSession.create(Play(GameState.initial(rules, PlayerId.One), SplitMix64(42L)))
+  private val playerOneStarts: Connect => IO[Session] = connect =>
+    GameSession.create(
+      Play(GameState.initial(connect.rules, PlayerId.One), SplitMix64(42L)),
+      connect.bot,
+    )
 
   /** A client on a fresh game, closed when `test` ends so the server can shut down at once. */
   private def connected[A](query: String = vanilla)(test: WsTestClient => A): A =
@@ -70,6 +73,27 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       client,
       s"""{"protocolVersion":1,"type":"place","topLeft":[$row,$col],"width":$width,"height":$height}""",
     )
+
+  "a client playing the bot" should "get the human's move, then the bot's roll and its move as separate states" in
+    connected(s"$vanilla&botSeats=2") { client =>
+      client.next()
+      val afterHuman = rollAndPlace(client)
+      turn(afterHuman).get[Int]("currentPlayerId").value shouldBe 2
+      turn(afterHuman).get[String]("turnState").value shouldBe "awaitingRoll"
+
+      val afterRoll = client.next()
+      afterRoll should not be Json.Null
+      turn(afterRoll).get[Int]("currentPlayerId").value shouldBe 2
+      turn(afterRoll).get[Json]("lastRoll").value should not be Json.Null
+
+      val afterMove = client.next()
+      afterMove should not be Json.Null
+      turn(afterMove).get[Int]("currentPlayerId").value shouldBe 1
+      turn(afterMove).get[String]("turnState").value shouldBe "awaitingRoll"
+      afterMove.hcursor.downField("game").downField("players").downField("2").downField(
+        "board"
+      ).get[List[Json]]("pieces").value should have size 1
+    }
 
   "a client that connects with walls on" should "get a game with wall edges" in
     TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
@@ -273,8 +297,9 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
 
   "a bug in the game" should "close the connection instead of becoming an error message" in {
     val failing = new Session:
-      def state: IO[Json] = IO.pure(parse("""{"protocolVersion":1,"type":"state"}""").value)
-      def handle(text: String): IO[Json] = IO.raiseError(new RuntimeException("boom"))
+      def state: IO[Vector[Json]] =
+        IO.pure(Vector(parse("""{"protocolVersion":1,"type":"state"}""").value))
+      def handle(text: String): IO[Vector[Json]] = IO.raiseError(new RuntimeException("boom"))
     TestServer.use(ws => WsRoutes.routes(ws, _ => IO.pure(failing)).orNotFound) { port =>
       val client = WsTestClient.connect(port, vanilla).value
       client.next()

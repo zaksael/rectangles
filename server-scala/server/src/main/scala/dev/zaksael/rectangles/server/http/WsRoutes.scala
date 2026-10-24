@@ -5,27 +5,33 @@ import scala.concurrent.duration.*
 import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.std.SecureRandom
+import cats.syntax.foldable.*
 import fs2.Stream
+import io.circe.Json
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io.*
 import org.http4s.server.websocket.WebSocketBuilder2
 import org.http4s.websocket.WebSocketFrame
 import org.typelevel.ci.CIString
 
-import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.rules.SplitMix64
+import dev.zaksael.rectangles.server.session.Connect
 import dev.zaksael.rectangles.server.session.ConnectParams
 import dev.zaksael.rectangles.server.session.GameSession
 import dev.zaksael.rectangles.server.session.Session
 
 object WsRoutes:
-  /** A new game for the rules, its dice seeded from real entropy. */
-  val newGame: Rules => IO[Session] = rules =>
+  /** A new game for what the connect asks for, its dice seeded from real entropy. */
+  val newGame: Connect => IO[Session] = connect =>
     for
-      random  <- SecureRandom.javaSecuritySecureRandom[IO]
-      seed    <- random.nextLong
-      session <- GameSession.create(ConnectParams.start(rules, SplitMix64(seed)))
+      random <- SecureRandom.javaSecuritySecureRandom[IO]
+      seed   <- random.nextLong
+      session <-
+        GameSession.create(ConnectParams.start(connect.rules, SplitMix64(seed)), connect.bot)
     yield session
+
+  private def send(outbox: Queue[IO, Option[WebSocketFrame]], message: Json): IO[Unit] =
+    outbox.offer(Some(WebSocketFrame.Text(message.noSpaces)))
 
   /**
    * `GET /ws`: refuses (403) a page from another host or parameters it does not know; otherwise
@@ -33,27 +39,25 @@ object WsRoutes:
    */
   def routes(
       ws: WebSocketBuilder2[IO],
-      sessions: Rules => IO[Session] = newGame,
+      sessions: Connect => IO[Session] = newGame,
       keepAlive: FiniteDuration = 20.seconds,
   ): HttpRoutes[IO] =
     HttpRoutes.of[IO] { case req @ GET -> Root / "ws" =>
       def header(name: String) = req.headers.get(CIString(name)).map(_.head.value)
       ConnectParams.parse(req.uri.query.params) match
-        case Some(rules) if OriginCheck.allowed(header("Origin"), header("Host")) =>
+        case Some(connect) if OriginCheck.allowed(header("Origin"), header("Host")) =>
           for
-            session <- sessions(rules)
+            session <- sessions(connect)
             outbox  <- Queue.unbounded[IO, Option[WebSocketFrame]]
             opening <- session.state
-            _       <- outbox.offer(Some(WebSocketFrame.Text(opening.noSpaces)))
+            _       <- opening.traverse_(message => send(outbox, message))
             socket <- ws.build(
               Stream
                 .fromQueueNoneTerminated(outbox)
                 .mergeHaltL(Stream.awakeEvery[IO](keepAlive).as(WebSocketFrame.Ping())),
               _.evalMap {
                 case WebSocketFrame.Text(text, _) =>
-                  session.handle(text).flatMap(reply =>
-                    outbox.offer(Some(WebSocketFrame.Text(reply.noSpaces)))
-                  )
+                  session.handle(text).flatMap(_.traverse_(message => send(outbox, message)))
                 case _ => IO.unit
               }.onFinalize(outbox.offer(None)),
             )

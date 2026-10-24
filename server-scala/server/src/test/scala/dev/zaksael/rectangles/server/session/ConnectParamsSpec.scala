@@ -7,6 +7,7 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import dev.zaksael.rectangles.domain.BotDifficulty
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.rules.Dice
@@ -16,12 +17,15 @@ import dev.zaksael.rectangles.server.ReplayDice
 import dev.zaksael.rectangles.server.protocol.Serialize
 
 class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with EitherValues:
+  private def rulesOf(params: Map[String, String]): Option[Rules] =
+    ConnectParams.parse(params).map(_.rules)
+
   "a connect with only the protocol version" should "ask for the default rules" in {
-    ConnectParams.parse(Map("protocolVersion" -> "1")) shouldBe Some(Rules())
+    rulesOf(Map("protocolVersion" -> "1")) shouldBe Some(Rules())
   }
 
   it should "take the board size and skip limit it is given" in {
-    ConnectParams.parse(Map(
+    rulesOf(Map(
       "protocolVersion" -> "1",
       "boardSize"       -> "23",
       "skipLimit"       -> "3",
@@ -29,24 +33,45 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       Some(Rules(boardSize = 23, skipLimit = 3))
   }
 
+  private def botOf(params: Map[String, String]): Option[Option[BotDifficulty]] =
+    ConnectParams.parse(params).map(_.bot)
+
+  private val vanilla = Map("protocolVersion" -> "1")
+
+  "a connect with no bot seat" should "have no bot, even when it names a difficulty" in {
+    botOf(vanilla) shouldBe Some(None)
+    botOf(vanilla + ("botDifficulty" -> "Greedy")) shouldBe Some(None)
+  }
+
+  "a connect with the bot seat" should "play the Basic bot unless it names a difficulty" in {
+    botOf(vanilla + ("botSeats" -> "2")) shouldBe Some(Some(BotDifficulty.Basic))
+  }
+
+  it should "play the difficulty it names" in {
+    botOf(vanilla ++ Map("botSeats" -> "2", "botDifficulty" -> "Greedy")) shouldBe
+      Some(Some(BotDifficulty.Greedy))
+    botOf(vanilla ++ Map("botSeats" -> "2", "botDifficulty" -> "Blocking")) shouldBe
+      Some(Some(BotDifficulty.Blocking))
+  }
+
   "a connect with a house rule turned on" should "ask for that rule" in {
-    ConnectParams.parse(Map("protocolVersion" -> "1", "wallsEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "wallsEnabled" -> "true")) shouldBe
       Some(Rules(walls = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "wildcardEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "wildcardEnabled" -> "true")) shouldBe
       Some(Rules(wildcard = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "rerollEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "rerollEnabled" -> "true")) shouldBe
       Some(Rules(reroll = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "comebackNudgeEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "comebackNudgeEnabled" -> "true")) shouldBe
       Some(Rules(comebackNudge = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "obstaclesEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "obstaclesEnabled" -> "true")) shouldBe
       Some(Rules(obstacles = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "prizeEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "prizeEnabled" -> "true")) shouldBe
       Some(Rules(prize = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "pitfallEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "pitfallEnabled" -> "true")) shouldBe
       Some(Rules(pitfall = true))
-    ConnectParams.parse(Map("protocolVersion" -> "1", "stealEnabled" -> "true")) shouldBe
+    rulesOf(Map("protocolVersion" -> "1", "stealEnabled" -> "true")) shouldBe
       Some(Rules(steal = true))
-    ConnectParams.parse(
+    rulesOf(
       Map("protocolVersion" -> "1", "selfEnclosedPenaltyEnabled" -> "true")
     ) shouldBe Some(Rules(selfEnclosedPenalty = true))
   }
@@ -76,7 +101,7 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
     )
     for query <- refused do
       withClue(query) {
-        ConnectParams.parse(Query.unsafeFromString(query).params) shouldBe None
+        rulesOf(Query.unsafeFromString(query).params) shouldBe None
       }
   }
 
@@ -105,7 +130,7 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
   }
 
   it should "open as an untouched 19x19 game with the starter to roll" in {
-    val rules = ConnectParams.parse(Map("protocolVersion" -> "1")).value
+    val rules = rulesOf(Map("protocolVersion" -> "1")).value
     val game =
       Serialize.game(ConnectParams.start(rules, ReplayDice(List(Draw.Choice(2, 0)))).state).hcursor
     game.downField("board").get[Int]("size").value shouldBe 19
@@ -129,5 +154,5 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       "comebackNudgeEnabled",
     )
     val query = ("protocolVersion=1" +: flags.map(flag => s"$flag=false")).mkString("&")
-    ConnectParams.parse(Query.unsafeFromString(query).params) shouldBe Some(Rules())
+    rulesOf(Query.unsafeFromString(query).params) shouldBe Some(Rules())
   }

@@ -36,7 +36,7 @@ object Actions:
       case ClientMessage.Surrender => Right(play.copy(state = Turns.surrender(play.state)))
 
   /** After a placement or a skip: end the game if it is over, else pass the turn. */
-  private def advance(state: GameState): GameState =
+  private[session] def advance(state: GameState): GameState =
     val checked = Turns.checkGameOver(state)
     if checked.turn == TurnState.GameOver then checked else Turns.endTurn(checked)
 
