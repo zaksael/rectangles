@@ -43,6 +43,10 @@ class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
     replay("pitfall") shouldBe empty
   }
 
+  "the steal golden set" should "replay with every reply as recorded" in {
+    replay("steal") shouldBe empty
+  }
+
   "the golden replay runner" should "report a changed score value" in {
     val changed = vanilla.copy(steps =
       vanilla.steps.updated(

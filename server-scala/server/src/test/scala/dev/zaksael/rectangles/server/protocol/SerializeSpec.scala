@@ -258,3 +258,65 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     at(Serialize.game(state), "players", "1", "houseRules", "pitfall").focus shouldBe
       Some(parse("""{"captured": 3}""").value)
   }
+
+  "the steal section" should "carry the flag, its cells sorted and the steal points" in {
+    val stolen = GameState.initial(Rules(steal = true)).copy(board =
+      Board(specialCells =
+        Set(
+          SpecialCell(CellKind.Steal, Cell(9, 9), 0),
+          SpecialCell(CellKind.Steal, Cell(3, 4), 1),
+          SpecialCell(CellKind.Pitfall, Cell(1, 1), 2),
+        )
+      )
+    )
+    val steal = at(Serialize.game(stolen), "houseRules", "steal")
+    steal.get[Boolean]("enabled").value shouldBe true
+    steal.get[List[List[Int]]]("cells").value shouldBe List(List(3, 4), List(9, 9))
+    steal.get[Int]("points").value shouldBe 10
+  }
+
+  it should "be off with no cells by default" in {
+    at(Serialize.game(game()), "houseRules", "steal").focus shouldBe
+      Some(parse("""{"enabled": false, "cells": [], "points": 10}""").value)
+  }
+
+  it should "count the steals a player has captured" in {
+    val base = game()
+    val state = base.copy(players =
+      base.players.updated(
+        PlayerId.One,
+        base.players(PlayerId.One).copy(specialCaptures = Map(CellKind.Steal -> 1)),
+      )
+    )
+    at(Serialize.game(state), "players", "1", "houseRules", "steal").focus shouldBe
+      Some(parse("""{"captured": 1}""").value)
+  }
+
+  private def stealAtCorner: GameState =
+    val state = GameState.initial(Rules(boardSize = 11, steal = true, prize = true, pitfall = true))
+    state.copy(board =
+      state.board.copy(specialCells = Set(SpecialCell(CellKind.Steal, Cell(0, 0), 0)))
+    )
+
+  "the game-over history" should "carry a steal, its parts summing to the score" in {
+    val over  = Turns.surrender(move(stealAtCorner, Cell(0, 0), 2, 2))
+    val entry = at(Serialize.game(over), "gameOver", "history").downArray
+    val parts = entry.downField("breakdown")
+    parts.downField("1").get[Int]("steal").value shouldBe 10
+    parts.downField("2").get[Int]("steal").value shouldBe -10
+    for who <- List("1", "2") do
+      parts.downField(who).as[Map[String, Int]].value.values.sum shouldBe
+        entry.downField("score").get[Int](who).value
+  }
+
+  "a player's score breakdown" should "sum to the total score with every rule on" in {
+    val json = Serialize.game(move(stealAtCorner, Cell(0, 0), 2, 2))
+    at(json, "players", "1", "score").downField("breakdown").focus shouldBe Some(
+      parse("""{"area": 4, "prize": 0, "pitfall": 0, "steal": 10, "enclosure": 0}""").value
+    )
+    at(json, "players", "2", "score").downField("breakdown").get[Int]("steal").value shouldBe -10
+    for who <- List("1", "2") do
+      val score = at(json, "players", who, "score")
+      score.downField("breakdown").as[Map[String, Int]].value.values.sum shouldBe
+        score.get[Int]("totalScore").value
+  }

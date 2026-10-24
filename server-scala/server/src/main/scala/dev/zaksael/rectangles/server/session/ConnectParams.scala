@@ -20,7 +20,7 @@ object ConnectParams:
     "obstaclesEnabled"           -> Flag(_.copy(obstacles = true), supported = true),
     "prizeEnabled"               -> Flag(_.copy(prize = true), supported = true),
     "pitfallEnabled"             -> Flag(_.copy(pitfall = true), supported = true),
-    "stealEnabled"               -> Flag(_.copy(steal = true), supported = false),
+    "stealEnabled"               -> Flag(_.copy(steal = true), supported = true),
     "selfEnclosedPenaltyEnabled" -> Flag(_.copy(selfEnclosedPenalty = true), supported = false),
     "comebackNudgeEnabled"       -> Flag(_.copy(comebackNudge = true), supported = false),
   )

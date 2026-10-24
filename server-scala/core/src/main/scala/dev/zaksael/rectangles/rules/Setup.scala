@@ -11,48 +11,41 @@ import dev.zaksael.rectangles.domain.SpecialCell
 
 object Setup:
   /**
-   * A new game for `rules`, its prize cells, walls, obstacles and pitfalls drawn in that order,
-   * each avoiding the ones before; with no pinned `starter`, a coin flip from `dice` says who moves
-   * first.
+   * A new game for `rules`, its prize cells, walls, obstacles, pitfalls and steal cells drawn in
+   * that order, each avoiding the ones before; with no pinned `starter`, a coin flip from `dice`
+   * says who moves first.
    */
   def newGame(rules: Rules, starter: Option[PlayerId], dice: Dice): (GameState, Dice) =
-    val (prize, afterPrize) =
-      if rules.prize then
-        Generation.mirroredCellPairs(
-          rules.boardSize,
-          Constants.PRIZE_CELL_PAIRS,
-          Set.empty,
-          dice,
-        )
-      else (Set.empty[Cell], dice)
+    def cells(on: Boolean, count: Int, occupied: Set[Cell], from: Dice): (Set[Cell], Dice) =
+      if on then Generation.mirroredCellPairs(rules.boardSize, count, occupied, from)
+      else (Set.empty, from)
+    val (prize, afterPrize) = cells(rules.prize, Constants.PRIZE_CELL_PAIRS, Set.empty, dice)
     val (walls, afterWalls) =
       if rules.walls then Generation.wallEdges(rules, prize, afterPrize)
       else (Set.empty[Edge], afterPrize)
+    val wallCells = Generation.wallCells(walls)
     val (obstacles, afterObstacles) =
-      if rules.obstacles then
-        Generation.mirroredCellPairs(
-          rules.boardSize,
-          Constants.OBSTACLE_CELL_PAIRS,
-          prize ++ Generation.wallCells(walls),
-          afterWalls,
-        )
-      else (Set.empty[Cell], afterWalls)
-    val (pitfall, afterPitfall) =
-      if rules.pitfall then
-        Generation.mirroredCellPairs(
-          rules.boardSize,
-          Constants.PITFALL_CELL_PAIRS,
-          prize ++ Generation.wallCells(walls) ++ obstacles,
-          afterObstacles,
-        )
-      else (Set.empty[Cell], afterObstacles)
+      cells(rules.obstacles, Constants.OBSTACLE_CELL_PAIRS, prize ++ wallCells, afterWalls)
+    val (pitfall, afterPitfall) = cells(
+      rules.pitfall,
+      Constants.PITFALL_CELL_PAIRS,
+      prize ++ wallCells ++ obstacles,
+      afterObstacles,
+    )
+    val (steal, afterSteal) = cells(
+      rules.steal,
+      Constants.STEAL_CELL_PAIRS,
+      prize ++ wallCells ++ obstacles ++ pitfall,
+      afterPitfall,
+    )
     val (first, next) =
-      starter.map((_, afterPitfall)).getOrElse(afterPitfall.choose(PlayerId.values.toSeq))
+      starter.map((_, afterSteal)).getOrElse(afterSteal.choose(PlayerId.values.toSeq))
     val game = GameState.initial(rules, first)
-    val specialCells = List(CellKind.Prize -> prize, CellKind.Pitfall -> pitfall)
-      .flatMap((kind, cells) => cells.toSeq.sortBy(c => (c.row, c.col)).map(kind -> _))
-      .zipWithIndex
-      .map { case ((kind, cell), index) => SpecialCell(kind, cell, index) }
+    val specialCells =
+      List(CellKind.Prize -> prize, CellKind.Pitfall -> pitfall, CellKind.Steal -> steal)
+        .flatMap((kind, cells) => cells.toSeq.sortBy(c => (c.row, c.col)).map(kind -> _))
+        .zipWithIndex
+        .map { case ((kind, cell), index) => SpecialCell(kind, cell, index) }
     (
       game.copy(board =
         game.board.copy(
