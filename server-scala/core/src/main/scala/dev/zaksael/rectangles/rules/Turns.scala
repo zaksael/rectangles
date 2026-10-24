@@ -27,17 +27,41 @@ object Turns:
       val turn =
         if legal.values.exists(_.nonEmpty) then TurnState.ChoosingPlacement else TurnState.Skipped
       val rolled = state.copy(lastRoll = Some(roll), legal = legal, turn = turn)
+      // A skip waits to be recorded while a reroll charge could still discard it.
       val resolved =
-        if turn == TurnState.Skipped then
-          rolled.copy(
-            players = state.players.updated(
-              state.current,
-              player.copy(consecutiveSkips = player.consecutiveSkips + 1),
-            ),
-            history = rolled.history :+ TurnRecord(state.current, roll, None),
-          )
+        if turn == TurnState.Skipped && !Rerolls.canReroll(rolled) then commitSkip(rolled, roll)
         else rolled
       Right((resolved, afterSecond))
+
+  /** Records the current player's skipped turn. */
+  private def commitSkip(state: GameState, roll: Roll): GameState =
+    val player = state.players(state.current)
+    state.copy(
+      players =
+        state.players.updated(
+          state.current,
+          player.copy(consecutiveSkips = player.consecutiveSkips + 1),
+        ),
+      history =
+        state.history :+ TurnRecord(state.current, roll, None),
+    )
+
+  /** Discards the roll for a fresh one, spending a charge; allowed while a roll is pending. */
+  def reroll(state: GameState, dice: Dice): Either[RuleError, (GameState, Dice)] =
+    val pending = state.turn == TurnState.ChoosingPlacement || state.turn == TurnState.Skipped
+    if !pending || !Rerolls.canReroll(state) then Left(RuleError.WrongState)
+    else
+      val player = state.players(state.current)
+      rollDice(
+        state.copy(
+          players =
+            state.players.updated(state.current, player.copy(rerollsUsed = player.rerollsUsed + 1)),
+          lastRoll = None,
+          legal = Map.empty,
+          turn = TurnState.AwaitingRoll,
+        ),
+        dice,
+      )
 
   def attemptPlace(
       state: GameState,
@@ -91,6 +115,9 @@ object Turns:
     if state.turn == TurnState.GameOver then state
     else ended(state, GameOverReason.Surrendered(state.current))
 
-  /** Acknowledges a skipped turn; the skip itself was recorded when the roll found no placement. */
+  /** Acknowledges a skipped turn; a skip held back for a reroll is recorded now. */
   def confirmSkip(state: GameState): Either[RuleError, GameState] =
-    Either.cond(state.turn == TurnState.Skipped, state, RuleError.WrongState)
+    if state.turn != TurnState.Skipped then Left(RuleError.WrongState)
+    else
+      Right(if Rerolls.canReroll(state) then state.lastRoll.fold(state)(commitSkip(state, _))
+      else state)
