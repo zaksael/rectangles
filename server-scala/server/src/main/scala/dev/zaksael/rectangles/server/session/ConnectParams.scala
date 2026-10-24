@@ -7,22 +7,17 @@ import dev.zaksael.rectangles.rules.Setup
 import dev.zaksael.rectangles.server.protocol.Protocol
 
 object ConnectParams:
-  /** A house-rule flag: how it turns its rule on, and whether the server builds that rule yet. */
-  final private case class Flag(turnOn: Rules => Rules, supported: Boolean)
-
-  /**
-   * The web client sends every house-rule flag; a rule not built yet is only allowed as "false".
-   */
-  private val ruleFlags: Map[String, Flag] = Map(
-    "wildcardEnabled"            -> Flag(_.copy(wildcard = true), supported = false),
-    "rerollEnabled"              -> Flag(_.copy(reroll = true), supported = true),
-    "wallsEnabled"               -> Flag(_.copy(walls = true), supported = true),
-    "obstaclesEnabled"           -> Flag(_.copy(obstacles = true), supported = true),
-    "prizeEnabled"               -> Flag(_.copy(prize = true), supported = true),
-    "pitfallEnabled"             -> Flag(_.copy(pitfall = true), supported = true),
-    "stealEnabled"               -> Flag(_.copy(steal = true), supported = true),
-    "selfEnclosedPenaltyEnabled" -> Flag(_.copy(selfEnclosedPenalty = true), supported = true),
-    "comebackNudgeEnabled"       -> Flag(_.copy(comebackNudge = true), supported = true),
+  /** The web client sends every house-rule flag; each one turns its rule on when "true". */
+  private val ruleFlags: Map[String, Rules => Rules] = Map(
+    "wildcardEnabled"            -> (_.copy(wildcard = true)),
+    "rerollEnabled"              -> (_.copy(reroll = true)),
+    "wallsEnabled"               -> (_.copy(walls = true)),
+    "obstaclesEnabled"           -> (_.copy(obstacles = true)),
+    "prizeEnabled"               -> (_.copy(prize = true)),
+    "pitfallEnabled"             -> (_.copy(pitfall = true)),
+    "stealEnabled"               -> (_.copy(steal = true)),
+    "selfEnclosedPenaltyEnabled" -> (_.copy(selfEnclosedPenalty = true)),
+    "comebackNudgeEnabled"       -> (_.copy(comebackNudge = true)),
   )
   private val known = Set("protocolVersion", "boardSize", "skipLimit") ++ ruleFlags.keySet
 
@@ -36,12 +31,12 @@ object ConnectParams:
       boardSize <- preset("boardSize", Constants.BOARD_SIZE_PRESETS, Constants.BOARD_SIZE)
       skipLimit <- preset("skipLimit", Constants.SKIP_LIMIT_PRESETS, Constants.SKIP_LIMIT)
       rules <- ruleFlags.foldLeft(Option(Rules(boardSize = boardSize, skipLimit = skipLimit))) {
-        case (rules, (name, flag)) =>
+        case (rules, (name, turnOn)) =>
           rules.flatMap(current =>
             params.get(name) match
-              case None | Some("false")           => Some(current)
-              case Some("true") if flag.supported => Some(flag.turnOn(current))
-              case _                              => None
+              case None | Some("false") => Some(current)
+              case Some("true")         => Some(turnOn(current))
+              case _                    => None
           )
       }
     yield rules

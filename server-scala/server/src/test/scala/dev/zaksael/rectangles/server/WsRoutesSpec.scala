@@ -157,6 +157,18 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       finally client.close()
     }
 
+  "a client that connects with the wildcard on" should "get a game with the rule enabled" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      val client = WsTestClient.connect(port, s"$vanilla&wildcardEnabled=true").value
+      try
+        val wildcard =
+          client.next().hcursor.downField("game").downField("houseRules").downField("wildcard")
+        wildcard.get[Boolean]("enabled").value shouldBe true
+        say(client, """{"protocolVersion":1,"type":"chooseWildcard","value":4}""")
+          .hcursor.get[String]("reason").value shouldBe "invalidAction"
+      finally client.close()
+    }
+
   "a roll" should "answer with a state that holds the roll" in
     connected() { client =>
       client.next()

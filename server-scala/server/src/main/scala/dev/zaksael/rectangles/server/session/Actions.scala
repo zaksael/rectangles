@@ -29,9 +29,11 @@ object Actions:
         )
       case ClientMessage.Reroll =>
         Turns.reroll(play.state, play.dice).left.map(rejected).map(Play.apply.tupled)
+      case ClientMessage.ChooseWildcard(value) =>
+        Turns.chooseWildcard(play.state, value).left.map(rejected).map(chosen =>
+          play.copy(state = chosen)
+        )
       case ClientMessage.Surrender => Right(play.copy(state = Turns.surrender(play.state)))
-      case _ =>
-        Left(ErrorMsg(ErrorReason.InvalidAction, s"cannot apply $message to ${play.state.turn}"))
 
   /** After a placement or a skip: end the game if it is over, else pass the turn. */
   private def advance(state: GameState): GameState =

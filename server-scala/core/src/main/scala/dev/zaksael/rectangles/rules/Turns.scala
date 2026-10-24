@@ -29,9 +29,7 @@ object Turns:
           turn = TurnState.ChoosingWildcard,
           wildcard = Some(pending),
         )
-        val anyFits = (Constants.DICE_MIN to Constants.DICE_MAX).exists(value =>
-          legalPlacementsForValue(picking, value).values.exists(_.nonEmpty)
-        )
+        val anyFits = legalValues(picking).nonEmpty
         // A picker where no value fits would only lead to the skip, so go straight to it.
         val resolved =
           if anyFits then picking
@@ -102,6 +100,12 @@ object Turns:
             else Roll(roll.first, value)
           Right(resolve(state.copy(wildcard = Some(pending.copy(editableIndex = None))), chosen))
         case None => Left(RuleError.WrongState)
+
+  /** The die values that would leave a placement while the wildcard picker is open. */
+  def legalValues(state: GameState): Vector[Int] =
+    (Constants.DICE_MIN to Constants.DICE_MAX).filter { value =>
+      legalPlacementsForValue(state, value).values.exists(_.nonEmpty)
+    }.toVector
 
   /** The spots for the roll if the wildcard die became `value`; empty outside the picker. */
   def legalPlacementsForValue(state: GameState, value: Int): Map[Roll, Set[Cell]] =

@@ -11,6 +11,7 @@ import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.Edge
 import dev.zaksael.rectangles.domain.GameState
+import dev.zaksael.rectangles.domain.PendingWildcard
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
@@ -382,4 +383,38 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
       "houseRules",
       "reroll",
     ).get[Int]("limit").value shouldBe 3
+  }
+
+  "the wildcard section" should "be off with nothing to pick by default" in {
+    at(Serialize.game(game()), "houseRules", "wildcard").focus shouldBe Some(
+      parse(
+        """{"enabled": false, "originalRoll": null, "legalValues": [], "editableIndex": null}"""
+      ).value
+    )
+  }
+
+  it should "be on with nothing to pick outside the picker" in {
+    at(
+      Serialize.game(GameState.initial(Rules(wildcard = true))),
+      "houseRules",
+      "wildcard",
+    ).focus shouldBe Some(
+      parse(
+        """{"enabled": true, "originalRoll": null, "legalValues": [], "editableIndex": null}"""
+      ).value
+    )
+  }
+
+  it should "carry the original roll, the editable die and the values that fit while the picker is open" in {
+    val open = placed(GameState.initial(Rules(wildcard = true)), PlayerId.One, Cell(0, 0), 1, 1)
+      .copy(
+        turn = TurnState.ChoosingWildcard,
+        lastRoll = Some(Roll(6, 6)),
+        wildcard = Some(PendingWildcard(Some(0), Roll(6, 6))),
+      )
+    val wildcard = at(Serialize.game(open), "houseRules", "wildcard")
+    wildcard.get[Boolean]("enabled").value shouldBe true
+    wildcard.get[List[Int]]("originalRoll").value shouldBe List(6, 6)
+    wildcard.get[Int]("editableIndex").value shouldBe 0
+    wildcard.get[List[Int]]("legalValues").value shouldBe List(1, 2, 3, 4, 5, 6)
   }

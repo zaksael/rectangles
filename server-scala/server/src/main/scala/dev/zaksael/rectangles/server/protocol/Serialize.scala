@@ -15,6 +15,7 @@ import dev.zaksael.rectangles.domain.TurnState
 import dev.zaksael.rectangles.rules.Potential
 import dev.zaksael.rectangles.rules.Rerolls
 import dev.zaksael.rectangles.rules.Scoring
+import dev.zaksael.rectangles.rules.Turns
 
 object Serialize:
   private val RecentTurns = 6
@@ -117,9 +118,9 @@ object Serialize:
     Json.obj(
       "wildcard" -> Json.obj(
         "enabled"       -> Json.fromBoolean(state.rules.wildcard),
-        "originalRoll"  -> Json.Null,
-        "legalValues"   -> Json.arr(),
-        "editableIndex" -> Json.Null,
+        "originalRoll"  -> state.wildcard.fold(Json.Null)(pending => roll(pending.originalRoll)),
+        "legalValues"   -> Json.arr(Turns.legalValues(state).map(Json.fromInt)*),
+        "editableIndex" -> state.wildcard.flatMap(_.editableIndex).fold(Json.Null)(Json.fromInt),
       ),
       "reroll" -> Json.obj(
         "enabled"   -> Json.fromBoolean(state.rules.reroll),
@@ -159,7 +160,7 @@ object Serialize:
           "playerId"             -> Json.fromInt(record.playerId.value),
           "roll"                 -> roll(record.roll),
           "placed"               -> record.placed.fold(Json.Null)(piece),
-          "wildcardOriginalRoll" -> Json.Null,
+          "wildcardOriginalRoll" -> record.wildcardOriginalRoll.fold(Json.Null)(roll),
           "score"                -> byPlayer(who => Json.fromInt(step(who).total)),
           "breakdown"            -> byPlayer(who => breakdown(step(who))),
           "points"               -> Json.fromInt(step(record.playerId).total - before),

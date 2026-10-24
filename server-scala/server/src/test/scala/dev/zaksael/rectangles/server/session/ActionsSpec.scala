@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
+import dev.zaksael.rectangles.domain.PendingWildcard
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
@@ -109,6 +110,31 @@ class ActionsSpec extends AnyFlatSpec with Matchers with EitherValues:
     val rerolled = Actions(Play(stuck, dice(2, 3)), ClientMessage.Reroll).value
     rerolled.state.players(PlayerId.One).rerollsUsed shouldBe 1
     rerolled.state.lastRoll shouldBe Some(Roll(2, 3))
+  }
+
+  private def picking: Play =
+    val open = GameState.initial(Rules(boardSize = 19, wildcard = true)).copy(
+      turn = TurnState.ChoosingWildcard,
+      lastRoll = Some(Roll(6, 6)),
+      wildcard = Some(PendingWildcard(Some(0), Roll(6, 6))),
+    )
+    Play(open, dice())
+
+  "a wildcard choice" should "be refused outside the picker" in {
+    val open = Play(GameState.initial(Rules(boardSize = 19, wildcard = true)), dice())
+    Actions(open, ClientMessage.ChooseWildcard(4)).left.value.reason shouldBe
+      ErrorReason.InvalidAction
+  }
+
+  it should "be refused as an illegal value outside 1 to 6" in {
+    Actions(picking, ClientMessage.ChooseWildcard(9)).left.value.reason shouldBe
+      ErrorReason.IllegalWildcardValue
+  }
+
+  it should "settle the roll with the chosen die" in {
+    val chosen = Actions(picking, ClientMessage.ChooseWildcard(1)).value
+    chosen.state.lastRoll shouldBe Some(Roll(1, 6))
+    Set(TurnState.ChoosingPlacement, TurnState.Skipped) should contain(chosen.state.turn)
   }
 
   "a surrender" should "end the game with the surrendering player named" in {
