@@ -52,6 +52,7 @@ object Serialize:
 
   private def turnState(turn: TurnState): String = turn match
     case TurnState.AwaitingRoll      => "awaitingRoll"
+    case TurnState.ChoosingWildcard  => "choosingWildcard"
     case TurnState.ChoosingPlacement => "choosingPlacement"
     case TurnState.Skipped           => "skipped"
     case TurnState.GameOver          => "gameOver"

@@ -1,7 +1,7 @@
 package dev.zaksael.rectangles.domain
 
 enum TurnState:
-  case AwaitingRoll, ChoosingPlacement, Skipped, GameOver
+  case AwaitingRoll, ChoosingWildcard, ChoosingPlacement, Skipped, GameOver
 
 /** Why a game ended; the player is the one the reason is about. */
 enum GameOverReason:
@@ -9,6 +9,12 @@ enum GameOverReason:
   case SkipLimit(who: PlayerId)
   case PlayerBlocked(who: PlayerId)
   case Surrendered(who: PlayerId)
+
+/**
+ * A wildcard double: the roll as thrown, and which die (0 or 1) the player may still change; the
+ * index is None once the value is picked.
+ */
+final case class PendingWildcard(editableIndex: Option[Int], originalRoll: Roll)
 
 final case class GameState(
     rules: Rules,
@@ -20,6 +26,7 @@ final case class GameState(
     legal: Map[Roll, Set[Cell]],
     history: Vector[TurnRecord],
     gameOver: Option[GameOverReason] = None,
+    wildcard: Option[PendingWildcard] = None,
 )
 
 object GameState:

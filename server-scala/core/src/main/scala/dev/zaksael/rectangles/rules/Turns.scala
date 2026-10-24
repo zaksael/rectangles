@@ -4,13 +4,14 @@ import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.Constants
 import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
+import dev.zaksael.rectangles.domain.PendingWildcard
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.domain.TurnState
 
 enum RuleError:
-  case WrongState, IllegalPlacement
+  case WrongState, IllegalPlacement, IllegalWildcardValue
 
 object Turns:
   def rollDice(state: GameState, dice: Dice): Either[RuleError, (GameState, Dice)] =
@@ -19,37 +20,61 @@ object Turns:
       val (first, afterFirst)   = dice.between(Constants.DICE_MIN, Constants.DICE_MAX)
       val (second, afterSecond) = afterFirst.between(Constants.DICE_MIN, Constants.DICE_MAX)
       val roll                  = Roll(first, second)
-      val player                = state.players(state.current)
-      val legal = Map(
-        roll                -> Placement.legalTopLefts(state.board, player, first, second),
-        Roll(second, first) -> Placement.legalTopLefts(state.board, player, second, first),
-      )
-      val turn =
-        if legal.values.exists(_.nonEmpty) then TurnState.ChoosingPlacement else TurnState.Skipped
-      val rolled = state.copy(lastRoll = Some(roll), legal = legal, turn = turn)
-      // A skip waits to be recorded while a reroll charge could still discard it.
-      val resolved =
-        if turn == TurnState.Skipped && !Rerolls.canReroll(rolled) then commitSkip(rolled, roll)
-        else rolled
-      Right((resolved, afterSecond))
+      if state.rules.wildcard && first == second then
+        val (index, afterIndex) = afterSecond.between(0, 1)
+        val pending             = PendingWildcard(Some(index), roll)
+        val picking = state.copy(
+          lastRoll = Some(roll),
+          legal = Map.empty,
+          turn = TurnState.ChoosingWildcard,
+          wildcard = Some(pending),
+        )
+        val anyFits = (Constants.DICE_MIN to Constants.DICE_MAX).exists(value =>
+          legalPlacementsForValue(picking, value).values.exists(_.nonEmpty)
+        )
+        // A picker where no value fits would only lead to the skip, so go straight to it.
+        val resolved =
+          if anyFits then picking
+          else resolve(picking.copy(wildcard = Some(pending.copy(editableIndex = None))), roll)
+        Right((resolved, afterIndex))
+      else Right((resolve(state, roll), afterSecond))
+
+  /** Both orientations of `roll` with the spots where each could go. */
+  private def legalFor(state: GameState, roll: Roll): Map[Roll, Set[Cell]] =
+    val player  = state.players(state.current)
+    val flipped = Roll(roll.second, roll.first)
+    Map(
+      roll    -> Placement.legalTopLefts(state.board, player, roll.first, roll.second),
+      flipped -> Placement.legalTopLefts(state.board, player, flipped.first, flipped.second),
+    )
+
+  /**
+   * Settles a roll: a placement to choose, or a skip (recorded unless a reroll could discard it).
+   */
+  private def resolve(state: GameState, roll: Roll): GameState =
+    val legal = legalFor(state, roll)
+    val turn =
+      if legal.values.exists(_.nonEmpty) then TurnState.ChoosingPlacement else TurnState.Skipped
+    val rolled = state.copy(lastRoll = Some(roll), legal = legal, turn = turn)
+    if turn == TurnState.Skipped && !Rerolls.canReroll(rolled) then commitSkip(rolled, roll)
+    else rolled
 
   /** Records the current player's skipped turn. */
   private def commitSkip(state: GameState, roll: Roll): GameState =
     val player = state.players(state.current)
     state.copy(
-      players =
-        state.players.updated(
-          state.current,
-          player.copy(consecutiveSkips = player.consecutiveSkips + 1),
-        ),
-      history =
-        state.history :+ TurnRecord(state.current, roll, None),
+      players = state.players.updated(
+        state.current,
+        player.copy(consecutiveSkips = player.consecutiveSkips + 1),
+      ),
+      history = state.history :+
+        TurnRecord(state.current, roll, None, state.wildcard.map(_.originalRoll)),
     )
 
   /** Discards the roll for a fresh one, spending a charge; allowed while a roll is pending. */
   def reroll(state: GameState, dice: Dice): Either[RuleError, (GameState, Dice)] =
-    val pending = state.turn == TurnState.ChoosingPlacement || state.turn == TurnState.Skipped
-    if !pending || !Rerolls.canReroll(state) then Left(RuleError.WrongState)
+    val pending = Set(TurnState.ChoosingWildcard, TurnState.ChoosingPlacement, TurnState.Skipped)
+    if !pending(state.turn) || !Rerolls.canReroll(state) then Left(RuleError.WrongState)
     else
       val player = state.players(state.current)
       rollDice(
@@ -59,9 +84,31 @@ object Turns:
           lastRoll = None,
           legal = Map.empty,
           turn = TurnState.AwaitingRoll,
+          wildcard = None,
         ),
         dice,
       )
+
+  /** Sets the wildcard die to `value` and settles the roll that results. */
+  def chooseWildcard(state: GameState, value: Int): Either[RuleError, GameState] =
+    if state.turn != TurnState.ChoosingWildcard then Left(RuleError.WrongState)
+    else if value < Constants.DICE_MIN || value > Constants.DICE_MAX then
+      Left(RuleError.IllegalWildcardValue)
+    else
+      state.lastRoll.zip(state.wildcard).headOption match
+        case Some((roll, pending)) =>
+          val chosen =
+            if pending.editableIndex.contains(0) then Roll(value, roll.second)
+            else Roll(roll.first, value)
+          Right(resolve(state.copy(wildcard = Some(pending.copy(editableIndex = None))), chosen))
+        case None => Left(RuleError.WrongState)
+
+  /** The spots for the roll if the wildcard die became `value`; empty outside the picker. */
+  def legalPlacementsForValue(state: GameState, value: Int): Map[Roll, Set[Cell]] =
+    state.lastRoll.zip(state.wildcard.flatMap(_.editableIndex)).headOption.fold(Map.empty) {
+      (roll, index) =>
+        legalFor(state, if index == 0 then Roll(value, roll.second) else Roll(roll.first, value))
+    }
 
   def attemptPlace(
       state: GameState,
@@ -76,7 +123,13 @@ object Turns:
       case Some(rolled) =>
         val result =
           Placement.place(state.board, state.players(state.current), topLeft, width, height)
-        val record = TurnRecord(state.current, rolled, Some(result.rectangle))
+        val record =
+          TurnRecord(
+            state.current,
+            rolled,
+            Some(result.rectangle),
+            state.wildcard.map(_.originalRoll),
+          )
         Right(
           Rerolls.maybeGrantNudge(
             state.copy(
@@ -96,6 +149,7 @@ object Turns:
         lastRoll = None,
         legal = Map.empty,
         turn = TurnState.AwaitingRoll,
+        wildcard = None,
       )
 
   /** Ends the game when the board is full, a player is boxed in or the skip limit is reached. */

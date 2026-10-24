@@ -42,3 +42,5 @@ object Actions:
     case RuleError.WrongState =>
       ErrorMsg(ErrorReason.InvalidAction, "not allowed in this turn state")
     case RuleError.IllegalPlacement => ErrorMsg(ErrorReason.IllegalPlacement, "illegal placement")
+    case RuleError.IllegalWildcardValue =>
+      ErrorMsg(ErrorReason.IllegalWildcardValue, "wildcard value must be between 1 and 6")
