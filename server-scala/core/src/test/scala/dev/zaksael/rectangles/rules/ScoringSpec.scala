@@ -13,9 +13,9 @@ import dev.zaksael.rectangles.domain.Rectangle
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.ScoreBreakdown
-import dev.zaksael.rectangles.domain.SpecialCell
 import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.placed
+import dev.zaksael.rectangles.withSpecialCells
 
 class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
   private def game(boardSize: Int = 8): GameState = GameState.initial(Rules(boardSize = boardSize))
@@ -59,14 +59,6 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
     Scoring.potentialHistory(played).lastOption shouldBe Some(live)
   }
 
-  private def withPrizes(size: Int, cells: Cell*): GameState =
-    val state = game(size)
-    state.copy(board =
-      state.board.copy(specialCells =
-        cells.zipWithIndex.map((cell, index) => SpecialCell(CellKind.Prize, cell, index)).toSet
-      )
-    )
-
   private def capturedPrizes(state: GameState, who: PlayerId, count: Int): GameState =
     state.copy(players =
       state.players.updated(
@@ -91,18 +83,33 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
   }
 
   "a player's potential" should "hold the open cells it can reach and the prize points among them" in {
-    val state = placed(withPrizes(4, Cell(0, 1), Cell(3, 2)), PlayerId.One, Cell(0, 0), 1, 1)
+    val state = placed(
+      withSpecialCells(Rules(boardSize = 4), CellKind.Prize, Cell(0, 1), Cell(3, 2)),
+      PlayerId.One,
+      Cell(0, 0),
+      1,
+      1,
+    )
     Scoring.potential(state.board, state.players(PlayerId.One)) shouldBe Potential(15, 20)
   }
 
   it should "leave out a prize already captured" in {
-    val state = placed(withPrizes(4, Cell(0, 1)), PlayerId.One, Cell(0, 0), 2, 1)
+    val state = placed(
+      withSpecialCells(Rules(boardSize = 4), CellKind.Prize, Cell(0, 1)),
+      PlayerId.One,
+      Cell(0, 0),
+      2,
+      1,
+    )
     Scoring.potential(state.board, state.players(PlayerId.One)).prizePoints shouldBe 0
   }
 
   "the breakdown history" should "credit a prize to the capturer only" in {
-    val (rolled, _) = Turns.rollDice(withPrizes(11, Cell(0, 0)), ScriptedDice.of(2, 2)).value
-    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
+    val (rolled, _) = Turns.rollDice(
+      withSpecialCells(Rules(boardSize = 11), CellKind.Prize, Cell(0, 0)),
+      ScriptedDice.of(2, 2),
+    ).value
+    val state = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
     Scoring.breakdownHistory(state) shouldBe Vector(
       Map(
         PlayerId.One -> ScoreBreakdown(area = 4, prize = 10),
@@ -112,8 +119,11 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
   }
 
   it should "end at the live breakdown of both players" in {
-    val (rolled, _) = Turns.rollDice(withPrizes(11, Cell(5, 5)), ScriptedDice.of(6, 6)).value
-    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 6, 6).value
+    val (rolled, _) = Turns.rollDice(
+      withSpecialCells(Rules(boardSize = 11), CellKind.Prize, Cell(5, 5)),
+      ScriptedDice.of(6, 6),
+    ).value
+    val state = Turns.attemptPlace(rolled, Cell(0, 0), 6, 6).value
     Scoring.breakdownHistory(state).lastOption shouldBe Some(
       Map(
         PlayerId.One -> Scoring.breakdown(state, PlayerId.One),
@@ -124,8 +134,11 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
   }
 
   "the potential history" should "count a prize both players can still reach" in {
-    val (rolled, _) = Turns.rollDice(withPrizes(11, Cell(5, 5)), ScriptedDice.of(2, 2)).value
-    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
+    val (rolled, _) = Turns.rollDice(
+      withSpecialCells(Rules(boardSize = 11), CellKind.Prize, Cell(5, 5)),
+      ScriptedDice.of(2, 2),
+    ).value
+    val state = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
     Scoring.potentialHistory(state).map(step =>
       PlayerId.values.toList.map(step(_).prizePoints)
     ) shouldBe

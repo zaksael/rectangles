@@ -13,6 +13,7 @@ import dev.zaksael.rectangles.domain.Constants
 import dev.zaksael.rectangles.domain.Edge
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.generated
 
 class WallsSpec extends AnyFlatSpec with Matchers:
   /** Wall cells grouped into contiguous segments, so a segment's own adjacency is not counted. */
@@ -29,17 +30,12 @@ class WallsSpec extends AnyFlatSpec with Matchers:
     split(edges.flatMap(edge => Set(edge.a, edge.b)), Nil)
 
   "a game with walls off" should "have no wall edges" in {
-    Setup.newGame(
-      Rules(boardSize = 11),
-      Some(PlayerId.One),
-      SplitMix64(0L),
-    )._1.board.wallEdges shouldBe empty
+    generated(Rules(boardSize = 11)).board.wallEdges shouldBe empty
   }
 
   "wall segments" should "stay the minimum special cell distance apart" in {
     for seed <- 0 until 30 do
-      val (state, _) =
-        Setup.newGame(Rules(walls = true), Some(PlayerId.One), SplitMix64(seed.toLong))
+      val state = generated(Rules(walls = true), seed.toLong)
       state.board.wallEdges should not be empty
       val groups = segments(state.board.wallEdges)
       for

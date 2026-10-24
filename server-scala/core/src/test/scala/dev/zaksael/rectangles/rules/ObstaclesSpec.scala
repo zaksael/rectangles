@@ -10,19 +10,17 @@ import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.Constants
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.generated
 
 class ObstaclesSpec extends AnyFlatSpec with Matchers:
-  private def newGame(rules: Rules, seed: Long) =
-    Setup.newGame(rules, Some(PlayerId.One), SplitMix64(seed))._1
-
   "a game with obstacles off" should "have no obstacle cells" in {
-    newGame(Rules(boardSize = 11), 0L).board.obstacleCells shouldBe empty
+    generated(Rules(boardSize = 11)).board.obstacleCells shouldBe empty
   }
 
   "obstacle cells" should "be symmetric, clear of the start corners and spread apart" in {
     val rules = Rules(obstacles = true)
     for seed <- 0 until 30 do
-      val cells = newGame(rules, seed.toLong).board.obstacleCells
+      val cells = generated(rules, seed.toLong).board.obstacleCells
       cells should not be empty
       cells.foreach { cell =>
         cells should contain(Generation.mirrorCell(cell, rules.boardSize))
@@ -36,7 +34,7 @@ class ObstaclesSpec extends AnyFlatSpec with Matchers:
 
   it should "stay off the wall cells when walls are on" in {
     for seed <- 0 until 30 do
-      val board = newGame(Rules(obstacles = true, walls = true), seed.toLong).board
+      val board = generated(Rules(obstacles = true, walls = true), seed.toLong).board
       board.obstacleCells should not be empty
       board.obstacleCells.intersect(board.wallEdges.flatMap(edge => Set(edge.a, edge.b))) shouldBe
         empty

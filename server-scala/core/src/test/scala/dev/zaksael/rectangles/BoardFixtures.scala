@@ -2,10 +2,15 @@ package dev.zaksael.rectangles
 
 import dev.zaksael.rectangles.domain.Board
 import dev.zaksael.rectangles.domain.Cell
+import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.Player
 import dev.zaksael.rectangles.domain.PlayerId
+import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.domain.SpecialCell
 import dev.zaksael.rectangles.rules.Placement
+import dev.zaksael.rectangles.rules.Setup
+import dev.zaksael.rectangles.rules.SplitMix64
 
 /** The two players of a `size` x `size` board, each starting in their own corner. */
 def makePlayers(size: Int): (Player, Player) =
@@ -39,3 +44,16 @@ def placed(state: GameState, who: PlayerId, topLeft: Cell, width: Int, height: I
 /** The larger of the row and column distances between two cells. */
 def chebyshev(a: Cell, b: Cell): Int =
   math.max(math.abs(a.row - b.row), math.abs(a.col - b.col))
+
+/** The game `Setup.newGame` builds for `rules` from `seed`, with Player One to move. */
+def generated(rules: Rules, seed: Long = 0L): GameState =
+  Setup.newGame(rules, Some(PlayerId.One), SplitMix64(seed))._1
+
+/** A fresh game for `rules` whose board holds `kind` cells at `cells`. */
+def withSpecialCells(rules: Rules, kind: CellKind, cells: Cell*): GameState =
+  val state = GameState.initial(rules)
+  state.copy(board =
+    state.board.copy(specialCells =
+      cells.zipWithIndex.map((cell, index) => SpecialCell(kind, cell, index)).toSet
+    )
+  )

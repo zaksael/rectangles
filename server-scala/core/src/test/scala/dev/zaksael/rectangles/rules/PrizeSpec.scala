@@ -10,6 +10,7 @@ import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.Constants
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.generated
 
 class PrizeSpec extends AnyFlatSpec with Matchers:
   private def prizes(rules: Rules, dice: Dice): Set[Cell] =
@@ -43,14 +44,7 @@ class PrizeSpec extends AnyFlatSpec with Matchers:
 
   it should "stay the minimum special cell distance apart, like obstacle cells" in {
     for seed <- 0 until 30 do
-      val board = Setup
-        .newGame(
-          Rules(prize = true, obstacles = true),
-          Some(PlayerId.One),
-          SplitMix64(seed.toLong),
-        )
-        ._1
-        .board
+      val board = generated(Rules(prize = true, obstacles = true), seed.toLong).board
       for
         cells <- List(board.cellsOfKind(CellKind.Prize), board.obstacleCells)
         a     <- cells
