@@ -1,10 +1,9 @@
 package dev.zaksael.rectangles.server.session
 
 import dev.zaksael.rectangles.domain.Constants
-import dev.zaksael.rectangles.domain.GameState
-import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.rules.Dice
+import dev.zaksael.rectangles.rules.Setup
 import dev.zaksael.rectangles.server.protocol.Protocol
 
 object ConnectParams:
@@ -36,5 +35,5 @@ object ConnectParams:
 
   /** A new game for `rules`; a coin flip from `dice` says who moves first. */
   def start(rules: Rules, dice: Dice): Play =
-    val (starter, next) = dice.choose(PlayerId.values.toSeq)
-    Play(GameState.initial(rules, starter), next)
+    val (state, next) = Setup.newGame(rules, None, dice)
+    Play(state, next)
