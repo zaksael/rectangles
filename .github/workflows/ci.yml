@@ -4,9 +4,17 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -25,6 +33,7 @@ jobs:
 
   scala:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: server-scala
@@ -53,6 +62,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -61,9 +71,11 @@ jobs:
       - run: docker build -t rectangles-server .
       - name: Run the container and connect
         run: |
-          docker run -d --name rectangles -p 8765:8765 rectangles-server
+          docker run -d --name rectangles --health-interval=2s --health-start-period=1s -p 8765:8765 rectangles-server
           for i in $(seq 1 30); do curl -fs localhost:8765/health && break; sleep 1; done
           curl -fs localhost:8765/health | grep -x ok
+          for i in $(seq 1 30); do [ "$(docker inspect -f '{{.State.Health.Status}}' rectangles)" = healthy ] && break; sleep 1; done
+          docker inspect -f '{{.State.Health.Status}}' rectangles | grep -x healthy
           curl -fs localhost:8765/ | grep -q 'id="root"'
           curl -fsI localhost:8765/ | grep -qi '^x-frame-options: DENY'
           node -e "
