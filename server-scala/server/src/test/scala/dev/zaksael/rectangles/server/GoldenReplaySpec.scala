@@ -15,12 +15,13 @@ class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
     replay("vanilla") shouldBe empty
   }
 
-  // Steps 10 and 11 send messages the server cannot answer yet: each owner deletes its own entry.
-  "the errors golden set" should "replay with every reply as recorded, but the steps still pending" in {
-    replay(
-      "errors",
-      Map(10 -> "requestAnalysis (F4)", 11 -> "continueSeries (G3)"),
-    ) shouldBe empty
+  // Step 11 sends a message the server cannot answer yet: its owner deletes the entry.
+  "the errors golden set" should "replay with every reply as recorded, but the step still pending" in {
+    replay("errors", Map(11 -> "continueSeries (G3)")) shouldBe empty
+  }
+
+  "the game-over golden set" should "replay with every reply as recorded, analysis included" in {
+    replay("game-over") shouldBe empty
   }
 
   "the walls golden set" should "replay with every reply as recorded" in {

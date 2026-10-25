@@ -38,6 +38,21 @@ class ProtocolSpec extends AnyFlatSpec with Matchers with EitherValues:
       .value shouldBe ClientMessage.Place(Cell(2, 3), 4, 5)
   }
 
+  "a request-analysis message" should "decode" in {
+    ClientMessage.decode(
+      """{"protocolVersion":1,"type":"requestAnalysis"}"""
+    ).value shouldBe ClientMessage.RequestAnalysis
+  }
+
+  "an analysis message" should "encode its turns" in {
+    val turns = Json.arr(Json.obj("turn" -> Json.fromInt(1)))
+    AnalysisMsg(turns).toJson shouldBe Json.obj(
+      "protocolVersion" -> Json.fromInt(1),
+      "type"            -> Json.fromString("analysis"),
+      "turns"           -> turns,
+    )
+  }
+
   "a choose-wildcard message" should "decode with its value" in {
     ClientMessage
       .decode("""{"protocolVersion":1,"type":"chooseWildcard","value":4}""")

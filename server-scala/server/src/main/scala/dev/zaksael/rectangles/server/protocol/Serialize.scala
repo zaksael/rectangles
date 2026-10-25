@@ -12,13 +12,38 @@ import dev.zaksael.rectangles.domain.Rectangle
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.ScoreBreakdown
 import dev.zaksael.rectangles.domain.TurnState
+import dev.zaksael.rectangles.rules.AnalysisAxis
 import dev.zaksael.rectangles.rules.Potential
 import dev.zaksael.rectangles.rules.Rerolls
 import dev.zaksael.rectangles.rules.Scoring
+import dev.zaksael.rectangles.rules.TurnAnalysis
 import dev.zaksael.rectangles.rules.Turns
 
 object Serialize:
   private val RecentTurns = 6
+
+  /**
+   * One entry per flagged turn, oldest first; `turn` is the 1-based move number, as in `history`.
+   */
+  def analysis(analyses: Map[Int, TurnAnalysis]): Json =
+    Json.arr(analyses.toSeq.sortBy(_._1).map { (turn, flagged) =>
+      Json.obj(
+        "turn"    -> Json.fromInt(turn),
+        "axis"    -> Json.fromString(axisName(flagged.axis)),
+        "chosen"  -> Json.fromInt(flagged.chosen),
+        "best"    -> Json.fromInt(flagged.best),
+        "topLeft" -> cell(flagged.better.topLeft),
+        "width"   -> Json.fromInt(flagged.better.width),
+        "height"  -> Json.fromInt(flagged.better.height),
+      )
+    }*)
+
+  private def axisName(axis: AnalysisAxis): String = axis match
+    case AnalysisAxis.Prize     => "prize"
+    case AnalysisAxis.Pitfall   => "pitfall"
+    case AnalysisAxis.Steal     => "steal"
+    case AnalysisAxis.Denial    => "denial"
+    case AnalysisAxis.Enclosure => "enclosure"
 
   /**
    * The `game` part of a `state` message. The house-rule parts that have no rule yet are written in

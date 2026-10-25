@@ -21,3 +21,11 @@ final case class StateMsg(game: Json):
     "game"            -> game,
     "series"          -> Json.Null,
   )
+
+/** `turns` is `Serialize.analysis`. */
+final case class AnalysisMsg(turns: Json):
+  def toJson: Json = Json.obj(
+    "protocolVersion" -> Json.fromInt(Protocol.Version),
+    "type"            -> Json.fromString("analysis"),
+    "turns"           -> turns,
+  )

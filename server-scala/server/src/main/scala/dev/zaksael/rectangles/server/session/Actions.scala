@@ -33,7 +33,8 @@ object Actions:
         Turns.chooseWildcard(play.state, value).left.map(rejected).map(chosen =>
           play.copy(state = chosen)
         )
-      case ClientMessage.Surrender => Right(play.copy(state = Turns.surrender(play.state)))
+      case ClientMessage.Surrender       => Right(play.copy(state = Turns.surrender(play.state)))
+      case ClientMessage.RequestAnalysis => Right(play)
 
   /** After a placement or a skip: end the game if it is over, else pass the turn. */
   private[session] def advance(state: GameState): GameState =

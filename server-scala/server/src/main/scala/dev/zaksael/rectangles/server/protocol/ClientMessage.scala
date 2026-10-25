@@ -12,6 +12,7 @@ enum ClientMessage:
   case Skip
   case Reroll
   case Surrender
+  case RequestAnalysis
   case ChooseWildcard(value: Int)
 
 object ClientMessage:
@@ -34,10 +35,11 @@ object ClientMessage:
         Left(ErrorMsg(ErrorReason.ProtocolVersionMismatch, "protocol version mismatch"))
       case Some(cursor) =>
         cursor.get[String]("type").toOption match
-          case Some("roll")      => Right(Roll)
-          case Some("skip")      => Right(Skip)
-          case Some("surrender") => Right(Surrender)
-          case Some("reroll")    => Right(Reroll)
+          case Some("roll")            => Right(Roll)
+          case Some("skip")            => Right(Skip)
+          case Some("surrender")       => Right(Surrender)
+          case Some("reroll")          => Right(Reroll)
+          case Some("requestAnalysis") => Right(RequestAnalysis)
           case Some("place") =>
             (for
               corner <- cursor.get[(Int, Int)]("topLeft")

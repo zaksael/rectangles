@@ -1,17 +1,25 @@
 package dev.zaksael.rectangles.server.session
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import io.circe.Json
+import io.circe.parser.parse
 import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.domain.BotDifficulty
+import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.rules.Analysis
+import dev.zaksael.rectangles.rules.AnalysisAxis
+import dev.zaksael.rectangles.rules.Candidate
 import dev.zaksael.rectangles.rules.SplitMix64
+import dev.zaksael.rectangles.rules.TurnAnalysis
 import dev.zaksael.rectangles.server.Draw
 import dev.zaksael.rectangles.server.ReplayDice
 
@@ -103,4 +111,61 @@ class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues:
     game.downField(
       "players"
     ).downField("1").downField("board").get[Int]("consecutiveSkips").value shouldBe 1
+  }
+
+  private val flagged =
+    Map(3 -> TurnAnalysis(AnalysisAxis.Prize, 0, 10, Candidate(Cell(0, 0), 4, 1)))
+
+  private val flaggedTurns =
+    parse(
+      """[{"turn":3,"axis":"prize","chosen":0,"best":10,"topLeft":[0,0],"width":4,"height":1}]"""
+    ).value
+
+  private val surrender = """{"protocolVersion":1,"type":"surrender"}"""
+  private val request   = """{"protocolVersion":1,"type":"requestAnalysis"}"""
+
+  /** A fresh game, already surrendered, whose analysis is `analyse`. */
+  private def finished(
+      analyse: GameState => Map[Int, TurnAnalysis] = Analysis.turnAnalyses,
+      bot: Option[BotDifficulty] = None,
+  ): GameSession =
+    val over = GameSession
+      .create(Play(GameState.initial(Rules(boardSize = 6)), SplitMix64(1L)), bot, analyse)
+      .unsafeRunSync()
+    over.handle(surrender).unsafeRunSync()
+    over
+
+  "a request for analysis after the game is over" should "answer the requester with the turns" in {
+    val reply = only(finished(_ => flagged).handle(request))
+    reply.hcursor.get[String]("type").value shouldBe "analysis"
+    reply.hcursor.get[Json]("turns").value shouldBe flaggedTurns
+  }
+
+  it should "answer an empty list when nothing is flagged" in {
+    only(finished().handle(request)).hcursor.get[Json]("turns").value shouldBe Json.arr()
+  }
+
+  it should "be computed once for the same game" in {
+    val calls = AtomicInteger(0)
+    val counted = finished { _ =>
+      calls.incrementAndGet()
+      flagged
+    }
+    (1 to 2).foreach(_ =>
+      only(counted.handle(request)).hcursor.get[Json]("turns").value shouldBe flaggedTurns
+    )
+    calls.get shouldBe 1
+  }
+
+  it should "also answer for a finished game against the bot" in {
+    only(finished(bot = Some(BotDifficulty.Basic)).handle(request)).hcursor
+      .get[String]("type").value shouldBe "analysis"
+  }
+
+  "a request for analysis mid-game" should "be an invalid action and leave the game playable" in {
+    val open  = session(2, 3)
+    val error = only(open.handle(request))
+    error.hcursor.get[String]("type").value shouldBe "error"
+    reason(error) shouldBe "invalidAction"
+    turnState(only(open.handle(surrender))) shouldBe "gameOver"
   }

@@ -13,10 +13,13 @@ import dev.zaksael.rectangles.domain.Edge
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PendingWildcard
 import dev.zaksael.rectangles.domain.PlayerId
+import dev.zaksael.rectangles.domain.Rectangle
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.SpecialCell
+import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.domain.TurnState
+import dev.zaksael.rectangles.rules.Analysis
 import dev.zaksael.rectangles.rules.Placement
 import dev.zaksael.rectangles.rules.Turns
 
@@ -417,4 +420,35 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     wildcard.get[List[Int]]("originalRoll").value shouldBe List(6, 6)
     wildcard.get[Int]("editableIndex").value shouldBe 0
     wildcard.get[List[Int]]("legalValues").value shouldBe List(1, 2, 3, 4, 5, 6)
+  }
+
+  private def analysed(state: GameState, records: TurnRecord*): Json =
+    Serialize.analysis(Analysis.turnAnalyses(state.copy(history = records.toVector)))
+
+  private def single(row: Int, col: Int): TurnRecord =
+    TurnRecord(PlayerId.One, Roll(1, 1), Some(Rectangle(Cell(row, col), 1, 1, PlayerId.One)))
+
+  "a serialized analysis" should "list a flagged Prize turn" in {
+    val state = GameState.initial(Rules(boardSize = 6, prize = true))
+    val withPrize = state.copy(board =
+      state.board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 3), 0)))
+    )
+    val move =
+      TurnRecord(PlayerId.One, Roll(1, 4), Some(Rectangle(Cell(0, 0), 1, 4, PlayerId.One)))
+
+    analysed(withPrize, move) shouldBe parse(
+      """[{"turn":1,"axis":"prize","chosen":0,"best":10,"topLeft":[0,0],"width":4,"height":1}]"""
+    ).value
+  }
+
+  it should "list a denial turn in cells with its move number" in {
+    val moves = Seq(single(0, 3), single(2, 4), single(2, 5), single(3, 5))
+
+    analysed(game(6), moves*) shouldBe parse(
+      """[{"turn":4,"axis":"denial","chosen":1,"best":5,"topLeft":[1,3],"width":1,"height":1}]"""
+    ).value
+  }
+
+  it should "be an empty list when nothing is flagged" in {
+    analysed(game(6), TurnRecord(PlayerId.One, Roll(6, 6), None)) shouldBe Json.arr()
   }
