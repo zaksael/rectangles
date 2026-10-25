@@ -48,7 +48,7 @@ server-scala/target/stage/bin/rectangles-server
 Run it from the repository root, with `JAVA_HOME` set to JDK 25. Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
 `RECTANGLES_SERVER_PORT` to change the address). The server serves the built frontend from
 `frontend/dist` (relative to where it runs; `RECTANGLES_FRONTEND_DIST` changes the folder) and the
-game socket at `/ws`; without a build it serves only `/ws`.
+game socket at `/ws` (and `GET /health`); without a build it serves only those two.
 
 A game lives in its browser tab: the server keeps one game per connection, with no accounts, so
 reloading or closing the tab ends it (the browser asks before leaving a game in progress).
@@ -153,8 +153,8 @@ the Vite proxy preserves.
 - Run it from `server-scala/` with `sbt server/run`, or `sbt "~server/reStart"` to restart on every source change. It serves `GET /health` (answers `ok`), the game socket at `/ws` and the built frontend, on `127.0.0.1:8765`; `RECTANGLES_SERVER_HOST` and `RECTANGLES_SERVER_PORT` change the address and `RECTANGLES_FRONTEND_DIST` the frontend folder (from `server-scala/` it must be `../frontend/dist`; the startup log names the folder it serves, or warns that it is missing). It logs plain text to stdout; `LOGGING4S_CONSOLE_FORMAT=json` switches to JSON lines. sbt's background server keeps the environment of the call that started it, so run `sbt shutdown` before restarting with a new value.
 - `server-scala/server/src/test/resources/golden/` holds recorded wire sessions (the messages sent and received, and the random draws behind them) that `GoldenReplaySpec` replays through a real session. They were recorded from the original Python implementation, which is kept at the `python-reference` tag, and stay as regression fixtures; nothing rewrites them yet.
 - `frontend/src/dev/fixtures/enclosureCases.json` holds boards with their enclosed-cell counts: `EnclosureCasesSpec` checks the engine against them and the frontend's flood fill is checked against the same file. Rewrite it after changing the enclosure rule with `sbt "server/Test/runMain dev.zaksael.rectangles.server.generateEnclosureCases"` from `server-scala/`.
-- `sbt server/stage` builds a launcher at `server-scala/target/stage/bin/rectangles-server`. The frontend integration tests start it by default; set `RECTANGLES_SERVER_CMD` to a command (split on whitespace, run from the repo root) to run them against another server, for example `RECTANGLES_SERVER_CMD=server-scala/target/stage/bin/rectangles-server npm test` from `frontend/`.
-- `docker build -t rectangles-server .` builds the image: node builds `frontend/`, sbt stages the server, and a JRE 25 stage runs it as a non-root user on port 8765. The container listens on all interfaces and logs JSON lines; `docker run -p 8765:8765 rectangles-server` then serves the game at `http://127.0.0.1:8765/`.
+- `sbt server/stage` builds a launcher at `server-scala/target/stage/bin/rectangles-server`. The frontend integration tests start it by default; set `RECTANGLES_SERVER_CMD` to a command (split on whitespace, run from the repo root) to run them against another server that speaks [the protocol](docs/PROTOCOL.md), for example `RECTANGLES_SERVER_CMD=server-scala/target/stage/bin/rectangles-server npm test` from `frontend/`.
+- `docker build -t rectangles-server .` builds the image: node builds `frontend/`, sbt stages the server, and a JRE 25 stage runs it as a non-root user on port 8765, with a healthcheck on `/health`. The container listens on all interfaces and logs JSON lines; `docker run -p 8765:8765 rectangles-server` then serves the game at `http://127.0.0.1:8765/`.
 - Check the style from `server-scala/` with `sbt "scalafmtCheckAll; scalafixAll --check"` (format with `sbt scalafmtAll`, fix with `sbt scalafixAll`); the compiler runs with warnings fatal, and `var`, `null` and `throw` are compile errors.
 - Run the tests from `server-scala/` with `sbt testFull`. Plain `sbt test` caches its result, so a re-run with no changes prints no summary.
 - `sbt -batch` already goes through sbt 2's built-in thin client: a warm run takes about half a second, a cold start about 35 seconds. There is no separate `sbtn` to install.
@@ -170,9 +170,7 @@ npm run coverage               # the same suite with a coverage report
 npm run lint
 ```
 
-Frontend coverage is about 97% (measured with `@vitest/coverage-v8`, not a project dependency).
-
-On every push and pull request, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`, followed by the two frontend integration tests against the staged launcher; and the Docker build, followed by starting the container, loading the page and connecting to the game socket.
+On every push and pull request, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`, followed by the two frontend integration tests against the staged launcher; and the Docker build, followed by starting the container, waiting for it to report healthy, loading the page and connecting to the game socket.
 
 ## Rules
 
@@ -182,7 +180,8 @@ optional mode in full detail, see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 - The board is a shared grid (size configurable before each match). Player 1
   grows inward from the **top-left** corner; Player 2 grows inward from the
   **bottom-right** corner.
-- Players alternate turns, starting with Player 1. On your turn, roll two
+- Players alternate turns; in a single game a coin flip picks who goes first (a series
+  alternates, starting with Player 1). On your turn, roll two
   six-sided dice — the two numbers become the width and height of a rectangle
   (rotatable, so a 2-and-5 roll can be placed as 2×5 or 5×2).
 - Your first piece must be anchored exactly at your own starting corner.
@@ -297,6 +296,7 @@ frontend/                 # React + Vite web client
     ├── dev/              # fixtures and test helpers, not shipped
     └── tokens.css        # colours, type and shared button styles
 docs/GAME_SPEC.md         # the full ruleset, independent of this code
+docs/PROTOCOL.md          # the WebSocket messages between client and server
 Dockerfile                # the server and the built frontend in one image
 ```
 

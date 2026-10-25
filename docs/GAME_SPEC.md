@@ -107,6 +107,12 @@ may be placed if and only if all of the following hold:
 Each of these is chosen independently before a match begins, and stays
 fixed for the whole match (and, in series play, for every round of it).
 
+The special cells, walls and obstacles below are placed with two distance
+rules, both measured in cells as the larger of the row and column difference.
+"Kept clear of a starting corner" means at least 6 cells away from it, and
+"a minimum distance apart" means at least 3 cells apart (this also applies
+between a cell and its own mirror).
+
 ### 6.1 Prize
 
 When enabled: four prize cells are marked on the board before play begins —
@@ -150,8 +156,8 @@ this one always touches both players' scores at once.
 
 ### 6.4 Walls
 
-When enabled: several wall segments are marked on the board before play
-begins, in mirrored pairs — each pair placed at a random position and
+When enabled: four wall lines, each five cells long, are marked on the board
+before play begins, in two mirrored pairs — each pair placed at a random position and
 orientation (horizontal or vertical), kept clear of both players' starting
 corners and a minimum distance from any other wall pair, with the second
 segment of each pair the exact mirror image of the first through the
@@ -164,8 +170,8 @@ past a wall is to build around one of its ends.
 
 ### 6.5 Obstacles
 
-When enabled: a small number of individual cells are marked on the board
-before play begins, in mirrored pairs — each pair placed at a random
+When enabled: four individual cells are marked on the board before play
+begins, in two mirrored pairs — each pair placed at a random
 position, kept clear of both players' starting corners, of any Prize
 or Walls cells already in play, and a minimum distance from any
 other Obstacle pair, with the second cell of each pair
@@ -321,7 +327,8 @@ Each round's score (§5) adds to that player's running series total — a
 landslide round counts for more than a squeaker — and every round in the
 series is always played out; there is no early clinch. Whoever has the
 higher cumulative score once all rounds are complete wins the series;
-equal cumulative totals is a tied series.
+equal cumulative totals is a tied series. Round 1 is started by Player 1, and
+the starting player alternates every round, whoever won the last one.
 
 ## 12. Tournament play
 
@@ -359,6 +366,10 @@ were placed in — the tournament champion.
 | Comeback | on / off | off |
 | Comeback threshold | 8% of board cells, rounded up (fixed) | 29/43/59 |
 | Comeback bonus | 1 extra reroll charge (fixed) | 1 |
+| Wall lines | 2 mirrored pairs, each line 5 cells (fixed) | 4 lines |
+| Obstacle cells | 2 mirrored pairs (fixed) | 4 cells |
+| Distance from a starting corner | at least 6 cells (fixed) | 6 |
+| Distance between features | at least 3 cells (fixed) | 3 |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
 | Tournament size | 4 or 8 participants | — |
