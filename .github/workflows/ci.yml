@@ -64,6 +64,8 @@ jobs:
           docker run -d --name rectangles -p 8765:8765 rectangles-server
           for i in $(seq 1 30); do curl -fs localhost:8765/health && break; sleep 1; done
           curl -fs localhost:8765/health | grep -x ok
+          curl -fs localhost:8765/ | grep -q 'id="root"'
+          curl -fsI localhost:8765/ | grep -qi '^x-frame-options: DENY'
           node -e "
             const s = new WebSocket('ws://127.0.0.1:8765/ws?protocolVersion=1')
             s.onmessage = (e) => { console.log(String(e.data)); process.exit(String(e.data).includes('\"type\":\"state\"') ? 0 : 1) }

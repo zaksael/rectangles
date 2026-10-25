@@ -1,5 +1,7 @@
 package dev.zaksael.rectangles.server
 
+import java.nio.file.Path
+
 import cats.effect.IO
 import com.comcast.ip4s.Host
 import com.comcast.ip4s.Port
@@ -9,7 +11,7 @@ import pureconfig.ConfigSource
 import pureconfig.error.CannotConvert
 import pureconfig.error.ConfigReaderException
 
-final case class Config(host: Host, port: Port) derives ConfigReader
+final case class Config(host: Host, port: Port, frontendDist: Path) derives ConfigReader
 
 object Config:
   given ConfigReader[Host] = ConfigReader.fromNonEmptyString(s =>
