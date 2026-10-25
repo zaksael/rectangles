@@ -65,10 +65,11 @@ final class GameSession private (
    * The state of `current`, then the bot's turn if it is up: the play it ends on and each state.
    */
   private def withBotSteps(current: Play): (Play, Vector[Json]) =
-    val (after, steps) = bot.fold((current, Vector.empty[GameState]))(BotTurns.run(current, _))
-    (after, (current.state +: steps).map(stateMessage))
+    val (after, steps) = bot.fold((current, Vector.empty[Play]))(BotTurns.run(current, _))
+    (after, (current +: steps).map(stateMessage))
 
-private def stateMessage(state: GameState): Json = StateMsg(Serialize.game(state)).toJson
+private def stateMessage(play: Play): Json =
+  StateMsg(Serialize.game(play.state), play.series.fold(Json.Null)(Serialize.series)).toJson
 
 object GameSession:
   def create(

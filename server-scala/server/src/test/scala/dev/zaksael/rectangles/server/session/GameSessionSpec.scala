@@ -7,6 +7,7 @@ import cats.effect.unsafe.implicits.global
 import io.circe.Json
 import io.circe.parser.parse
 import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -15,15 +16,17 @@ import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.domain.TurnState
 import dev.zaksael.rectangles.rules.Analysis
 import dev.zaksael.rectangles.rules.AnalysisAxis
 import dev.zaksael.rectangles.rules.Candidate
+import dev.zaksael.rectangles.rules.Series
 import dev.zaksael.rectangles.rules.SplitMix64
 import dev.zaksael.rectangles.rules.TurnAnalysis
 import dev.zaksael.rectangles.server.Draw
 import dev.zaksael.rectangles.server.ReplayDice
 
-class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues:
+class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues with OptionValues:
   private def session(rolls: Int*): GameSession =
     GameSession
       .create(
@@ -168,4 +171,51 @@ class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues:
     error.hcursor.get[String]("type").value shouldBe "error"
     reason(error) shouldBe "invalidAction"
     turnState(only(open.handle(surrender))) shouldBe "gameOver"
+  }
+
+  private def seriesOf(message: Json) = message.hcursor.downField("series")
+
+  /** The session a connect for `query` opens, with the dice fixed. */
+  private def connected(
+      query: Map[String, String],
+      bot: Option[BotDifficulty] = None,
+  ): GameSession =
+    val connect = ConnectParams.parse(Map("protocolVersion" -> "1") ++ query).value
+    GameSession
+      .create(ConnectParams.open(connect, SplitMix64(3L)), bot)
+      .unsafeRunSync()
+
+  "a connect with a series length" should "open on a series with no round played" in {
+    val series = seriesOf(only(connected(Map("seriesLength" -> "3")).state))
+    series.get[Int]("length").value shouldBe 3
+    series.get[Int]("gamesPlayed").value shouldBe 0
+    series.get[Boolean]("isComplete").value shouldBe false
+  }
+
+  it should "keep the house rules it is given" in {
+    val game = only(connected(Map("seriesLength" -> "3", "prizeEnabled" -> "true")).state)
+      .hcursor.downField("game")
+    game.downField("houseRules").downField("prize").get[Boolean]("enabled").value shouldBe true
+  }
+
+  "a finished round of a series" should "be recorded in the series" in {
+    val open   = connected(Map("seriesLength" -> "3"))
+    val series = seriesOf(only(open.handle(surrender)))
+    series.get[Int]("gamesPlayed").value shouldBe 1
+    series.get[List[Json]]("rounds").value should have size 1
+  }
+
+  it should "be recorded when a bot move ends it" in {
+    val stuck = Play(
+      GameState.initial(Rules(boardSize = 19, skipLimit = 1), PlayerId.Two).copy(
+        turn = TurnState.Skipped
+      ),
+      SplitMix64(1L),
+      Some(Series(3, Rules(boardSize = 19, skipLimit = 1))),
+    )
+    val replies = GameSession.create(stuck, Some(BotDifficulty.Basic)).unsafeRunSync()
+      .state.unsafeRunSync()
+
+    turnState(replies.last) shouldBe "gameOver"
+    seriesOf(replies.last).get[Int]("gamesPlayed").value shouldBe 1
   }

@@ -20,6 +20,11 @@ class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
     replay("errors", Map(11 -> "continueSeries (G3)")) shouldBe empty
   }
 
+  // Steps 8 to 23 start with continueSeries, which the server cannot answer yet: its owner deletes them.
+  "the series golden set" should "replay its first round as recorded, but the steps still pending" in {
+    replay("series", (8 to 23).map(_ -> "continueSeries (G3)").toMap) shouldBe empty
+  }
+
   "the game-over golden set" should "replay with every reply as recorded, analysis included" in {
     replay("game-over") shouldBe empty
   }

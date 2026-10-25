@@ -19,7 +19,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint -- --deny-warnings
-      # The integration tests need a full server; they run in the scala job against the Scala launcher (wireContract joins it once series and analysis exist).
+      # The integration tests need a full server; they run in the scala job against the Scala launcher.
       - run: npm test -- --exclude '**/*.integration.test.ts'
       - run: npm run build
 
@@ -49,7 +49,7 @@ jobs:
           RECTANGLES_SERVER_CMD: ${{ github.workspace }}/server-scala/target/stage/bin/rectangles-server
         run: |
           npm ci
-          npx vitest run src/hooks/useGameSocket.integration.test.ts
+          npx vitest run src/hooks/useGameSocket.integration.test.ts src/hooks/wireContract.integration.test.ts
 
   docker:
     runs-on: ubuntu-24.04

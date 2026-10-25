@@ -13,14 +13,37 @@ import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.ScoreBreakdown
 import dev.zaksael.rectangles.domain.TurnState
 import dev.zaksael.rectangles.rules.AnalysisAxis
+import dev.zaksael.rectangles.rules.PlayerRound
 import dev.zaksael.rectangles.rules.Potential
 import dev.zaksael.rectangles.rules.Rerolls
+import dev.zaksael.rectangles.rules.RoundResult
 import dev.zaksael.rectangles.rules.Scoring
+import dev.zaksael.rectangles.rules.Series
 import dev.zaksael.rectangles.rules.TurnAnalysis
 import dev.zaksael.rectangles.rules.Turns
 
 object Serialize:
   private val RecentTurns = 6
+
+  def series(series: Series): Json =
+    def round(of: RoundResult)(field: PlayerRound => Int): Json =
+      byPlayer(who => Json.fromInt(field(of.players(who))))
+    Json.obj(
+      "length"      -> Json.fromInt(series.length),
+      "scores"      -> byPlayer(who => Json.fromInt(series.scores(who))),
+      "gamesPlayed" -> Json.fromInt(series.gamesPlayed),
+      "rounds" -> Json.arr(series.rounds.map(result =>
+        Json.obj(
+          "area"            -> round(result)(_.area),
+          "prizeCaptured"   -> round(result)(_.prizeCaptured),
+          "pitfallCaptured" -> round(result)(_.pitfallCaptured),
+          "stealCaptured"   -> round(result)(_.stealCaptured),
+          "total"           -> round(result)(_.total),
+        )
+      )*),
+      "isComplete" -> Json.fromBoolean(series.isComplete),
+      "winner"     -> series.winner.fold(Json.Null)(who => Json.fromInt(who.value)),
+    )
 
   /**
    * One entry per flagged turn, oldest first; `turn` is the 1-based move number, as in `history`.

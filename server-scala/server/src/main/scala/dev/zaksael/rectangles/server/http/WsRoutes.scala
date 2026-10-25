@@ -27,7 +27,7 @@ object WsRoutes:
       random <- SecureRandom.javaSecuritySecureRandom[IO]
       seed   <- random.nextLong
       session <-
-        GameSession.create(ConnectParams.start(connect.rules, SplitMix64(seed)), connect.bot)
+        GameSession.create(ConnectParams.open(connect, SplitMix64(seed)), connect.bot)
     yield session
 
   private def send(outbox: Queue[IO, Option[WebSocketFrame]], message: Json): IO[Unit] =

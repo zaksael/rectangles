@@ -15,32 +15,32 @@ object BotTurns:
   def step(play: Play, difficulty: BotDifficulty): Option[Play] =
     val state = play.state
     if Bot.shouldReroll(state, difficulty) then
-      Turns.reroll(state, play.dice).toOption.map(Play.apply.tupled)
+      Turns.reroll(state, play.dice).toOption.map(play.stepped.tupled)
     else
       state.turn match
         case TurnState.AwaitingRoll =>
-          Turns.rollDice(state, play.dice).toOption.map(Play.apply.tupled)
+          Turns.rollDice(state, play.dice).toOption.map(play.stepped.tupled)
         case TurnState.ChoosingWildcard =>
           val (value, next) = Bot.chooseWildcardValue(state, difficulty, play.dice)
-          Turns.chooseWildcard(state, value).toOption.map(Play(_, next))
+          Turns.chooseWildcard(state, value).toOption.map(play.stepped(_, next))
         case TurnState.ChoosingPlacement =>
           val (pick, next) = Bot.choosePlacement(state, difficulty, play.dice)
           Turns.attemptPlace(state, pick.topLeft, pick.width, pick.height).toOption.map(placed =>
-            Play(Actions.advance(placed), next)
+            play.stepped(Actions.advance(placed), next)
           )
         case TurnState.Skipped =>
           Turns.confirmSkip(state).toOption.map(skipped =>
-            Play(Actions.advance(skipped), play.dice)
+            play.stepped(Actions.advance(skipped), play.dice)
           )
         case TurnState.GameOver => None
 
-  /** Steps while it is Player Two's turn; the play it ends on and the state after every step. */
-  def run(play: Play, difficulty: BotDifficulty): (Play, Vector[GameState]) =
-    @tailrec def go(current: Play, states: Vector[GameState]): (Play, Vector[GameState]) =
+  /** Steps while it is Player Two's turn; the play it ends on and the play after every step. */
+  def run(play: Play, difficulty: BotDifficulty): (Play, Vector[Play]) =
+    @tailrec def go(current: Play, states: Vector[Play]): (Play, Vector[Play]) =
       if current.state.turn == TurnState.GameOver || current.state.current != PlayerId.Two then
         (current, states)
       else
         step(current, difficulty) match
           case None       => (current, states)
-          case Some(next) => go(next, states :+ next.state)
+          case Some(next) => go(next, states :+ next)
     go(play, Vector.empty)

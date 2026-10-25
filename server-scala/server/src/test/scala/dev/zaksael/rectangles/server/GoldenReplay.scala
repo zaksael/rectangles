@@ -29,14 +29,16 @@ object GoldenReplay:
    */
   def run(game: GoldenGame, pending: Map[Int, String] = Map.empty): List[String] =
     ConnectParams.parse(game.connect).fold(List("connect refused")) { connect =>
-      val replay = ReplayDice(game.draws.toList)
-      val seen   = AtomicReference(replay)
-      val (state, dice) = Setup.newGame(
-        connect.rules,
-        Option.when(game.pinnedStarter)(PlayerId.One),
-        RecordingDice(replay, seen),
-      )
-      val session = GameSession.create(Play(state, dice)).unsafeRunSync()
+      val replay    = ReplayDice(game.draws.toList)
+      val seen      = AtomicReference(replay)
+      val recording = RecordingDice(replay, seen)
+      val play =
+        if connect.seriesLength.isDefined then ConnectParams.open(connect, recording)
+        else
+          val (state, dice) =
+            Setup.newGame(connect.rules, Option.when(game.pinnedStarter)(PlayerId.One), recording)
+          Play(state, dice)
+      val session = GameSession.create(play).unsafeRunSync()
       val replies = game.steps.zipWithIndex.flatMap { case (step, index) =>
         Option.unless(pending.contains(index)) {
           val reply = step.send.fold(session.state)(sent =>
@@ -46,7 +48,10 @@ object GoldenReplay:
         }
       }.flatten.toList
       val left = seen.get
-      replies ++ Option.when(left.draws.nonEmpty)(s"${left.draws.size} recorded draws unused") ++
+      // A held-back step leaves its draws unused.
+      replies ++ Option.when(pending.isEmpty && left.draws.nonEmpty)(
+        s"${left.draws.size} recorded draws unused"
+      ) ++
         left.problems
     }
 

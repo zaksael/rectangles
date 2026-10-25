@@ -38,6 +38,17 @@ class ProtocolSpec extends AnyFlatSpec with Matchers with EitherValues:
       .value shouldBe ClientMessage.Place(Cell(2, 3), 4, 5)
   }
 
+  "a state message" should "carry its series" in {
+    val game   = Json.obj("board" -> Json.obj("size" -> Json.fromInt(19)))
+    val series = Json.obj("length" -> Json.fromInt(3))
+    StateMsg(game, series).toJson shouldBe Json.obj(
+      "protocolVersion" -> Json.fromInt(1),
+      "type"            -> Json.fromString("state"),
+      "game"            -> game,
+      "series"          -> series,
+    )
+  }
+
   "a request-analysis message" should "decode" in {
     ClientMessage.decode(
       """{"protocolVersion":1,"type":"requestAnalysis"}"""

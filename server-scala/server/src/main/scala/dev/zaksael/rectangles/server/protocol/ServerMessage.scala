@@ -13,13 +13,13 @@ final case class ErrorMsg(reason: ErrorReason, message: String):
     "message"         -> Json.fromString(message),
   )
 
-/** `game` is `Serialize.game`. */
-final case class StateMsg(game: Json):
+/** `game` is `Serialize.game`; `series` is `Serialize.series`, or null outside a series. */
+final case class StateMsg(game: Json, series: Json = Json.Null):
   def toJson: Json = Json.obj(
     "protocolVersion" -> Json.fromInt(Protocol.Version),
     "type"            -> Json.fromString("state"),
     "game"            -> game,
-    "series"          -> Json.Null,
+    "series"          -> series,
   )
 
 /** `turns` is `Serialize.analysis`. */

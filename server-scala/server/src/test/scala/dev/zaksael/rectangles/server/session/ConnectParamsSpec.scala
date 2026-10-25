@@ -33,6 +33,12 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
       Some(Rules(boardSize = 23, skipLimit = 3))
   }
 
+  "a connect with a series length" should "ask for a series of that many rounds" in {
+    ConnectParams.parse(vanilla + ("seriesLength" -> "5")).map(_.seriesLength) shouldBe
+      Some(Some(5))
+    ConnectParams.parse(vanilla).map(_.seriesLength) shouldBe Some(None)
+  }
+
   private def botOf(params: Map[String, String]): Option[Option[BotDifficulty]] =
     ConnectParams.parse(params).map(_.bot)
 

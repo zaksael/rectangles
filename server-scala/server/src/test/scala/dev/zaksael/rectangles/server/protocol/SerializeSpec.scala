@@ -21,6 +21,7 @@ import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.domain.TurnState
 import dev.zaksael.rectangles.rules.Analysis
 import dev.zaksael.rectangles.rules.Placement
+import dev.zaksael.rectangles.rules.Series
 import dev.zaksael.rectangles.rules.Turns
 
 class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
@@ -451,4 +452,29 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
 
   it should "be an empty list when nothing is flagged" in {
     analysed(game(6), TurnRecord(PlayerId.One, Roll(6, 6), None)) shouldBe Json.arr()
+  }
+
+  "a serialized series" should "carry the scores and each round's breakdown" in {
+    val rules = Rules(boardSize = 6, skipLimit = 2, prize = true)
+    val played = placed(
+      placed(GameState.initial(rules), PlayerId.One, Cell(0, 0), 5, 1),
+      PlayerId.Two,
+      Cell(0, 1),
+      2,
+      1,
+    )
+    val first = played.players(PlayerId.One)
+    val finished = played.copy(players =
+      played.players.updated(
+        PlayerId.One,
+        first.copy(specialCaptures = Map(CellKind.Prize -> 1)),
+      )
+    )
+
+    Serialize.series(Series(3, rules).record(finished)) shouldBe parse(
+      """{"length":3,"scores":{"1":15,"2":2},"gamesPlayed":1,
+        |"rounds":[{"area":{"1":5,"2":2},"prizeCaptured":{"1":1,"2":0},
+        |"pitfallCaptured":{"1":0,"2":0},"stealCaptured":{"1":0,"2":0},"total":{"1":15,"2":2}}],
+        |"isComplete":false,"winner":1}""".stripMargin
+    ).value
   }
