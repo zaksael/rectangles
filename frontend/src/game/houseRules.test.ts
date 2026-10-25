@@ -12,10 +12,11 @@ test('every house rule has a one-line description for Mode Select', () => {
 
 // Mode Select runs before any state arrives, so the descriptions carry the engine's numbers as text; these tests read the engine's
 // constants file so a changed value fails here instead of leaving the copy quietly wrong.
-const constantsPy = readFileSync('../rectangles/engine/constants.py', 'utf8')
+const constantsFile = '../server-scala/core/src/main/scala/dev/zaksael/rectangles/domain/Rules.scala'
+const constantsScala = readFileSync(constantsFile, 'utf8')
 const engine = (name: string): number => {
-  const value = constantsPy.match(new RegExp(`^${name} = (\\d+)`, 'm'))?.[1]
-  if (value === undefined) throw new Error(`${name} not found in rectangles/engine/constants.py`)
+  const value = constantsScala.match(new RegExp(`^\\s*val ${name}:\\s*Int\\s*=\\s*(\\d+)`, 'm'))?.[1]
+  if (value === undefined) throw new Error(`${name} not found in ${constantsFile}`)
   return Number(value)
 }
 const descriptionOf = (key: keyof HouseRules) => HOUSE_RULE_GROUPS.flatMap((g) => g.rules).find((r) => r.key === key)!.description

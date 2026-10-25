@@ -1,6 +1,6 @@
 # Rectangles
 
-A two-player pen-and-paper dice game, implemented as a Python rules engine and WebSocket server with a React
+A two-player pen-and-paper dice game, implemented as a Scala rules engine and WebSocket server with a React
 frontend that runs in the browser.
 
 Two players share one grid board and grow their territory inward from
@@ -26,29 +26,29 @@ area when the game ends wins.
 
 ## Requirements
 
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) for dependency management
+- JDK 25 (pinned in `.sdkmanrc` and `.java-version`) and sbt 2.0.10, to build and test the server
 - Node.js 22.22.2, 24.15 or 26 and newer (the even-numbered LTS lines) and npm, to build and test the frontend
 
 ## Setup
 
 ```bash
-uv sync
 cd frontend
 npm install
 npm run build
+cd ../server-scala
+sbt server/stage
 ```
 
 ## Play
 
 ```bash
-uv run python -m rectangles.server.app
+server-scala/target/stage/bin/rectangles-server
 ```
 
-Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
+Run it from the repository root, with `JAVA_HOME` set to JDK 25. Then open `http://127.0.0.1:8765/` (set `RECTANGLES_SERVER_HOST` and
 `RECTANGLES_SERVER_PORT` to change the address). The server serves the built frontend from
-`frontend/dist` and the game socket at `/ws`; without a build it serves only
-`/ws`.
+`frontend/dist` (relative to where it runs; `RECTANGLES_FRONTEND_DIST` changes the folder) and the
+game socket at `/ws`; without a build it serves only `/ws`.
 
 A game lives in its browser tab: the server keeps one game per connection, with no accounts, so
 reloading or closing the tab ends it (the browser asks before leaving a game in progress).
@@ -137,7 +137,7 @@ Window" notice takes their place and the game waits where it was.
 
 ### Frontend development
 
-Run the server in one terminal (`uv run python -m rectangles.server.app`) and
+Run the server in one terminal (the staged launcher, or `sbt server/run` in `server-scala/`) and
 `npm run dev` in `frontend/` in another. The Vite dev server forwards `/ws` to
 the server on port 8765; open the printed `localhost` URL to play. The server
 accepts a WebSocket only from a page served from its own host and port, which
@@ -145,16 +145,16 @@ the Vite proxy preserves.
 
 ### Scala server
 
-`server-scala/` holds a Scala port of the engine and server, built next to the
-Python one and not yet playable. It is an sbt build with two subprojects, `core`
-(rules) and `server` (HTTP and WebSocket).
+`server-scala/` holds the engine and the server. It is an sbt build with two subprojects, `core`
+(rules, no server dependency) and `server` (HTTP and WebSocket).
 
 - JDK 25 (pinned in `.sdkmanrc` and `.java-version`), sbt 2.0.10 (`server-scala/project/build.properties`) and Scala 3.9.0.
 - Homebrew's `sbt` wrapper defaults `JAVA_HOME` to its own newest JDK, so export `JAVA_HOME` for JDK 25 first (`export JAVA_HOME=$(/usr/libexec/java_home -v 25)`).
-- Run it from `server-scala/` with `sbt server/run`, or `sbt "~server/reStart"` to restart on every source change. It serves `GET /health` (answers `ok`) and a placeholder `/ws` that sends one `state` message with only `protocolVersion` and `type`, then ignores the client on `127.0.0.1:8765`; `RECTANGLES_SERVER_HOST` and `RECTANGLES_SERVER_PORT` change that. It logs plain text to stdout; `LOGGING4S_CONSOLE_FORMAT=json` switches to JSON lines. sbt's background server keeps the environment of the call that started it, so run `sbt shutdown` before restarting with a new value.
-- `scripts/regenerate_golden.py` (run `uv run python -m scripts.regenerate_golden` from the repo root, `--check` to compare) replays scripted games against the Python server and records their wire traffic and random draws into `server-scala/server/src/test/resources/golden/`, the fixtures the Scala server is checked against. It goes away with the Python server; after that the fixtures are rewritten with `UPDATE_GOLDEN=1`.
-- `sbt server/stage` builds a launcher at `server-scala/target/stage/bin/rectangles-server`. The frontend integration tests start the Python server by default; set `RECTANGLES_SERVER_CMD` to a command (split on whitespace, run from the repo root) to run them against another server, for example `RECTANGLES_SERVER_CMD=server-scala/target/stage/bin/rectangles-server npm test` from `frontend/`.
-- `docker build -t rectangles-server .` builds the image: node builds `frontend/`, sbt stages the Scala server, and a JRE 25 stage runs it as a non-root user on port 8765. The container listens on all interfaces and logs JSON lines; `docker run -p 8765:8765 rectangles-server` then answers `GET /health`. The built frontend is copied to `/app/frontend/dist`, but the server does not serve it yet.
+- Run it from `server-scala/` with `sbt server/run`, or `sbt "~server/reStart"` to restart on every source change. It serves `GET /health` (answers `ok`), the game socket at `/ws` and the built frontend, on `127.0.0.1:8765`; `RECTANGLES_SERVER_HOST` and `RECTANGLES_SERVER_PORT` change the address and `RECTANGLES_FRONTEND_DIST` the frontend folder (from `server-scala/` it must be `../frontend/dist`; the startup log names the folder it serves, or warns that it is missing). It logs plain text to stdout; `LOGGING4S_CONSOLE_FORMAT=json` switches to JSON lines. sbt's background server keeps the environment of the call that started it, so run `sbt shutdown` before restarting with a new value.
+- `server-scala/server/src/test/resources/golden/` holds recorded wire sessions (the messages sent and received, and the random draws behind them) that `GoldenReplaySpec` replays through a real session. They were recorded from the original Python implementation, which is kept at the `python-reference` tag, and stay as regression fixtures; nothing rewrites them yet.
+- `frontend/src/dev/fixtures/enclosureCases.json` holds boards with their enclosed-cell counts: `EnclosureCasesSpec` checks the engine against them and the frontend's flood fill is checked against the same file. Rewrite it after changing the enclosure rule with `sbt "server/Test/runMain dev.zaksael.rectangles.server.generateEnclosureCases"` from `server-scala/`.
+- `sbt server/stage` builds a launcher at `server-scala/target/stage/bin/rectangles-server`. The frontend integration tests start it by default; set `RECTANGLES_SERVER_CMD` to a command (split on whitespace, run from the repo root) to run them against another server, for example `RECTANGLES_SERVER_CMD=server-scala/target/stage/bin/rectangles-server npm test` from `frontend/`.
+- `docker build -t rectangles-server .` builds the image: node builds `frontend/`, sbt stages the server, and a JRE 25 stage runs it as a non-root user on port 8765. The container listens on all interfaces and logs JSON lines; `docker run -p 8765:8765 rectangles-server` then serves the game at `http://127.0.0.1:8765/`.
 - Check the style from `server-scala/` with `sbt "scalafmtCheckAll; scalafixAll --check"` (format with `sbt scalafmtAll`, fix with `sbt scalafixAll`); the compiler runs with warnings fatal, and `var`, `null` and `throw` are compile errors.
 - Run the tests from `server-scala/` with `sbt testFull`. Plain `sbt test` caches its result, so a re-run with no changes prints no summary.
 - `sbt -batch` already goes through sbt 2's built-in thin client: a warm run takes about half a second, a cold start about 35 seconds. There is no separate `sbtn` to install.
@@ -162,17 +162,17 @@ Python one and not yet playable. It is an sbt build with two subprojects, `core`
 ## Tests
 
 ```bash
-uv run pytest                  # backend: engine and server
-cd frontend
-npm test                       # frontend (Vitest)
+cd server-scala
+sbt testFull                   # backend: engine and server
+cd ../frontend
+npm test                       # frontend (Vitest); needs `sbt server/stage` first
 npm run coverage               # the same suite with a coverage report
 npm run lint
 ```
 
-Coverage is about 99% on the backend and 97% on the frontend (measured with `pytest-cov` and
-`@vitest/coverage-v8`, neither a project dependency).
+Frontend coverage is about 97% (measured with `@vitest/coverage-v8`, not a project dependency).
 
-On every push and pull request, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`; and the Docker build, followed by starting the container and connecting to it. The two frontend integration tests, the Python suite and the golden-fixture check are left to local runs.
+On every push and pull request, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`, followed by the two frontend integration tests against the staged launcher; and the Docker build, followed by starting the container, loading the page and connecting to the game socket.
 
 ## Rules
 
@@ -277,19 +277,16 @@ series total.
 ## Project structure
 
 ```
-rectangles/
-├── engine/               # rules engine, no UI dependency
-│   ├── analysis.py       # Replay's turn analysis: where a better move existed
-│   ├── board.py          # grid + placement legality
-│   ├── bot.py            # picks a placement for the bot opponent (Basic/Greedy/Blocking)
-│   ├── constants.py      # tunable game/UI values (board sizes, limits, presets)
-│   ├── game.py           # turn state machine, scoring, game-over rules
-│   ├── models.py         # Rectangle, Player, TurnRecord
-│   ├── series.py         # N-round match series (cumulative score, next-round setup)
-│   └── tournament.py     # single-elimination bracket (participants, matches, tiebreaks)
-└── server/               # FastAPI/WebSocket server for online play
-    ├── app.py            # WebSocket handler, one Game per connection; serves frontend/dist
-    └── schema.py         # wire message schema, state serialization
+server-scala/
+├── core/                 # rules engine, no server dependency
+│   └── src/main/scala/dev/zaksael/rectangles/
+│       ├── domain/       # board, game state, players, rules and constants
+│       └── rules/        # placement, turns, scoring, setup, bot, analysis, series
+└── server/               # HTTP and WebSocket server
+    └── src/main/scala/dev/zaksael/rectangles/server/
+        ├── http/         # /health, /ws and the static frontend
+        ├── protocol/     # wire messages and state serialization
+        └── session/      # one game per connection, action dispatch, connect parameters
 frontend/                 # React + Vite web client
 └── src/
     ├── screens/          # Mode Select, Playing and Replay
@@ -299,13 +296,12 @@ frontend/                 # React + Vite web client
     ├── game/             # wire types, house rules and other logic with no React
     ├── dev/              # fixtures and test helpers, not shipped
     └── tokens.css        # colours, type and shared button styles
-tests/                    # backend tests (engine/, server/); frontend tests sit beside their source
 docs/GAME_SPEC.md         # the full ruleset, independent of this code
-pyproject.toml            # Python dependencies and settings (managed with uv)
+Dockerfile                # the server and the built frontend in one image
 ```
 
-The engine also implements tournaments (see section 12 of the
-[spec](docs/GAME_SPEC.md)); the web client doesn't offer them.
+Tournaments (see section 12 of the [spec](docs/GAME_SPEC.md)) aren't implemented; the web client
+doesn't offer them.
 
-The rules engine (`rectangles/engine/`) has no UI dependency, so it's fully
-unit-testable headlessly — see `tests/`.
+The rules engine (`server-scala/core/`) has no dependency on the server, so it's fully
+unit-testable headlessly — see `core/src/test/`.

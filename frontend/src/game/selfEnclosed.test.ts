@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 import cases from '../dev/fixtures/enclosureCases.json'
 import { selfEnclosedOwners } from './selfEnclosed'
 
-// Boards and the per-player enclosed-cell counts the engine computed for them (tests/engine/enclosure_cases.py writes the file).
+// Boards and the per-player enclosed-cell counts the engine computed for them (the Scala `EnclosureCasesGenerator` writes the file; see its comment for the sbt command).
 // The client re-implements that flood-fill to hatch the cells, so its count must equal the engine's on every board.
 type Case = (typeof cases)[number]
 
