@@ -27,9 +27,7 @@ import dev.zaksael.rectangles.server.session.Play
  * Writes `frontend/src/dev/fixtures/enclosureCases.json`: boards with the self-enclosed counts the
  * engine computes for them. The web client re-implements the enclosure flood fill to hatch the
  * cells (the wire sends only counts), and `selfEnclosed.test.ts` checks that port against this
- * file; `EnclosureCasesSpec` checks each stored board still gets its stored counts. Rerun when the
- * enclosure rule changes, from `server-scala/`:
- * `sbt "server/Test/runMain dev.zaksael.rectangles.server.generateEnclosureCases [out.json]"`.
+ * file; `EnclosureCasesSpec` checks each stored board still gets its stored counts.
  */
 object EnclosureCasesGenerator:
   val defaultOut = "../frontend/src/dev/fixtures/enclosureCases.json"

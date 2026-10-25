@@ -83,10 +83,7 @@ object Golden:
       .map(_.toString)
       .flatMap(text => parser.decode[GoldenGame](text).left.map(_.toString))
 
-  /**
-   * Rewrites the fixture when `enabled` (the `UPDATE_GOLDEN=1` mode, used only after the Python
-   * reference is gone). Returns whether it wrote.
-   */
+  /** Rewrites the fixture when `enabled` (the `UPDATE_GOLDEN=1` mode). Returns whether it wrote. */
   def update(
       name: String,
       content: String,
