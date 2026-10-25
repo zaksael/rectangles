@@ -28,4 +28,7 @@ ENV RECTANGLES_SERVER_HOST=0.0.0.0 \
     LOGGING4S_CONSOLE_FORMAT=json
 EXPOSE 8765
 USER rectangles
+# the JRE image has no curl; bash can open the socket itself
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/${RECTANGLES_SERVER_PORT:-8765} && printf "GET /health HTTP/1.0\r\n\r\n" >&3 && grep -qx ok <&3' || exit 1
 ENTRYPOINT ["/app/bin/rectangles-server"]
