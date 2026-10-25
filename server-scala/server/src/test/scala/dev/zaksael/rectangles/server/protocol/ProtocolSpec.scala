@@ -55,6 +55,12 @@ class ProtocolSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).value shouldBe ClientMessage.RequestAnalysis
   }
 
+  "a continue-series message" should "decode" in {
+    ClientMessage.decode(
+      """{"protocolVersion":1,"type":"continueSeries"}"""
+    ).value shouldBe ClientMessage.ContinueSeries
+  }
+
   "an analysis message" should "encode its turns" in {
     val turns = Json.arr(Json.obj("turn" -> Json.fromInt(1)))
     AnalysisMsg(turns).toJson shouldBe Json.obj(

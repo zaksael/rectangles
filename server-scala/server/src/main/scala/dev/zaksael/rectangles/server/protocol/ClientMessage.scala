@@ -13,6 +13,7 @@ enum ClientMessage:
   case Reroll
   case Surrender
   case RequestAnalysis
+  case ContinueSeries
   case ChooseWildcard(value: Int)
 
 object ClientMessage:
@@ -40,6 +41,7 @@ object ClientMessage:
           case Some("surrender")       => Right(Surrender)
           case Some("reroll")          => Right(Reroll)
           case Some("requestAnalysis") => Right(RequestAnalysis)
+          case Some("continueSeries")  => Right(ContinueSeries)
           case Some("place") =>
             (for
               corner <- cursor.get[(Int, Int)]("topLeft")

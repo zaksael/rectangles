@@ -43,6 +43,18 @@ object Actions:
         )
       case ClientMessage.Surrender => Right(play.stepped(Turns.surrender(play.state), play.dice))
       case ClientMessage.RequestAnalysis => Right(play)
+      case ClientMessage.ContinueSeries  => continueSeries(play)
+
+  /**
+   * Only between the rounds of a series that has more to play: the next round replaces the finished
+   * one. A stray or doubled request must not replace a live round, which is not recorded yet.
+   */
+  private def continueSeries(play: Play): Either[ErrorMsg, Play] =
+    play.series.filter(!_.isComplete).filter(_ => play.state.turn == TurnState.GameOver) match
+      case Some(series) =>
+        val (state, dice) = series.newGame(play.dice)
+        Right(Play(state, dice, Some(series)))
+      case None => Left(ErrorMsg(ErrorReason.InvalidAction, "no series round to continue"))
 
   /** After a placement or a skip: end the game if it is over, else pass the turn. */
   private[session] def advance(state: GameState): GameState =

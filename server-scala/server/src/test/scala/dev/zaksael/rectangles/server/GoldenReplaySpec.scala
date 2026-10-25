@@ -8,21 +8,19 @@ import org.scalatest.matchers.should.Matchers
 class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
   private val vanilla = Golden.load("vanilla").value
 
-  private def replay(name: String, pending: Map[Int, String] = Map.empty): List[String] =
-    GoldenReplay.run(Golden.load(name).value, pending)
+  private def replay(name: String): List[String] =
+    GoldenReplay.run(Golden.load(name).value)
 
   "the vanilla golden set" should "replay with every reply as recorded" in {
     replay("vanilla") shouldBe empty
   }
 
-  // Step 11 sends a message the server cannot answer yet: its owner deletes the entry.
-  "the errors golden set" should "replay with every reply as recorded, but the step still pending" in {
-    replay("errors", Map(11 -> "continueSeries (G3)")) shouldBe empty
+  "the errors golden set" should "replay with every reply as recorded" in {
+    replay("errors") shouldBe empty
   }
 
-  // Steps 8 to 23 start with continueSeries, which the server cannot answer yet: its owner deletes them.
-  "the series golden set" should "replay its first round as recorded, but the steps still pending" in {
-    replay("series", (8 to 23).map(_ -> "continueSeries (G3)").toMap) shouldBe empty
+  "the series golden set" should "replay with every reply as recorded" in {
+    replay("series") shouldBe empty
   }
 
   "the game-over golden set" should "replay with every reply as recorded, analysis included" in {

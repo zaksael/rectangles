@@ -179,10 +179,11 @@ class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues with O
   private def connected(
       query: Map[String, String],
       bot: Option[BotDifficulty] = None,
+      analyse: GameState => Map[Int, TurnAnalysis] = Analysis.turnAnalyses,
   ): GameSession =
     val connect = ConnectParams.parse(Map("protocolVersion" -> "1") ++ query).value
     GameSession
-      .create(ConnectParams.open(connect, SplitMix64(3L)), bot)
+      .create(ConnectParams.open(connect, SplitMix64(3L)), bot, analyse)
       .unsafeRunSync()
 
   "a connect with a series length" should "open on a series with no round played" in {
@@ -218,4 +219,64 @@ class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues with O
 
     turnState(replies.last) shouldBe "gameOver"
     seriesOf(replies.last).get[Int]("gamesPlayed").value shouldBe 1
+  }
+
+  private val continue = """{"protocolVersion":1,"type":"continueSeries"}"""
+
+  "continuing a series after a finished round" should "start a fresh game with the round recorded" in {
+    val open = connected(Map("seriesLength" -> "3"))
+    only(open.handle(surrender))
+    val reply = only(open.handle(continue))
+    val game  = reply.hcursor.downField("game")
+    game.downField("gameOver").get[Json]("reason").value shouldBe Json.Null
+    game.downField("players").downField("1").downField("board").get[List[Json]](
+      "pieces"
+    ).value shouldBe empty
+    seriesOf(reply).get[Int]("gamesPlayed").value shouldBe 1
+  }
+
+  it should "open a bot-first round with the bot's steps" in {
+    val open = connected(Map("seriesLength" -> "3"), Some(BotDifficulty.Basic))
+    only(open.handle(surrender))
+    val reply = open.handle(continue).unsafeRunSync()
+    reply.size should be > 1
+    reply.map(turnState).last shouldBe "awaitingRoll"
+  }
+
+  it should "give the next round its own analysis" in {
+    val seen = scala.collection.mutable.ListBuffer.empty[GameState]
+    val open = connected(
+      Map("seriesLength" -> "3"),
+      analyse = state =>
+        seen += state
+        Map.empty,
+    )
+    only(open.handle(surrender))
+    only(open.handle(request))
+    only(open.handle(continue))
+    only(open.handle(surrender))
+    only(open.handle(request))
+    seen should have size 2
+    seen.head should not be seen.last
+  }
+
+  "continuing without a series" should "be an invalid action" in {
+    reason(only(session().handle(continue))) shouldBe "invalidAction"
+  }
+
+  "continuing mid-round" should "be an invalid action and leave the round playable" in {
+    val open = connected(Map("seriesLength" -> "3"))
+    reason(only(open.handle(continue))) shouldBe "invalidAction"
+    seriesOf(only(open.handle(surrender))).get[Int]("gamesPlayed").value shouldBe 1
+  }
+
+  "continuing a complete series" should "be an invalid action" in {
+    val open = connected(Map("seriesLength" -> "3"))
+    val last = (1 to 3).foldLeft(Json.Null) { (_, round) =>
+      val over = only(open.handle(surrender))
+      if round < 3 then only(open.handle(continue)): Unit
+      over
+    }
+    seriesOf(last).get[Boolean]("isComplete").value shouldBe true
+    reason(only(open.handle(continue))) shouldBe "invalidAction"
   }

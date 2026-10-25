@@ -25,9 +25,9 @@ final private class RecordingDice(inner: ReplayDice, seen: AtomicReference[Repla
 object GoldenReplay:
   /**
    * The differences between replaying `game` through a real `GameSession` and its recording; empty
-   * when they match. A step listed in `pending` (with the task that will answer it) is not sent.
+   * when they match.
    */
-  def run(game: GoldenGame, pending: Map[Int, String] = Map.empty): List[String] =
+  def run(game: GoldenGame): List[String] =
     ConnectParams.parse(game.connect).fold(List("connect refused")) { connect =>
       val replay    = ReplayDice(game.draws.toList)
       val seen      = AtomicReference(replay)
@@ -40,18 +40,13 @@ object GoldenReplay:
           Play(state, dice)
       val session = GameSession.create(play).unsafeRunSync()
       val replies = game.steps.zipWithIndex.flatMap { case (step, index) =>
-        Option.unless(pending.contains(index)) {
-          val reply = step.send.fold(session.state)(sent =>
-            session.handle(sent.asString.getOrElse(sent.noSpaces))
-          ).unsafeRunSync()
-          compare(step.receive, reply).map(difference => s"step $index $difference")
-        }
-      }.flatten.toList
+        val reply = step.send.fold(session.state)(sent =>
+          session.handle(sent.asString.getOrElse(sent.noSpaces))
+        ).unsafeRunSync()
+        compare(step.receive, reply).map(difference => s"step $index $difference")
+      }.toList
       val left = seen.get
-      // A held-back step leaves its draws unused.
-      replies ++ Option.when(pending.isEmpty && left.draws.nonEmpty)(
-        s"${left.draws.size} recorded draws unused"
-      ) ++
+      replies ++ Option.when(left.draws.nonEmpty)(s"${left.draws.size} recorded draws unused") ++
         left.problems
     }
 
