@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.ScriptedDice
 import dev.zaksael.rectangles.domain.Cell
+import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rectangle
@@ -64,6 +65,13 @@ class TurnFlowSpec extends AnyFlatSpec with Matchers with EitherValues:
   "rolling twice in one turn" should "be rejected" in {
     val (rolled, dice) = Turns.rollDice(game(), ScriptedDice.of(2, 2, 3, 3)).value
     Turns.rollDice(rolled, dice).map(_._1) shouldBe Left(RuleError.WrongState)
+  }
+
+  "placing after the game is over" should "be rejected and leave the final state as it was" in {
+    val (rolled, _) = Turns.rollDice(game(), ScriptedDice.of(2, 3)).value
+    val over        = Turns.surrender(rolled)
+    Turns.attemptPlace(over, Cell(0, 0), 2, 3) shouldBe Left(RuleError.WrongState)
+    over.gameOver shouldBe Some(GameOverReason.Surrendered(PlayerId.One))
   }
 
   "ending the turn after the game is over" should "change nothing" in {

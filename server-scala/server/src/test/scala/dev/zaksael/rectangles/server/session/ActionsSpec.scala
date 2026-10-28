@@ -50,6 +50,25 @@ class ActionsSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).left.value.reason shouldBe ErrorReason.IllegalPlacement
   }
 
+  it should "be refused when the same roll is placed twice" in {
+    val rolled = Actions(play(), ClientMessage.Roll).value
+    val placed = Actions(rolled, ClientMessage.Place(Cell(0, 0), 2, 3)).value
+    Actions(
+      placed,
+      ClientMessage.Place(Cell(0, 0), 2, 3),
+    ).left.value.reason shouldBe ErrorReason.IllegalPlacement
+  }
+
+  it should "be refused as an invalid action once the game is over, so a surrender stands" in {
+    val rolled      = Actions(play(), ClientMessage.Roll).value
+    val surrendered = Actions(rolled, ClientMessage.Surrender).value
+    Actions(
+      surrendered,
+      ClientMessage.Place(Cell(0, 0), 2, 3),
+    ).left.value.reason shouldBe ErrorReason.InvalidAction
+    surrendered.state.gameOver shouldBe Some(GameOverReason.Surrendered(PlayerId.One))
+  }
+
   it should "end the game instead of passing the turn when nothing more can be placed" in {
     val rolled = Actions(play(boardSize = 1, rolls = Seq(1, 1)), ClientMessage.Roll).value
     val over   = Actions(rolled, ClientMessage.Place(Cell(0, 0), 1, 1)).value

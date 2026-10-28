@@ -55,6 +55,6 @@ With a bot, the answer to an action is one `state` per step, in order: the human
 
 - `malformedMessage`: not JSON, an unknown `type`, or a missing or mistyped field
 - `protocolVersionMismatch`: `protocolVersion` is not `1`
-- `invalidAction`: the action does not fit the moment (rolling twice, `requestAnalysis` mid-game, `continueSeries` outside a finished round)
+- `invalidAction`: the action does not fit the moment (rolling twice, any `roll`, `place`, `skip`, `reroll` or `chooseWildcard` once the game is over, `requestAnalysis` mid-game, `continueSeries` outside a finished round)
 - `illegalPlacement`: the `place` is not a legal placement
 - `illegalWildcardValue`: the `chooseWildcard` value is outside 1–6

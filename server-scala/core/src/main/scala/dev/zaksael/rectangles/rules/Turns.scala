@@ -123,7 +123,8 @@ object Turns:
     state.lastRoll.filter(_ =>
       state.legal.get(Roll(width, height)).exists(_.contains(topLeft))
     ) match
-      case None => Left(RuleError.IllegalPlacement)
+      case _ if state.turn == TurnState.GameOver => Left(RuleError.WrongState)
+      case None                                  => Left(RuleError.IllegalPlacement)
       case Some(rolled) =>
         val result =
           Placement.place(state.board, state.players(state.current), topLeft, width, height)
