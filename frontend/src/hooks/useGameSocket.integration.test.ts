@@ -10,14 +10,17 @@ import { useGameSocket } from './useGameSocket'
 // (non-mocked) socket test.
 vi.stubGlobal('WebSocket', NodeWebSocket)
 
-let stopServer: () => void
+let stopServer: (() => void) | undefined
 let serverUrl: string
 
 beforeAll(async () => {
   ;({ serverUrl, stop: stopServer } = await startServer())
-}, 15_000)
+}, 45_000)
 
-afterAll(() => stopServer())
+afterAll(() => {
+  stopServer?.()
+  vi.unstubAllGlobals()
+})
 
 test(
   'connects to a real running server and receives a state broadcast matching the wire schema',

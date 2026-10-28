@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createServer } from 'node:net'
 import path from 'node:path'
@@ -21,9 +21,13 @@ function pickFreePort(): Promise<number> {
   })
 }
 
-function waitForServerReady(serverUrl: string, timeoutMs: number): Promise<void> {
+// Under a loaded machine the JVM can take a while to bind its port.
+const READY_TIMEOUT_MS = 30_000
+
+function waitForServerReady(serverUrl: string, timeoutMs: number, exited: Promise<never>): Promise<void> {
   const deadline = Date.now() + timeoutMs
-  return new Promise((resolve, reject) => {
+  let settled = false // the server exited, or became ready: stop polling
+  const ready = new Promise<void>((resolve, reject) => {
     function attempt() {
       const socket = new NodeWebSocket(`${serverUrl}/ws?protocolVersion=1`)
       socket.addEventListener('open', () => {
@@ -31,6 +35,7 @@ function waitForServerReady(serverUrl: string, timeoutMs: number): Promise<void>
         resolve()
       })
       socket.addEventListener('error', () => {
+        if (settled) return
         if (Date.now() > deadline) {
           reject(new Error(`server at ${serverUrl} did not become ready in time`))
           return
@@ -40,6 +45,25 @@ function waitForServerReady(serverUrl: string, timeoutMs: number): Promise<void>
     }
     attempt()
   })
+  return Promise.race([ready, exited]).finally(() => {
+    settled = true
+  })
+}
+
+// Rejects when the process ends (ignored once the server was ready); keeps the tail of its output so the error says why.
+function watchExit(serverProcess: ChildProcess): Promise<never> {
+  let tail = ''
+  const collect = (chunk: Buffer) => {
+    tail = (tail + chunk.toString()).slice(-4000)
+  }
+  serverProcess.stdout?.on('data', collect)
+  serverProcess.stderr?.on('data', collect)
+  const exited = new Promise<never>((_, reject) => {
+    serverProcess.on('error', (err) => reject(new Error(`could not start the server: ${err.message}`)))
+    serverProcess.on('exit', (code, signal) => reject(new Error(`server exited with code ${code ?? signal} before it was ready:\n${tail}`)))
+  })
+  exited.catch(() => {})
+  return exited
 }
 
 export interface ServerCommand {
@@ -67,6 +91,12 @@ export async function startServer(): Promise<{ serverUrl: string; stop: () => vo
     cwd: REPO_ROOT,
     env: { ...process.env, RECTANGLES_SERVER_PORT: String(port) },
   })
-  await waitForServerReady(serverUrl, 10_000)
+  const exited = watchExit(serverProcess)
+  try {
+    await waitForServerReady(serverUrl, READY_TIMEOUT_MS, exited)
+  } catch (err) {
+    serverProcess.kill()
+    throw err
+  }
   return { serverUrl, stop: () => serverProcess.kill() }
 }

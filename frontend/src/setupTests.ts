@@ -5,7 +5,11 @@ import '@testing-library/jest-dom/vitest'
 afterEach(cleanup)
 
 // The screens are laid out for a desktop window; jsdom's default 1024px would show the narrow-window notice.
-Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1400 })
+// Restored after every test, so one that fails while narrowed the window doesn't leak the width into the next.
+const DESKTOP_WIDTH = 1400
+const setDesktopWidth = () => Object.defineProperty(window, 'innerWidth', { configurable: true, value: DESKTOP_WIDTH })
+setDesktopWidth()
+afterEach(setDesktopWidth)
 
 // jsdom doesn't implement <dialog>'s showModal()/close() yet.
 if (!HTMLDialogElement.prototype.showModal) {

@@ -9,13 +9,13 @@ import type { AnalysisTurn, GameAction, HistoryEntry, RecentTurn } from '../game
 // renamed, dropped or added server key (or a TS type that drifted) fails here. Values are not compared, only the key structure.
 
 let serverUrl: string
-let stopServer: () => void
+let stopServer: (() => void) | undefined
 
 beforeAll(async () => {
   ;({ serverUrl, stop: stopServer } = await startServer())
-}, 15_000)
+}, 45_000)
 
-afterAll(() => stopServer())
+afterAll(() => stopServer?.())
 
 const ALL_RULES =
   'wildcardEnabled=true&rerollEnabled=true&wallsEnabled=true&obstaclesEnabled=true&prizeEnabled=true&pitfallEnabled=true&stealEnabled=true&selfEnclosedPenaltyEnabled=true&comebackNudgeEnabled=true'
