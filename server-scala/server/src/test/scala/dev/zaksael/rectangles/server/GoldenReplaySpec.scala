@@ -2,10 +2,11 @@ package dev.zaksael.rectangles.server
 
 import io.circe.Json
 import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
+class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues with OptionValues:
   private val vanilla = Golden.load("vanilla").value
 
   private def replay(name: String): List[String] =
@@ -71,6 +72,10 @@ class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
     replay("all-rules") shouldBe empty
   }
 
+  "the bot random-starter golden set" should "replay with every reply as recorded" in {
+    replay("bot-random-starter") shouldBe empty
+  }
+
   "the golden replay runner" should "report a changed score value" in {
     val changed = vanilla.copy(steps =
       vanilla.steps.updated(
@@ -82,6 +87,26 @@ class GoldenReplaySpec extends AnyFlatSpec with Matchers with EitherValues:
       )
     )
     GoldenReplay.run(changed).exists(_.contains("totalScore")) shouldBe true
+  }
+
+  it should "name the reply in a bot step whose value changed" in {
+    val bot  = Golden.load("bot-random-starter").value
+    val step = bot.steps(0)
+    val changed = bot.copy(steps =
+      bot.steps.updated(
+        0,
+        step.copy(receive =
+          step.receive.updated(
+            1,
+            step.receive(1).hcursor.downField("game").downField("turn").downField("currentPlayerId")
+              .withFocus(_ => Json.fromInt(9)).top.value,
+          )
+        ),
+      )
+    )
+    GoldenReplay.run(changed).exists(d =>
+      d.contains("step 0 reply 1") && d.contains("currentPlayerId")
+    ) shouldBe true
   }
 
   it should "fail when the recording holds a draw the game never made" in {

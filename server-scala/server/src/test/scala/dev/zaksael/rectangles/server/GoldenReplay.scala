@@ -38,7 +38,7 @@ object GoldenReplay:
           val (state, dice) =
             Setup.newGame(connect.rules, Option.when(game.pinnedStarter)(PlayerId.One), recording)
           Play(state, dice)
-      val session = GameSession.create(play).unsafeRunSync()
+      val session = GameSession.create(play, connect.bot).unsafeRunSync()
       val replies = game.steps.zipWithIndex.flatMap { case (step, index) =>
         val reply = step.send.fold(session.state)(sent =>
           session.handle(sent.asString.getOrElse(sent.noSpaces))
@@ -50,16 +50,27 @@ object GoldenReplay:
         left.problems
     }
 
-  /** An error reply is compared on type and reason only: its message embeds Python enum names. */
+  /**
+   * The replies compared one by one (a bot step adds one state each); a count mismatch is the only
+   * difference reported then.
+   */
   private def compare(expected: Vector[Json], actual: Vector[Json]): List[String] =
-    (expected, actual) match
-      case (Vector(want), Vector(got)) if want.hcursor.get[String]("type").contains("error") =>
-        List("type", "reason").flatMap { key =>
-          JsonDiff.diff(
-            want.hcursor.get[Json](key).getOrElse(Json.Null),
-            got.hcursor.get[Json](key).getOrElse(Json.Null),
-            s"$$.$key",
-          )
-        }
-      case (Vector(want), Vector(got)) => JsonDiff.diff(want, got)
-      case _ => List(s"recorded ${expected.size} replies, the session gave ${actual.size}")
+    if expected.size != actual.size then
+      List(s"recorded ${expected.size} replies, the session gave ${actual.size}")
+    else
+      expected.zip(actual).zipWithIndex.toList.flatMap { case ((want, got), index) =>
+        val label = if expected.size > 1 then s"reply $index " else ""
+        compareReply(want, got).map(label + _)
+      }
+
+  /** An error reply is compared on type and reason only: its message embeds Python enum names. */
+  private def compareReply(want: Json, got: Json): List[String] =
+    if want.hcursor.get[String]("type").contains("error") then
+      List("type", "reason").flatMap { key =>
+        JsonDiff.diff(
+          want.hcursor.get[Json](key).getOrElse(Json.Null),
+          got.hcursor.get[Json](key).getOrElse(Json.Null),
+          s"$$.$key",
+        )
+      }
+    else JsonDiff.diff(want, got)
