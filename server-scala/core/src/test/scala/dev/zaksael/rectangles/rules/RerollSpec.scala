@@ -67,6 +67,13 @@ class RerollSpec extends AnyFlatSpec with Matchers with EitherValues:
     confirmed.history.map(_.placed) shouldBe Vector(None)
   }
 
+  it should "be recorded once however often it is confirmed" in {
+    val (rolled, _) = Turns.rollDice(game(2), deadRoll).value
+    val twice       = Turns.confirmSkip(rolled).flatMap(Turns.confirmSkip).value
+    one(twice).consecutiveSkips shouldBe 1
+    twice.history should have size 1
+  }
+
   it should "be recorded once, at the roll, when no reroll can be spent" in {
     val (rolled, _) = Turns.rollDice(game(2, reroll = false), deadRoll).value
     one(rolled).consecutiveSkips shouldBe 1

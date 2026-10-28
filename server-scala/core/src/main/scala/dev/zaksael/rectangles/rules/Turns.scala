@@ -176,9 +176,20 @@ object Turns:
     if state.turn == TurnState.GameOver then state
     else ended(state, GameOverReason.Surrendered(state.current))
 
-  /** Acknowledges a skipped turn; a skip held back for a reroll is recorded now. */
+  /** Acknowledges a skipped turn; a skip held back for a reroll is recorded now, once. */
   def confirmSkip(state: GameState): Either[RuleError, GameState] =
     if state.turn != TurnState.Skipped then Left(RuleError.WrongState)
     else
-      Right(if Rerolls.canReroll(state) then state.lastRoll.fold(state)(commitSkip(state, _))
-      else state)
+      Right(
+        if Rerolls.canReroll(state) && !recorded(state) then
+          state.lastRoll.fold(state)(commitSkip(state, _))
+        else state
+      )
+
+  /** Whether the latest history record is this player's skip of the pending roll. */
+  private def recorded(state: GameState): Boolean =
+    state.history.lastOption.exists(record =>
+      record.playerId == state.current && record.placed.isEmpty && state.lastRoll.contains(
+        record.roll
+      )
+    )
