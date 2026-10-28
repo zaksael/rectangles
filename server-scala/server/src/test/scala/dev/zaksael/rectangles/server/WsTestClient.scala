@@ -20,6 +20,7 @@ import io.circe.parser
 import org.http4s.HttpApp
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.websocket.WebSocketBuilder2
+import org.scalatest.Assertions
 
 /** A WebSocket client for tests: the messages it receives queue up, and the close code is kept. */
 final class WsTestClient private (
@@ -29,12 +30,17 @@ final class WsTestClient private (
 ):
   def send(text: String): Unit = socket.sendText(text, true).get(5, TimeUnit.SECONDS): Unit
 
-  /** The next message from the server, parsed; Json.Null after 5 seconds without one. */
-  def next(): Json =
-    Option(inbox.poll(
-      5,
-      TimeUnit.SECONDS,
-    )).flatMap(text => parser.parse(text).toOption).getOrElse(Json.Null)
+  /**
+   * The next message from the server, parsed; fails the test when none arrives in time or it is not
+   * JSON.
+   */
+  def next(wait: FiniteDuration = 5.seconds): Json =
+    val text = Option(inbox.poll(wait.toMillis, TimeUnit.MILLISECONDS))
+      .getOrElse(Assertions.fail(s"no message from the server within $wait"))
+    parser.parse(text).fold(
+      failure => Assertions.fail(s"the server sent text that is not JSON: $text", failure),
+      identity,
+    )
 
   /** The close code the server sent, or None when the connection is still open after 5 seconds. */
   def closeCode(): Option[Int] = Try(closed.get(5, TimeUnit.SECONDS)).toOption

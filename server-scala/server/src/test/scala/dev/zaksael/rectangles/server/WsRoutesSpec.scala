@@ -82,12 +82,10 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       turn(afterHuman).get[String]("turnState").value shouldBe "awaitingRoll"
 
       val afterRoll = client.next()
-      afterRoll should not be Json.Null
       turn(afterRoll).get[Int]("currentPlayerId").value shouldBe 2
       turn(afterRoll).get[Json]("lastRoll").value should not be Json.Null
 
       val afterMove = client.next()
-      afterMove should not be Json.Null
       turn(afterMove).get[Int]("currentPlayerId").value shouldBe 1
       turn(afterMove).get[String]("turnState").value shouldBe "awaitingRoll"
       afterMove.hcursor.downField("game").downField("players").downField("2").downField(

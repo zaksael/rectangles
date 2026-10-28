@@ -41,8 +41,7 @@ class FullGameSpec extends AnyFlatSpec with Matchers with EitherValues with Opti
   @tailrec
   private def untilHuman(client: WsTestClient): Json =
     val message = client.next()
-    if message == Json.Null then fail("the server stopped answering")
-    else if humanToAct(message) then message
+    if humanToAct(message) then message
     else untilHuman(client)
 
   private def humanAction(state: Json): String =
