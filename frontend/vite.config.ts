@@ -14,5 +14,7 @@ export default defineConfig({
     // One jsdom per worker instead of one per file (about half the run time); setupTests cleans up after each test, and a test that leaks global state would show up as an order-dependent failure.
     isolate: false,
     setupFiles: './src/setupTests.ts',
+    // A red run still writes the report, so `npm run coverage` never needs a second pass.
+    coverage: { reportOnFailure: true },
   },
 })
