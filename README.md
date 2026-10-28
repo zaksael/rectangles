@@ -214,7 +214,7 @@ the full wording of every rule see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 | Rule | What it does | On the board |
 |---|---|---|
 | **Prize** | Four cells (two mirrored pairs). Covering one captures it for +10 points on top of your area; one piece can capture several. | A plus mark that disappears once covered; a ring around what your last placement captured. |
-| **Walls** | Several wall lines (mirrored pairs, horizontal or vertical) between cells, so no area is lost. A piece can't cross a wall, and a piece on one side doesn't touch territory on the other: build around the ends. | Thick lines between cells. |
+| **Walls** | Four wall lines, each as long as five cells (two mirrored pairs, horizontal or vertical), between cells, so no area is lost. A piece can't cross a wall, and a piece on one side doesn't touch territory on the other: build around the ends. | Thick lines between cells. |
 | **Obstacles** | Four cells (two mirrored pairs) that no piece can ever cover. | A solid dark square. |
 | **Pitfall** | Four cells (two mirrored pairs). Covering one docks you 10 points; scores aren't floored at 0, so a player can go negative. | A bar mark that disappears once covered; its own Pitfall row in the score table. |
 | **Steal** | Two cells (one mirrored pair). Covering one is zero-sum: you gain 10 and your opponent loses 10, a 20-point swing. Scores can go negative. | A plus-over-minus mark that disappears once covered; the Steal row shows each player's net swing. |
@@ -252,9 +252,10 @@ Prize/Steal/Pitfall for Greedy, a deniable frontier cell for Blocking); if
 every value ties at zero, Blocking picks randomly among them, while Greedy
 instead prefers whichever value gives the larger piece. With Reroll on,
 they spend a charge to discard a roll that would cost them points (a forced
-Pitfall), or that scores nothing while a Prize or Steal (Greedy) or a cell of
-your frontier (Blocking) is still within a roll's reach; with nothing in
-reach, as on the opening turns, they accept the roll and keep the charge.
+Pitfall), or that scores nothing while a Prize or Steal (Greedy), or those and a cell of
+your frontier (Blocking), is still within a roll's reach; with nothing in
+reach, as on the opening turns, they accept the roll and keep the charge. A
+roll that would skip the turn is always discarded while a charge is left.
 Basic stays fully random for both and never rerolls.
 
 ## Series mode

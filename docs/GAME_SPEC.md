@@ -130,7 +130,7 @@ one prize at once). Each captured prize permanently earns that player a fixed
 When enabled: two mirrored single-cell pairs (four pitfall cells total) are
 marked on the board before play begins - each pair at a random position
 plus its mirror through the board's center, kept clear of both players'
-starting corners, of any Prize, Walls, or Obstacles cells already in play,
+starting corners, of any Prize or Obstacle cell and any cell beside a wall already in play,
 and a minimum distance apart from other Pitfall cells, so neither player is
 favored and the cells don't cluster together. A pitfall cell behaves like
 any other empty cell
@@ -145,8 +145,8 @@ mirror image of Prize's bonus, not a bonus to anyone.
 When enabled: one mirrored single-cell pair (two steal cells total) is
 marked on the board before play begins - placed at a random position plus
 its mirror through the board's center, kept clear of both players' starting
-corners and of any Prize, Walls, Obstacles, or Pitfall cell already in
-play, so neither player is favored. A steal cell behaves like any other
+corners and of any Prize, Obstacle or Pitfall cell and any cell beside a
+wall already in play, so neither player is favored. A steal cell behaves like any other
 empty cell for placement
 purposes; whichever player's piece happens to cover it captures it
 immediately. Capturing a steal cell is a zero-sum transfer: the capturing
@@ -156,10 +156,10 @@ this one always touches both players' scores at once.
 
 ### 6.4 Walls
 
-When enabled: four wall lines, each five cells long, are marked on the board
+When enabled: four wall lines, each as long as five cells, are marked on the board
 before play begins, in two mirrored pairs — each pair placed at a random position and
 orientation (horizontal or vertical), kept clear of both players' starting
-corners and a minimum distance from any other wall pair, with the second
+corners, of any Prize, and a minimum distance from any other wall pair, with the second
 segment of each pair the exact mirror image of the first through the
 board's center. A wall sits
 *between* two adjacent cells, not on a cell itself — no board area is ever
@@ -173,7 +173,7 @@ past a wall is to build around one of its ends.
 When enabled: four individual cells are marked on the board before play
 begins, in two mirrored pairs — each pair placed at a random
 position, kept clear of both players' starting corners, of any Prize
-or Walls cells already in play, and a minimum distance from any
+cell and any cell beside a wall already in play, and a minimum distance from any
 other Obstacle pair, with the second cell of each pair
 the exact mirror image of the first through the board's center. Unlike a
 wall, an obstacle cell is a piece of the board itself that is permanently
@@ -272,8 +272,9 @@ is possible.
 At any point during their own turn, a player may concede the match outright
 instead of playing on. Their opponent wins immediately and unconditionally,
 regardless of the score at that moment. In a series (§11), a surrender ends
-only the current round this way — the surrendering player's opponent wins
-that round outright, and the series continues to its next round as normal.
+only the current round: each player's score at that moment is added to the
+series totals as it stands (the surrender adds nothing and takes nothing
+away), and the series continues to its next round as normal.
 
 ## 10. Bot opponent difficulty
 
@@ -306,14 +307,18 @@ Greedy and Blocking apply the same underlying strategy to Wildcard Roll
   every turn none of Prize/Steal/Pitfall are in play — Blocking picks among
   the tied values at random, while Greedy instead prefers the value
   yielding the largest piece.
-- With Reroll on, both discard a roll that would cost them points (a forced
-  Pitfall) and, at a score of zero, a roll when some roll could still score:
-  a Prize or Steal cell within reach of a piece for Greedy, a cell of the
-  opponent's frontier for Blocking. "Within reach" means no more than five
-  cells from the player's territory (or start corner before the first move),
-  since a piece is at most six wide. Otherwise — on the opening turns, or
-  with nothing left to gain — the roll is accepted and the charge saved.
-  A roll that would skip the turn is always discarded when a charge is left.
+- With Reroll on and a charge left, both always discard a roll that would
+  skip the turn. Otherwise each scores the best placement of the roll by its
+  own metric (Greedy by special cells alone; Blocking by those plus the
+  opponent's cells denied) and discards the roll when that best score is
+  negative — a forced Pitfall that Blocking's denial does not outweigh — or
+  zero while some roll could still gain: a Prize or Steal cell for either, and
+  a cell of the opponent's frontier as well for Blocking, within reach of a
+  piece. "Within reach" means no more than five cells from the player's
+  frontier (the empty cells touching their territory), or from the start corner
+  before the first move, since a piece is at most six wide. Otherwise — on the
+  opening turns, or with nothing left to gain — the roll is accepted and the
+  charge saved.
 
 Basic never rerolls and always picks a wildcard value uniformly at
 random, regardless of house rules.
@@ -321,7 +326,7 @@ random, regardless of house rules.
 ## 11. Series play
 
 Instead of a single game, a match may instead be a fixed-length series
-(e.g. best-of-3 or best-of-5 rounds) against the same opponent, with board
+(3 or 5 rounds) against the same opponent, with board
 size, skip limit, and every optional-rule setting locked for every round.
 Each round's score (§5) adds to that player's running series total — a
 landslide round counts for more than a squeaker — and every round in the

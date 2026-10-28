@@ -4,7 +4,7 @@ How a client talks to the server: connect parameters, the messages each side sen
 
 ## Connect
 
-`GET /ws?<parameters>`, upgraded to a WebSocket. One connection is one game; closing it ends the game.
+`GET /ws?<parameters>`, upgraded to a WebSocket. One connection is one game; closing it ends the game, and there is no resume: connecting again starts a new game.
 
 | Parameter | Values | Default |
 |---|---|---|
@@ -45,16 +45,16 @@ Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`.
 | `analysis` | `turns` | answer to `requestAnalysis` |
 | `error` | `reason`, `message` | an action was refused; the game is unchanged |
 
-With a bot, the answer to an action is one `state` per step, in order: the human's action, then each roll, placement or skip the bot makes until it is the human's turn again. A bot that moves first sends its steps right after connect. The last `state` is the current one.
+With a bot, the answer to an action is one `state` per step, in order: the human's action, then each roll, reroll, wildcard choice, placement or skip the bot makes until it is the human's turn again. A bot that moves first sends its steps right after connect. The last `state` is the current one.
 
-`analysis.turns` lists the turns where a better move existed: `turn` (1-based), `axis` (`prize`, `pitfall`, `steal`, `denial` or `enclosure`), `chosen` and `best` (points on that axis), and the better placement as `topLeft`, `width` and `height`.
+`analysis.turns` lists the turns where a better move existed: `turn` (1-based), `axis` (`prize`, `pitfall`, `steal`, `denial` or `enclosure`), `chosen` and `best` (points on that axis; cells denied for `denial`), and the better placement as `topLeft`, `width` and `height`.
 
 ## Errors
 
 `error.reason` is one of:
 
-- `malformedMessage`: not JSON, an unknown `type`, or a missing or mistyped field
-- `protocolVersionMismatch`: `protocolVersion` is not `1`
+- `malformedMessage`: not JSON, an unknown `type`, or a missing or mistyped field other than `protocolVersion`
+- `protocolVersionMismatch`: `protocolVersion` is missing or not `1`
 - `invalidAction`: the action does not fit the moment (rolling twice, any `roll`, `place`, `skip`, `reroll` or `chooseWildcard` once the game is over, `requestAnalysis` mid-game, `continueSeries` outside a finished round)
-- `illegalPlacement`: the `place` is not a legal placement
+- `illegalPlacement`: the `place` is not a legal placement, including a `place` before the roll or a second one on the same roll
 - `illegalWildcardValue`: the `chooseWildcard` value is outside 1–6
