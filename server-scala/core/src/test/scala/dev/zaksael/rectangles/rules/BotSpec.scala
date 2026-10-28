@@ -235,6 +235,22 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
     reroll(state, BotDifficulty.Greedy) shouldBe true
   }
 
+  it should "go to Blocking too when every candidate covers a Pitfall" in {
+    val state = rolled(
+      placed(
+        withSpecialCells(rerollRules(6), CellKind.Pitfall, Cell(0, 1), Cell(1, 0)),
+        PlayerId.One,
+        Cell(0, 0),
+        1,
+        1,
+      ),
+      1,
+      1,
+    )
+    state.turn shouldBe TurnState.ChoosingPlacement
+    reroll(state, BotDifficulty.Blocking) shouldBe true
+  }
+
   it should "not happen when rerolls are off, even at a zero score" in {
     reroll(rolled(lone(rerollRules(6, reroll = false)), 1, 1), BotDifficulty.Greedy) shouldBe false
   }

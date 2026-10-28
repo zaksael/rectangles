@@ -47,6 +47,21 @@ class StealSpec extends AnyFlatSpec with Matchers with EitherValues:
     found.exists(_.nonEmpty) shouldBe true
   }
 
+  it should "be one mirrored pair clear of the start corners" in {
+    val found =
+      for
+        size <- List(11, 19)
+        seed <- 0 until 30
+      yield
+        val cells = generated(Rules(boardSize = size, steal = true), seed.toLong).board
+          .cellsOfKind(CellKind.Steal)
+        cells.size should be <= 2 * Constants.STEAL_CELL_PAIRS
+        cells.map(Generation.mirrorCell(_, size)) shouldBe cells
+        cells.foreach(Generation.nearStartCorner(_, size) shouldBe false)
+        cells
+    found.exists(_.nonEmpty) shouldBe true
+  }
+
   it should "be empty on a board too small for any candidate" in {
     val board = generated(Rules(boardSize = 6, steal = true)).board
     board.cellsOfKind(CellKind.Steal) shouldBe empty

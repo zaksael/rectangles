@@ -5,6 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.ScriptedDice
+import dev.zaksael.rectangles.chebyshev
 import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.Constants
@@ -38,6 +39,25 @@ class PitfallSpec extends AnyFlatSpec with Matchers with EitherValues:
         pitfalls.intersect(Generation.wallCells(board.wallEdges)) shouldBe empty
         pitfalls.intersect(board.obstacleCells) shouldBe empty
         pitfalls
+    found.exists(_.nonEmpty) shouldBe true
+  }
+
+  it should "be mirrored, clear of the start corners and spaced apart" in {
+    val found =
+      for
+        size <- List(11, 19)
+        seed <- 0 until 30
+      yield
+        val cells = generated(Rules(boardSize = size, pitfall = true), seed.toLong).board
+          .cellsOfKind(CellKind.Pitfall)
+        cells.size should be <= 2 * Constants.PITFALL_CELL_PAIRS
+        cells.map(Generation.mirrorCell(_, size)) shouldBe cells
+        cells.foreach(Generation.nearStartCorner(_, size) shouldBe false)
+        for
+          a <- cells
+          b <- cells if a != b && b != Generation.mirrorCell(a, size)
+        do chebyshev(a, b) should be >= Constants.MIN_SPECIAL_CELL_DISTANCE
+        cells
     found.exists(_.nonEmpty) shouldBe true
   }
 

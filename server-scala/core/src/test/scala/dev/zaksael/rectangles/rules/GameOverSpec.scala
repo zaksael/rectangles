@@ -86,6 +86,33 @@ class GameOverSpec extends AnyFlatSpec with Matchers with EitherValues:
       Some(GameOverReason.SkipLimit(PlayerId.One))
   }
 
+  private def atSkipLimit(state: GameState, who: PlayerId): GameState =
+    state.copy(players =
+      state.players.updated(
+        who,
+        state.players(who).copy(consecutiveSkips = state.rules.skipLimit),
+      )
+    )
+
+  "a full board with a player at the skip limit" should "end as board full, not skipped out" in {
+    val full =
+      placed(placed(game(2), PlayerId.One, Cell(0, 0), 1, 2), PlayerId.Two, Cell(0, 1), 1, 2)
+    Turns.checkGameOver(atSkipLimit(full, PlayerId.One)).gameOver shouldBe
+      Some(GameOverReason.BoardFull)
+  }
+
+  "a boxed-in player while the other is at the skip limit" should "end the game as blocked, not skipped out" in {
+    val boxedIn = placed(
+      placed(placed(game(4), PlayerId.One, Cell(0, 0), 1, 1), PlayerId.Two, Cell(1, 0), 1, 1),
+      PlayerId.Two,
+      Cell(0, 1),
+      1,
+      1,
+    )
+    Turns.checkGameOver(atSkipLimit(boxedIn, PlayerId.Two)).gameOver shouldBe
+      Some(GameOverReason.PlayerBlocked(PlayerId.One))
+  }
+
   "a 1x1 board" should "end after the first placement with that player winning" in {
     val (rolled, _) = Turns.rollDice(game(1), ScriptedDice.of(1, 1)).value
     val over        = Turns.checkGameOver(Turns.attemptPlace(rolled, Cell(0, 0), 1, 1).value)
