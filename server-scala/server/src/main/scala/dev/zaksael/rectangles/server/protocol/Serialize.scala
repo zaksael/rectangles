@@ -69,8 +69,7 @@ object Serialize:
     case AnalysisAxis.Enclosure => "enclosure"
 
   /**
-   * The `game` part of a `state` message. The house-rule parts that have no rule yet are written in
-   * their switched-off form; each rule fills its part in with its own task.
+   * The `game` part of a `state` message.
    */
   def game(state: GameState): Json =
     val steps = moves(state)

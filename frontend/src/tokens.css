@@ -2,11 +2,11 @@
  * Rectangles design tokens: shared custom properties and component styles.
  *
  * "Ledger" aesthetic: flat, no rounded corners, no drop shadows.
- * Two exceptions: a true modal dialog (connection lost, Surrender
- * confirm, Settings, Game-over) floating over a dimmed backdrop scrim, and the
- * Playing toast floating over the live board. Each elevates one layer
- * above another rather than decorating a flat card, and needs the shadow
- * to read as lifted rather than pasted on. Everything else stays flat.
+ * One exception: a true modal dialog (connection lost, Surrender
+ * confirm, Settings, Game-over) floats over a dimmed backdrop scrim. It
+ * elevates one layer above another rather than decorating a flat card, and
+ * needs the shadow to read as lifted rather than pasted on. Everything else
+ * stays flat.
  */
 
 :root {

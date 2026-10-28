@@ -73,10 +73,9 @@ const BoardLayers = memo(function BoardLayers({
 
   const specialCells = specialCellKinds(game)
 
-  // The most recent placement briefly rings whichever special cell(s) it just captured,
-  // mirroring the Pygame renderer's last-move prize highlight - a marker alone isn't
-  // enough of a signal for a capture that just happened. Applies to all three kinds
-  // for consistency, even though the Pygame reference only ever did it for Prize.
+  // The most recent placement briefly rings whichever special cell(s) it just captured: a
+  // marker alone isn't enough of a signal for a capture that just happened. Applies to all
+  // three special cell kinds.
   const captureRing: [number, number][] = []
   if (lastPlacedCells) {
     for (const [r, c] of lastPlacedCells) {

@@ -4,7 +4,8 @@ import io.circe.Json
 
 object JsonDiff:
   /**
-   * Arrays under these keys are compared without regard to order (Python builds them from sets).
+   * Arrays under these keys are compared without regard to order (the reference builds them from
+   * sets).
    */
   private val unordered = Set("topLefts", "edges")
 

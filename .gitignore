@@ -1,9 +1,5 @@
 .claude/
 CLAUDE.md
-__pycache__/
-*.pyc
-.pytest_cache/
-.venv/
 .DS_Store
 .idea/
 

@@ -184,7 +184,7 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
   )
 }
 
-// One step every this many milliseconds (the Pygame replay's values), the same for a skip as for a placement.
+// One step every this many milliseconds, the same for a skip as for a placement.
 const SPEEDS = [
   { label: 'Slow', ms: 1200 },
   { label: 'Normal', ms: 600 },

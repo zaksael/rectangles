@@ -117,9 +117,9 @@ function buildStartGameParams(settings: ModeSelectSettings): StartGameParams {
   }
 }
 
-// The mode cards, difficulty pills, and house-rule rows are non-native
-// (div with role="radio"/"checkbox"), so they don't get Enter/Space
-// activation for free the way a real <button> does.
+// The mode cards are non-native (div with role="radio"), so they don't get
+// Enter/Space activation for free the way the difficulty pills and house-rule
+// rows (real <button>s) do.
 function handleActivateKey(e: KeyboardEvent, onActivate: () => void): void {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault()

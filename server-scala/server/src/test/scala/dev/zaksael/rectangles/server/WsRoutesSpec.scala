@@ -319,7 +319,7 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       finally client.close()
     }
 
-  "a message far larger than any real one" should "close the connection (Ember drops it past its fragment limit; Python answered close code 1009 at 16 MiB)" in
+  "a message far larger than any real one" should "close the connection (Ember drops it past its fragment limit)" in
     connected() { client =>
       client.next()
       Try(client.send("x" * 20000000))

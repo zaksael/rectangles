@@ -13,7 +13,8 @@ import io.circe.Json
 import io.circe.parser
 
 /**
- * A random draw the Python reference made: replaying them in order reproduces the recorded game.
+ * A random draw the reference implementation made: replaying them in order reproduces the recorded
+ * game.
  */
 enum Draw:
   case RandInt(lo: Int, hi: Int, value: Int)

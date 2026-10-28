@@ -63,7 +63,10 @@ object GoldenReplay:
         compareReply(want, got).map(label + _)
       }
 
-  /** An error reply is compared on type and reason only: its message embeds Python enum names. */
+  /**
+   * An error reply is compared on type and reason only: its message embeds the reference's enum
+   * names.
+   */
   private def compareReply(want: Json, got: Json): List[String] =
     if want.hcursor.get[String]("type").contains("error") then
       List("type", "reason").flatMap { key =>
