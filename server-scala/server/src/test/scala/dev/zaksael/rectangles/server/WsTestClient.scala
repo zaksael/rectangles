@@ -22,6 +22,8 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.websocket.WebSocketBuilder2
 import org.scalatest.Assertions
 
+import dev.zaksael.rectangles.server.http.WsRoutes
+
 /** A WebSocket client for tests: the messages it receives queue up, and the close code is kept. */
 final class WsTestClient private (
     socket: WebSocket,
@@ -101,6 +103,7 @@ object TestServer:
       .default[IO]
       .withPort(port"0")
       .withIdleTimeout(idleTimeout)
+      .withMaxWebSocketMessageSize(WsRoutes.maxMessageSize)
       .withHttpWebSocketApp(app)
       .build
       .use(server => IO.blocking(test(server.address.getPort)))

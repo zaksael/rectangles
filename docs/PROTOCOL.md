@@ -22,7 +22,7 @@ The server sends a ping every 20 seconds so idle connections stay open.
 
 ## Messages
 
-Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`.
+Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`. A client text frame may be at most 64 KiB; a longer one closes the connection without an error message.
 
 ### Client to server
 

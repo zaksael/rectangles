@@ -33,6 +33,7 @@ object Main extends IOApp.Simple:
         .default[IO]
         .withHost(config.host)
         .withPort(config.port)
+        .withMaxWebSocketMessageSize(WsRoutes.maxMessageSize)
         .withHttpWebSocketApp(ws =>
           (HealthRoutes.routes <+> WsRoutes.routes(ws) <+> StaticRoutes.routes(
             config.frontendDist

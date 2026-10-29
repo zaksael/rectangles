@@ -362,6 +362,13 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
     }
   }
 
+  "a message just over 64 KiB" should "close the connection" in
+    connected() { client =>
+      client.next()
+      Try(client.send("x" * 65537))
+      client.closeCode() should not be None
+    }
+
   private def httpGet(port: Int, path: String): HttpResponse[String] =
     HttpClient
       .newHttpClient()

@@ -30,6 +30,9 @@ object WsRoutes:
         GameSession.create(ConnectParams.open(connect, SplitMix64(seed)), connect.bot)
     yield session
 
+  /** The longest text a client may send, in bytes. */
+  val maxMessageSize: Int = 64 * 1024
+
   /**
    * Replies a connection may have waiting; a client that reads slower than it sends is held back
    * past it.
