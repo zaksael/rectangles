@@ -83,6 +83,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const placing = humanTurnState === 'choosingPlacement'
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
+  // Once the server says the page is out of date, the reload hint outranks every later error.
+  const [outOfDate, setOutOfDate] = useState(false)
+  if (error?.reason === 'protocolVersionMismatch' && !outOfDate) setOutOfDate(true)
+
   useEffect(() => {
     if (!error || error.reason === 'protocolVersionMismatch') return
     const timer = setTimeout(() => setDismissedError(error), ERROR_TOAST_MS)
@@ -113,7 +117,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   }, [state])
 
   // The notice row holds one notice: an error shows first, and a Comeback notice waits (its timer unstarted) until it clears.
-  const errorShown = error !== null && error !== dismissedError
+  const errorShown = outOfDate || (error !== null && error !== dismissedError)
   useEffect(() => {
     if (!comebackNotice || errorShown) return
     const timer = setTimeout(() => setComebackNotice(null), COMEBACK_TOAST_MS)
@@ -369,7 +373,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               </tbody>
             </table>
             <div className="rail-notice" role="status" aria-live="polite">
-              {errorShown ? <div className="toast">{ERROR_TEXT[error.reason] ?? ERROR_TEXT.malformedMessage}</div> : comebackNotice && <div className="toast">{comebackNotice}</div>}
+              {errorShown ? <div className="toast">{outOfDate ? ERROR_TEXT.protocolVersionMismatch : (ERROR_TEXT[error!.reason] ?? ERROR_TEXT.malformedMessage)}</div> : comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             {showResultBar ? (
               <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />

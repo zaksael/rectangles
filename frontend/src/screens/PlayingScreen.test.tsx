@@ -342,6 +342,17 @@ test('the out-of-date toast stays until the page is reloaded', () => {
   expect(screen.getByRole('status')).toHaveTextContent('This game is out of date — reload the page.')
 })
 
+test('a later error does not replace the out-of-date toast', () => {
+  vi.useFakeTimers()
+  const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const { rerender } = render(<PlayingScreen {...props} error={{ reason: 'protocolVersionMismatch', message: 'x' }} />)
+
+  rerender(<PlayingScreen {...props} error={{ reason: 'illegalPlacement', message: 'y' }} />)
+  act(() => vi.advanceTimersByTime(60_000))
+
+  expect(screen.getByRole('status')).toHaveTextContent('This game is out of date — reload the page.')
+})
+
 test('a newer error replaces the toast and restarts the 4 second timer', () => {
   vi.useFakeTimers()
   const props = { state: makeState(), sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
