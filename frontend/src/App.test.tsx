@@ -200,6 +200,33 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled()
   })
 
+  it('a late close from the previous game does not undo the next game having opened', () => {
+    render(<App />)
+    startGameAndOpen()
+    const first = FakeWebSocket.instances.at(-1)!
+    act(() => {
+      first.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series: null,
+      })
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
+    startGameAndOpen()
+    sendState()
+
+    act(() => {
+      first.emit('close')
+    })
+
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
+    expect(screen.queryByText("This game can't be resumed")).not.toBeInTheDocument()
+  })
+
   it('returns to Mode Select from the game-over dialog on one New Game click, even when the socket closes asynchronously', () => {
     render(<App />)
     startGameAndOpen()
