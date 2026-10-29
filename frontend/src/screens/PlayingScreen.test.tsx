@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import { readCss } from '../dev/testUtils/styles'
 import { makeGame, makeSeries } from '../dev/fixtures/gameFixtures'
-import type { GameWireState, RecentTurn } from '../game/gameTypes'
+import type { ErrorReason, GameWireState, RecentTurn } from '../game/gameTypes'
 import type { GameError, GameState } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
 
@@ -325,6 +325,21 @@ test('the error toast auto-dismisses after 4 seconds', () => {
 
   act(() => vi.advanceTimersByTime(1))
   expect(screen.getByRole('status')).toBeEmptyDOMElement()
+})
+
+test('a reason this client does not know still shows the generic toast text', () => {
+  renderScreen(makeState(), vi.fn(), { reason: 'futureReason' as ErrorReason, message: 'x' })
+
+  expect(screen.getByRole('status')).toHaveTextContent('Something went wrong — try again.')
+})
+
+test('the out-of-date toast stays until the page is reloaded', () => {
+  vi.useFakeTimers()
+  renderScreen(makeState(), vi.fn(), { reason: 'protocolVersionMismatch', message: 'x' })
+
+  act(() => vi.advanceTimersByTime(60_000))
+
+  expect(screen.getByRole('status')).toHaveTextContent('This game is out of date — reload the page.')
 })
 
 test('a newer error replaces the toast and restarts the 4 second timer', () => {

@@ -84,7 +84,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const [dismissedError, setDismissedError] = useState<GameError | null>(null)
 
   useEffect(() => {
-    if (!error) return
+    if (!error || error.reason === 'protocolVersionMismatch') return
     const timer = setTimeout(() => setDismissedError(error), ERROR_TOAST_MS)
     return () => clearTimeout(timer)
   }, [error])
@@ -369,7 +369,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               </tbody>
             </table>
             <div className="rail-notice" role="status" aria-live="polite">
-              {errorShown ? <div className="toast">{ERROR_TEXT[error.reason]}</div> : comebackNotice && <div className="toast">{comebackNotice}</div>}
+              {errorShown ? <div className="toast">{ERROR_TEXT[error.reason] ?? ERROR_TEXT.malformedMessage}</div> : comebackNotice && <div className="toast">{comebackNotice}</div>}
             </div>
             {showResultBar ? (
               <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
