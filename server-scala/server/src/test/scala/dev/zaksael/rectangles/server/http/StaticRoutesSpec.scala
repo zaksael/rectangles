@@ -13,13 +13,14 @@ import scala.jdk.OptionConverters.*
 import cats.effect.IO
 import cats.syntax.semigroupk.*
 import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.server.TestServer
 import dev.zaksael.rectangles.server.WsTestClient
 
-class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
+class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues with OptionValues:
   /** A built frontend in a temp folder, with a file beside it that must never be served. */
   private def withBuild[A](test: Path => A): A =
     val root = Files.createTempDirectory("static-routes")
@@ -67,6 +68,43 @@ class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
             header(response, "X-Frame-Options") shouldBe Some("DENY")
             header(response, "X-Content-Type-Options") shouldBe Some("nosniff")
           }
+      }
+    }
+
+  it should "cache the hashed assets for good and make the page revalidate" in
+    withBuild { dist =>
+      served(dist) { port =>
+        header(get(port, "/assets/app.js"), "Cache-Control") shouldBe
+          Some("public, max-age=31536000, immutable")
+        header(get(port, "/"), "Cache-Control") shouldBe Some("no-cache")
+      }
+    }
+
+  it should "keep an asset cached when the browser revalidates it" in
+    withBuild { dist =>
+      served(dist) { port =>
+        val etag = header(get(port, "/assets/app.js"), "ETag").value
+        val revalidated = HttpClient
+          .newHttpClient()
+          .send(
+            HttpRequest
+              .newBuilder(URI.create(s"http://127.0.0.1:$port/assets/app.js"))
+              .header("If-None-Match", etag)
+              .GET()
+              .build(),
+            BodyHandlers.ofString(),
+          )
+        revalidated.statusCode shouldBe 304
+        header(revalidated, "Cache-Control") shouldBe Some("public, max-age=31536000, immutable")
+      }
+    }
+
+  it should "not cache a missing asset" in
+    withBuild { dist =>
+      served(dist) { port =>
+        val missing = get(port, "/assets/gone.js")
+        missing.statusCode shouldBe 404
+        header(missing, "Cache-Control") shouldBe Some("no-cache")
       }
     }
 
