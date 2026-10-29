@@ -71,6 +71,19 @@ class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues with 
       }
     }
 
+  it should "limit what the page may load to its own origin, on every response" in
+    withBuild { dist =>
+      served(dist) { port =>
+        for path <- List("/", "/assets/app.js", "/nope") do
+          withClue(path) {
+            val policy = header(get(port, path), "Content-Security-Policy").value
+            policy should include("default-src 'self'")
+            policy should include("object-src 'none'")
+            policy should include("frame-ancestors 'none'")
+          }
+      }
+    }
+
   it should "cache the hashed assets for good and make the page revalidate" in
     withBuild { dist =>
       served(dist) { port =>

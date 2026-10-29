@@ -15,9 +15,20 @@ import org.http4s.server.staticcontent.fileService
 import org.typelevel.ci.*
 
 object StaticRoutes:
+  /** The build loads only its own scripts, styles, fonts and socket. */
+  private val policy = List(
+    "default-src 'self'",
+    "img-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ).mkString("; ")
+
   private val hardening = List(
     Header.Raw(ci"X-Frame-Options", "DENY"),
     Header.Raw(ci"X-Content-Type-Options", "nosniff"),
+    Header.Raw(ci"Content-Security-Policy", policy),
   )
 
   /**
