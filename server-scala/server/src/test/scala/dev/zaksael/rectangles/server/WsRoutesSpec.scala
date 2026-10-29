@@ -5,7 +5,13 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.WebSocket
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
+import scala.annotation.tailrec
 import scala.concurrent.duration.*
 import scala.util.Try
 
@@ -325,6 +331,36 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       Try(client.send("x" * 20000000))
       client.closeCode() should not be None
     }
+
+  "a client that sends but never reads" should "stop the server taking its messages once the outbox is full" in {
+    val handled = new AtomicInteger
+    val big     = Json.fromString("x" * 262144)
+    val sessions: Connect => IO[Session] = _ =>
+      IO.pure(new Session:
+        def state: IO[Vector[Json]] = IO.pure(Vector(Json.obj()))
+        def handle(text: String): IO[Vector[Json]] =
+          IO.delay(handled.incrementAndGet()).as(Vector(big)))
+    // A listener that asks for no message after the first, so the replies pile up on the server.
+    val silent = new WebSocket.Listener:
+      override def onText(ws: WebSocket, data: CharSequence, last: Boolean): CompletionStage[?] =
+        CompletableFuture.completedFuture(())
+    @tailrec def settled(previous: Int, stableFor: Int): Int =
+      Thread.sleep(250)
+      val now = handled.get
+      if now == previous && stableFor >= 4 then now
+      else settled(now, if now == previous then stableFor + 1 else 0)
+    TestServer.use(ws => WsRoutes.routes(ws, sessions).orNotFound) { port =>
+      val socket = HttpClient
+        .newHttpClient()
+        .newWebSocketBuilder()
+        .buildAsync(URI.create(s"ws://localhost:$port/ws?$vanilla"), silent)
+        .get(5, TimeUnit.SECONDS)
+      try
+        (1 to 300).foreach(_ => socket.sendText("{}", true).get(5, TimeUnit.SECONDS))
+        settled(-1, 0) should be < 150
+      finally socket.abort()
+    }
+  }
 
   private def httpGet(port: Int, path: String): HttpResponse[String] =
     HttpClient

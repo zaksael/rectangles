@@ -30,6 +30,12 @@ object WsRoutes:
         GameSession.create(ConnectParams.open(connect, SplitMix64(seed)), connect.bot)
     yield session
 
+  /**
+   * Replies a connection may have waiting; a client that reads slower than it sends is held back
+   * past it.
+   */
+  private val outboxSize = 64
+
   private def send(outbox: Queue[IO, Option[WebSocketFrame]], message: Json): IO[Unit] =
     outbox.offer(Some(WebSocketFrame.Text(message.noSpaces)))
 
@@ -48,7 +54,7 @@ object WsRoutes:
         case Some(connect) if OriginCheck.allowed(header("Origin"), header("Host")) =>
           for
             session <- sessions(connect)
-            outbox  <- Queue.unbounded[IO, Option[WebSocketFrame]]
+            outbox  <- Queue.bounded[IO, Option[WebSocketFrame]](outboxSize)
             opening <- session.state
             _       <- opening.traverse_(message => send(outbox, message))
             socket <- ws.build(
@@ -59,7 +65,7 @@ object WsRoutes:
                 case WebSocketFrame.Text(text, _) =>
                   session.handle(text).flatMap(_.traverse_(message => send(outbox, message)))
                 case _ => IO.unit
-              }.onFinalize(outbox.offer(None)),
+              }.onFinalize(outbox.tryOffer(None).void),
             )
           yield socket
         case _ => Forbidden()
