@@ -296,6 +296,57 @@ test.each<[GameAction, unknown]>([
   expect(FakeWebSocket.instances[0]!.sent).toEqual([expected])
 })
 
+test('an error arriving behind a queued state shows only after that state has', () => {
+  const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null })
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: secondGame, series: null })
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'error', reason: 'invalidAction', message: 'x' })
+  })
+  expect(result.current.error).toBeNull()
+
+  act(() => {
+    vi.advanceTimersByTime(500)
+  })
+  expect(result.current.state?.game).toEqual(secondGame)
+  expect(result.current.error?.reason).toBe('invalidAction')
+})
+
+test('an error with no state waiting ahead of it shows at once, even during the delay after a state', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null }))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'error', reason: 'invalidAction', message: 'x' }))
+
+  expect(result.current.error?.reason).toBe('invalidAction')
+})
+
+test('an analysis arriving behind a queued state applies right after it, without a further wait', () => {
+  const over = (lastRoll: [number, number] | null): GameWireState => ({
+    ...fakeGame,
+    turn: { ...fakeGame.turn, lastRoll },
+    gameOver: { history: [], reason: 'boardFull', playerId: null, winner: 1 },
+  })
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  act(() => result.current.requestAnalysis())
+
+  act(() => {
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: over(null), series: null })
+    FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: over([3, 4]), series: null })
+    FakeWebSocket.instances[0]!.emit('message', analysisMessage)
+  })
+  expect(result.current.analysis).toEqual({ status: 'loading' })
+
+  act(() => {
+    vi.advanceTimersByTime(500)
+  })
+  expect(result.current.state?.game.turn.lastRoll).toEqual([3, 4])
+  expect(result.current.analysis).toEqual({ status: 'ready', turns: analysisTurns })
+})
+
 test('applies a single state message immediately, with no delay', () => {
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
 
@@ -467,6 +518,7 @@ test('a fresh connection clears the previous game state and error', () => {
       reason: 'illegalPlacement',
       message: 'x',
     })
+    vi.advanceTimersByTime(500)
   })
   expect(result.current.state).not.toBeNull()
   expect(result.current.error).not.toBeNull()

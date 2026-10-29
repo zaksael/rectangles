@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Analysis, ErrorReason, GameAction, GameWireState, SeriesWireState } from '../game/gameTypes'
+import type { Analysis, AnalysisTurn, ErrorReason, GameAction, GameWireState, SeriesWireState } from '../game/gameTypes'
 
 interface GameSocketParams {
   protocolVersion: number
@@ -52,6 +52,9 @@ export interface GameError {
   message: string
 }
 
+// What the pacing queue holds: everything the server says about the game, in the order it said it.
+type Paced = { kind: 'state'; state: GameState } | { kind: 'error'; error: GameError } | { kind: 'analysis'; turns: AnalysisTurn[] }
+
 type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'connect-failed'
 
 const DEFAULT_PACING_DELAY_MS = 500
@@ -82,7 +85,7 @@ export function useGameSocket(params: GameSocketParams) {
   const socketRef = useRef<WebSocket | null>(null)
   const intentionalCloseRef = useRef(false)
   const hasOpenedRef = useRef(false)
-  const stateQueueRef = useRef<GameState[]>([])
+  const pacedQueueRef = useRef<Paced[]>([])
   const drainTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Read when each wait starts, so a change applies from the next one without a new connection.
   const pacingDelayRef = useRef(DEFAULT_PACING_DELAY_MS)
@@ -123,22 +126,45 @@ export function useGameSocket(params: GameSocketParams) {
     hasOpenedRef.current = false
     const setStatus = (value: ConnectionStatus) => setStatusEntry({ connection, value })
     analysisRef.current = null
-    stateQueueRef.current = []
+    pacedQueueRef.current = []
     if (drainTimeoutRef.current !== null) {
       clearTimeout(drainTimeoutRef.current)
       drainTimeoutRef.current = null
     }
 
+    function applyUnpaced(item: Exclude<Paced, { kind: 'state' }>) {
+      if (item.kind === 'error') {
+        setError(item.error)
+        failPendingAnalysis()
+      } else {
+        setAnalysis({ status: 'ready', turns: item.turns })
+      }
+    }
     function drainNext() {
-      const next = stateQueueRef.current.shift()
+      const next = pacedQueueRef.current.shift()
       if (next === undefined) {
         drainTimeoutRef.current = null
         return
       }
-      setState(next)
+      if (next.kind !== 'state') {
+        applyUnpaced(next)
+        drainNext()
+        return
+      }
+      setState(next.state)
       // A state with no history is a game still in play: any analysis held belongs to the round before.
-      if (!next.game.gameOver.history) setAnalysis(null)
+      if (!next.state.game.gameOver.history) setAnalysis(null)
+      // An error or analysis queued right behind this state shows with it; only states wait out the delay.
+      for (let head = pacedQueueRef.current[0]; head !== undefined && head.kind !== 'state'; head = pacedQueueRef.current[0]) {
+        pacedQueueRef.current.shift()
+        applyUnpaced(head)
+      }
       drainTimeoutRef.current = setTimeout(drainNext, pacingDelayRef.current)
+    }
+    // An error or analysis with no state waiting ahead of it applies at once, so feedback never waits out a state's delay.
+    function enqueueUnpaced(item: Exclude<Paced, { kind: 'state' }>) {
+      if (pacedQueueRef.current.length === 0) applyUnpaced(item)
+      else pacedQueueRef.current.push(item)
     }
     // Spelled out, not '/ws': browsers before 2024 reject a relative WebSocket URL with a SyntaxError.
     const base = params.serverUrl ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
@@ -192,15 +218,14 @@ export function useGameSocket(params: GameSocketParams) {
           botSeat === undefined
             ? data.game
             : { ...data.game, players: { ...data.game.players, [botSeat]: { ...data.game.players[botSeat], name: botName(params.botDifficulty) } } }
-        stateQueueRef.current.push({ game, series: data.series })
+        pacedQueueRef.current.push({ kind: 'state', state: { game, series: data.series } })
         if (drainTimeoutRef.current === null) {
           drainNext()
         }
       } else if (data.type === 'analysis') {
-        setAnalysis({ status: 'ready', turns: data.turns })
+        enqueueUnpaced({ kind: 'analysis', turns: data.turns })
       } else if (data.type === 'error') {
-        setError({ reason: data.reason, message: data.message })
-        failPendingAnalysis()
+        enqueueUnpaced({ kind: 'error', error: { reason: data.reason, message: data.message } })
       } else {
         reject(data)
       }
