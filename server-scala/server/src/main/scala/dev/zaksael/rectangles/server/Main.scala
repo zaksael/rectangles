@@ -9,7 +9,6 @@ import logging4s.cats.CatsInstances.given
 import logging4s.console.ConsoleInstances.given
 import logging4s.core.Logging
 import logging4s.core.syntax.loggable.*
-import org.http4s.ember.server.EmberServerBuilder
 
 import dev.zaksael.rectangles.server.http.HealthRoutes
 import dev.zaksael.rectangles.server.http.StaticRoutes
@@ -29,11 +28,9 @@ object Main extends IOApp.Simple:
             "no frontend folder, serving only /health and /ws",
             frontend.toString.asLogValue("folder"),
           )
-      _ <- EmberServerBuilder
-        .default[IO]
+      _ <- ServerBuilder.ember
         .withHost(config.host)
         .withPort(config.port)
-        .withMaxWebSocketMessageSize(WsRoutes.maxMessageSize)
         .withHttpWebSocketApp(ws =>
           (HealthRoutes.routes <+> WsRoutes.routes(ws) <+> StaticRoutes.routes(
             config.frontendDist
