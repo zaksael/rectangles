@@ -99,6 +99,8 @@ object TestServer:
     ServerBuilder.ember
       .withPort(port"0")
       .withIdleTimeout(idleTimeout)
+      // A test that fails before closing its client must not wait out Ember's 30 s default.
+      .withShutdownTimeout(1.second)
       .withHttpWebSocketApp(app)
       .build
       .use(server => IO.blocking(test(server.address.getPort)))
