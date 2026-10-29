@@ -374,6 +374,43 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
     }
   }
 
+  /**
+   * What the server logs to stdout while `action` runs and until `done` holds (or 5 seconds pass).
+   */
+  private def logged(done: String => Boolean)(action: => Unit): String =
+    val out      = new java.io.ByteArrayOutputStream
+    val original = System.out
+    System.setOut(new java.io.PrintStream(out, true))
+    try
+      action
+      @tailrec def wait(left: Int): Unit =
+        if left > 0 && !done(out.toString) then
+          Thread.sleep(50)
+          wait(left - 1)
+      wait(100)
+      out.toString
+    finally System.setOut(original)
+
+  "a connection" should "be logged when it opens and when it closes" in {
+    val log = logged(_.contains("connection closed"))(connected()(_.next(): Unit))
+    log should include("connection opened")
+    log should include("connection closed")
+  }
+
+  it should "log why a connect was refused" in {
+    val log = logged(_.contains("badParameters"))(
+      TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+        WsTestClient.connect(port, "protocolVersion=1&boardSize=20"): Unit
+        WsTestClient.connect(port, "protocolVersion=1&boardSize=19&boardSize=19"): Unit
+        WsTestClient.connect(port, vanilla, Map("Origin" -> "http://evil.example")): Unit
+      }
+    )
+    log should include("connect refused")
+    log should include("badParameters")
+    log should include("repeatedParameter")
+    log should include("badOrigin")
+  }
+
   "a message just over 64 KiB" should "close the connection" in
     connected() { client =>
       client.next()

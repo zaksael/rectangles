@@ -1,5 +1,7 @@
 package dev.zaksael.rectangles.server.http
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import scala.concurrent.duration.*
 
 import cats.effect.IO
@@ -8,6 +10,10 @@ import cats.effect.std.SecureRandom
 import cats.syntax.foldable.*
 import fs2.Stream
 import io.circe.Json
+import logging4s.cats.CatsInstances.given
+import logging4s.console.ConsoleInstances.given
+import logging4s.core.Logging
+import logging4s.core.syntax.loggable.*
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io.*
 import org.http4s.server.websocket.WebSocketBuilder2
@@ -39,6 +45,9 @@ object WsRoutes:
    */
   private val outboxSize = 64
 
+  /** Connections open right now, across the whole process; only the log lines read it. */
+  private val openConnections = new AtomicInteger
+
   private def send(outbox: Queue[IO, Option[WebSocketFrame]], message: Json): IO[Unit] =
     outbox.offer(Some(WebSocketFrame.Text(message.noSpaces)))
 
@@ -55,15 +64,25 @@ object WsRoutes:
     HttpRoutes.of[IO] { case req @ GET -> Root / "ws" =>
       def header(name: String) = req.headers.get(CIString(name)).map(_.head.value)
       val keys                 = req.uri.query.pairs.map(_._1)
+      def refuse(reason: String) =
+        Logging.create[IO]("WsRoutes").flatMap(
+          _.warn("connect refused", reason.asLogValue("reason"))
+        ) *> Forbidden()
       ConnectParams.parse(req.uri.query.params) match
-        case Some(connect)
-            if keys.distinct.size == keys.size &&
-              OriginCheck.allowed(header("Origin"), header("Host")) =>
+        case None                                       => refuse("badParameters")
+        case Some(_) if keys.distinct.size != keys.size => refuse("repeatedParameter")
+        case Some(_) if !OriginCheck.allowed(header("Origin"), header("Host")) =>
+          refuse("badOrigin")
+        case Some(connect) =>
           for
+            log     <- Logging.create[IO]("WsRoutes")
             session <- sessions(connect)
             outbox  <- Queue.bounded[IO, Option[WebSocketFrame]](outboxSize)
             opening <- session.state
             _       <- opening.traverse_(message => send(outbox, message))
+            _ <- IO.delay(openConnections.incrementAndGet()).flatMap(open =>
+              log.info("connection opened", open.asLogValue("open"))
+            )
             socket <- ws.build(
               Stream
                 .fromQueueNoneTerminated(outbox)
@@ -72,8 +91,12 @@ object WsRoutes:
                 case WebSocketFrame.Text(text, _) =>
                   session.handle(text).flatMap(_.traverse_(message => send(outbox, message)))
                 case _ => IO.unit
-              }.onFinalize(outbox.tryOffer(None).void),
+              }.onFinalize(
+                outbox.tryOffer(None).void *>
+                  IO.delay(openConnections.decrementAndGet()).flatMap(open =>
+                    log.info("connection closed", open.asLogValue("open"))
+                  )
+              ),
             )
           yield socket
-        case _ => Forbidden()
     }
