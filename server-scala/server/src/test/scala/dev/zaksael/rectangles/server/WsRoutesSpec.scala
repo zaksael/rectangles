@@ -299,6 +299,18 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       ).left.value shouldBe 403
     }
 
+  it should "get HTTP 403 for a parameter given twice, even with the same value" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      WsTestClient.connect(
+        port,
+        "protocolVersion=1&boardSize=19&boardSize=23",
+      ).left.value shouldBe 403
+      WsTestClient.connect(
+        port,
+        "protocolVersion=1&boardSize=19&boardSize=19",
+      ).left.value shouldBe 403
+    }
+
   "a bug in the game" should "close the connection instead of becoming an error message" in {
     val failing = new Session:
       def state: IO[Vector[Json]] =

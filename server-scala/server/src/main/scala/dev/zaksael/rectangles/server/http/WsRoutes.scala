@@ -43,8 +43,9 @@ object WsRoutes:
     outbox.offer(Some(WebSocketFrame.Text(message.noSpaces)))
 
   /**
-   * `GET /ws`: refuses (403) a page from another host or parameters it does not know; otherwise
-   * sends the opening state and answers each client text with the reply the session gives.
+   * `GET /ws`: refuses (403) a page from another host, parameters it does not know or a parameter
+   * given twice; otherwise sends the opening state and answers each client text with the reply the
+   * session gives.
    */
   def routes(
       ws: WebSocketBuilder2[IO],
@@ -53,8 +54,11 @@ object WsRoutes:
   ): HttpRoutes[IO] =
     HttpRoutes.of[IO] { case req @ GET -> Root / "ws" =>
       def header(name: String) = req.headers.get(CIString(name)).map(_.head.value)
+      val keys                 = req.uri.query.pairs.map(_._1)
       ConnectParams.parse(req.uri.query.params) match
-        case Some(connect) if OriginCheck.allowed(header("Origin"), header("Host")) =>
+        case Some(connect)
+            if keys.distinct.size == keys.size &&
+              OriginCheck.allowed(header("Origin"), header("Host")) =>
           for
             session <- sessions(connect)
             outbox  <- Queue.bounded[IO, Option[WebSocketFrame]](outboxSize)

@@ -16,7 +16,7 @@ How a client talks to the server: connect parameters, the messages each side sen
 | `botDifficulty` | `Basic`, `Greedy`, `Blocking`; used only with `botSeats` | `Basic` |
 | `prizeEnabled`, `pitfallEnabled`, `stealEnabled`, `wallsEnabled`, `obstaclesEnabled`, `selfEnclosedPenaltyEnabled`, `wildcardEnabled`, `rerollEnabled`, `comebackNudgeEnabled` | `true` or `false` | `false` |
 
-The server answers `403` and does not upgrade when a parameter is unknown, a value is not allowed, or the page's `Origin` is a different host and port than the server's (no `Origin`, as from a script, is accepted). A single game starts with a coin flip for the first player; round 1 of a series is started by Player 1.
+The server answers `403` and does not upgrade when a parameter is unknown or given twice, a value is not allowed, or the page's `Origin` is a different host and port than the server's (no `Origin`, as from a script, is accepted). A single game starts with a coin flip for the first player; round 1 of a series is started by Player 1.
 
 The server sends a ping every 20 seconds so idle connections stay open.
 
