@@ -158,6 +158,52 @@ test('a frame that is not JSON surfaces a malformedMessage error and is logged, 
   expect(log).toHaveBeenCalledTimes(1)
 })
 
+test('a frame that is JSON but not an object surfaces a malformedMessage error without throwing', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  expect(() => act(() => FakeWebSocket.instances[0]!.emit('message', null))).not.toThrow()
+
+  expect(result.current.error?.reason).toBe('malformedMessage')
+})
+
+test('a state frame without a usable game surfaces a malformedMessage error and queues nothing', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  expect(() =>
+    act(() => FakeWebSocket.instances[0]!.emit('message', { type: 'state', game: { ...fakeGame, players: undefined }, series: null })),
+  ).not.toThrow()
+
+  expect(result.current.error?.reason).toBe('malformedMessage')
+  expect(result.current.state).toBeNull()
+})
+
+test('a frame of a type this client does not know surfaces a malformedMessage error', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { type: 'futureThing' }))
+
+  expect(result.current.error?.reason).toBe('malformedMessage')
+})
+
+test('a frame from a server on another protocol version surfaces protocolVersionMismatch and is not applied', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 2, type: 'state', game: fakeGame, series: null }))
+
+  expect(result.current.error?.reason).toBe('protocolVersionMismatch')
+  expect(result.current.state).toBeNull()
+})
+
 test('an unreadable frame while the analysis is loading makes it unavailable', () => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
   onTestFinished(() => void vi.restoreAllMocks())

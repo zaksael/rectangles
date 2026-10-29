@@ -58,6 +58,8 @@ const DEFAULT_PACING_DELAY_MS = 500
 
 export const botName = (difficulty?: string) => `Bot (${difficulty})`
 
+const isObject = (value: unknown): boolean => typeof value === 'object' && value !== null
+
 function connectParamsToQuery(params: GameSocketParams): string {
   const query = new URLSearchParams()
   for (const key of QUERY_PARAM_KEYS) {
@@ -157,17 +159,34 @@ export function useGameSocket(params: GameSocketParams) {
       }
     })
     socket.addEventListener('message', (event) => {
+      // States are full snapshots, so the next valid one heals the board; meanwhile say so instead of freezing silently.
+      const reject = (cause: unknown) => {
+        console.error('Unreadable message from the server', cause)
+        setError({ reason: 'malformedMessage', message: 'The server sent a message that could not be read.' })
+        failPendingAnalysis()
+      }
       let data
       try {
         data = JSON.parse(event.data)
       } catch (cause) {
-        // States are full snapshots, so the next valid one heals the board; meanwhile say so instead of freezing silently.
-        console.error('Unreadable message from the server', cause)
-        setError({ reason: 'malformedMessage', message: 'The server sent a message that could not be read.' })
+        reject(cause)
+        return
+      }
+      if (!isObject(data)) {
+        reject(data)
+        return
+      }
+      // The server always sends it; a frame without one is not a version clash, a different number is.
+      if (data.protocolVersion !== undefined && data.protocolVersion !== params.protocolVersion) {
+        setError({ reason: 'protocolVersionMismatch', message: 'The server speaks a different protocol version.' })
         failPendingAnalysis()
         return
       }
       if (data.type === 'state') {
+        if (!isObject(data.game) || !isObject(data.game.players) || !isObject(data.game.turn) || !isObject(data.game.gameOver) || (data.series !== null && !isObject(data.series))) {
+          reject(data)
+          return
+        }
         const botSeat = params.botSeats
         const game: GameWireState =
           botSeat === undefined
@@ -182,6 +201,8 @@ export function useGameSocket(params: GameSocketParams) {
       } else if (data.type === 'error') {
         setError({ reason: data.reason, message: data.message })
         failPendingAnalysis()
+      } else {
+        reject(data)
       }
     })
     return () => {
@@ -192,7 +213,7 @@ export function useGameSocket(params: GameSocketParams) {
       }
       socket.close()
     }
-  }, [connection, query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty])
+  }, [connection, query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty, params.protocolVersion])
 
   function disconnect() {
     intentionalCloseRef.current = true
