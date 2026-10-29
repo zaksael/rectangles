@@ -108,6 +108,17 @@ describe('App', () => {
     expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
   })
 
+  it('the connection-lost modal has no series wording when the socket closes before the first state', () => {
+    render(<App />)
+    startGameAndOpen()
+
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('close')
+    })
+
+    expect(screen.getByText(/couldn't be restored/)).not.toHaveTextContent(/series/)
+  })
+
   it('a speed picked in the Menu is remembered and shown pressed when the Menu reopens', () => {
     render(<App />)
     startGameAndOpen()
