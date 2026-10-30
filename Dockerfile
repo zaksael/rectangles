@@ -3,7 +3,7 @@
 FROM node:24-slim AS frontend
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY frontend/ ./
 RUN npm run build
 
@@ -12,12 +12,14 @@ ADD --checksum=sha256:783fe0c278564e67fbd14ecaa9ace6b9433cf8ece0ad8f50ad436cb246
 RUN tar -xzf /tmp/sbt.tgz -C /opt && rm /tmp/sbt.tgz
 ENV PATH=/opt/sbt/bin:$PATH
 WORKDIR /app/server-scala
-# Resolve the dependencies in their own layer, so a source change does not download them again.
+# The sbt, ivy and coursier caches are build cache mounts, so a changed build file downloads only what is new and a source change downloads nothing.
 COPY server-scala/project project
 COPY server-scala/build.sbt ./
-RUN sbt -batch update
+RUN --mount=type=cache,target=/root/.sbt --mount=type=cache,target=/root/.ivy2 --mount=type=cache,target=/root/.cache/coursier \
+    sbt -batch update
 COPY server-scala/ ./
-RUN sbt -batch server/stage
+RUN --mount=type=cache,target=/root/.sbt --mount=type=cache,target=/root/.ivy2 --mount=type=cache,target=/root/.cache/coursier \
+    sbt -batch server/stage
 
 FROM eclipse-temurin:25-jre
 RUN useradd --system --uid 10001 rectangles
