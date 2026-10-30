@@ -1247,8 +1247,7 @@ test('values with no legal placement are disabled, not removed', () => {
   const group = screen.getByRole('group', { name: 'Wildcard value' })
   for (const [name, enabled] of [['1', true], ['2', false], ['3', true], ['4', true], ['5', false], ['6', true]] as const) {
     const pill = within(group).getByRole('button', { name: `Set wildcard die to ${name}` })
-    if (enabled) expect(pill).toBeEnabled()
-    else expect(pill).toBeDisabled()
+    expect({ name, disabled: pill.matches(':disabled') }).toEqual({ name, disabled: !enabled })
   }
 })
 

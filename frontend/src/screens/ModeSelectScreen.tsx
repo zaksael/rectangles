@@ -224,6 +224,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       </div>
 
       <div className="mode-cards" role="radiogroup" aria-label="Opponent">
+        {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a mouse shortcut for the radio inside, which takes the keys */}
         <div
           className={settings.opponent === 'bot' ? 'mode-card selected' : 'mode-card'}
           onClick={() => setSettings((s) => ({ ...s, opponent: 'bot' }))}

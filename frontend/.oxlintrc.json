@@ -1,8 +1,21 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "oxc"],
+  "plugins": ["react", "oxc", "typescript", "jsx-a11y", "vitest"],
+  "categories": { "suspicious": "warn" },
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    // The automatic JSX runtime needs no React import.
+    "react/react-in-jsx-scope": "off",
+    // Tests type their mocks by inference; a type parameter on every vi.fn adds noise.
+    "vitest/require-mock-type-parameters": "off",
+    // The radio groups, groups and images are deliberate ARIA widgets; swapping the tags would redo markup, CSS and keys (the touch-and-accessibility work owns that).
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "jsx-a11y/no-noninteractive-element-interactions": "off",
+    "jsx-a11y/no-noninteractive-tabindex": "off",
+    // The game-over dialogs take focus on purpose, so the keyboard lands on the actions.
+    "jsx-a11y/no-autofocus": "off",
+    // expect(value, 'message') is vitest's own failure-message form.
+    "vitest/valid-expect": "off"
   }
 }

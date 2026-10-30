@@ -144,6 +144,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const startPlacement = useEffectEvent(handleBoardFocus)
   useEffect(() => {
     if (document.activeElement?.classList.contains('board')) startPlacement()
+  // oxlint-disable-next-line react/exhaustive-effect-dependencies -- dims is a trigger: re-check focus when the board resizes
   }, [dims])
 
   const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false
@@ -158,6 +159,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     if (!autoSkip) return
     const timer = setTimeout(sendSkip, AUTO_SKIP_MS)
     return () => clearTimeout(timer)
+  // oxlint-disable-next-line react/exhaustive-effect-dependencies -- state is a trigger: every new state restarts the pause
   }, [autoSkip, state])
 
   const lastPlaced = useLastPlaced(state?.game)
@@ -318,6 +320,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
               <caption className="visually-hidden">Score</caption>
               <thead>
                 <tr>
+                  {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- empty corner cell above the row titles */}
                   <td />
                   {ids.map((id) => (
                     <th key={id} scope="col" className={`p${id}${currentId === Number(id) ? ' current' : ''}${turnState === 'gameOver' ? ' over' : ''}`} aria-current={currentId === Number(id) ? 'true' : undefined}>

@@ -131,6 +131,7 @@ function ScoreTable({ game, history, step }: { game: GameWireState; history: His
       <caption className="visually-hidden">{`Score at ${step === 0 ? 'the start of the game' : `turn ${step}`}`}</caption>
       <thead>
         <tr>
+          {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- empty corner cell above the row titles */}
           <td />
           {ids.map((id) => (
             <th key={id} scope="col" className="over">

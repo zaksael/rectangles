@@ -135,6 +135,7 @@ export function useGameSocket(params: GameSocketParams) {
     function applyUnpaced(item: Exclude<Paced, { kind: 'state' }>) {
       if (item.kind === 'error') {
         setError(item.error)
+        // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the connection key decides when to reconnect; other params must not
         failPendingAnalysis()
       } else {
         setAnalysis({ status: 'ready', turns: item.turns })

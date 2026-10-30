@@ -118,10 +118,10 @@ function useArmedAt() {
 // V goes back to the board or the result, N starts a new game, R opens the replay; Ctrl, Cmd and Alt combos belong to the browser.
 function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void, onReplay?: (() => void) | undefined) {
   if (event.ctrlKey || event.metaKey || event.altKey) return
-  const key = event.key.toLowerCase()
-  if (key === 'v') onView()
-  else if (key === 'r') onReplay?.()
-  else if (key === 'n' && !event.repeat && Date.now() >= armedAt) onNewGame?.()
+  const pressed = event.key.toLowerCase()
+  if (pressed === 'v') onView()
+  else if (pressed === 'r') onReplay?.()
+  else if (pressed === 'n' && !event.repeat && Date.now() >= armedAt) onNewGame?.()
 }
 
 // The breakdown tables' header: a hidden label for the row-title column, then one column per player.
