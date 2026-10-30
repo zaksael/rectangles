@@ -196,8 +196,8 @@ interface ReplayScreenProps {
   series?: SeriesWireState | null
   onBack: () => void
   analysis?: Analysis | null
-  showBetterOption?: boolean
-  onToggleBetterOption?: () => void
+  showBetterOption?: boolean | undefined
+  onToggleBetterOption?: (() => void) | undefined
   // The socket dropped: the replay needs no server, so it says so and carries on.
   connectionLost?: boolean
   onNewGame?: () => void

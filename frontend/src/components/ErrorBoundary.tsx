@@ -4,13 +4,13 @@ import '../dialogs/NarrowWindowGate.css'
 // A render error unmounts the whole tree to a blank page. A reload is the only safe reset, since whatever state caused it is suspect.
 // The card is plain markup with no app state, so it cannot throw for the reason the app did, and it reuses the narrow-window notice's look.
 export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
+  override state = { failed: false }
 
   static getDerivedStateFromError() {
     return { failed: true }
   }
 
-  render() {
+  override render() {
     if (!this.state.failed) return this.props.children
     return (
       <div className="narrow-notice" role="alert">

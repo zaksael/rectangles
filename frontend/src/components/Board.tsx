@@ -14,16 +14,16 @@ interface BoardProps {
   previewTopLeft?: [number, number] | null
   previewDims?: [number, number] | null
   previewKind?: 'legal' | 'danger' | 'pending' | null
-  coverableCells?: [number, number][]
+  coverableCells?: [number, number][] | undefined
   lastPlaced?: [number, number] | null
   // Replay's Show Better Option: the placement that would have ranked higher, outlined.
-  betterOption?: { topLeft: [number, number]; width: number; height: number } | null
-  onCellHover?: (cell: [number, number]) => void
-  onCellTap?: (cell: [number, number], pointerType: string) => void
+  betterOption?: { topLeft: [number, number]; width: number; height: number } | null | undefined
+  onCellHover?: ((cell: [number, number]) => void) | undefined
+  onCellTap?: ((cell: [number, number], pointerType: string) => void) | undefined
   // Keyboard play: giving onKeyDown makes the board a single tab stop.
   onKeyDown?: KeyboardEventHandler
   onFocus?: FocusEventHandler
-  describedBy?: string
+  describedBy?: string | undefined
 }
 
 // The cells, walls and piece outlines only change with the game state, so hovering
@@ -34,7 +34,7 @@ const BoardLayers = memo(function BoardLayers({
   lastPlaced,
 }: {
   game: GameWireState
-  coverableCells?: [number, number][]
+  coverableCells?: [number, number][] | undefined
   lastPlaced?: BoardProps['lastPlaced']
 }) {
   const { size } = game.board

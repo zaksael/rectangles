@@ -5,7 +5,7 @@ import { afterEach, expect, test } from 'vitest'
 import { serverCommand, startServer } from './realServer'
 
 afterEach(() => {
-  delete process.env.RECTANGLES_SERVER_CMD
+  delete process.env['RECTANGLES_SERVER_CMD']
 })
 
 test('without RECTANGLES_SERVER_CMD the staged Scala launcher is started', () => {
@@ -27,7 +27,7 @@ test('a server that exits before it is ready rejects at once, naming the exit an
   const script = path.join(mkdtempSync(path.join(tmpdir(), 'fake-server-')), 'server.sh')
   writeFileSync(script, '#!/bin/sh\necho boom-from-server >&2\nexit 3\n')
   chmodSync(script, 0o755)
-  process.env.RECTANGLES_SERVER_CMD = script
+  process.env['RECTANGLES_SERVER_CMD'] = script
   const started = Date.now()
   await expect(startServer()).rejects.toThrow(/exited with code 3[\s\S]*boom-from-server/)
   expect(Date.now() - started).toBeLessThan(5_000)

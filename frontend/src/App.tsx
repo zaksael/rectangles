@@ -130,6 +130,7 @@ function App() {
       </NarrowWindowGate>
     )
   }
+  return null
 }
 
 export default App

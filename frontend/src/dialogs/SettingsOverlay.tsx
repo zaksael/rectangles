@@ -12,9 +12,9 @@ interface SettingsOverlayProps {
   opponentLabel: string
   sendAction: (action: GameAction) => void
   onClose: () => void
-  botSeat?: number
+  botSeat?: number | undefined
   // Given in a Vs Bot match only: the Menu's one adjustable item.
-  botSpeed?: { current: BotSpeedLabel; onChange: (label: BotSpeedLabel) => void }
+  botSpeed?: { current: BotSpeedLabel; onChange: (label: BotSpeedLabel) => void } | undefined
 }
 
 export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClose, botSeat, botSpeed }: SettingsOverlayProps) {

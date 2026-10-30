@@ -18,7 +18,7 @@ interface GameSocketParams {
   selfEnclosedPenaltyEnabled?: boolean
   comebackNudgeEnabled?: boolean
   // The wait between two queued states; not a connect param, so changing it never reconnects.
-  pacingDelayMs?: number
+  pacingDelayMs?: number | undefined
   serverUrl?: string
   enabled?: boolean
   connectionId?: number

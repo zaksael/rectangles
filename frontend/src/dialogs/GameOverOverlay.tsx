@@ -116,7 +116,7 @@ function useArmedAt() {
 }
 
 // V goes back to the board or the result, N starts a new game, R opens the replay; Ctrl, Cmd and Alt combos belong to the browser.
-function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void, onReplay?: () => void) {
+function handleResultKey(event: { key: string; repeat: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, armedAt: number, onView: () => void, onNewGame?: () => void, onReplay?: (() => void) | undefined) {
   if (event.ctrlKey || event.metaKey || event.altKey) return
   const key = event.key.toLowerCase()
   if (key === 'v') onView()
@@ -145,10 +145,10 @@ function ScoreTableHead({ game, label }: { game: GameWireState; label: string })
 
 interface ResultDialogProps {
   winner: number | null
-  describedBy?: string
+  describedBy?: string | undefined
   onViewBoard: () => void
-  onAdvance?: () => void
-  onReplay?: () => void
+  onAdvance?: (() => void) | undefined
+  onReplay?: (() => void) | undefined
   children: ReactNode
 }
 
@@ -176,13 +176,13 @@ function ResultDialog({ winner, describedBy, onViewBoard, onAdvance, onReplay, c
 
 // The result's last button, and the action N shares with it: New Game for a single game, Next Round mid-series,
 // Series Result after the last round. A button whose handler wasn't given isn't shown.
-function advanceFor(series: SeriesWireState | null, handlers: { onNewGame: () => void; onNextRound?: () => void; onSeriesResult?: () => void }) {
+function advanceFor(series: SeriesWireState | null, handlers: { onNewGame: () => void; onNextRound?: (() => void) | undefined; onSeriesResult?: (() => void) | undefined }) {
   if (series === null) return { label: 'New Game', onAdvance: handlers.onNewGame }
   return series.isComplete ? { label: 'Series Result', onAdvance: handlers.onSeriesResult } : { label: 'Next Round', onAdvance: handlers.onNextRound }
 }
 
 // A result button with its key chip (N by default; Replay uses R).
-function AdvanceButton({ label, onAdvance, keyName = 'N' }: { label: string; onAdvance?: () => void; keyName?: string }) {
+function AdvanceButton({ label, onAdvance, keyName = 'N' }: { label: string; onAdvance?: (() => void) | undefined; keyName?: string }) {
   if (!onAdvance) return null
   return (
     <button className="btn secondary" onClick={onAdvance} aria-keyshortcuts={keyName.toLowerCase()}>
@@ -198,8 +198,8 @@ interface GameOverBarProps {
   series?: SeriesWireState | null
   onViewResult: () => void
   onNewGame: () => void
-  onNextRound?: () => void
-  onSeriesResult?: () => void
+  onNextRound?: (() => void) | undefined
+  onSeriesResult?: (() => void) | undefined
   // The bar for the series card's board view: the series outcome and totals, and no way forward but a new game.
   seriesResult?: boolean
 }
@@ -249,9 +249,9 @@ interface GameOverOverlayProps {
   series?: SeriesWireState | null
   onNewGame: () => void
   onViewBoard: () => void
-  onNextRound?: () => void
-  onSeriesResult?: () => void
-  onReplay?: () => void
+  onNextRound?: (() => void) | undefined
+  onSeriesResult?: (() => void) | undefined
+  onReplay?: (() => void) | undefined
 }
 
 export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, onNextRound, onSeriesResult, onReplay }: GameOverOverlayProps) {
@@ -358,7 +358,7 @@ const seriesHeadline = (game: GameWireState, series: SeriesWireState) =>
   series.winner === null ? 'Series tied' : `${nameOf(game, series.winner)} wins the series`
 
 // The series' result: a per-round ledger ending in the total that decided it.
-export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onReplay }: { game: GameWireState; series: SeriesWireState; onNewGame: () => void; onViewBoard: () => void; onReplay?: () => void }) {
+export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onReplay }: { game: GameWireState; series: SeriesWireState; onNewGame: () => void; onViewBoard: () => void; onReplay?: (() => void) | undefined }) {
   const { winner } = series
   return (
     <ResultDialog winner={winner} describedBy={winner !== null ? 'gameover-story' : undefined} onViewBoard={onViewBoard} onAdvance={onNewGame} onReplay={onReplay}>

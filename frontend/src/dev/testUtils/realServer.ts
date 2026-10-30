@@ -77,7 +77,7 @@ const SCALA_SERVER: ServerCommand = { command: STAGED_LAUNCHER, args: [] }
 // RECTANGLES_SERVER_CMD replaces the staged Scala launcher (`sbt server/stage` in server-scala/ builds it). It is split on
 // whitespace and run without a shell, so `stop` kills the server itself, not a wrapper around it.
 export function serverCommand(env: Record<string, string | undefined>): ServerCommand {
-  const [command, ...args] = (env.RECTANGLES_SERVER_CMD ?? '').trim().split(/\s+/)
+  const [command, ...args] = (env['RECTANGLES_SERVER_CMD'] ?? '').trim().split(/\s+/)
   return command ? { command, args } : SCALA_SERVER
 }
 

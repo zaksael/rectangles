@@ -25,10 +25,10 @@ interface PlayingScreenProps {
   onOpenSettings: () => void
   onNewGame: () => void
   // Says which card Replay was opened from, so Back can show that card again.
-  onReplay?: (fromSeriesResult: boolean) => void
+  onReplay?: ((fromSeriesResult: boolean) => void) | undefined
   // Back from Replay on a finished series: open the series card rather than the last round's.
   initialSeriesResultOpen?: boolean
-  botSeat?: number
+  botSeat?: number | undefined
 }
 
 const ERROR_TOAST_MS = 4000
