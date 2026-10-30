@@ -170,7 +170,7 @@ npm run coverage               # the same suite with a coverage report
 npm run lint
 ```
 
-On every push and pull request, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`, followed by the two frontend integration tests against the staged launcher; and the Docker build, followed by starting the container, waiting for it to report healthy, loading the page and connecting to the game socket.
+On every pull request and every push to `main`, GitHub Actions (`.github/workflows/ci.yml`) runs three jobs: the frontend lint, Vitest suite and production build; the Scala format and lint checks, tests and `sbt server/stage`, followed by the two frontend integration tests against the staged launcher; and the Docker build, followed by starting the container, waiting for it to report healthy, loading the page and connecting to the game socket.
 
 ## Rules
 
