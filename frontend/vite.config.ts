@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/ws': { target: 'ws://localhost:8765', ws: true },
+      '/ws': { target: `ws://localhost:${process.env.RECTANGLES_SERVER_PORT ?? 8765}`, ws: true },
     },
   },
   test: {

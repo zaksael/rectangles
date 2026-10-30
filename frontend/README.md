@@ -10,4 +10,4 @@ npm test        # vitest run; the integration tests start the staged server (`sb
 npm run coverage  # vitest run --coverage
 ```
 
-The server serves the built bundle: run `npm run build`, then `server-scala/target/stage/bin/rectangles-server` from the repo root and open `http://127.0.0.1:8765/`. During development `npm run dev` forwards `/ws` to the server on port 8765.
+The server serves the built bundle: run `npm run build`, then `server-scala/target/stage/bin/rectangles-server` from the repo root and open `http://127.0.0.1:8765/`. During development `npm run dev` forwards `/ws` to the server on port 8765 (or `RECTANGLES_SERVER_PORT`, when set).
