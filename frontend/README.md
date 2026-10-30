@@ -3,7 +3,7 @@
 React/TypeScript frontend for Rectangles. Talks to the Scala WebSocket server in `../server-scala/server/`.
 
 ```
-npm install
+npm ci
 npm run dev     # dev server
 npm run build   # tsc -b && vite build
 npm test        # vitest run; the integration tests start the staged server (`sbt server/stage` in ../server-scala first)

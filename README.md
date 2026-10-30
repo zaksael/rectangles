@@ -33,7 +33,7 @@ area when the game ends wins.
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run build
 cd ../server-scala
 sbt server/stage
