@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { HistoryEntry } from '../game/gameTypes'
 import { makeGame, makeHistoryEntry, makeSeries } from '../dev/fixtures/gameFixtures'
+import { readCss } from '../dev/testUtils/styles'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from './GameOverOverlay'
 
 afterEach(cleanup)
@@ -800,4 +801,81 @@ test('a single rolled cell reads as "1 cell", not "1 cells"', () => {
   const dialog = renderWithHistory([dealt(1, [1, 1]), dealt(2, [2, 2])], 1, 'boardFull', false)
 
   expect(dialog).toHaveTextContent('Dice: Player 1 rolled 1 cell, Player 2 rolled 4 cells')
+})
+
+test.each([
+  ['playerBlocked', 2, 'Player 2 had no legal move left'],
+  ['skipLimit', 1, 'Player 1 hit the skip limit (5 of 5)'],
+  ['surrender', 2, 'Player 2 surrendered'],
+] as const)('a single game names the player for a %s ending', (reason, playerId, text) => {
+  const dialog = renderOver({ winner: 1, reason, playerId, area: [158, 141] })
+  expect(within(dialog).getByText(text)).toBeInTheDocument()
+})
+
+test('a surrender win reads plain "wins", not "on score"', () => {
+  const dialog = renderOver({ winner: 1, reason: 'surrender', playerId: 2, area: [158, 141] })
+  expect(within(dialog).getByRole('heading', { name: 'Player\u00a01 wins' })).toBeInTheDocument()
+})
+
+test('a game with no winner is headlined "Tied"', () => {
+  const dialog = renderOver({ winner: null, area: [150, 150] })
+  expect(within(dialog).getByRole('heading', { name: 'Tied' })).toBeInTheDocument()
+})
+
+test('player names in the headline use a non-breaking space so they never wrap mid-name', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141] })
+  expect(within(dialog).getByRole('heading').textContent).toBe('Player\u00a01 wins on score')
+})
+
+test('a modifier row shows both players’ figures, signed', () => {
+  const dialog = renderOver({ winner: 1, area: [158, 141], score: [170, 129] }, (game) => {
+    withRules(game)
+    setParts(game, '1', { steal: 12 })
+    setParts(game, '2', { steal: -12 })
+  })
+  const [own, theirs] = within(dialog).getByRole('row', { name: /^Steal/ }).querySelectorAll('td')
+  expect(own).toHaveTextContent('12')
+  expect(theirs).toHaveTextContent('−12')
+})
+
+// jsdom skips the imported stylesheet, so tests that assert computed style inject the real files, the shared tokens first as in the bundle.
+function injectGameOverCss() {
+  const style = document.createElement('style')
+  style.textContent = `${readCss('tokens.css')}\n${readCss('PlayingScreen.css')}`
+  document.head.append(style)
+  onTestFinished(() => style.remove())
+}
+
+test('the winner’s score cell has a 4px top border and 4px less top padding, so the scoreboard keeps its height', () => {
+  injectGameOverCss()
+
+  renderOver({ winner: 1, area: [158, 141] })
+
+  const [winner, other] = [...document.querySelectorAll('.game-over-scoreboard > div')].map((d) => getComputedStyle(d))
+  expect([winner!.borderTopWidth, winner!.borderTopStyle, winner!.paddingTop]).toEqual(['4px', 'solid', '6px'])
+  expect([other!.borderTopWidth, other!.paddingTop]).toEqual(['0px', '10px'])
+})
+
+test('the breakdown row note and the biggest-swing tag are 12px, and the story bolds only its margin', () => {
+  injectGameOverCss()
+
+  renderOver({ winner: 1, area: [120, 120], score: [140, 120] }, (game) => {
+    game.houseRules.prize = { enabled: true, cells: [], points: 5 }
+    game.houseRules.steal = { enabled: true, cells: [], points: 10 }
+    setParts(game, '1', { prize: 10, steal: 20 })
+    setParts(game, '2', { steal: -20 })
+  })
+
+  expect(getComputedStyle(screen.getByText('+5 per captured cell')).fontSize).toBe('12px')
+  expect(getComputedStyle(screen.getByText('Biggest swing')).fontSize).toBe('12px')
+  expect(getComputedStyle(screen.getByText('20 points')).fontWeight).toBe('600')
+  expect(getComputedStyle(document.querySelector('.game-over-story')!).fontWeight).not.toBe('600')
+})
+
+test('a headline followed straight by the scoreboard keeps 18px below it', () => {
+  injectGameOverCss()
+
+  const dialog = renderOver({ winner: null, area: [150, 150] })
+
+  expect(getComputedStyle(within(dialog).getByRole('heading', { name: 'Tied' })).marginBottom).toBe('18px')
 })

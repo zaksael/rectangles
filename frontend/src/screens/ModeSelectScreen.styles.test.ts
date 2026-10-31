@@ -69,3 +69,12 @@ test("Mode Select's own classes all carry the mode- prefix", () => {
   const classes = new Set([...selectors.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((match) => match[1]!))
   expect([...classes].filter((name) => !name.startsWith('mode-') && !SHARED_OR_STATE.includes(name))).toEqual([])
 })
+
+test('the group header wraps so the links drop under a label in a narrow column', () => {
+  expect(css).toMatch(/\.mode-group-head \{[^}]*flex-wrap:\s*wrap/)
+})
+
+test('the group links share the Reset link\u2019s style and its coarse-pointer padding', () => {
+  expect(css).toMatch(/\.mode-reset-link,\s*\.mode-group-link \{/)
+  expect(css).toMatch(/@media \(any-pointer: coarse\) \{[\s\S]*\.mode-reset-link,\s*\.mode-group-link \{[^}]*padding:\s*12px 0/)
+})

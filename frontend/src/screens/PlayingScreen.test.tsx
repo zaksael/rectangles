@@ -428,96 +428,6 @@ test('no game-over dialog while the game is in progress', () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
-test.each([
-  ['playerBlocked', 2, 'Player 2 had no legal move left'],
-  ['skipLimit', 1, 'Player 1 hit the skip limit (5 of 5)'],
-  ['surrender', 2, 'Player 2 surrendered'],
-] as const)('game over names the player for a %s ending', (reason, playerId, text) => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason, playerId, winner: 1 } }))
-  expect(within(screen.getByRole('dialog')).getByText(text)).toBeInTheDocument()
-})
-
-test('a surrender win reads plain "wins", not "on score"', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'surrender', playerId: 2, winner: 1 } }))
-  expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Player\u00a01 wins' })).toBeInTheDocument()
-})
-
-test('game over reads "Tied" when there is no winner', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: null } }))
-  expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Tied' })).toBeInTheDocument()
-})
-
-test('a plain game over shows the final score as a group of both totals', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
-  game.players['1'].score = { ...game.players['1'].score, totalArea: 5, totalScore: 5 }
-  game.players['2'].score = { ...game.players['2'].score, totalArea: 4, totalScore: 4 }
-  renderScreen({ game, series: null })
-
-  expect(within(screen.getByRole('dialog')).getByRole('group', { name: 'Final score' })).toHaveTextContent('Player 15Player 24')
-})
-
-test('game over shows a Prize breakdown row, in points, when Prize is enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
-  game.houseRules.prize = { enabled: true, cells: [], points: 5 }
-  Object.assign(game.players['1'].score.breakdown, { prize: 10 })
-  Object.assign(game.players['2'].score.breakdown, { prize: 5 })
-  renderScreen({ game, series: null })
-
-  const table = within(screen.getByRole('dialog')).getByRole('table')
-  const row = within(table).getByRole('row', { name: /Prize/ })
-  expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Prize+5 per captured cell',
-    '10',
-    '5',
-  ])
-})
-
-test('game over shows a Pitfall breakdown row, as a negative deduction, when Pitfall is enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
-  game.houseRules.pitfall = { enabled: true, cells: [], points: 10 }
-  Object.assign(game.players['1'].score.breakdown, { pitfall: -10 })
-  renderScreen({ game, series: null })
-
-  const table = within(screen.getByRole('dialog')).getByRole('table')
-  const row = within(table).getByRole('row', { name: /Pitfall/ })
-  expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Pitfall−10 per captured cell',
-    '−10',
-    '0',
-  ])
-})
-
-test('game over shows a Steal breakdown row, as each player\'s net swing, when Steal is enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
-  game.houseRules.steal = { enabled: true, cells: [], points: 10 }
-  Object.assign(game.players['1'].score.breakdown, { steal: 10 })
-  Object.assign(game.players['2'].score.breakdown, { steal: -10 })
-  renderScreen({ game, series: null })
-
-  const table = within(screen.getByRole('dialog')).getByRole('table')
-  const row = within(table).getByRole('row', { name: /Steal/ })
-  expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Stealcapturer +10, opponent −10, per capture',
-    '10',
-    '−10',
-  ])
-})
-
-test('game over shows an Enclosure breakdown row, as a negative deduction of 1 per cell, when enabled', () => {
-  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
-  game.houseRules.selfEnclosedPenalty = { enabled: true }
-  Object.assign(game.players['1'].score.breakdown, { enclosure: -3 })
-  renderScreen({ game, series: null })
-
-  const table = within(screen.getByRole('dialog')).getByRole('table')
-  const row = within(table).getByRole('row', { name: /Enclosure/ })
-  expect([within(row).getByRole('rowheader').textContent, ...within(row).getAllByRole('cell').map((c) => c.textContent)]).toEqual([
-    'Enclosure−1 per sealed-in cell',
-    '−3',
-    '0',
-  ])
-})
-
 test('the game-over dialog offers New Game', () => {
   const onNewGame = vi.fn()
   renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }), vi.fn(), null, onNewGame)
@@ -565,11 +475,6 @@ test('the result bar offers New Game', () => {
   fireEvent.click(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'New Game' }))
 
   expect(onNewGame).toHaveBeenCalledTimes(1)
-})
-
-test('game-over player names use a non-breaking space so they never wrap mid-name', () => {
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
-  expect(within(screen.getByRole('dialog')).getByRole('heading').textContent).toBe('Player\u00a01 wins on score')
 })
 
 const renderVsBot = (state: GameState) => renderScreen(state, vi.fn(), null, vi.fn(), 2)
@@ -796,48 +701,6 @@ test('the last roll is marked by a dashed border alone, not by dimming its digit
 
   expect(dice().map((c) => c.borderTopStyle)).toEqual(['dashed', 'dashed'])
   expect(dice().map((c) => c.opacity)).toEqual(['1', '1'])
-})
-
-test('the winner’s score cell has a 4px top border and 4px less top padding, so the scoreboard keeps its height', () => {
-  injectPlayingCss()
-
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
-
-  const [winner, other] = [...document.querySelectorAll('.game-over-scoreboard > div')].map((d) => getComputedStyle(d))
-  expect([winner!.borderTopWidth, winner!.borderTopStyle, winner!.paddingTop]).toEqual(['4px', 'solid', '6px'])
-  expect([other!.borderTopWidth, other!.paddingTop]).toEqual(['0px', '10px'])
-})
-
-test('the breakdown row note and the biggest-swing tag are 12px, and the story bolds only its margin', () => {
-  injectPlayingCss()
-  const game = makeGame({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } })
-  game.houseRules.prize = { enabled: true, cells: [], points: 5 }
-  game.houseRules.steal = { enabled: true, cells: [], points: 10 }
-  Object.assign(game.players['1'].score.breakdown, { prize: 10, steal: 20 })
-  Object.assign(game.players['2'].score.breakdown, { steal: -20 })
-  game.players['1'].score = { ...game.players['1'].score, totalArea: 120, totalScore: 140 }
-  game.players['2'].score = { ...game.players['2'].score, totalArea: 120, totalScore: 120 }
-  renderScreen({ game, series: null })
-
-  expect(getComputedStyle(screen.getByText('+5 per captured cell')).fontSize).toBe('12px')
-  expect(getComputedStyle(screen.getByText('Biggest swing')).fontSize).toBe('12px')
-  expect(getComputedStyle(screen.getByText('20 points')).fontWeight).toBe('600')
-  expect(getComputedStyle(document.querySelector('.game-over-story')!).fontWeight).not.toBe('600')
-})
-
-test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the lower number', () => {
-  injectPlayingCss()
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: 1 } }))
-
-  const total = document.querySelector('.game-over-scoreboard .trail .n')!
-  expect(getComputedStyle(total).color).toBe('color-mix(in srgb, var(--ink) 70%, transparent)')
-})
-
-test('a headline followed straight by the scoreboard keeps 18px below it', () => {
-  injectPlayingCss()
-  renderScreen(makeState({ turn: gameOverTurn, gameOver: { history: null, reason: 'boardFull', playerId: null, winner: null } }))
-
-  expect(getComputedStyle(screen.getByRole('heading', { name: 'Tied' })).marginBottom).toBe('18px')
 })
 
 test('shows no dice before the first roll of the game', () => {

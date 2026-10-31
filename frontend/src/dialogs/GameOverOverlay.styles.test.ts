@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { readCss, ruleFor, textContrast, tokensCss } from '../dev/testUtils/styles'
+import { mixShare, readCss, ruleFor, textContrast, tokensCss } from '../dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 
@@ -42,4 +42,11 @@ test('the dice line is at least 12px and its muted ink still passes AA on the le
   expect(Number(block.match(/font-size:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(12)
   expect(block).toMatch(/color:\s*var\(--ink-muted\)/)
   expect(textContrast(css, '.game-over-luck')).toBeGreaterThanOrEqual(4.5)
+})
+
+test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the lower number', () => {
+  const rule = ruleFor(css, '.game-over-scoreboard .trail .n')
+
+  expect(mixShare(rule, 'color', '--ink')).toBe(0.7)
+  expect(textContrast(css, '.game-over-scoreboard .trail .n')).toBeGreaterThanOrEqual(4.5)
 })

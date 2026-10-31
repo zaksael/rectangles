@@ -665,16 +665,3 @@ describe('per-group All On and All Off links', () => {
     expect(screen.getByRole('button', { name: 'All Off, Special cells' })).toBeEnabled()
   })
 })
-
-describe('the group header links (stylesheet)', () => {
-  const css = readCss('ModeSelectScreen.css')
-
-  test('the header wraps so the links drop under a label in a narrow column', () => {
-    expect(css).toMatch(/\.mode-group-head \{[^}]*flex-wrap:\s*wrap/)
-  })
-
-  test('the links share the Reset link\u2019s style and its coarse-pointer padding', () => {
-    expect(css).toMatch(/\.mode-reset-link,\s*\.mode-group-link \{/)
-    expect(css).toMatch(/@media \(any-pointer: coarse\) \{[\s\S]*\.mode-reset-link,\s*\.mode-group-link \{[^}]*padding:\s*12px 0/)
-  })
-})
