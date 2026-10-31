@@ -37,15 +37,11 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
     Scoring.winner(state) shouldBe None
   }
 
-  "the breakdown history" should "show a plain placement as area for the mover only" in {
-    val (rolled, _) = Turns.rollDice(game(6), ScriptedDice.of(2, 3)).value
-    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 3).value
-    Scoring.breakdownHistory(state) shouldBe Vector(
-      Map(PlayerId.One -> ScoreBreakdown(area = 6), PlayerId.Two -> ScoreBreakdown())
-    )
-  }
-
-  "the potential history" should "end at each player's live potential" in {
+  /**
+   * Player One's 2x3 piece then Player Two's 1x1 on a 6x6 board: the board, and the same game with
+   * its history.
+   */
+  private def twoMoveGame: (GameState, GameState) =
     val state =
       placed(placed(game(6), PlayerId.One, Cell(0, 0), 2, 3), PlayerId.Two, Cell(5, 5), 1, 1)
     val played = state.copy(history =
@@ -54,7 +50,26 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
         TurnRecord(PlayerId.Two, Roll(1, 1), Some(Rectangle(Cell(5, 5), 1, 1, PlayerId.Two))),
       )
     )
-    val live = state.players.view.mapValues(Scoring.potential(state.board, _)).toMap
+    (state, played)
+
+  "the breakdown history" should "show a plain placement as area for the mover only" in {
+    val (rolled, _) = Turns.rollDice(game(6), ScriptedDice.of(2, 3)).value
+    val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 3).value
+    Scoring.breakdownHistory(state) shouldBe Vector(
+      Map(PlayerId.One -> ScoreBreakdown(area = 6), PlayerId.Two -> ScoreBreakdown())
+    )
+  }
+
+  it should "leave out the steps before the index it is given" in {
+    val played = twoMoveGame._2
+    Scoring.breakdownHistory(played, 1) shouldBe Vector(
+      Map(PlayerId.One -> ScoreBreakdown(area = 6), PlayerId.Two -> ScoreBreakdown(area = 1))
+    )
+  }
+
+  "the potential history" should "end at each player's live potential" in {
+    val (state, played) = twoMoveGame
+    val live            = state.players.view.mapValues(Scoring.potential(state.board, _)).toMap
     live shouldBe Map(PlayerId.One -> Potential(29, 0), PlayerId.Two -> Potential(29, 0))
     Scoring.potentialHistory(played).lastOption shouldBe Some(live)
   }

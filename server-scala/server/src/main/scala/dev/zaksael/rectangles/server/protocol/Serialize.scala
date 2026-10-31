@@ -72,7 +72,9 @@ object Serialize:
    * The `game` part of a `state` message.
    */
   def game(state: GameState): Json =
-    val steps = moves(state)
+    // Only the game-over screen needs every move; the rest of the game sends the last few, so only those are scored.
+    val steps =
+      moves(state, if state.turn == TurnState.GameOver then 0 else state.history.size - RecentTurns)
     Json.obj(
       "board" -> Json.obj(
         "size"      -> Json.fromInt(state.board.size),
@@ -194,14 +196,20 @@ object Serialize:
       "selfEnclosedPenalty" -> enabled(state.rules.selfEnclosedPenalty),
     )
 
-  /** Every move, oldest first; `points` is the mover's own score change on that move. */
-  private def moves(state: GameState): Vector[Json] =
-    val steps = Scoring.breakdownHistory(state)
-    state.history
-      .zip(steps)
-      .zipWithIndex
-      .map { case ((record, step), index) =>
-        val before = if index == 0 then 0 else steps(index - 1)(record.playerId).total
+  /**
+   * The moves from index `from` on, oldest first; `points` is the mover's own score change on that
+   * move.
+   */
+  private def moves(state: GameState, from: Int): Vector[Json] =
+    val start = math.max(from, 0)
+    // The step before the first move kept is scored too: its total is what that move's points are measured against.
+    val base  = math.max(start - 1, 0)
+    val steps = Scoring.breakdownHistory(state, base)
+    state.history.zipWithIndex
+      .drop(start)
+      .map { case (record, index) =>
+        val step   = steps(index - base)
+        val before = if index == 0 then 0 else steps(index - 1 - base)(record.playerId).total
         Json.obj(
           "turn"                 -> Json.fromInt(index + 1),
           "playerId"             -> Json.fromInt(record.playerId.value),

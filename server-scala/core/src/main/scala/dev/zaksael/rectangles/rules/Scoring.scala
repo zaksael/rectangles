@@ -42,8 +42,17 @@ object Scoring:
       val two = total(state, PlayerId.Two)
       if one > two then Some(PlayerId.One) else if two > one then Some(PlayerId.Two) else None
 
-  def breakdownHistory(state: GameState): Vector[Map[PlayerId, ScoreBreakdown]] =
-    replay(state).map(step => step.players.keys.map(who => who -> breakdown(step, who)).toMap)
+  /**
+   * The breakdown after each history record from index `from` on. The board is replayed from the
+   * start either way, but only these steps are scored: scoring is the expensive part.
+   */
+  def breakdownHistory(
+      state: GameState,
+      from: Int = 0,
+  ): Vector[Map[PlayerId, ScoreBreakdown]] =
+    replay(state).drop(from).map(step =>
+      step.players.keys.map(who => who -> breakdown(step, who)).toMap
+    )
 
   def potential(board: Board, player: Player): Potential =
     val reachable = board.reachableEmptyCells(player)

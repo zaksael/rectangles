@@ -112,6 +112,28 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     )
   }
 
+  it should "score every move right when the first one kept is not move two" in {
+    val moves = List(
+      (Cell(0, 0), 1, 1),
+      (Cell(10, 10), 1, 1),
+      (Cell(1, 0), 1, 2),
+      (Cell(9, 10), 1, 1),
+      (Cell(3, 0), 1, 3),
+      (Cell(6, 10), 1, 3),
+      (Cell(6, 0), 1, 1),
+      (Cell(5, 10), 1, 1),
+    )
+    val state             = moves.foldLeft(game(11))((acc, m) => move(acc, m._1, m._2, m._3))
+    val recent            = at(Serialize.game(state), "turn").get[List[Json]]("recentTurns").value
+    def ints(key: String) = recent.map(_.hcursor.get[Int](key).value)
+    ints("turn") shouldBe List(3, 4, 5, 6, 7, 8)
+    ints("points") shouldBe List(2, 1, 3, 3, 1, 1)
+    recent.last.hcursor.get[Json]("score").value shouldBe Json.obj(
+      "1" -> Json.fromInt(7),
+      "2" -> Json.fromInt(6),
+    )
+  }
+
   "the game-over history" should "be null while playing and a list of steps once the game is over" in {
     val playing = move(game(11), Cell(0, 0), 2, 3)
     at(Serialize.game(playing), "gameOver").get[Json]("history").value shouldBe Json.Null
