@@ -46,13 +46,6 @@ test('nothing on Replay animates, so autoplay has no motion to reduce', () => {
   expect(css).not.toMatch(/transition|animation|@keyframes/)
 })
 
-test('the rail never outgrows the window: it stops at the window height and scrolls by itself beyond that', () => {
-  const block = ruleFor(css, '.replay .rail')
-
-  expect(block).toMatch(/max-height:\s*calc\(100dvh - 2px\)/)
-  expect(block).toMatch(/overflow-y:\s*auto/)
-})
-
 test('the chart is 300px tall but is the one thing that gives up height, down to 160px', () => {
   const block = ruleFor(css, '.replay .chart-body')
 
@@ -88,13 +81,6 @@ test('the connection notice text stays AA (4.5:1) on the ledger and is outlined 
 test('the chart label and the empty-chart text stay AA (4.5:1) on the ledger', () => {
   expect(textContrast(css, '.replay .chart-label')).toBeGreaterThanOrEqual(4.5)
   expect(textContrast(css, '.replay .chart-empty')).toBeGreaterThanOrEqual(4.5)
-})
-
-test('the rail is 360px wide in all, padding included, so the chart gets a 320px box', () => {
-  const block = ruleFor(css, '.replay .rail')
-
-  expect(block).toMatch(/box-sizing:\s*border-box/)
-  expect(block).toMatch(/width:\s*360px/)
 })
 
 test('the caption keeps room for three lines of text, so a longer or shorter caption does not resize the chart', () => {
@@ -195,4 +181,8 @@ test('the Better move tag is a 12px ink label on the outline\'s top-left corner,
 test('the key hint is muted like the chart hint, and a touch screen, which has no keyboard, does not show it', () => {
   expect(ruleFor(css, '.replay .controls-hint')).toMatch(/color:\s*var\(--ink-muted\)/)
   expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.replay \.controls-hint \{[^}]*display:\s*none/)
+})
+
+test('the Replay rail sets only its own gap; the rest comes from the shared .rail', () => {
+  expect(ruleFor(css, '.replay .rail').trim()).toBe('gap: 16px;')
 })

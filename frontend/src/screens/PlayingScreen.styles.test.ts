@@ -41,15 +41,6 @@ test('the board fits the window height less the frame\'s 52px of chrome, the sam
   expect(ruleFor(css, '.playing')).toMatch(/--chrome:\s*52px/)
 })
 
-test('the rail is a 360px border-box column that scrolls by itself rather than outgrow the window', () => {
-  const block = ruleFor(css, '.playing .rail')
-
-  expect(block).toMatch(/box-sizing:\s*border-box/)
-  expect(block).toMatch(/width:\s*360px/)
-  expect(block).toMatch(/max-height:\s*calc\(100dvh - 2px\)/)
-  expect(block).toMatch(/overflow-y:\s*auto/)
-})
-
 test('on any touch input (touchscreen laptops too) the action buttons and dice are 44px tall and the Wildcard pills are 44px targets', () => {
   const media = css.match(/@media \(any-pointer: coarse\) \{\s*\.playing \{([^}]*)\}\s*\.wildcard-pills \.pill \{([^}]*)\}/)
 
@@ -147,4 +138,8 @@ test('a modal is never wider or taller than the safe area less a 16px margin', (
   const block = ruleFor(tokensCss, 'dialog.modal')
   expect(block).toMatch(/max-width:\s*calc\(100vw - 32px - env\(safe-area-inset-left\) - env\(safe-area-inset-right\)\)/)
   expect(block).toMatch(/max-height:\s*calc\(100dvh - 32px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/)
+})
+
+test('the Playing rail sets only its own gap; the rest comes from the shared .rail', () => {
+  expect(ruleFor(css, '.playing .rail').trim()).toBe('gap: 8px;')
 })

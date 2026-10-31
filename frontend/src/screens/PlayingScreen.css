@@ -29,17 +29,7 @@
 }
 
 .playing .rail {
-  box-sizing: border-box;
-  width: 360px;
-  flex: none;
-  display: flex;
-  flex-direction: column;
   gap: 8px;
-  padding: 20px;
-  border-left: 1px solid var(--line);
-  /* The frame never outgrows the window: past this the rail scrolls by itself. */
-  max-height: calc(100dvh - 2px);
-  overflow-y: auto;
 }
 .playing .rail .btn {
   font-weight: 500;

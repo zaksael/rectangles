@@ -82,3 +82,14 @@ test('no stylesheet spells out the muted ink mix outside its token', () => {
 
   expect(spellers).toEqual([])
 })
+
+// Playing and Replay share one side rail; each screen adds only its own gap.
+test('the shared .rail is a 360px border-box column that scrolls by itself rather than outgrow the window', () => {
+  const block = tokensCss.match(/\n\.rail \{([^}]*)\}/)?.[1] ?? ''
+
+  expect(block).toMatch(/box-sizing:\s*border-box/)
+  expect(block).toMatch(/width:\s*360px/)
+  expect(block).toMatch(/flex-direction:\s*column/)
+  expect(block).toMatch(/max-height:\s*calc\(100dvh - 2px\)/)
+  expect(block).toMatch(/overflow-y:\s*auto/)
+})

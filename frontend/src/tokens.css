@@ -247,3 +247,17 @@ dialog.modal .actions .btn {
   flex: 1;
   padding: 12px;
 }
+
+/* The side rail of Playing and Replay, a 360px column. The frame never outgrows the window: past this the rail scrolls by itself
+   (on Replay the chart has given up its height first). Each screen sets its own gap. */
+.rail {
+  box-sizing: border-box;
+  width: 360px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border-left: 1px solid var(--line);
+  max-height: calc(100dvh - 2px);
+  overflow-y: auto;
+}

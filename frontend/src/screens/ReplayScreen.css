@@ -18,17 +18,7 @@
 }
 
 .replay .rail {
-  box-sizing: border-box;
-  width: 360px;
-  flex: none;
-  display: flex;
-  flex-direction: column;
   gap: 16px;
-  padding: 20px;
-  border-left: 1px solid var(--line);
-  /* The frame never outgrows the window: past this the chart has given up its height and the rail scrolls by itself. */
-  max-height: calc(100dvh - 2px);
-  overflow-y: auto;
 }
 
 .replay .rail-head {
