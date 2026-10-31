@@ -193,6 +193,6 @@ test('the Better move tag is a 12px ink label on the outline\'s top-left corner,
 })
 
 test('the key hint is muted like the chart hint, and a touch screen, which has no keyboard, does not show it', () => {
-  expect(ruleFor(css, '.replay .controls-hint')).toMatch(/color:\s*color-mix\(in srgb, var\(--ink\) 75%, transparent\)/)
+  expect(ruleFor(css, '.replay .controls-hint')).toMatch(/color:\s*var\(--ink-muted\)/)
   expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.replay \.controls-hint \{[^}]*display:\s*none/)
 })

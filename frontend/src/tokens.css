@@ -13,6 +13,7 @@
   color-scheme: light;
   --ledger: #E7EBDD; /* page background */
   --ink: #23262B;    /* text, borders, outlines */
+  --ink-muted: color-mix(in srgb, var(--ink) 75%, transparent); /* secondary text */
   --line: #B9C2AE;   /* dividers, secondary borders */
 
   --p1: #2E6F95;
@@ -225,7 +226,7 @@ dialog.modal .reason {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
   margin: 0 0 6px;
   text-wrap: balance;
 }

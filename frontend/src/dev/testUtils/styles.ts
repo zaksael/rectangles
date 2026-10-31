@@ -37,8 +37,14 @@ export function ruleFor(css: string, selector: string) {
 }
 
 // The N in a rule's `property: color-mix(in srgb, var(--token) N%, transparent)`, as a share (0-1).
-export const mixShare = (rule: string, property: string, tokenName: string) =>
-  Number(rule.match(new RegExp(`${property}:\\s*color-mix\\(in srgb, var\\(${tokenName}\\) (\\d+)%`))![1]!) / 100
+// A property set to a token that is itself such a mix (`color: var(--ink-muted)`) is read through that token's definition in tokens.css.
+export function mixShare(rule: string, property: string, tokenName: string) {
+  const own = new RegExp(`(?<![\\w-])${property}:\\s*([^;]*)`) // not `border-left-color:` when asked for `color`
+  const value = rule.match(own)![1]!
+  const alias = value.match(/^var\((--[\w-]+)\)/)
+  const source = alias ? tokensCss.match(new RegExp(`${alias[1]}:\\s*([^;]*);`))![1]! : value
+  return Number(source.match(new RegExp(`color-mix\\(in srgb, var\\(${tokenName}\\) (\\d+)%`))![1]!) / 100
+}
 
 // Contrast of a rule's `color-mix(in srgb, var(--ink) N%, transparent)` text on the ledger.
 export function textContrast(css: string, selector: string) {

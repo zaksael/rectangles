@@ -17,7 +17,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
   margin-bottom: 8px;
 }
 

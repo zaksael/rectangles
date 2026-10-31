@@ -131,7 +131,7 @@
   font-size: 12px;
   line-height: 14px;
   min-height: 14px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 /* Touch players have no keyboard: blank the hint by colour, so its height stays reserved and the board's aria-describedby text stays in the DOM. */
 @media (pointer: coarse) {
@@ -377,7 +377,7 @@ dialog.game-over h2 {
 .game-over-best,
 .game-over-luck {
   font-size: 13px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 .game-over-best b,
 .game-over-luck b {
@@ -411,7 +411,7 @@ dialog.game-over h2 {
 }
 .game-over-row-note,
 .game-over table.breakdown .zero {
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 .game-over-row-note {
   display: block;
@@ -475,7 +475,7 @@ dialog.game-over h2 {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
   font-weight: 500;
   border-bottom: 1px solid var(--line);
   padding-bottom: 8px;
@@ -493,7 +493,7 @@ dialog.game-over h2 {
 }
 .game-over-caption {
   font: 500 12px 'IBM Plex Sans', sans-serif;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
   margin: 0 0 6px;
 }
 .game-over-scoreboard {
@@ -518,7 +518,7 @@ dialog.game-over h2 {
 }
 .game-over-scoreboard .who {
   font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 .game-over-scoreboard .swatch {
   display: inline-block;
@@ -625,7 +625,7 @@ dialog.settings {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 .match-info dd {
   margin: 4px 0 0;
@@ -635,7 +635,7 @@ dialog.settings {
 .settings-rules-summary {
   margin: 0 0 12px;
   font-size: 13px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 .settings-rules {
   display: grid;
@@ -656,7 +656,7 @@ dialog.settings {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 .settings-rules ul {
   list-style: none;
@@ -666,7 +666,7 @@ dialog.settings {
 .settings-rule {
   min-height: 23px;
   font-size: 14px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--ink) 60%, transparent);
 }
@@ -703,7 +703,7 @@ dialog.settings {
   margin: 8px 0 0;
   font-size: 13px;
   text-align: right;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 .board:focus {

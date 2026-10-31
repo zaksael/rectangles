@@ -40,6 +40,6 @@ test('the dice line is at least 12px and its muted ink still passes AA on the le
   const block = ruleFor(css, '.game-over-luck')
 
   expect(Number(block.match(/font-size:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(12)
-  expect(block).toMatch(/color:\s*color-mix\(in srgb, var\(--ink\) \d+%, transparent\)/)
+  expect(block).toMatch(/color:\s*var\(--ink-muted\)/)
   expect(textContrast(css, '.game-over-luck')).toBeGreaterThanOrEqual(4.5)
 })

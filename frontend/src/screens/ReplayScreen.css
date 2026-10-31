@@ -88,7 +88,7 @@
   line-height: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 .replay .chart-readout .dot {
@@ -113,7 +113,7 @@
   margin: 0;
   font-size: 12px;
   line-height: 18px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 /* A touch screen has no keyboard, so the line gives its height back to the chart. */
@@ -173,7 +173,7 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 /* The one flexible thing in the rail: 300px when there is room, down to 160px in a short window. */
@@ -208,7 +208,7 @@
 .replay .chart-hint {
   flex-basis: 100%;
   font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 /* The dots sit on the element itself here, not under a .p1 / .p2 ancestor as on Playing. */
@@ -242,7 +242,7 @@
 .replay .chart-axis {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
-  fill: color-mix(in srgb, var(--ink) 75%, transparent);
+  fill: var(--ink-muted);
 }
 
 .replay .chart-empty {
@@ -253,7 +253,7 @@
   padding: 0 24px;
   text-align: center;
   font-size: 13px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 /* The turn analysis: a note under the caption for a flagged turn, or the one muted line saying why there is none. The slot
@@ -274,7 +274,7 @@
 
 .replay .analysis.pending {
   border-left-color: var(--line);
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 .replay .analysis-row {
@@ -307,7 +307,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--ink-muted);
 }
 
 .replay .chart-key svg {

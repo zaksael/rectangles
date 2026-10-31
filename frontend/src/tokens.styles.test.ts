@@ -67,3 +67,18 @@ test('a modal\'s actions are an even row 12px apart, each button taking an equal
   expect(ruleFor(tokensCss, 'dialog.modal .actions .btn')).toMatch(/flex:\s*1/)
   expect(ruleFor(tokensCss, 'dialog.modal .actions .btn')).toMatch(/padding:\s*12px/)
 })
+
+// The muted text colour is one token; a stylesheet that spells the mix out again would let the two drift apart.
+const INK_MUTED_MIX = 'color-mix(in srgb, var(--ink) 75%, transparent)'
+
+test('tokens.css names the muted ink as --ink-muted', () => {
+  expect(tokensCss).toContain(`--ink-muted: ${INK_MUTED_MIX};`)
+})
+
+test('no stylesheet spells out the muted ink mix outside its token', () => {
+  const sheets = readdirSync('src', { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.css'))
+
+  const spellers = sheets.filter((f) => readFileSync(`src/${f}`, 'utf8').replace(`--ink-muted: ${INK_MUTED_MIX};`, '').includes(INK_MUTED_MIX))
+
+  expect(spellers).toEqual([])
+})
