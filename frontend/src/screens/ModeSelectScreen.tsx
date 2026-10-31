@@ -158,8 +158,8 @@ interface SegmentedFieldProps<T> {
 // A labelled radiogroup of segmented buttons; `id` names its label and hint elements.
 function SegmentedField<T>({ id, label, hint, options, value, onChange, checkedRef }: SegmentedFieldProps<T>) {
   return (
-    <div className="field">
-      <span className="field-label" id={`${id}-label`}>{label}</span>
+    <div className="mode-field">
+      <span className="mode-field-label" id={`${id}-label`}>{label}</span>
       <div className="segmented" role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={hint ? `${id}-hint` : undefined}>
         {options.map((option) => (
           <button
@@ -177,7 +177,7 @@ function SegmentedField<T>({ id, label, hint, options, value, onChange, checkedR
           </button>
         ))}
       </div>
-      {hint && <span className="field-hint" id={`${id}-hint`}>{hint}</span>}
+      {hint && <span className="mode-field-hint" id={`${id}-hint`}>{hint}</span>}
     </div>
   )
 }
@@ -219,7 +219,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
 
   return (
     <div className="mode-select">
-      <div className="screen-header">
+      <div className="mode-screen-header">
         <h1 className="title">New Game</h1>
       </div>
 
@@ -245,7 +245,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
           </div>
           <div
-            className={settings.opponent === 'bot' ? 'difficulty-pills' : 'difficulty-pills hidden'}
+            className={settings.opponent === 'bot' ? 'mode-difficulty-pills' : 'mode-difficulty-pills hidden'}
             role="group"
             aria-label="Difficulty"
             aria-hidden={settings.opponent !== 'bot'}
@@ -288,25 +288,25 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       </div>
 
       {noModeSelected ? (
-        <div className="empty-hint-box">
-          <p id="start-game-hint" className="empty-hint">
+        <div className="mode-empty-hint-box">
+          <p id="start-game-hint" className="mode-empty-hint">
             Choose a mode to enable Start Game
           </p>
         </div>
       ) : (
-        <div className="config">
-          <div className="config-section">
-            <div className="section-label-row">
-              <span className="section-label">Match setup</span>
-              <div className="reset-group">
+        <div className="mode-config">
+          <div className="mode-config-section">
+            <div className="mode-section-label-row">
+              <span className="mode-section-label">Match setup</span>
+              <div className="mode-reset-group">
                 {changed > 0 && (
                   <>
-                    <span id="changed-count" className="changed-count">
+                    <span id="changed-count" className="mode-changed-count">
                       {changed} changed from defaults
                     </span>
                     <button
                       type="button"
-                      className="reset-link"
+                      className="mode-reset-link"
                       onClick={() => setConfirmingReset(true)}
                       aria-describedby="changed-count"
                     >
@@ -316,7 +316,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                 )}
               </div>
             </div>
-            <div className="field-row">
+            <div className="mode-field-row">
               <SegmentedField
                 id="board-size"
                 label="Board size"
@@ -344,24 +344,24 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             </div>
           </div>
 
-          <div className="config-section">
-            <span className="section-label">House rules</span>
-            <div className="rules-groups">
+          <div className="mode-config-section">
+            <span className="mode-section-label">House rules</span>
+            <div className="mode-rules-groups">
               {HOUSE_RULE_GROUPS.map((group) => (
-                <div className="rules-group" key={group.label}>
-                  <div className="group-head">
-                    <span className="group-label">{group.label}</span>
-                    <div className="group-links">
-                      <button type="button" className="group-link" aria-label={`All On, ${group.label}`} onClick={() => setGroup(group.rules, true)}>
+                <div className="mode-rules-group" key={group.label}>
+                  <div className="mode-group-head">
+                    <span className="mode-group-label">{group.label}</span>
+                    <div className="mode-group-links">
+                      <button type="button" className="mode-group-link" aria-label={`All On, ${group.label}`} onClick={() => setGroup(group.rules, true)}>
                         All On
                       </button>
                       <span aria-hidden="true">·</span>
-                      <button type="button" className="group-link" aria-label={`All Off, ${group.label}`} onClick={() => setGroup(group.rules, false)}>
+                      <button type="button" className="mode-group-link" aria-label={`All Off, ${group.label}`} onClick={() => setGroup(group.rules, false)}>
                         All Off
                       </button>
                     </div>
                   </div>
-                  <div className="rules-grid">
+                  <div className="mode-rules-grid">
                     {group.rules.map(({ key, label, description }) => (
                       <button
                         key={key}
@@ -374,9 +374,9 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
                         onClick={() => updateHouseRule(key, !settings.houseRules[key])}
                       >
                         <span className="checkbox" aria-hidden="true"></span>
-                        <span className="rule-text">
+                        <span className="mode-rule-text">
                           <span id={`rule-name-${key}`}>{label}</span>
-                          <span id={`rule-desc-${key}`} className="rule-desc">
+                          <span id={`rule-desc-${key}`} className="mode-rule-desc">
                             {description}
                           </span>
                         </span>
@@ -399,7 +399,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
       {connectFailed && (
-        <div className="start-error" role="alert">
+        <div className="mode-start-error" role="alert">
           Couldn’t connect — your settings are unchanged, try again
         </div>
       )}

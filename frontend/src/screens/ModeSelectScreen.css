@@ -7,7 +7,7 @@
   gap: 16px;
 }
 
-.mode-select .screen-header {
+.mode-select .mode-screen-header {
   padding-bottom: 12px;
 }
 .mode-select .title {
@@ -36,7 +36,7 @@
   text-align: left;
 }
 /* Vs Bot's role="radio"/keyboard handling live on this inner wrapper, not
-   .mode-card itself — it nests the difficulty-pills group (a plain labelled group, not a second radiogroup) as a sibling,
+   .mode-card itself — it nests the mode-difficulty-pills group (a plain labelled group, not a second radiogroup) as a sibling,
    and a "radio" role can't contain further interactive content. .mode-card's
    own onClick (no role, so it isn't itself exposed as interactive) still
    covers the whole card for mouse users. Local
@@ -99,7 +99,7 @@
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
-.difficulty-pills {
+.mode-difficulty-pills {
   display: flex;
   gap: 6px;
   margin-top: 8px;
@@ -108,7 +108,7 @@
    constant whether or not it's selected - visibility:hidden keeps the
    layout space reserved instead of the card (and the shared grid row with
    Local 2P) jumping height when a mode is picked. */
-.difficulty-pills.hidden {
+.mode-difficulty-pills.hidden {
   visibility: hidden;
 }
 
@@ -121,9 +121,9 @@
   outline-offset: 2px;
 }
 
-.section-label,
-.group-label,
-.field-label {
+.mode-section-label,
+.mode-group-label,
+.mode-field-label {
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
@@ -131,22 +131,22 @@
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
-.section-label-row {
+.mode-section-label-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
 }
-.reset-group {
+.mode-reset-group {
   display: flex;
   align-items: baseline;
   gap: 12px;
 }
-.changed-count {
+.mode-changed-count {
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
-.reset-link,
-.group-link {
+.mode-reset-link,
+.mode-group-link {
   background: none;
   border: none;
   padding: 0;
@@ -156,35 +156,35 @@
   color: color-mix(in srgb, var(--ink) 75%, transparent);
   cursor: pointer;
 }
-.reset-link:hover,
-.group-link:hover {
+.mode-reset-link:hover,
+.mode-group-link:hover {
   color: var(--ink);
 }
 
-.config {
+.mode-config {
   border: 1px solid var(--line);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-.empty-hint-box {
+.mode-empty-hint-box {
   border: 1px dashed var(--line);
   padding: 16px;
   text-align: center;
 }
-.config-section {
+.mode-config-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.field-row {
+.mode-field-row {
   display: flex;
   justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
 }
-.field {
+.mode-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -221,38 +221,38 @@
   background: color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
-.rules-groups {
+.mode-rules-groups {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0 16px;
 }
-.rules-group {
+.mode-rules-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding-left: 16px;
   border-left: 1px solid var(--line);
 }
-.rules-group:first-child {
+.mode-rules-group:first-child {
   padding-left: 0;
   border-left: none;
 }
 /* The links drop under the label when a narrow column cannot hold both. */
-.group-head {
+.mode-group-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   column-gap: 8px;
 }
-.group-links {
+.mode-group-links {
   display: flex;
   align-items: baseline;
   gap: 6px;
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
-.rules-grid {
+.mode-rules-grid {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -284,12 +284,12 @@
 .rule .checkbox {
   margin-top: 1px; /* sits on the name's line, not the block's middle */
 }
-.rule-text {
+.mode-rule-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.rule-desc {
+.mode-rule-desc {
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
@@ -331,12 +331,12 @@
     animation: none;
   }
 }
-.empty-hint,
-.field-hint {
+.mode-empty-hint,
+.mode-field-hint {
   font-size: 12px;
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
-.start-error {
+.mode-start-error {
   font-size: 13px;
   font-weight: 500;
   color: var(--danger);
@@ -357,8 +357,8 @@
   .segmented button {
     padding: 13px 16px;
   }
-  .reset-link,
-  .group-link {
+  .mode-reset-link,
+  .mode-group-link {
     padding: 12px 0;
   }
 }

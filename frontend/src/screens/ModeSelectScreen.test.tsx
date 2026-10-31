@@ -104,19 +104,19 @@ test('selecting Local 2P hides the difficulty pills and omits botSeats/botDiffic
   expect(onStartGame.mock.calls[0]![0]).not.toHaveProperty('botDifficulty')
 })
 
-test('the difficulty-pills row stays mounted (reserving its space) even when it is hidden', () => {
+test('the mode-difficulty-pills row stays mounted (reserving its space) even when it is hidden', () => {
   const { container } = render(
     <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />,
   )
 
-  expect(container.querySelector('.difficulty-pills')).toBeInTheDocument()
+  expect(container.querySelector('.mode-difficulty-pills')).toBeInTheDocument()
 
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
-  expect(container.querySelector('.difficulty-pills')).toBeInTheDocument()
-  expect(container.querySelector('.difficulty-pills')).toHaveClass('hidden')
+  expect(container.querySelector('.mode-difficulty-pills')).toBeInTheDocument()
+  expect(container.querySelector('.mode-difficulty-pills')).toHaveClass('hidden')
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
-  expect(container.querySelector('.difficulty-pills')).not.toHaveClass('hidden')
+  expect(container.querySelector('.mode-difficulty-pills')).not.toHaveClass('hidden')
 })
 
 test('hidden difficulty pills are inert (unreachable by keyboard, not just visually hidden)', () => {
@@ -126,7 +126,7 @@ test('hidden difficulty pills are inert (unreachable by keyboard, not just visua
 
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
 
-  const pillsContainer = container.querySelector('.difficulty-pills') as HTMLDivElement
+  const pillsContainer = container.querySelector('.mode-difficulty-pills') as HTMLDivElement
   expect(pillsContainer).toHaveAttribute('inert')
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
@@ -670,11 +670,11 @@ describe('the group header links (stylesheet)', () => {
   const css = readCss('ModeSelectScreen.css')
 
   test('the header wraps so the links drop under a label in a narrow column', () => {
-    expect(css).toMatch(/\.group-head \{[^}]*flex-wrap:\s*wrap/)
+    expect(css).toMatch(/\.mode-group-head \{[^}]*flex-wrap:\s*wrap/)
   })
 
   test('the links share the Reset link\u2019s style and its coarse-pointer padding', () => {
-    expect(css).toMatch(/\.reset-link,\s*\.group-link \{/)
-    expect(css).toMatch(/@media \(any-pointer: coarse\) \{[\s\S]*\.reset-link,\s*\.group-link \{[^}]*padding:\s*12px 0/)
+    expect(css).toMatch(/\.mode-reset-link,\s*\.mode-group-link \{/)
+    expect(css).toMatch(/@media \(any-pointer: coarse\) \{[\s\S]*\.mode-reset-link,\s*\.mode-group-link \{[^}]*padding:\s*12px 0/)
   })
 })

@@ -4,11 +4,11 @@ import { contrast, danger, ledger, mix, mixShare, readCss, ruleFor, textContrast
 const css = readCss('ModeSelectScreen.css')
 
 test('the Mode Select changed-from-defaults cue keeps AA contrast (4.5:1) on the ledger', () => {
-  expect(textContrast(css, '.changed-count')).toBeGreaterThanOrEqual(4.5)
+  expect(textContrast(css, '.mode-changed-count')).toBeGreaterThanOrEqual(4.5)
 })
 
 test('the failed-connect line is a status block: 13px bold-ish text, a full danger border and tint, and AA (4.5:1) on that tint', () => {
-  const rule = ruleFor(css, '.start-error')
+  const rule = ruleFor(css, '.mode-start-error')
   const tint = mix(danger, mixShare(rule, 'background', '--danger'), ledger)
 
   expect(rule).toMatch(/font-size:\s*13px/)
@@ -26,8 +26,8 @@ test('the touch-target growth applies to any device with a touch input, so touch
   expect(css).toContain('@media (any-pointer: coarse)')
   expect(css).not.toContain('@media (pointer: coarse)')
   const block = css.match(/@media \(any-pointer: coarse\) \{([\s\S]*?)\n\}/)![1]
-  for (const selector of ['.segmented button', '.group-link']) expect(block).toContain(`${selector} {`)
-  expect(block).toContain('.reset-link,')
+  for (const selector of ['.segmented button', '.mode-group-link']) expect(block).toContain(`${selector} {`)
+  expect(block).toContain('.mode-reset-link,')
   expect(block).not.toContain('.pill {') // the shared pill grows in tokens.css
 })
 
@@ -39,17 +39,17 @@ test('a described house rule is already taller than a 44px touch target, so it g
 
 test('a house rule puts its checkbox on the name line, spaces blocks 10px apart, and shows its description at 12px and AA contrast', () => {
   expect(ruleFor(css, '.rule')).toMatch(/align-items:\s*flex-start/)
-  expect(ruleFor(css, '.rules-grid')).toMatch(/gap:\s*10px/)
-  expect(ruleFor(css, '.rule-desc')).toMatch(/font-size:\s*12px/)
-  expect(textContrast(css, '.rule-desc')).toBeGreaterThanOrEqual(4.5)
+  expect(ruleFor(css, '.mode-rules-grid')).toMatch(/gap:\s*10px/)
+  expect(ruleFor(css, '.mode-rule-desc')).toMatch(/font-size:\s*12px/)
+  expect(textContrast(css, '.mode-rule-desc')).toBeGreaterThanOrEqual(4.5)
 })
 
 test('the difficulty pills take the shared .pill look with no per-screen override', () => {
-  expect(css).not.toMatch(/\.difficulty-pills \.pill \{/)
+  expect(css).not.toMatch(/\.mode-difficulty-pills \.pill \{/)
 })
 
 test('the difficulty pills start at the left edge of their left-aligned card: the row is not centred', () => {
-  const rule = ruleFor(css, '.difficulty-pills')
+  const rule = ruleFor(css, '.mode-difficulty-pills')
 
   expect(rule).not.toMatch(/justify-content:\s*center/)
 })
@@ -59,4 +59,13 @@ test('the Mode Select title is a 24px screen title whose weight comes from .titl
 
   expect(rule).toMatch(/font-size:\s*24px/)
   expect(rule).not.toMatch(/font-weight/)
+})
+
+// Every stylesheet is global, so a screen's own class must carry its prefix; these are shared (tokens.css) or states.
+const SHARED_OR_STATE = ['active', 'btn', 'checkbox', 'connecting', 'hidden', 'on', 'primary', 'rule', 'segmented', 'selected', 'title']
+
+test("Mode Select's own classes all carry the mode- prefix", () => {
+  const selectors = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{[^}]*\}/g, '{}')
+  const classes = new Set([...selectors.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((match) => match[1]!))
+  expect([...classes].filter((name) => !name.startsWith('mode-') && !SHARED_OR_STATE.includes(name))).toEqual([])
 })
