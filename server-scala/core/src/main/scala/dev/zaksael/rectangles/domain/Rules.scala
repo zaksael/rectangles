@@ -60,10 +60,9 @@ object Constants:
   val COMEBACK_NUDGE_EXTRA_REROLLS: Int         = 1
 
   /** Each setting's default is one of its presets. */
-  val BOARD_SIZE_PRESETS: Vector[Int]        = Vector(19, 23, 27)
-  val SKIP_LIMIT_PRESETS: Vector[Int]        = Vector(3, 5)
-  val SERIES_LENGTH_PRESETS: Vector[Int]     = Vector(3, 5)
-  val BOT_DIFFICULTY_PRESETS: Vector[String] = Vector("Basic", "Greedy", "Blocking")
+  val BOARD_SIZE_PRESETS: Vector[Int]    = Vector(19, 23, 27)
+  val SKIP_LIMIT_PRESETS: Vector[Int]    = Vector(3, 5)
+  val SERIES_LENGTH_PRESETS: Vector[Int] = Vector(3, 5)
 
   val PLAYER_NAMES: Map[PlayerId, String] =
     Map(PlayerId.One -> "Player 1", PlayerId.Two -> "Player 2")

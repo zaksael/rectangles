@@ -26,11 +26,3 @@ class GoldenSpec extends AnyFlatSpec with Matchers with EitherValues:
     names.size shouldBe 16
     names.foreach(file => Golden.load(file.stripSuffix(".json")).isRight shouldBe true)
   }
-
-  "Golden.update" should "rewrite a fixture only when the update mode is on" in {
-    val tmp = Files.createTempDirectory("golden")
-    Golden.update("x", "one", tmp, enabled = false) shouldBe false
-    Files.exists(tmp.resolve("x.json")) shouldBe false
-    Golden.update("x", "one", tmp, enabled = true) shouldBe true
-    Files.readString(tmp.resolve("x.json")) shouldBe "one"
-  }

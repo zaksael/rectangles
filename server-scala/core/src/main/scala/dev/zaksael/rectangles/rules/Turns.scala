@@ -93,13 +93,13 @@ object Turns:
     else if value < Constants.DICE_MIN || value > Constants.DICE_MAX then
       Left(RuleError.IllegalWildcardValue)
     else
-      state.lastRoll.zip(state.wildcard).headOption match
-        case Some((roll, pending)) =>
+      (state.lastRoll, state.wildcard) match
+        case (Some(roll), Some(pending)) =>
           val chosen =
             if pending.editableIndex.contains(0) then Roll(value, roll.second)
             else Roll(roll.first, value)
           Right(resolve(state.copy(wildcard = Some(pending.copy(editableIndex = None))), chosen))
-        case None => Left(RuleError.WrongState)
+        case _ => Left(RuleError.WrongState)
 
   /** The die values that would leave a placement while the wildcard picker is open. */
   def legalValues(state: GameState): Vector[Int] =
@@ -109,10 +109,10 @@ object Turns:
 
   /** The spots for the roll if the wildcard die became `value`; empty outside the picker. */
   def legalPlacementsForValue(state: GameState, value: Int): Map[Roll, Set[Cell]] =
-    state.lastRoll.zip(state.wildcard.flatMap(_.editableIndex)).headOption.fold(Map.empty) {
-      (roll, index) =>
+    (state.lastRoll, state.wildcard.flatMap(_.editableIndex)) match
+      case (Some(roll), Some(index)) =>
         legalFor(state, if index == 0 then Roll(value, roll.second) else Roll(roll.first, value))
-    }
+      case _ => Map.empty
 
   def attemptPlace(
       state: GameState,

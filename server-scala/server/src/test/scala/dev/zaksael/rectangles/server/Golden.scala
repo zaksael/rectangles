@@ -1,7 +1,5 @@
 package dev.zaksael.rectangles.server
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.nio.file.Path
 
 import scala.io.Source
@@ -83,15 +81,3 @@ object Golden:
     )(_.mkString).toEither.left
       .map(_.toString)
       .flatMap(text => parser.decode[GoldenGame](text).left.map(_.toString))
-
-  /** Rewrites the fixture when `enabled` (the `UPDATE_GOLDEN=1` mode). Returns whether it wrote. */
-  def update(
-      name: String,
-      content: String,
-      target: Path = dir,
-      enabled: Boolean = sys.env.get("UPDATE_GOLDEN").contains("1"),
-  ): Boolean =
-    if enabled then
-      Files.writeString(target.resolve(s"$name.json"), content, StandardCharsets.UTF_8)
-      true
-    else false
