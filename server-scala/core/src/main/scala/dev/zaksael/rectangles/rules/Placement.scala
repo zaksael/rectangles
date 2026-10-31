@@ -17,16 +17,18 @@ object Placement:
       height: Int,
   ): Boolean =
     val rectangle = Rectangle(topLeft, width, height, player.id)
-    val anchored =
+    // Defs, not vals: most spots on a busy board fail the emptiness test, so the rest is never built.
+    def anchored =
       rectangle.topLeft == player.startCorner || rectangle.bottomRight == player.startCorner
-    val touchesOwn = rectangle.cells.exists(cell =>
+    def touchesOwn = rectangle.cells.exists(cell =>
       cell.neighbors.exists(next =>
         board.ownerAt(next).contains(player.id) && !board.isEdgeWalled(cell, next)
       )
     )
-    val covered       = rectangle.cells.toSet
-    val straddlesWall = board.wallEdges.exists(edge => covered(edge.a) && covered(edge.b))
-    covered.forall(board.isEmpty) && !straddlesWall &&
+    def straddlesWall =
+      val covered = rectangle.cells.toSet
+      board.wallEdges.exists(edge => covered(edge.a) && covered(edge.b))
+    rectangle.cells.forall(board.isEmpty) && !straddlesWall &&
     (if player.hasMoved then touchesOwn else anchored)
 
   /**
