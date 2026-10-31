@@ -146,6 +146,31 @@ describe('App', () => {
     expect(screen.queryByRole('group', { name: 'Bot speed' })).not.toBeInTheDocument()
   })
 
+  it('a Local 2P game shows a second state right behind the first, with no bot-speed wait', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('open')
+    })
+    const broadcast = (turnState: 'awaitingRoll' | 'choosingPlacement') =>
+      act(() => {
+        FakeWebSocket.instances.at(-1)!.emit('message', {
+          protocolVersion: 1,
+          type: 'state',
+          game: makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll: null, legalPlacements: [] } }),
+          series: null,
+        })
+      })
+
+    broadcast('awaitingRoll')
+    broadcast('choosingPlacement')
+    act(() => vi.advanceTimersByTime(1))
+
+    expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
+  })
+
   it('dismisses an open Menu overlay once the connection-lost modal appears', () => {
     render(<App />)
     startGameAndOpen()
