@@ -54,6 +54,6 @@ def withSpecialCells(rules: Rules, kind: CellKind, cells: Cell*): GameState =
   val state = GameState.initial(rules)
   state.copy(board =
     state.board.copy(specialCells =
-      cells.zipWithIndex.map((cell, index) => SpecialCell(kind, cell, index)).toSet
+      cells.map(SpecialCell(kind, _)).toSet
     )
   )

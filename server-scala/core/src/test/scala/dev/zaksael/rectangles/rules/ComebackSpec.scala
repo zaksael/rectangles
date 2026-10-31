@@ -50,7 +50,7 @@ class ComebackSpec extends AnyFlatSpec with Matchers with EitherValues:
   it should "count a captured prize, not only area" in {
     val start = game(11)
     val prized = start.copy(board =
-      start.board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 0), 0)))
+      start.board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 0))))
     )
     val (rolled, _) = Turns.rollDice(prized, ScriptedDice.of(1, 1)).value
     val state       = Turns.attemptPlace(rolled, Cell(0, 0), 1, 1).value

@@ -49,7 +49,7 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
 
   it should "carry the area it can still reach and the prize points in that reach" in {
     val withPrize = game(4).copy(board =
-      game(4).board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 1), 0)))
+      game(4).board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 1))))
     )
     val json      = Serialize.game(placed(withPrize, PlayerId.One, Cell(0, 0), 1, 1))
     val potential = at(json, "players", "1", "score", "potential")
@@ -236,9 +236,9 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     val prized = GameState.initial(Rules(prize = true)).copy(board =
       Board(specialCells =
         Set(
-          SpecialCell(CellKind.Prize, Cell(9, 9), 0),
-          SpecialCell(CellKind.Prize, Cell(3, 4), 1),
-          SpecialCell(CellKind.Pitfall, Cell(1, 1), 2),
+          SpecialCell(CellKind.Prize, Cell(9, 9)),
+          SpecialCell(CellKind.Prize, Cell(3, 4)),
+          SpecialCell(CellKind.Pitfall, Cell(1, 1)),
         )
       )
     )
@@ -257,9 +257,9 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     val pitted = GameState.initial(Rules(pitfall = true)).copy(board =
       Board(specialCells =
         Set(
-          SpecialCell(CellKind.Pitfall, Cell(9, 9), 0),
-          SpecialCell(CellKind.Pitfall, Cell(3, 4), 1),
-          SpecialCell(CellKind.Prize, Cell(1, 1), 2),
+          SpecialCell(CellKind.Pitfall, Cell(9, 9)),
+          SpecialCell(CellKind.Pitfall, Cell(3, 4)),
+          SpecialCell(CellKind.Prize, Cell(1, 1)),
         )
       )
     )
@@ -290,9 +290,9 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     val stolen = GameState.initial(Rules(steal = true)).copy(board =
       Board(specialCells =
         Set(
-          SpecialCell(CellKind.Steal, Cell(9, 9), 0),
-          SpecialCell(CellKind.Steal, Cell(3, 4), 1),
-          SpecialCell(CellKind.Pitfall, Cell(1, 1), 2),
+          SpecialCell(CellKind.Steal, Cell(9, 9)),
+          SpecialCell(CellKind.Steal, Cell(3, 4)),
+          SpecialCell(CellKind.Pitfall, Cell(1, 1)),
         )
       )
     )
@@ -322,7 +322,7 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
   private def stealAtCorner: GameState =
     val state = GameState.initial(Rules(boardSize = 11, steal = true, prize = true, pitfall = true))
     state.copy(board =
-      state.board.copy(specialCells = Set(SpecialCell(CellKind.Steal, Cell(0, 0), 0)))
+      state.board.copy(specialCells = Set(SpecialCell(CellKind.Steal, Cell(0, 0))))
     )
 
   "the game-over history" should "carry a steal, its parts summing to the score" in {
@@ -454,7 +454,7 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
   "a serialized analysis" should "list a flagged Prize turn" in {
     val state = GameState.initial(Rules(boardSize = 6, prize = true))
     val withPrize = state.copy(board =
-      state.board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 3), 0)))
+      state.board.copy(specialCells = Set(SpecialCell(CellKind.Prize, Cell(0, 3))))
     )
     val move =
       TurnRecord(PlayerId.One, Roll(1, 4), Some(Rectangle(Cell(0, 0), 1, 4, PlayerId.One)))

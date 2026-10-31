@@ -81,8 +81,8 @@ class PlacementSpec extends AnyFlatSpec with Matchers:
 
   it should "treat special cells like any other empty cell" in {
     val specialCells = Set(
-      SpecialCell(CellKind.Prize, Cell(0, 5), 0),
-      SpecialCell(CellKind.Prize, Cell(5, 0), 0),
+      SpecialCell(CellKind.Prize, Cell(0, 5)),
+      SpecialCell(CellKind.Prize, Cell(5, 0)),
     )
     val scene = Scene.on(Board(size = 6, specialCells = specialCells))
     scene.board.cellsOfKind(CellKind.Prize) shouldBe Set(Cell(0, 5), Cell(5, 0))

@@ -73,9 +73,7 @@ class AnalysisSpec extends AnyFlatSpec with Matchers:
   }
 
   private def special(state: GameState, cells: (CellKind, Cell)*): GameState =
-    val all = cells.zipWithIndex.map { case ((kind, cell), index) =>
-      SpecialCell(kind, cell, index)
-    }
+    val all = cells.map(SpecialCell(_, _))
     state.copy(board = state.board.copy(specialCells = all.toSet))
 
   /** A wall between rows 3 and 4 across the whole 6 x 6 board. */

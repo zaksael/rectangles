@@ -38,7 +38,7 @@ final case class Board(
     cell.row >= 0 && cell.col >= 0 && cell.row < size && cell.col < size
 
   def cellsOfKind(kind: CellKind): Set[Cell] =
-    specialCells.collect { case SpecialCell(`kind`, location, _) => location }
+    specialCells.collect { case SpecialCell(`kind`, location) => location }
 
   /** Empty cells the player could still grow into, however far away. */
   def reachableEmptyCells(player: Player): Set[Cell] =

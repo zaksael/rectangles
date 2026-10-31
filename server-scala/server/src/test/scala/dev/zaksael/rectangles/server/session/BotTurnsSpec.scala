@@ -79,8 +79,8 @@ class BotTurnsSpec extends AnyFlatSpec with Matchers with OptionValues:
     val state = picker.copy(board =
       picker.board.copy(specialCells =
         Set(
-          SpecialCell(CellKind.Pitfall, Cell(17, 18), 0),
-          SpecialCell(CellKind.Pitfall, Cell(18, 17), 1),
+          SpecialCell(CellKind.Pitfall, Cell(17, 18)),
+          SpecialCell(CellKind.Pitfall, Cell(18, 17)),
         )
       )
     )

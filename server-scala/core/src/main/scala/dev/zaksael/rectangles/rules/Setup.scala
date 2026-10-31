@@ -44,8 +44,7 @@ object Setup:
     val specialCells =
       List(CellKind.Prize -> prize, CellKind.Pitfall -> pitfall, CellKind.Steal -> steal)
         .flatMap((kind, cells) => cells.toSeq.sortBy(c => (c.row, c.col)).map(kind -> _))
-        .zipWithIndex
-        .map { case ((kind, cell), index) => SpecialCell(kind, cell, index) }
+        .map(SpecialCell(_, _))
     (
       game.copy(board =
         game.board.copy(
