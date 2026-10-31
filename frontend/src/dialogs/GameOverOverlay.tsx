@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react'
 import type { GameWireState, SeriesWireState } from '../game/gameTypes'
 import { KeyBadge } from '../components/KeyBadge'
 import { rolledArea } from '../game/luck'
-import { SELF_ENCLOSED_PENALTY_PER_CELL } from '../game/ruleRows'
+import { RULE_ROWS, SELF_ENCLOSED_PENALTY_PER_CELL } from '../game/ruleRows'
 import { formatSigned, key, nameOf, reasonText } from '../game/resultText'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
@@ -14,32 +14,20 @@ interface ModifierRow {
   value: (game: GameWireState, id: '1' | '2') => number
 }
 
-const MODIFIER_ROWS: ModifierRow[] = [
-  {
-    label: 'Prize',
-    note: (game) => `+${game.houseRules.prize.points} per captured cell`,
-    enabled: (game) => game.houseRules.prize.enabled,
-    value: (game, id) => game.players[id].score.breakdown.prize,
-  },
-  {
-    label: 'Pitfall',
-    note: (game) => `−${game.houseRules.pitfall.points} per captured cell`,
-    enabled: (game) => game.houseRules.pitfall.enabled,
-    value: (game, id) => game.players[id].score.breakdown.pitfall,
-  },
-  {
-    label: 'Steal',
-    note: (game) => `capturer +${game.houseRules.steal.points}, opponent −${game.houseRules.steal.points}, per capture`,
-    enabled: (game) => game.houseRules.steal.enabled,
-    value: (game, id) => game.players[id].score.breakdown.steal,
-  },
-  {
-    label: 'Enclosure',
-    note: () => `−${SELF_ENCLOSED_PENALTY_PER_CELL} per sealed-in cell`,
-    enabled: (game) => game.houseRules.selfEnclosedPenalty.enabled,
-    value: (game, id) => game.players[id].score.breakdown.enclosure,
-  },
-]
+// What each scoring rule's row says it is worth; the rows themselves (label, on/off) come from RULE_ROWS, shared with Playing and Replay.
+const MODIFIER_NOTES: Record<(typeof RULE_ROWS)[number]['part'], (game: GameWireState) => string> = {
+  prize: (game) => `+${game.houseRules.prize.points} per captured cell`,
+  pitfall: (game) => `−${game.houseRules.pitfall.points} per captured cell`,
+  steal: (game) => `capturer +${game.houseRules.steal.points}, opponent −${game.houseRules.steal.points}, per capture`,
+  enclosure: () => `−${SELF_ENCLOSED_PENALTY_PER_CELL} per sealed-in cell`,
+}
+
+const MODIFIER_ROWS: ModifierRow[] = RULE_ROWS.map((row) => ({
+  label: row.label,
+  note: MODIFIER_NOTES[row.part],
+  enabled: row.on,
+  value: (game, id) => game.players[id].score.breakdown[row.part],
+}))
 
 function scoreMargin(game: GameWireState): number | null {
   const { winner, reason } = game.gameOver
