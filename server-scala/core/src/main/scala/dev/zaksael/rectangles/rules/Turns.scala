@@ -17,11 +17,11 @@ object Turns:
   def rollDice(state: GameState, dice: Dice): Either[RuleError, (GameState, Dice)] =
     if state.turn != TurnState.AwaitingRoll then Left(RuleError.WrongState)
     else
-      val (first, afterFirst)   = dice.between(Constants.DICE_MIN, Constants.DICE_MAX)
-      val (second, afterSecond) = afterFirst.between(Constants.DICE_MIN, Constants.DICE_MAX)
+      val (first, afterFirst)   = dice.die
+      val (second, afterSecond) = afterFirst.die
       val roll                  = Roll(first, second)
       if state.rules.wildcard && first == second then
-        val (index, afterIndex) = afterSecond.between(0, 1)
+        val (index, afterIndex) = afterSecond.coin
         val pending             = PendingWildcard(Some(index), roll)
         val picking = state.copy(
           lastRoll = Some(roll),

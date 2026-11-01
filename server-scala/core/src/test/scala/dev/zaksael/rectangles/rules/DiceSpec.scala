@@ -12,8 +12,8 @@ class DiceSpec extends AnyFlatSpec with Matchers:
     rest.nextLong._1 shouldBe 0x6e789e6aa1b965f4L
   }
 
-  it should "draw values within the asked range, both ends reachable" in {
-    val draws = Iterator.iterate((0, SplitMix64(7L): Dice)) { case (_, dice) => dice.between(1, 6) }
+  it should "roll a die from 1 to 6, both ends reachable" in {
+    val draws  = Iterator.iterate((0, SplitMix64(7L): Dice)) { case (_, dice) => dice.die }
     val values = draws.drop(1).take(200).map(_._1).toSet
     values shouldBe Set(1, 2, 3, 4, 5, 6)
   }
@@ -25,4 +25,9 @@ class DiceSpec extends AnyFlatSpec with Matchers:
   it should "choose one of the options its draw indexes" in {
     ScriptedDice.of(1).choose(Seq("a", "b", "c")).map(_._1) shouldBe Some("b")
     ScriptedDice.of(0).chooseAmong("a", "b", "c")._1 shouldBe "a"
+  }
+
+  it should "flip a coin that lands on 0 and on 1" in {
+    val flips = Iterator.iterate((0, SplitMix64(3L): Dice)) { case (_, dice) => dice.coin }
+    flips.drop(1).take(100).map(_._1).toSet shouldBe Set(0, 1)
   }

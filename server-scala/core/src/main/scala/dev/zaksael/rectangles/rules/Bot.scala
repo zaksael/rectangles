@@ -71,7 +71,7 @@ object Bot:
   ): Option[(Int, Dice)] =
     scoreFn(state, difficulty) match
       // Basic draws any value, legal or not: an illegal one costs it the turn.
-      case None => Some(dice.between(Constants.DICE_MIN, Constants.DICE_MAX))
+      case None => Some(dice.die)
       case Some(score) =>
         val scored = Turns.legalValues(state).map { value =>
           val spots = Turns.legalPlacementsForValue(state, value)

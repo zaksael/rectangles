@@ -64,7 +64,7 @@ object Generation:
     val start = (Set.empty[Cell], occupied, Set.empty[Edge], dice)
     val (_, _, result, after) = (0 until Constants.WALL_LINE_PAIRS).foldLeft(start) {
       case ((ownPlaced, taken, edges, current), _) =>
-        val (orientation, next) = current.between(0, 1)
+        val (orientation, next) = current.coin
         val candidates =
           for
             fixed <- 0 until size - 1
@@ -76,13 +76,12 @@ object Generation:
               !cells.exists(nearStartCorner(_, size)) && cells.intersect(taken).isEmpty &&
               !cells.exists(nearAny(_, ownPlaced))
           yield line
-        if candidates.isEmpty then (ownPlaced, taken, edges, next)
-        else
-          val (index, last) = next.between(0, candidates.size - 1)
-          val line          = candidates(index)
-          val mirroredLine =
-            line.map(edge => Edge.between(mirrorCell(edge.a, size), mirrorCell(edge.b, size)))
-          val placed = wallCells((line ++ mirroredLine).toSet)
-          (ownPlaced ++ placed, taken ++ placed, edges ++ line ++ mirroredLine, last)
+        next.choose(candidates) match
+          case None => (ownPlaced, taken, edges, next)
+          case Some((line, last)) =>
+            val mirroredLine =
+              line.map(edge => Edge.between(mirrorCell(edge.a, size), mirrorCell(edge.b, size)))
+            val placed = wallCells((line ++ mirroredLine).toSet)
+            (ownPlaced ++ placed, taken ++ placed, edges ++ line ++ mirroredLine, last)
     }
     (result, after)
