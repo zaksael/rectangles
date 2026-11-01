@@ -69,8 +69,7 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
                 <h3>{group.label}</h3>
                 <ul>
                   {group.rules.map((rule) => {
-                    const wireKey = rule.key.replace(/Enabled$/, '') as keyof GameWireState['houseRules']
-                    const on = game.houseRules[wireKey].enabled
+                    const on = game.houseRules[rule.wire].enabled
                     return (
                       <li key={rule.key} className={on ? 'settings-rule on' : 'settings-rule'}>
                         <span>{rule.label}</span>

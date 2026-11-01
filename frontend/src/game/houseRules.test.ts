@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
+import { makeGame } from '../dev/fixtures/gameFixtures'
 import { HOUSE_RULE_GROUPS, type HouseRules } from './houseRules'
 import { SELF_ENCLOSED_PENALTY_PER_CELL } from './ruleRows'
 
@@ -8,6 +9,23 @@ test('every house rule has a one-line description for Mode Select', () => {
 
   expect(rules).toHaveLength(9)
   for (const rule of rules) expect(rule.description?.trim().length ?? 0, rule.label).toBeGreaterThan(0)
+})
+
+test.each([
+  ['prizeEnabled', 'prize'],
+  ['pitfallEnabled', 'pitfall'],
+  ['stealEnabled', 'steal'],
+  ['wallsEnabled', 'walls'],
+  ['obstaclesEnabled', 'obstacles'],
+  ['selfEnclosedPenaltyEnabled', 'selfEnclosedPenalty'],
+  ['wildcardEnabled', 'wildcard'],
+  ['rerollEnabled', 'reroll'],
+  ['comebackNudgeEnabled', 'comebackNudge'],
+] as const)('the %s rule reads the game state\'s %s entry, which carries its enabled flag', (key, wire) => {
+  const rule = HOUSE_RULE_GROUPS.flatMap((g) => g.rules).find((r) => r.key === key)!
+
+  expect(rule.wire).toBe(wire)
+  expect(makeGame().houseRules[wire]).toHaveProperty('enabled')
 })
 
 // Mode Select runs before any state arrives, so the descriptions carry the engine's numbers as text; these tests read the engine's

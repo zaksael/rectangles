@@ -1,3 +1,5 @@
+import type { GameWireState } from './gameTypes'
+
 export interface HouseRules {
   prizeEnabled: boolean
   pitfallEnabled: boolean
@@ -12,6 +14,8 @@ export interface HouseRules {
 
 interface HouseRuleDef {
   key: keyof HouseRules
+  // The entry of the game state's houseRules that carries this rule's `enabled` flag.
+  wire: keyof GameWireState['houseRules']
   label: string
   // One plain line shown under the label on Mode Select.
   description: string
@@ -28,16 +32,19 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     rules: [
       {
         key: 'prizeEnabled',
+        wire: 'prize',
         label: 'Prize',
         description: 'Cover a prize cell to bank a 10-point bonus.',
       },
       {
         key: 'pitfallEnabled',
+        wire: 'pitfall',
         label: 'Pitfall',
         description: 'Cover a pitfall cell and lose 10 points.',
       },
       {
         key: 'stealEnabled',
+        wire: 'steal',
         label: 'Steal',
         description: 'Cover a steal cell to take 10 points from your opponent.',
       },
@@ -48,16 +55,19 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     rules: [
       {
         key: 'wallsEnabled',
+        wire: 'walls',
         label: 'Walls',
         description: 'Walls sit between cells and block pieces; build around their ends.',
       },
       {
         key: 'obstaclesEnabled',
+        wire: 'obstacles',
         label: 'Obstacles',
         description: 'Some cells are blocked for the whole match.',
       },
       {
         key: 'selfEnclosedPenaltyEnabled',
+        wire: 'selfEnclosedPenalty',
         label: 'Enclosure penalty',
         description: 'Each empty cell you wall off by yourself costs 1 point.',
       },
@@ -68,16 +78,19 @@ export const HOUSE_RULE_GROUPS: HouseRuleGroup[] = [
     rules: [
       {
         key: 'wildcardEnabled',
+        wire: 'wildcard',
         label: 'Wildcard roll',
         description: 'On doubles, change one die to any value from 1 to 6.',
       },
       {
         key: 'rerollEnabled',
+        wire: 'reroll',
         label: 'Reroll',
         description: 'Discard a roll and roll again, twice per game.',
       },
       {
         key: 'comebackNudgeEnabled',
+        wire: 'comebackNudge',
         label: 'Comeback',
         description: 'Far behind? You earn one extra reroll.',
       },
