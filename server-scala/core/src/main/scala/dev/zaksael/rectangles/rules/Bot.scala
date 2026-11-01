@@ -46,11 +46,12 @@ object Bot:
     c => blockingScore(c, frontier) + specialCellScore(c, state.board)
 
   /** The best-scoring item; a tie is broken by one draw among the best, a clear winner by none. */
-  private def breakTie[K: Ordering, A](scored: Vector[(K, A)], dice: Dice): (A, Dice) =
-    val best = scored.map(_._1).max
-    scored.collect { case (key, item) if key == best => item } match
-      case Vector(only) => (only, dice)
-      case tied         => dice.choose(tied)
+  private def breakTie[K: Ordering, A](scored: Vector[(K, A)], dice: Dice): Option[(A, Dice)] =
+    scored.maxByOption(_._1).flatMap { (best, _) =>
+      scored.collect { case (key, item) if key == best => item } match
+        case Vector(only) => Some((only, dice))
+        case tied         => dice.choose(tied)
+    }
 
   /** How each smart difficulty scores a candidate; Basic has no score. */
   private def scoreFn(state: GameState, difficulty: BotDifficulty): Option[Candidate => Int] =
@@ -67,10 +68,10 @@ object Bot:
       state: GameState,
       difficulty: BotDifficulty,
       dice: Dice,
-  ): (Int, Dice) =
+  ): Option[(Int, Dice)] =
     scoreFn(state, difficulty) match
       // Basic draws any value, legal or not: an illegal one costs it the turn.
-      case None => dice.between(Constants.DICE_MIN, Constants.DICE_MAX)
+      case None => Some(dice.between(Constants.DICE_MIN, Constants.DICE_MAX))
       case Some(score) =>
         val scored = Turns.legalValues(state).map { value =>
           val spots = Turns.legalPlacementsForValue(state, value)
@@ -83,7 +84,6 @@ object Bot:
             else 0
           ((bestScore(candidates(spots), score), area), value)
         }
-        require(scored.nonEmpty, "no legal wildcard value")
         breakTie(scored, dice)
 
   /** The cells whose capture would lift this difficulty's score above zero. */
@@ -123,14 +123,16 @@ object Bot:
           case _ => false
       case _ => false
 
-  /** Needs at least one legal placement, which the placement-choosing turn state guarantees. */
+  /**
+   * The placement this difficulty picks; none when no placement is legal, which the
+   * placement-choosing turn state rules out.
+   */
   def choosePlacement(
       state: GameState,
       difficulty: BotDifficulty,
       dice: Dice,
-  ): (Candidate, Dice) =
+  ): Option[(Candidate, Dice)] =
     val all = candidates(state.legal)
-    require(all.nonEmpty, "no legal placement")
     difficulty match
       case BotDifficulty.Greedy =>
         // Special cells tie at 0 when none is reachable; denial then decides instead of a bare draw.

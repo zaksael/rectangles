@@ -3,6 +3,8 @@ package dev.zaksael.rectangles.rules
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import dev.zaksael.rectangles.ScriptedDice
+
 class DiceSpec extends AnyFlatSpec with Matchers:
   "SplitMix64" should "match the reference sequence for seed 0" in {
     val (first, rest) = SplitMix64(0L).nextLong
@@ -14,4 +16,13 @@ class DiceSpec extends AnyFlatSpec with Matchers:
     val draws = Iterator.iterate((0, SplitMix64(7L): Dice)) { case (_, dice) => dice.between(1, 6) }
     val values = draws.drop(1).take(200).map(_._1).toSet
     values shouldBe Set(1, 2, 3, 4, 5, 6)
+  }
+
+  it should "choose nothing from no options" in {
+    SplitMix64(1L).choose(Seq.empty[Int]) shouldBe None
+  }
+
+  it should "choose one of the options its draw indexes" in {
+    ScriptedDice.of(1).choose(Seq("a", "b", "c")).map(_._1) shouldBe Some("b")
+    ScriptedDice.of(0).chooseAmong("a", "b", "c")._1 shouldBe "a"
   }

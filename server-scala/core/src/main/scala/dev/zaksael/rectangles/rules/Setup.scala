@@ -39,7 +39,7 @@ object Setup:
       afterPitfall,
     )
     val (first, next) =
-      starter.map((_, afterSteal)).getOrElse(afterSteal.choose(PlayerId.values.toSeq))
+      starter.map((_, afterSteal)).getOrElse(afterSteal.chooseAmong(PlayerId.One, PlayerId.Two))
     val game = GameState.initial(rules, first)
     val specialCells =
       List(CellKind.Prize -> prize, CellKind.Pitfall -> pitfall, CellKind.Steal -> steal)

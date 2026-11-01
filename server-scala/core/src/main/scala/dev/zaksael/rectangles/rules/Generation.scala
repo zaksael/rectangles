@@ -45,11 +45,11 @@ object Generation:
               if !taken(cell) && !nearStartCorner(cell, size) &&
                 !nearAny(cell, Set(mirrorCell(cell, size))) && !nearAny(cell, ownPicked)
             yield cell
-          if candidates.isEmpty then (ownPicked, taken, result, current)
-          else
-            val (cell, next) = current.choose(candidates)
-            val pair         = Set(cell, mirrorCell(cell, size))
-            (ownPicked ++ pair, taken ++ pair, result ++ pair, next)
+          current.choose(candidates) match
+            case None => (ownPicked, taken, result, current)
+            case Some((cell, next)) =>
+              val pair = Set(cell, mirrorCell(cell, size))
+              (ownPicked ++ pair, taken ++ pair, result ++ pair, next)
       }
     (picked, after)
 

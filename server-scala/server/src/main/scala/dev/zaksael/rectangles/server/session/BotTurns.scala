@@ -21,12 +21,14 @@ object BotTurns:
         case TurnState.AwaitingRoll =>
           Turns.rollDice(state, play.dice).toOption.map(play.stepped.tupled)
         case TurnState.ChoosingWildcard =>
-          val (value, next) = Bot.chooseWildcardValue(state, difficulty, play.dice)
-          Turns.chooseWildcard(state, value).toOption.map(play.stepped(_, next))
+          Bot.chooseWildcardValue(state, difficulty, play.dice).flatMap((value, next) =>
+            Turns.chooseWildcard(state, value).toOption.map(play.stepped(_, next))
+          )
         case TurnState.ChoosingPlacement =>
-          val (pick, next) = Bot.choosePlacement(state, difficulty, play.dice)
-          Turns.attemptPlace(state, pick.topLeft, pick.width, pick.height).toOption.map(placed =>
-            play.stepped(Actions.advance(placed), next)
+          Bot.choosePlacement(state, difficulty, play.dice).flatMap((pick, next) =>
+            Turns.attemptPlace(state, pick.topLeft, pick.width, pick.height).toOption.map(placed =>
+              play.stepped(Actions.advance(placed), next)
+            )
           )
         case TurnState.Skipped =>
           Turns.confirmSkip(state).toOption.map(skipped =>

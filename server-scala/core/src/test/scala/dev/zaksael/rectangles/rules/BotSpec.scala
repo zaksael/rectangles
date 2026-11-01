@@ -1,6 +1,7 @@
 package dev.zaksael.rectangles.rules
 
 import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -17,7 +18,7 @@ import dev.zaksael.rectangles.domain.TurnState
 import dev.zaksael.rectangles.placed
 import dev.zaksael.rectangles.withSpecialCells
 
-class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
+class BotSpec extends AnyFlatSpec with Matchers with EitherValues with OptionValues:
   private def rolled(state: GameState, dice: Int*): GameState =
     Turns.rollDice(state, ScriptedDice(dice.toList)).value._1
 
@@ -26,7 +27,7 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
   private val six = Rules(boardSize = 6)
 
   private def greedy(state: GameState): Candidate =
-    Bot.choosePlacement(state, BotDifficulty.Greedy, ScriptedDice.of())._1
+    Bot.choosePlacement(state, BotDifficulty.Greedy, ScriptedDice.of()).value._1
 
   "a Greedy placement" should "capture a Prize" in {
     val state = rolled(
@@ -76,12 +77,12 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
       1,
       1,
     )
-    val (_, after) = Bot.choosePlacement(state, BotDifficulty.Greedy, ScriptedDice.of(0))
+    val (_, after) = Bot.choosePlacement(state, BotDifficulty.Greedy, ScriptedDice.of(0)).value
     after shouldBe ScriptedDice.of(0)
   }
 
   private def blocking(state: GameState, draws: Int*): Candidate =
-    Bot.choosePlacement(state, BotDifficulty.Blocking, ScriptedDice(draws.toList))._1
+    Bot.choosePlacement(state, BotDifficulty.Blocking, ScriptedDice(draws.toList)).value._1
 
   private def facing(state: GameState): GameState =
     placed(placed(state, PlayerId.One, Cell(2, 2), 1, 1), PlayerId.Two, Cell(2, 4), 1, 1)
@@ -120,7 +121,7 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
     picker
 
   private def wildcard(state: GameState, difficulty: BotDifficulty, draws: Int*): Int =
-    Bot.chooseWildcardValue(state, difficulty, ScriptedDice(draws.toList))._1
+    Bot.chooseWildcardValue(state, difficulty, ScriptedDice(draws.toList)).value._1
 
   "a wildcard value" should "be a Basic bot's plain draw" in {
     wildcard(picking(GameState.initial(sixWild), 2, 2, 0), BotDifficulty.Basic, 4) shouldBe 4
@@ -297,9 +298,19 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
     reroll(state, BotDifficulty.Greedy) shouldBe true
   }
 
+  "a placement with no legal spot" should "be none, for every difficulty" in {
+    for difficulty <- BotDifficulty.values do
+      Bot.choosePlacement(small, difficulty, ScriptedDice.of()) shouldBe None
+  }
+
+  "a wildcard pick with no legal value" should "be none, for every difficulty" in {
+    for difficulty <- BotDifficulty.values.filter(_ != BotDifficulty.Basic) do
+      Bot.chooseWildcardValue(small, difficulty, ScriptedDice.of()) shouldBe None
+  }
+
   "a Basic placement" should "be one of the legal candidates" in {
     val state     = rolled(small, 2, 3, 0)
-    val (pick, _) = Bot.choosePlacement(state, BotDifficulty.Basic, ScriptedDice.of(0))
+    val (pick, _) = Bot.choosePlacement(state, BotDifficulty.Basic, ScriptedDice.of(0)).value
     state.legal.getOrElse(Roll(pick.width, pick.height), Set.empty) should contain(pick.topLeft)
   }
 
@@ -308,8 +319,9 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues:
     val all = state.legal.toVector.flatMap((roll, cells) =>
       cells.map(Candidate(_, roll.first, roll.second))
     ).sortBy(c => (c.topLeft.row, c.topLeft.col, c.width, c.height))
-    val (first, _) = Bot.choosePlacement(state, BotDifficulty.Basic, ScriptedDice.of(0))
-    val (last, _)  = Bot.choosePlacement(state, BotDifficulty.Basic, ScriptedDice.of(all.size - 1))
+    val (first, _) = Bot.choosePlacement(state, BotDifficulty.Basic, ScriptedDice.of(0)).value
+    val (last, _) =
+      Bot.choosePlacement(state, BotDifficulty.Basic, ScriptedDice.of(all.size - 1)).value
     first shouldBe all.head
     last shouldBe all.last
   }
