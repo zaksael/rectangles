@@ -10,5 +10,7 @@ object OriginCheck:
   // shortcut: same host and port only, no allowlist; add one if a proxy that rewrites Host ever fronts the server.
   def allowed(origin: Option[String], host: Option[String]): Boolean =
     origin.forall(page =>
-      Uri.fromString(page).toOption.flatMap(_.authority).map(_.renderString).exists(host.contains)
+      Uri.fromString(page).toOption.flatMap(_.authority).map(_.renderString.toLowerCase).exists(
+        authority => host.exists(_.toLowerCase == authority)
+      )
     )
