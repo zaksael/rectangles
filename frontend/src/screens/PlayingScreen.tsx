@@ -13,6 +13,7 @@ import { KeyBadge } from '../components/KeyBadge'
 import { ReachNoteRow, REACH_NOTE_ID } from '../components/ReachNoteRow'
 import { noBreak } from '../game/noBreak'
 import { RULE_ROWS, signed } from '../game/ruleRows'
+import { key } from '../game/resultText'
 import { seriesRound } from '../game/seriesRound'
 import { coveredSpecialRules } from '../game/specialCells'
 import '../components/ScoreTable.css'
@@ -167,7 +168,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   const roll = state?.game.turn.lastRoll ?? null
   // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
-  const shownRoll = useShownRoll(roll, String(state?.game.turn.currentPlayerId ?? 1) as '1' | '2', turnState === 'gameOver')
+  const shownRoll = useShownRoll(roll, key(state?.game.turn.currentPlayerId ?? 1), turnState === 'gameOver')
   const wildcard = state?.game.houseRules.wildcard
   const pickIndex = humanTurnState === 'choosingWildcard' && roll ? (wildcard?.editableIndex ?? null) : null
 
@@ -197,7 +198,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const showResultBar = turnState === 'gameOver' && resultHidden
   // Once the game is over nobody is to move, so the header stops marking a player.
   const currentId = turnState === 'gameOver' ? null : state?.game.turn.currentPlayerId
-  const currentName = state && noBreak(state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].name)
+  const currentName = state && noBreak(state.game.players[key(state.game.turn.currentPlayerId)].name)
   let turnStatus: string | null = null
   if (currentName && turnState !== 'gameOver') {
     if (isBotTurn) turnStatus = `${currentName} is playing…`
@@ -210,7 +211,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         previewKind === 'danger' && previewTopLeft && dims && state
           ? placementReason(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)
           : null
-      const firstMove = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.pieces.length === 0
+      const firstMove = state.game.players[key(state.game.turn.currentPlayerId)].board.pieces.length === 0
       if (reason) turnStatus += ` — ${reason}`
       else if (previewKind === null || previewKind === 'danger') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
       else if (previewTopLeft && dims) {
@@ -222,7 +223,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     else if (turnState === 'skipped') {
       turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : `${currentName}: no legal move, skipping… (S)`
       const { skipLimit } = state.game.board
-      const nextSkip = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.consecutiveSkips + 1
+      const nextSkip = state.game.players[key(state.game.turn.currentPlayerId)].board.consecutiveSkips + 1
       turnStatus += nextSkip >= skipLimit ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${nextSkip} of ${skipLimit}`
     }
   }
@@ -236,16 +237,16 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     if (event.ctrlKey || event.metaKey || event.altKey) return
     // A held key must not burn every reroll or confirm the next player's skip.
     if (event.repeat) return
-    const key = event.key.toLowerCase()
-    if (key === 'm') {
+    const pressed = event.key.toLowerCase()
+    if (pressed === 'm') {
       onOpenSettings()
-    } else if (key === 'd' && humanTurnState === 'awaitingRoll') {
+    } else if (pressed === 'd' && humanTurnState === 'awaitingRoll') {
       sendAction({ type: 'roll' })
-    } else if (key === 'r' && humanTurnState === 'choosingPlacement') {
+    } else if (pressed === 'r' && humanTurnState === 'choosingPlacement') {
       rotate()
-    } else if (key === 's' && humanTurnState === 'skipped') {
+    } else if (pressed === 's' && humanTurnState === 'skipped') {
       sendAction({ type: 'skip' })
-    } else if (key === 'e' && rerollUsable) {
+    } else if (pressed === 'e' && rerollUsable) {
       sendAction({ type: 'reroll' })
     }
   })
@@ -453,7 +454,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                   <li key={m.turn} className={`move p${m.playerId}${m.live ? ' live' : ''}`}>
                     <span className="turn-no">{m.turn}</span>
                     <span className="dot" aria-hidden="true" />
-                    <span className="who">{state.game.players[String(m.playerId) as '1' | '2'].name}</span>
+                    <span className="who">{state.game.players[key(m.playerId)].name}</span>
                     <span className="what">{m.text}</span>
                     <span className="gain">{m.points === 0 ? '' : signed(m.points)}</span>
                   </li>

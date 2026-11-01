@@ -1,4 +1,5 @@
 import type { GameWireState } from './gameTypes'
+import { key } from './resultText'
 
 // Lowercase: each is appended after the status line's em dash. The idle hint (no spot hovered yet)
 // reuses the two rule reasons, so the same rule reads the same whether or not a spot is hovered.
@@ -32,7 +33,7 @@ export function placementReason(
     for (let c = col; c < col + width; c++) {
       const owner = owners.get(`${r},${c}`)
       if (owner === playerId) return 'overlaps your territory'
-      if (owner !== undefined) return `overlaps ${game.players[String(owner) as '1' | '2'].name}’s territory`
+      if (owner !== undefined) return `overlaps ${game.players[key(owner)].name}’s territory`
     }
   }
 
@@ -41,7 +42,7 @@ export function placementReason(
   if (obstacles.enabled && obstacles.cells.some(covers)) return 'covers an obstacle'
   if (walls.enabled && walls.edges.some(([a, b]) => covers(a) && covers(b))) return 'crosses a wall'
 
-  const own = game.players[String(playerId) as '1' | '2'].board
+  const own = game.players[key(playerId)].board
   if (own.pieces.length === 0) {
     const [sr, sc] = own.startCorner
     const atCorner = (sr === row || sr === row + height - 1) && (sc === col || sc === col + width - 1)

@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useState } from 'react'
 import { Board } from '../components/Board'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts, SeriesWireState } from '../game/gameTypes'
 import { noBreak } from '../game/noBreak'
-import { formatSigned, reasonText } from '../game/resultText'
+import { formatSigned, key, reasonText } from '../game/resultText'
 import { ScoreChart } from '../components/ScoreChart'
 import { RuleRowLabel } from '../components/RuleRowLabel'
 import { ReachNoteRow, REACH_NOTE_ID } from '../components/ReachNoteRow'
@@ -22,7 +22,7 @@ function gameAt(game: GameWireState, history: HistoryEntry[], step: number): Gam
 const rollText = (roll: [number, number]) => roll.join(', ')
 
 function moveText(game: GameWireState, entry: HistoryEntry): string {
-  const name = noBreak(game.players[String(entry.playerId) as '1' | '2'].name)
+  const name = noBreak(game.players[key(entry.playerId)].name)
   const { placed, wildcardOriginalRoll } = entry
   if (!placed) return `${name} skipped (rolled ${rollText(entry.roll)})`
   const [row, col] = placed.topLeft
@@ -36,7 +36,7 @@ const ZERO_PARTS: ScoreParts = { area: 0, prize: 0, pitfall: 0, steal: 0, enclos
 // What the placing player's score parts gained or lost on this step, named the way the rules read.
 function effectTexts(game: GameWireState, history: HistoryEntry[], step: number): string[] {
   const entry = history[step - 1]!
-  const me = String(entry.playerId) as '1' | '2'
+  const me = key(entry.playerId)
   const opponent = noBreak(game.players[me === '1' ? '2' : '1'].name)
   const before = step === 1 ? ZERO_PARTS : history[step - 2]!.breakdown[me]
   const now = entry.breakdown[me]
@@ -53,9 +53,9 @@ function effectTexts(game: GameWireState, history: HistoryEntry[], step: number)
 function endText(game: GameWireState, history: HistoryEntry[]): string | null {
   const reason = reasonText(game)
   const { winner } = game.gameOver
-  if (game.gameOver.reason === 'surrender' && winner !== null) return `${reason}, ${noBreak(game.players[String(winner) as '1' | '2'].name)} wins`
+  if (game.gameOver.reason === 'surrender' && winner !== null) return `${reason}, ${noBreak(game.players[key(winner)].name)} wins`
   const { score } = history[history.length - 1]!
-  const result = winner === null ? 'tied' : `${noBreak(game.players[String(winner) as '1' | '2'].name)} wins by ${Math.abs(score['1'] - score['2'])}`
+  const result = winner === null ? 'tied' : `${noBreak(game.players[key(winner)].name)} wins by ${Math.abs(score['1'] - score['2'])}`
   return reason && `${reason}, ${result}`
 }
 
