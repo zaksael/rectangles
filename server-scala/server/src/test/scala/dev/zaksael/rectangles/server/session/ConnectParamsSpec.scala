@@ -54,6 +54,8 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
   }
 
   it should "play the difficulty it names" in {
+    botOf(vanilla ++ Map("botSeats" -> "2", "botDifficulty" -> "Basic")) shouldBe
+      Some(Some(BotDifficulty.Basic))
     botOf(vanilla ++ Map("botSeats" -> "2", "botDifficulty" -> "Greedy")) shouldBe
       Some(Some(BotDifficulty.Greedy))
     botOf(vanilla ++ Map("botSeats" -> "2", "botDifficulty" -> "Blocking")) shouldBe

@@ -16,6 +16,15 @@ final case class Connect(
 )
 
 object ConnectParams:
+  /**
+   * The names `botDifficulty` takes: written out here so renaming a case cannot change the
+   * protocol.
+   */
+  private def wireName(difficulty: BotDifficulty): String = difficulty match
+    case BotDifficulty.Basic    => "Basic"
+    case BotDifficulty.Greedy   => "Greedy"
+    case BotDifficulty.Blocking => "Blocking"
+
   /** The web client sends every house-rule flag; each one turns its rule on when "true". */
   private val ruleFlags: Map[String, Rules => Rules] = Map(
     "wildcardEnabled"            -> (_.copy(wildcard = true)),
@@ -53,7 +62,7 @@ object ConnectParams:
         length.toIntOption.filter(Constants.SERIES_LENGTH_PRESETS.contains).map(Some(_))
       )
       difficulty <- params.get("botDifficulty").fold(Option(BotDifficulty.Basic))(name =>
-        BotDifficulty.values.find(_.toString == name)
+        BotDifficulty.values.find(wireName(_) == name)
       )
       rules <- ruleFlags.foldLeft(Option(Rules(boardSize = boardSize, skipLimit = skipLimit))) {
         case (rules, (name, turnOn)) =>
