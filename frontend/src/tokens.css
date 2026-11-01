@@ -235,7 +235,7 @@ dialog.modal::backdrop {
 }
 dialog.modal h2 {
   font-family: 'Source Serif 4', serif;
-  font-weight: 700;
+  font-weight: 600;
   margin: 0;
   text-wrap: balance;
 }

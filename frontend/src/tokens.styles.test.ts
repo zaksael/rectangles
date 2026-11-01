@@ -52,11 +52,11 @@ test('a modal dims the page behind it with 30% ink', () => {
   expect(ruleFor(tokensCss, 'dialog.modal::backdrop')).toMatch(/color-mix\(in srgb, var\(--ink\) 30%, transparent\)/)
 })
 
-test('a modal heading is bold balanced serif with no margin', () => {
+test('a modal heading is semibold balanced serif with no margin', () => {
   const block = ruleFor(tokensCss, 'dialog.modal h2')
 
   expect(block).toMatch(/font-family:\s*'Source Serif 4', serif/)
-  expect(block).toMatch(/font-weight:\s*700/)
+  expect(block).toMatch(/font-weight:\s*600/)
   expect(block).toMatch(/margin:\s*0/)
   expect(block).toMatch(/text-wrap:\s*balance/)
 })
