@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 import { makeGame } from '../dev/fixtures/gameFixtures'
 import type { GameState } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
-import { getBoard, keyboardState, makeState, renderRerenderable, renderScreen, renderVsBot, specialRules } from '../dev/testUtils/playingScreenHarness'
+import { getBoard, keyboardState, makeState, recentTurn, renderRerenderable, renderScreen, renderVsBot, specialRules } from '../dev/testUtils/playingScreenHarness'
 
 test.each([
   ['awaitingRoll', ['Roll']],
@@ -190,8 +190,13 @@ test("on the human's turn against a bot, placement still works", () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
 
-function withPieces(p1: [number, number][], p2: [number, number][]): GameState {
+// `recent` lists the latest turns, oldest first: a placement's top-left, or null for a skip.
+function withPieces(p1: [number, number][], p2: [number, number][], recent: ([number, number] | null)[] = []): GameState {
   const state = makeState({ board: { size: 6, skipLimit: 5 } })
+  state.game.turn.recentTurns = recent.map((topLeft, i) => {
+    const turn = recentTurn(i + 1, 1, topLeft && [1, 1], topLeft ? 1 : 0)
+    return topLeft ? { ...turn, placed: { topLeft, width: 1, height: 1 } } : turn
+  })
   state.game.players['1'].board.pieces = p1.map((topLeft) => ({ topLeft, width: 1, height: 1, owner: 1 }))
   state.game.players['2'].board.pieces = p2.map((topLeft) => ({ topLeft, width: 1, height: 1, owner: 2 }))
   return state
@@ -206,18 +211,18 @@ test('outlines the piece that was just placed, and keeps it through a skip', () 
   const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
   expect(document.querySelector('.piece-outline.last')).not.toBeInTheDocument()
 
-  update(withPieces([[0, 0], [0, 1]], [[5, 5]]))
+  update(withPieces([[0, 0], [0, 1]], [[5, 5]], [[0, 1]]))
   expect(document.querySelectorAll('.piece-outline.last')).toHaveLength(1)
   expect(outlineAt(0, 1)).toBe(true)
 
-  update(withPieces([[0, 0], [0, 1]], [[5, 5]]))
+  update(withPieces([[0, 0], [0, 1]], [[5, 5]], [[0, 1], null]))
   expect(outlineAt(0, 1)).toBe(true)
 })
 
 test("moves the last-placed outline to the opponent's next piece", () => {
   const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
-  update(withPieces([[0, 0], [0, 1]], [[5, 5]]))
-  update(withPieces([[0, 0], [0, 1]], [[5, 5], [5, 4]]))
+  update(withPieces([[0, 0], [0, 1]], [[5, 5]], [[0, 1]]))
+  update(withPieces([[0, 0], [0, 1]], [[5, 5], [5, 4]], [[0, 1], [5, 4]]))
 
   expect(document.querySelectorAll('.piece-outline.last')).toHaveLength(1)
   expect(outlineAt(5, 4)).toBe(true)
