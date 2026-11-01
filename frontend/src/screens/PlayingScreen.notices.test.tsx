@@ -3,7 +3,7 @@ import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { ErrorReason } from '../game/gameTypes'
 import type { GameError } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
-import { gameOverState, injectPlayingCss, makeState, movesState, recentTurn, renderPlaying, renderScreen, rerollState } from '../dev/testUtils/playingScreenHarness'
+import { gameOverState, getBoard, injectPlayingCss, makeState, movesState, recentTurn, renderPlaying, renderScreen, rerollState } from '../dev/testUtils/playingScreenHarness'
 
 afterEach(() => vi.useRealTimers())
 
@@ -230,7 +230,7 @@ test('every modal dialog is border-box, so its declared width includes the paddi
 test('the focus order is the board, then Menu, then the action buttons', () => {
   renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 
-  const board = screen.getByRole('group', { name: / board$/ })
+  const board = getBoard()
   const menu = screen.getByRole('button', { name: 'Menu' })
   const rotate = screen.getByRole('button', { name: 'Rotate' })
   const follows = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)

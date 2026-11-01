@@ -22,6 +22,8 @@ interface BoardProps {
   onCellTap?: ((cell: [number, number], pointerType: string) => void) | undefined
   // Keyboard play: giving onKeyDown makes the board a single tab stop.
   onKeyDown?: KeyboardEventHandler
+  // While the keys place the piece, an application role makes a screen reader pass them through instead of using them to browse.
+  takesKeys?: boolean
   onFocus?: FocusEventHandler
   describedBy?: string | undefined
 }
@@ -170,13 +172,15 @@ export function Board({
   onKeyDown,
   onFocus,
   describedBy,
+  takesKeys,
 }: BoardProps) {
   const { size } = game.board
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the role is always group or application, which the rule cannot see through the ternary
     <div
       className="board"
-      role="group"
+      role={takesKeys ? 'application' : 'group'}
       aria-label={`${size}×${size} board`}
       aria-describedby={describedBy}
       tabIndex={onKeyDown ? 0 : undefined}

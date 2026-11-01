@@ -293,6 +293,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             onCellHover={placing ? handleCellHover : undefined}
             onCellTap={placing ? handleCellTap : undefined}
             onKeyDown={handleBoardKeyDown}
+            takesKeys={placing}
             onFocus={handleBoardFocus}
             describedBy={placing ? 'board-help board-summary' : 'board-summary'}
           />

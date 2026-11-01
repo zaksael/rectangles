@@ -121,3 +121,6 @@ export const moves = () => within(screen.getByRole('log', { name: 'Moves' })).qu
 
 export const movesState = (recentTurns: RecentTurn[], turnState: GameWireState['turn']['turnState'] = 'awaitingRoll', currentPlayerId = 1) =>
   makeState({ turn: { currentPlayerId, turnState, lastRoll: turnState === 'awaitingRoll' ? null : [2, 3], legalPlacements: [], recentTurns } })
+
+// The board is an application region while it takes placement keys, and a group otherwise.
+export const getBoard = () => screen.queryByRole('application', { name: / board$/ }) ?? screen.getByRole('group', { name: / board$/ })
