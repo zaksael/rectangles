@@ -304,3 +304,11 @@
   width: 14px;
   height: 14px;
 }
+
+@media (forced-colors: active) {
+  .replay .speed .btn[aria-pressed='true'],
+  .replay .analysis-row .btn[aria-pressed='true'] {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

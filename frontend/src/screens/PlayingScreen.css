@@ -682,6 +682,12 @@ dialog.settings {
   background: var(--ink);
   color: var(--ledger);
 }
+@media (forced-colors: active) {
+  .speed-options .btn[aria-pressed='true'] {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
 /* Separates Resume/Surrender from the read-only match info above them. */
 .settings-footer {
   margin-top: 24px;

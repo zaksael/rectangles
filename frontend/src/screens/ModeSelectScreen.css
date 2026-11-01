@@ -89,6 +89,13 @@
   .mode-card.selected .mode-marker {
     border-width: 5px;
   }
+  .segmented button.active {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .rule.on .checkbox::after {
+    background: CanvasText;
+  }
 }
 .mode-card .mode-name {
   font-weight: 600;

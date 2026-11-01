@@ -193,6 +193,13 @@ dialog button:focus,
   color: var(--ledger);
   border-color: var(--ink);
 }
+/* Forced colors drop background fills, so a selected control names system colours to stay told apart from the rest. */
+@media (forced-colors: active) {
+  .pill.active {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
 .pill:hover:not(.active) {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
