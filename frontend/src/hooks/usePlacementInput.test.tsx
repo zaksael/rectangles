@@ -260,7 +260,7 @@ test('touch: first tap on a legal cell previews it without placing', () => {
   expect(sendAction).not.toHaveBeenCalled()
 })
 
-test('touch: the pending preview is shown even over an illegal cell', () => {
+test('touch: a tap over an illegal cell previews it as illegal, not pending', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
     turn: { recentTurns: [],
@@ -274,7 +274,7 @@ test('touch: the pending preview is shown even over an illegal cell', () => {
   const { result } = renderHook(() => usePlacementInput(game, vi.fn()))
   act(() => result.current.handleCellTap([4, 4], 'touch'))
 
-  expect(result.current.previewKind).toBe('pending')
+  expect(result.current.previewKind).toBe('danger')
 })
 
 test('touch: a second tap on the same cell confirms the placement', () => {

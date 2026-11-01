@@ -408,6 +408,23 @@ test('a legal preview over a special cell ends the status line with what it woul
   expect(screen.getByTestId('turn-status').textContent).toMatch(/ place 2 wide × 2 tall — covers Pitfall \(−10\)$/)
 })
 
+test('a touch first tap on a legal spot reads like a hover: the status line says what it would trigger', () => {
+  placingOnSpecialBoard({ pitfall: { enabled: true, cells: [[1, 1]], points: 10 } })
+
+  fireEvent.pointerUp(screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!, { pointerType: 'touch' })
+
+  expect(screen.getByTestId('turn-status').textContent).toMatch(/ place 2 wide × 2 tall — covers Pitfall \(−10\)$/)
+})
+
+test('a touch first tap on an illegal spot shows the illegal preview', () => {
+  placingOnSpecialBoard({ pitfall: { enabled: true, cells: [[1, 1]], points: 10 } })
+  const board = screen.getByRole('group', { name: / board$/ })
+
+  fireEvent.pointerUp(board.querySelector('[data-cell="4,4"]')!, { pointerType: 'touch' })
+
+  expect(board.querySelector('.preview')).toHaveClass('danger')
+})
+
 test('a preview over several special cells lists the kinds in rule order, not in board order', () => {
   // The Steal cell comes first when scanning the board row by row, the Pitfall cell second.
   placingOnSpecialBoard({

@@ -112,7 +112,8 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
 
   const previewTopLeft = game && dims && hoveredCell ? computeTopLeft(hoveredCell, dims, game.board.size) : null
   const previewIsLegal = game && dims && previewTopLeft ? isLegalTopLeft(previewTopLeft, dims, game.turn.legalPlacements) : false
-  const previewKind: 'legal' | 'danger' | 'pending' | null = !previewTopLeft ? null : previewSource === 'touch' ? 'pending' : previewIsLegal ? 'legal' : 'danger'
+  // A legal touch preview is 'pending' (it still awaits the confirming tap); an illegal one reads like a hover.
+  const previewKind: 'legal' | 'danger' | 'pending' | null = !previewTopLeft ? null : !previewIsLegal ? 'danger' : previewSource === 'touch' ? 'pending' : 'legal'
 
   function place(cell: [number, number]) {
     if (!game || !dims) return

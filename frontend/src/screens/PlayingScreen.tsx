@@ -212,7 +212,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           : null
       const firstMove = state.game.players[String(state.game.turn.currentPlayerId) as '1' | '2'].board.pieces.length === 0
       if (reason) turnStatus += ` — ${reason}`
-      else if (previewKind !== 'legal') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
+      else if (previewKind === null || previewKind === 'danger') turnStatus += ` — ${firstMove ? START_CORNER_RULE : ADJACENCY_RULE}`
       else if (previewTopLeft && dims) {
         const covered = coveredSpecialRules(state.game, previewTopLeft, dims)
         if (covered.length > 0) turnStatus += ` — covers ${covered.join(', ')}`
