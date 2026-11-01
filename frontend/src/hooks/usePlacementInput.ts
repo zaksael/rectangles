@@ -98,6 +98,8 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
   }
 
   function handleCellHover(cell: [number, number]) {
+    // A tap is followed by a compatibility mouseover on the same cell: it must not turn the touch preview back into a hover.
+    if (previewSource === 'touch' && hoveredCell?.[0] === cell[0] && hoveredCell?.[1] === cell[1]) return
     setHoveredCell(cell)
     setPreviewSource('hover')
   }
@@ -126,7 +128,8 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
       place(cell)
       return
     }
-    const isSameCell = hoveredCell?.[0] === cell[0] && hoveredCell?.[1] === cell[1]
+    // Only a touch tap confirms: a cell a hover or key holds is a first tap here, so a stray tap never places unseen.
+    const isSameCell = previewSource === 'touch' && hoveredCell?.[0] === cell[0] && hoveredCell?.[1] === cell[1]
     if (isSameCell) {
       place(cell)
       setHoveredCell(null)

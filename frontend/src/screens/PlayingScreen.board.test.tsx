@@ -139,6 +139,28 @@ test('touch: two taps on the same cell are needed to place', () => {
   expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
 })
 
+// A browser follows a tap with compatibility mouse events, so the cell just tapped is also "hovered" before the second tap lands.
+test('touch: the mouseover a browser sends after a tap does not undo the first tap', () => {
+  const sendAction = renderScreen(
+    makeState({
+      board: { size: 5, skipLimit: 5 },
+      turn: { recentTurns: [],
+        currentPlayerId: 1,
+        turnState: 'choosingPlacement',
+        lastRoll: [2, 1],
+        legalPlacements: [{ width: 2, height: 1, topLefts: [[0, 0]] }],
+      },
+    }),
+  )
+  const cell = screen.getByRole('group', { name: / board$/ }).querySelector('[data-cell="0,0"]')!
+
+  fireEvent.pointerUp(cell, { pointerType: 'touch' })
+  fireEvent.mouseOver(cell)
+  fireEvent.pointerUp(cell, { pointerType: 'touch' })
+
+  expect(sendAction).toHaveBeenCalledWith({ type: 'place', topLeft: [0, 0], width: 2, height: 1 })
+})
+
 const botPlacementTurn = {
   recentTurns: [],
   currentPlayerId: 2,

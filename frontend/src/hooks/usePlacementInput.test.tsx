@@ -297,6 +297,26 @@ test('touch: a second tap on the same cell confirms the placement', () => {
   expect(result.current.previewTopLeft).toBeNull()
 })
 
+test('touch: a first tap on the cell a hover or key already holds previews it instead of placing', () => {
+  const game = makeGame({
+    board: { size: 5, skipLimit: 5 },
+    turn: { recentTurns: [],
+      currentPlayerId: 1,
+      turnState: 'choosingPlacement',
+      lastRoll: [2, 3],
+      legalPlacements: [{ width: 2, height: 3, topLefts: [[1, 1]] }],
+    },
+  })
+  const sendAction = vi.fn()
+
+  const { result } = renderHook(() => usePlacementInput(game, sendAction))
+  act(() => result.current.handleCellHover([2, 2]))
+  act(() => result.current.handleCellTap([2, 2], 'touch'))
+
+  expect(sendAction).not.toHaveBeenCalled()
+  expect(result.current.previewKind).toBe('pending')
+})
+
 test('touch: tapping a different cell relocates the preview instead of placing', () => {
   const game = makeGame({
     board: { size: 5, skipLimit: 5 },
