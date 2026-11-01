@@ -16,7 +16,7 @@ How a client talks to the server: connect parameters, the messages each side sen
 | `botDifficulty` | `Basic`, `Greedy`, `Blocking`; used only with `botSeats` | `Basic` |
 | `prizeEnabled`, `pitfallEnabled`, `stealEnabled`, `wallsEnabled`, `obstaclesEnabled`, `selfEnclosedPenaltyEnabled`, `wildcardEnabled`, `rerollEnabled`, `comebackNudgeEnabled` | `true` or `false` | `false` |
 
-The server answers `403` and does not upgrade when a parameter is unknown or given twice, a value is not allowed, or the page's `Origin` is a different host and port than the server's (compared ignoring letter case; no `Origin`, as from a script, is accepted). A single game starts with a coin flip for the first player; round 1 of a series is started by Player 1.
+The server answers `403` and does not upgrade when a parameter is unknown or given twice, a value is not allowed, or the page's `Origin` is a different host and port than the server's (compared ignoring letter case; no `Origin`, as from a script, is accepted). A connect whose `protocolVersion` is a whole number other than `1` (a page cached across a server upgrade) is upgraded, gets one `protocolVersionMismatch` error and is closed, so the client can say the page is out of date; with a different `Origin` it is still refused with `403`. A single game starts with a coin flip for the first player; round 1 of a series is started by Player 1.
 
 The server sends a ping every 20 seconds so idle connections stay open.
 
@@ -54,7 +54,7 @@ With a bot, the answer to an action is one `state` per step, in order: the human
 `error.reason` is one of:
 
 - `malformedMessage`: not JSON, an unknown `type`, or a missing or mistyped field other than `protocolVersion`
-- `protocolVersionMismatch`: `protocolVersion` is missing or not `1`
+- `protocolVersionMismatch`: `protocolVersion` is missing or not `1` in a message, or not `1` in the connect parameters (then the connection closes after this error)
 - `invalidAction`: the action does not fit the moment (rolling twice, any `roll`, `place`, `skip`, `reroll` or `chooseWildcard` once the game is over, `requestAnalysis` mid-game, `continueSeries` outside a finished round)
 - `illegalPlacement`: the `place` is not a legal placement, including a `place` before the roll or a second one on the same roll
 - `illegalWildcardValue`: the `chooseWildcard` value is outside 1–6

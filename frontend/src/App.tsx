@@ -71,7 +71,14 @@ function App() {
 
   if (screen === 'PLAYING') {
     if (gameSocket.status === 'closed-unexpected') {
-      return <ConnectionLostModal isSeries={gameSocket.state?.series != null} onNewGame={handleNewGame} />
+      return (
+        <ConnectionLostModal
+          isSeries={gameSocket.state?.series != null}
+          onNewGame={handleNewGame}
+          outOfDate={gameSocket.error?.reason === 'protocolVersionMismatch'}
+          onReload={() => window.location.reload()}
+        />
+      )
     }
     return (
       <NarrowWindowGate screen="Playing">

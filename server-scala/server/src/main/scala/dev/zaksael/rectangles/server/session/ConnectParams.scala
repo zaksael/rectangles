@@ -47,6 +47,10 @@ object ConnectParams:
       "seriesLength",
     ) ++ ruleFlags.keySet
 
+  /** True when the connect names a whole protocol version other than this server's. */
+  def versionSkew(params: Map[String, String]): Boolean =
+    params.get("protocolVersion").flatMap(_.toIntOption).exists(_ != Protocol.Version)
+
   /** What a connect asks for, or None when any parameter is unknown or not allowed. */
   def parse(params: Map[String, String]): Option[Connect] =
     def preset(name: String, allowed: Vector[Int], default: Int): Option[Int] =

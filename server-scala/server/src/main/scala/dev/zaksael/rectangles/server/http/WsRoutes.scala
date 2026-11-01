@@ -21,6 +21,8 @@ import org.http4s.websocket.WebSocketFrame
 import org.typelevel.ci.CIString
 
 import dev.zaksael.rectangles.rules.SplitMix64
+import dev.zaksael.rectangles.server.protocol.ErrorMsg
+import dev.zaksael.rectangles.server.protocol.ErrorReason
 import dev.zaksael.rectangles.server.session.Connect
 import dev.zaksael.rectangles.server.session.ConnectParams
 import dev.zaksael.rectangles.server.session.GameSession
@@ -69,6 +71,19 @@ object WsRoutes:
           _.warn("connect refused", reason.asLogValue("reason"))
         ) *> Forbidden()
       ConnectParams.parse(req.uri.query.params) match
+        // A stale tab gets the error a message would, since a browser cannot read a 403's body.
+        case None
+            if ConnectParams.versionSkew(req.uri.query.params) &&
+              OriginCheck.allowed(header("Origin"), header("Host")) =>
+          ws.build(
+            Stream.emit(WebSocketFrame.Text(
+              ErrorMsg(
+                ErrorReason.ProtocolVersionMismatch,
+                "protocol version mismatch",
+              ).toJson.noSpaces
+            )),
+            _.drain,
+          )
         case None                                       => refuse("badParameters")
         case Some(_) if keys.distinct.size != keys.size => refuse("repeatedParameter")
         case Some(_) if !OriginCheck.allowed(header("Origin"), header("Host")) =>

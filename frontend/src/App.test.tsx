@@ -108,6 +108,21 @@ describe('App', () => {
     expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
   })
 
+  it('tells a stale page to reload when the server answers with another protocol version and closes', () => {
+    render(<App />)
+    startGameAndOpen()
+
+    act(() => {
+      const socket = FakeWebSocket.instances.at(-1)!
+      socket.emit('message', { type: 'error', protocolVersion: 2, reason: 'protocolVersionMismatch', message: 'protocol version mismatch' })
+      socket.emit('close')
+    })
+
+    expect(screen.getByText('This page is out of date')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reload Page' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New Game' })).not.toBeInTheDocument()
+  })
+
   it('the connection-lost modal has no series wording when the socket closes before the first state', () => {
     render(<App />)
     startGameAndOpen()

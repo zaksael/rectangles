@@ -3,12 +3,17 @@ import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 interface ConnectionLostModalProps {
   isSeries: boolean
   onNewGame: () => void
+  // The server answered a stale page with a protocol version mismatch: reloading is the only way out.
+  outOfDate?: boolean | undefined
+  onReload?: (() => void) | undefined
 }
 
-export function ConnectionLostModal({ isSeries, onNewGame }: ConnectionLostModalProps) {
+export function ConnectionLostModal({ isSeries, onNewGame, outOfDate = false, onReload }: ConnectionLostModalProps) {
   const dialogRef = useAutoOpenDialog()
 
-  const body = isSeries
+  const body = outOfDate
+    ? 'The server was updated after this page loaded. Reload the page to continue.'
+    : isSeries
     ? "The connection to the server dropped and couldn't be restored. Rejoining an in-progress game isn't supported yet, and the series can't be resumed either — you'll need to start a new one."
     : "The connection to the server dropped and couldn't be restored. Rejoining an in-progress game isn't supported yet — you'll need to start a new one."
 
@@ -21,11 +26,11 @@ export function ConnectionLostModal({ isSeries, onNewGame }: ConnectionLostModal
       onCancel={(e) => e.preventDefault()}
     >
       <p className="reason">Connection lost</p>
-      <h2 id="connection-lost-title">This game can&apos;t be resumed</h2>
+      <h2 id="connection-lost-title">{outOfDate ? 'This page is out of date' : "This game can't be resumed"}</h2>
       <p className="body">{body}</p>
       <div className="actions">
-        <button className="btn primary" onClick={onNewGame} autoFocus>
-          New Game
+        <button className="btn primary" onClick={outOfDate ? onReload : onNewGame} autoFocus>
+          {outOfDate ? 'Reload Page' : 'New Game'}
         </button>
       </div>
     </dialog>

@@ -288,6 +288,22 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       say(client, action("roll")).hcursor.get[String]("type").value shouldBe "state"
     }
 
+  "a connect that names another protocol version" should "get an error message and a close, not a bare 403" in
+    connected("protocolVersion=2&boardSize=20") { client =>
+      reason(client.next()) shouldBe "protocolVersionMismatch"
+      client.closeCode() should not be None
+    }
+
+  "a connect with another protocol version" should "still get 403 from another host or when the version is not a number" in
+    TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
+      WsTestClient.connect(
+        port,
+        "protocolVersion=2",
+        Map("Origin" -> "http://evil.example"),
+      ).left.value shouldBe 403
+      WsTestClient.connect(port, "protocolVersion=abc").left.value shouldBe 403
+    }
+
   "a connect the server refuses" should "get HTTP 403 for parameters it does not know or a page from another host" in
     TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
       WsTestClient.connect(port, "protocolVersion=1&boardSize=20").left.value shouldBe 403

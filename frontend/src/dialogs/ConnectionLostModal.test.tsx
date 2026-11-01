@@ -1,10 +1,19 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import { ConnectionLostModal } from './ConnectionLostModal'
 
 test('a single game says only the game cannot be rejoined', () => {
   render(<ConnectionLostModal isSeries={false} onNewGame={vi.fn()} />)
   expect(screen.getByText(/couldn't be restored/)).not.toHaveTextContent(/series/)
+})
+
+test('an out-of-date page offers only Reload Page, which reloads and does not start a new game', () => {
+  const onReload = vi.fn()
+  const onNewGame = vi.fn()
+  render(<ConnectionLostModal isSeries={false} onNewGame={onNewGame} outOfDate onReload={onReload} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Reload Page' }))
+  expect(onReload).toHaveBeenCalledTimes(1)
+  expect(onNewGame).not.toHaveBeenCalled()
 })
 
 test('a series says the series cannot be resumed either', () => {
