@@ -69,7 +69,7 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
 
   "the potential history" should "end at each player's live potential" in {
     val (state, played) = twoMoveGame
-    val live            = state.players.view.mapValues(Scoring.potential(state.board, _)).toMap
+    val live            = state.players.map(Scoring.potential(state.board, _)).toMap
     live shouldBe Map(PlayerId.One -> Potential(29, 0), PlayerId.Two -> Potential(29, 0))
     Scoring.potentialHistory(played).lastOption shouldBe Some(live)
   }

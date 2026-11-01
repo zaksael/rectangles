@@ -8,6 +8,7 @@ import dev.zaksael.rectangles.domain.CellKind
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
+import dev.zaksael.rectangles.domain.Seats
 import dev.zaksael.rectangles.placed
 
 class SeriesSpec extends AnyFlatSpec with Matchers:
@@ -28,11 +29,10 @@ class SeriesSpec extends AnyFlatSpec with Matchers:
     val withAreas = List(one -> oneArea, two -> twoArea).filter(_._2 > 0).foldLeft(empty) {
       case (state, (who, area)) => placed(state, who, Cell(0, 0), area, 1)
     }
-    withAreas.copy(players = withAreas.players.view.map { (who, player) =>
-      who -> player.copy(specialCaptures =
-        Map(CellKind.Prize -> (if who == one then onePrizes else twoPrizes))
-      )
-    }.toMap)
+    def withPrizes(who: PlayerId) = withAreas.players(who).copy(specialCaptures =
+      Map(CellKind.Prize -> (if who == one then onePrizes else twoPrizes))
+    )
+    withAreas.copy(players = Seats(withPrizes(PlayerId.One), withPrizes(PlayerId.Two)))
 
   "recording a game" should "accumulate both players' scores" in {
     val first = series().record(finished(10, 0, 4, 0))

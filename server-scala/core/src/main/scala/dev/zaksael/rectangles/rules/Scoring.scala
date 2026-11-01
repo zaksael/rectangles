@@ -51,7 +51,7 @@ object Scoring:
       from: Int = 0,
   ): Vector[Map[PlayerId, ScoreBreakdown]] =
     replay(state).drop(from).map(step =>
-      step.players.keys.map(who => who -> breakdown(step, who)).toMap
+      PlayerId.values.map(who => who -> breakdown(step, who)).toMap
     )
 
   def potential(board: Board, player: Player): Potential =
@@ -62,7 +62,7 @@ object Scoring:
     )
 
   def potentialHistory(state: GameState): Vector[Map[PlayerId, Potential]] =
-    replay(state).map(step => step.players.view.mapValues(potential(step.board, _)).toMap)
+    replay(state).map(step => step.players.map(potential(step.board, _)).toMap)
 
   /**
    * The same board geometry with nothing placed, and the players unplayed at their start corners.
@@ -70,7 +70,7 @@ object Scoring:
   private[rules] def emptyCopy(state: GameState): GameState =
     state.copy(
       board = state.board.copy(owners = Map.empty),
-      players = state.players.view.mapValues(p => Player(p.id, p.name, p.startCorner)).toMap,
+      players = state.players.map(p => Player(p.id, p.name, p.startCorner)),
     )
 
   /** The game rebuilt from an empty board, once per history record, after that record. */

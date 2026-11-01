@@ -31,3 +31,19 @@ final case class ScoreBreakdown(
     enclosure: Int = 0,
 ):
   def total: Int = area + prize + pitfall + steal + enclosure
+
+/** One value per player: unlike a `Map[PlayerId, A]`, it cannot lack a player. */
+final case class Seats[A](one: A, two: A):
+  def apply(who: PlayerId): A = who match
+    case PlayerId.One => one
+    case PlayerId.Two => two
+
+  def updated(who: PlayerId, a: A): Seats[A] = who match
+    case PlayerId.One => copy(one = a)
+    case PlayerId.Two => copy(two = a)
+
+  def map[B](f: A => B): Seats[B] = Seats(f(one), f(two))
+
+  def values: Vector[A] = Vector(one, two)
+
+  def toMap: Map[PlayerId, A] = Map(PlayerId.One -> one, PlayerId.Two -> two)
