@@ -17,6 +17,7 @@ area when the game ends wins.
 - [Development](#development)
   - [Frontend development](#frontend-development)
   - [Scala server](#scala-server)
+  - [Deployment](#deployment)
 - [Tests](#tests)
 - [Rules](#rules)
 - [House Rules](#house-rules)
@@ -159,6 +160,11 @@ the Vite proxy preserves.
 - Check the style from `server-scala/` with `sbt "scalafmtCheckAll; scalafixAll --check"` (format with `sbt scalafmtAll`, fix with `sbt scalafixAll`); the compiler runs with warnings fatal, and `var`, `null` and `throw` are compile errors.
 - Run the tests from `server-scala/` with `sbt testFull`. Plain `sbt test` caches its result, so a re-run with no changes prints no summary.
 - `sbt -batch` already goes through sbt 2's built-in thin client: a warm run takes about half a second, a cold start about 35 seconds. There is no separate `sbtn` to install.
+
+### Deployment
+
+- Behind a reverse proxy, keep the original `Host` header (nginx: `proxy_set_header Host $host;`), forward `Upgrade` and `Connection` so the WebSocket upgrades, and end TLS at the proxy. The server refuses a page whose `Origin` host and port differ from `Host` (letter case ignored), so a proxy that rewrites `Host` gets `403` on every game; there is no allowed-origins setting.
+- The Docker image sets `JAVA_OPTS=-XX:MaxRAMPercentage=75`, so the JVM heap is 75% of the container's memory limit (the JVM default is 25%); override `JAVA_OPTS` to change it.
 
 ## Tests
 

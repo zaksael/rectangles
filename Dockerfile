@@ -27,7 +27,8 @@ WORKDIR /app
 COPY --from=server /app/server-scala/target/stage/ ./
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 ENV RECTANGLES_SERVER_HOST=0.0.0.0 \
-    LOGGING4S_CONSOLE_FORMAT=json
+    LOGGING4S_CONSOLE_FORMAT=json \
+    JAVA_OPTS=-XX:MaxRAMPercentage=75
 EXPOSE 8765
 USER rectangles
 # the JRE image has no curl; bash can open the socket itself
