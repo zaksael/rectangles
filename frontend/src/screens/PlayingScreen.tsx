@@ -128,6 +128,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     rotate,
     previewTopLeft,
     previewKind,
+    previewSource,
     coverableCells,
     dims,
     handleCellHover,
@@ -301,7 +302,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
           <p id="board-summary" className="visually-hidden">{boardSummary(state.game)}</p>
           <div className="visually-hidden" data-testid="cursor-position" aria-live="polite">
-            {previewTopLeft && dims && state ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}, ${describeFootprint(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)}` : ''}
+            {previewSource === 'key' && previewTopLeft && dims && state ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}, ${describeFootprint(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)}` : ''}
           </div>
         </div>
       )}

@@ -441,6 +441,25 @@ test('the piece position is announced as the keyboard moves it', () => {
   expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2, 2 empty cells')
 })
 
+test('a mouse hover is read once, by the status line, not also as a position', () => {
+  renderScreen(keyboardState())
+  const board = screen.getByRole('group', { name: / board$/ })
+
+  fireEvent.mouseOver(board.querySelector('[data-cell="0,0"]')!)
+
+  expect(screen.getByTestId('cursor-position')).toBeEmptyDOMElement()
+})
+
+test('the position is announced again once the keyboard takes over from the mouse', () => {
+  renderScreen(keyboardState())
+  const board = screen.getByRole('group', { name: / board$/ })
+
+  fireEvent.mouseOver(board.querySelector('[data-cell="0,0"]')!)
+  fireEvent.keyDown(board, { key: 'ArrowRight' })
+
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent(/^Row \d+, column \d+, /)
+})
+
 test('no position is announced before the piece is on the board', () => {
   renderScreen(keyboardState())
   expect(screen.getByTestId('cursor-position')).toBeEmptyDOMElement()

@@ -127,7 +127,8 @@ Window" notice takes their place and the game waits where it was.
   turn and keeps focus between turns; the piece starts on the first legal spot when you focus it or a
   new placement begins.
 - **Screen readers:** the turn status, each roll ("Player 1 rolled 2 and 1") and the piece's position with
-  what it would sit on ("Row 5, column 7, 4 empty cells") are announced as they change. The board has a
+  what it would sit on ("Row 5, column 7, 4 empty cells") are announced as they change; the position is
+  read as the keyboard moves the piece, not on a mouse hover. The board has a
   hidden summary of each player's pieces and cells, plus obstacles and walls.
 - **Colour and touch:** the player colours and the illegal-placement colour were checked under red-green
   and blue-yellow colour blindness, and special cells are told apart by shape (`+`, `−`, `±`) as well as

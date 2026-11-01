@@ -77,7 +77,7 @@ function pickInitialDims(
 export function usePlacementInput(game: GameWireState | null, sendAction: (action: GameAction) => void) {
   const [dims, setDims] = useState<[number, number] | null>(null)
   const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null)
-  const [previewSource, setPreviewSource] = useState<'hover' | 'touch' | null>(null)
+  const [previewSource, setPreviewSource] = useState<'hover' | 'key' | 'touch' | null>(null)
   const turnState = game?.turn.turnState
   const lastRoll = game?.turn.lastRoll
 
@@ -146,7 +146,7 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
     const first = findLegalEntry(dims, game.turn.legalPlacements)?.topLefts[0]
     if (!first) return
     setHoveredCell(centerCell(first, dims))
-    setPreviewSource('hover')
+    setPreviewSource('key')
   }
 
   function handleBoardKeyDown(event: KeyboardEvent) {
@@ -159,7 +159,7 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
       const [row, col] = hoveredCell ?? [0, 0]
       const last = game.board.size - 1
       setHoveredCell([Math.max(0, Math.min(row + step[0], last)), Math.max(0, Math.min(col + step[1], last))])
-      setPreviewSource('hover')
+      setPreviewSource('key')
     } else if (event.key.toLowerCase() === 'n') {
       event.preventDefault()
       const spots = findLegalEntry(dims, game.turn.legalPlacements)?.topLefts ?? []
@@ -169,7 +169,7 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
       const next = event.shiftKey ? spots.findLast(before) ?? spots.at(-1) : spots.find(after) ?? spots[0]
       if (next) {
         setHoveredCell(centerCell(next, dims))
-        setPreviewSource('hover')
+        setPreviewSource('key')
       }
     } else if ((event.key === 'Enter' || event.key === ' ') && hoveredCell) {
       event.preventDefault()
@@ -177,5 +177,5 @@ export function usePlacementInput(game: GameWireState | null, sendAction: (actio
     }
   }
 
-  return { dims, rotate, previewTopLeft, previewKind, coverableCells, handleCellHover, handleCellTap, handleBoardFocus, handleBoardKeyDown }
+  return { dims, rotate, previewTopLeft, previewKind, previewSource, coverableCells, handleCellHover, handleCellTap, handleBoardFocus, handleBoardKeyDown }
 }
