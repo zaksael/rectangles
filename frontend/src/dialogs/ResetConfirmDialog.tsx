@@ -20,7 +20,7 @@ export function ResetConfirmDialog({ onCancel, onConfirm }: ResetConfirmDialogPr
       }}
     >
       <h2 id="reset-title">Reset to Defaults?</h2>
-      <p>Board size, skip limit, and house rules go back to their defaults. Your chosen opponent stays selected.</p>
+      <p>Board size, skip limit, games, bot difficulty, and house rules go back to their defaults. Your chosen opponent stays selected.</p>
       <div className="actions">
         <button className="btn secondary" onClick={onCancel} autoFocus>
           Cancel

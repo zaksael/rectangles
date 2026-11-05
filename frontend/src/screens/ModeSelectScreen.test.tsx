@@ -439,6 +439,18 @@ test('Reset to Defaults opens a confirm dialog', () => {
   expect(screen.getByRole('heading', { name: 'Reset to Defaults?' })).toBeInTheDocument()
 })
 
+test('the reset dialog names every setting a reset restores', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
+
+  expect(screen.getByRole('dialog')).toHaveTextContent(
+    'Board size, skip limit, games, bot difficulty, and house rules go back to their defaults. Your chosen opponent stays selected.',
+  )
+})
+
 test('confirming the reset dialog restores match setup but keeps the chosen opponent', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
 
