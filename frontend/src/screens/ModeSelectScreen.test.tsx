@@ -73,6 +73,13 @@ test('every house rule is shown', () => {
   expect(screen.getByRole('checkbox', { name: 'Comeback' })).toBeInTheDocument()
 })
 
+test('each mode card is named by its title alone and described by its one-line description', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+
+  expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAccessibleDescription('Play a computer opponent, pick a difficulty')
+  expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAccessibleDescription('Two players share this device')
+})
+
 test('each house rule is named by its label alone and described by its one-line description', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))

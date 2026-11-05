@@ -234,15 +234,16 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
             className="mode-card-select"
             role="radio"
             aria-checked={settings.opponent === 'bot'}
-            aria-label="Vs Bot"
+            aria-labelledby="mode-name-bot"
+            aria-describedby="mode-desc-bot"
             tabIndex={settings.opponent === 'local2p' ? -1 : 0}
             onKeyDown={(e) => {
               handleActivateKey(e, () => setSettings((s) => ({ ...s, opponent: 'bot' })))
               handleRadioArrowKey(e)
             }}
           >
-            <span className="mode-name">Vs Bot</span>
-            <span className="mode-desc">Play a computer opponent, pick a difficulty</span>
+            <span id="mode-name-bot" className="mode-name">Vs Bot</span>
+            <span id="mode-desc-bot" className="mode-desc">Play a computer opponent, pick a difficulty</span>
           </div>
           <div
             className={settings.opponent === 'bot' ? 'mode-difficulty-pills' : 'mode-difficulty-pills hidden'}
@@ -273,7 +274,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           className={settings.opponent === 'local2p' ? 'mode-card selected' : 'mode-card'}
           role="radio"
           aria-checked={settings.opponent === 'local2p'}
-          aria-label="Local 2P"
+          aria-labelledby="mode-name-local2p"
+          aria-describedby="mode-desc-local2p"
           tabIndex={settings.opponent === 'local2p' ? 0 : -1}
           onClick={() => setSettings((s) => ({ ...s, opponent: 'local2p' }))}
           onKeyDown={(e) => {
@@ -282,8 +284,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
           }}
         >
           <span className="mode-marker" aria-hidden="true" />
-          <span className="mode-name">Local 2P</span>
-          <span className="mode-desc">Two players share this device</span>
+          <span id="mode-name-local2p" className="mode-name">Local 2P</span>
+          <span id="mode-desc-local2p" className="mode-desc">Two players share this device</span>
         </div>
       </div>
 
