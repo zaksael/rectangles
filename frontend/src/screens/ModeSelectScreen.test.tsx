@@ -479,6 +479,13 @@ test('while isConnecting, Start Game is disabled and reads Connecting…', () =>
   expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled()
 })
 
+test('with a saved opponent, Start Game has focus as soon as the screen mounts', () => {
+  localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'bot' }))
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+  expect(screen.getByRole('button', { name: 'Start Game' })).toHaveFocus()
+})
+
 test('while isConnecting, a Cancel button under Start Game calls onCancel', () => {
   const onCancel = vi.fn()
   render(<ModeSelectScreen isConnecting connectFailed={false} onStartGame={vi.fn()} onCancel={onCancel} />)

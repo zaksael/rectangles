@@ -416,6 +416,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
 
       <button
         ref={startButton}
+        autoFocus={!noModeSelected}
         className={isConnecting ? 'btn primary connecting' : 'btn primary'}
         onClick={handleStartGame}
         disabled={isConnecting || noModeSelected}
