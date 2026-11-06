@@ -192,15 +192,17 @@
   gap: 12px;
 }
 .mode-field-row {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(max-content, 1fr));
+  gap: 0 16px;
 }
 .mode-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.mode-field:not(:first-child) {
+  padding-left: 16px;
 }
 .segmented {
   display: flex;

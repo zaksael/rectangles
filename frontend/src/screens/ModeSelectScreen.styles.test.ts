@@ -28,6 +28,20 @@ test('the section labels sit one level above the group and field labels: 13px, 6
   expect(ruleFor(css, '.mode-field-label')).toMatch(/font-size:\s*11px/)
 })
 
+test('the Match setup fields sit on the same three columns and gap as the house-rule groups, never narrower than their control', () => {
+  const row = ruleFor(css, '.mode-field-row')
+  const groups = ruleFor(css, '.mode-rules-groups')
+
+  expect(row).toMatch(/display:\s*grid/)
+  expect(row).toMatch(/grid-template-columns:\s*repeat\(3, minmax\(max-content, 1fr\)\)/)
+  expect(row.match(/gap:\s*([^;]+);/)![1]).toBe(groups.match(/gap:\s*([^;]+);/)![1])
+})
+
+test('Match setup fields after the first are inset like the rule groups after the first, so their edges meet the rule text', () => {
+  expect(ruleFor(css, '.mode-field:not(:first-child)')).toMatch(/padding-left:\s*16px/)
+  expect(ruleFor(css, '.mode-rules-group')).toMatch(/padding-left:\s*16px/)
+})
+
 test('the Cancel link is centred under Start Game, like the button above it', () => {
   expect(ruleFor(css, '.mode-cancel')).toMatch(/align-self:\s*center/)
 })
