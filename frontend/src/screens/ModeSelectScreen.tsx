@@ -186,13 +186,23 @@ interface ModeSelectScreenProps {
   isConnecting: boolean
   connectFailed: boolean
   onStartGame: (params: StartGameParams) => void
+  onCancel: () => void
 }
 
-export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: ModeSelectScreenProps) {
+export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onCancel }: ModeSelectScreenProps) {
   const [settings, setSettings] = useState<ModeSelectSettings>(loadSettings)
   const [confirmingReset, setConfirmingReset] = useState(false)
   const focusAfterReset = useRef(false)
   const checkedBoardSize = useRef<HTMLButtonElement>(null)
+  const focusStartAfterCancel = useRef(false)
+  const startButton = useRef<HTMLButtonElement>(null)
+
+  // The Cancel link is gone once the connection is, and Start is still disabled in that render: wait until it is enabled.
+  useEffect(() => {
+    if (!focusStartAfterCancel.current || isConnecting) return
+    focusStartAfterCancel.current = false
+    startButton.current?.focus()
+  })
 
   // The Reset link is gone once reset, so the dialog has no opener to hand focus back to: land it on the first reset control.
   useEffect(() => {
@@ -405,6 +415,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       )}
 
       <button
+        ref={startButton}
         className={isConnecting ? 'btn primary connecting' : 'btn primary'}
         onClick={handleStartGame}
         disabled={isConnecting || noModeSelected}
@@ -412,6 +423,18 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
       >
         {isConnecting ? 'Connecting…' : 'Start Game'}
       </button>
+      {isConnecting && (
+        <button
+          type="button"
+          className="mode-reset-link mode-cancel"
+          onClick={() => {
+            focusStartAfterCancel.current = true
+            onCancel()
+          }}
+        >
+          Cancel
+        </button>
+      )}
       {connectFailed && (
         <div className="mode-start-error" role="alert">
           Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again

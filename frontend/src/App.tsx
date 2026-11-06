@@ -65,6 +65,7 @@ function App() {
         isConnecting={connectParams.enabled && gameSocket.status === undefined}
         connectFailed={gameSocket.status === 'connect-failed'}
         onStartGame={handleStartGame}
+        onCancel={handleNewGame}
       />
     )
   }

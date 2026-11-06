@@ -8,13 +8,13 @@ beforeEach(() => {
 })
 
 test('the screen title is a heading', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   expect(screen.getByRole('heading', { name: 'New Game' })).toBeInTheDocument()
 })
 
 test('on first launch, no mode is selected and Start Game is disabled with a hint', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAttribute('aria-checked', 'false')
   expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAttribute('aria-checked', 'false')
@@ -24,7 +24,7 @@ test('on first launch, no mode is selected and Start Game is disabled with a hin
 })
 
 test('selecting a mode enables Start Game and clears the hint', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
@@ -34,7 +34,7 @@ test('selecting a mode enables Start Game and clears the hint', () => {
 
 test('Space with focus on the page starts the game', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.keyDown(document.body, { key: ' ' })
@@ -44,7 +44,7 @@ test('Space with focus on the page starts the game', () => {
 
 test('a held Space starts the game once, not on every key repeat', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.keyDown(document.body, { key: ' ' })
@@ -55,7 +55,7 @@ test('a held Space starts the game once, not on every key repeat', () => {
 
 test('Space does not start the game with Ctrl, Alt or Meta held', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.keyDown(document.body, { key: ' ', ctrlKey: true })
@@ -67,7 +67,7 @@ test('Space does not start the game with Ctrl, Alt or Meta held', () => {
 
 test('Space does not start the game again while connecting', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.keyDown(document.body, { key: ' ' })
@@ -77,7 +77,7 @@ test('Space does not start the game again while connecting', () => {
 
 test('Space does not start the game while no mode is chosen', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.keyDown(document.body, { key: ' ' })
 
@@ -86,7 +86,7 @@ test('Space does not start the game while no mode is chosen', () => {
 
 test('Space does not start the game on a focused control', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.keyDown(screen.getByRole('radio', { name: 'Vs Bot' }), { key: ' ' })
@@ -96,7 +96,7 @@ test('Space does not start the game on a focused control', () => {
 
 test('Start Game with default settings passes the documented first-launch connect params, plus the house-rule flags', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
@@ -119,7 +119,7 @@ test('Start Game with default settings passes the documented first-launch connec
 })
 
 test('every house rule is shown', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
@@ -136,14 +136,14 @@ test('every house rule is shown', () => {
 })
 
 test('each mode card is named by its title alone and described by its one-line description', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   expect(screen.getByRole('radio', { name: 'Vs Bot' })).toHaveAccessibleDescription('Play a computer opponent, pick a difficulty')
   expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAccessibleDescription('Two players share this device')
 })
 
 test('each house rule is named by its label alone and described by its one-line description', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   const prize = screen.getByRole('checkbox', { name: 'Prize' })
@@ -152,7 +152,7 @@ test('each house rule is named by its label alone and described by its one-line 
 })
 
 test('clicking a rule\'s description toggles the rule, like the rest of its block', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   fireEvent.click(screen.getByText('Cover a prize cell to bank a 10-point bonus.'))
@@ -162,7 +162,7 @@ test('clicking a rule\'s description toggles the rule, like the rest of its bloc
 
 test('selecting Local 2P hides the difficulty pills and omits botSeats/botDifficulty from Start Game', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
   expect(screen.queryByRole('radio', { name: 'Greedy' })).not.toBeInTheDocument()
@@ -175,7 +175,7 @@ test('selecting Local 2P hides the difficulty pills and omits botSeats/botDiffic
 
 test('the mode-difficulty-pills row stays mounted (reserving its space) even when it is hidden', () => {
   const { container } = render(
-    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />,
+    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />,
   )
 
   expect(container.querySelector('.mode-difficulty-pills')).toBeInTheDocument()
@@ -190,7 +190,7 @@ test('the mode-difficulty-pills row stays mounted (reserving its space) even whe
 
 test('hidden difficulty pills are inert (unreachable by keyboard, not just visually hidden)', () => {
   const { container } = render(
-    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />,
+    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />,
   )
 
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
@@ -204,7 +204,7 @@ test('hidden difficulty pills are inert (unreachable by keyboard, not just visua
 
 test('Enter activates a non-native radio/checkbox widget', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.keyDown(screen.getByRole('radio', { name: 'Local 2P' }), { key: 'Enter' })
 
@@ -212,7 +212,7 @@ test('Enter activates a non-native radio/checkbox widget', () => {
 })
 
 test('the segmented groups are named by their visible label and their options are plain buttons', () => {
-  const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
 
   for (const name of ['Board size', 'Skip limit', 'Games']) {
@@ -224,14 +224,14 @@ test('the segmented groups are named by their visible label and their options ar
 })
 
 test('the skip limit group says what it counts', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
 
   expect(screen.getByRole('radiogroup', { name: 'Skip limit' })).toHaveAccessibleDescription('Skips in a row that end the game')
 })
 
 function renderRadios(group: string) {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   // Difficulty is a plain labelled group, so it is not a second radiogroup nested inside Opponent.
   return within(screen.getByRole(group === 'Difficulty' ? 'group' : 'radiogroup', { name: group })).getAllByRole('radio')
@@ -270,7 +270,7 @@ describe.each(['Board size', 'Skip limit', 'Games', 'Difficulty'])('%s radio opt
 
 describe('Opponent cards', () => {
   const renderCards = () => {
-    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
     return [screen.getByRole('radio', { name: 'Vs Bot' }), screen.getByRole('radio', { name: 'Local 2P' })]
   }
 
@@ -320,7 +320,7 @@ function injectModeSelectCss() {
 describe('selection cue on the opponent cards', () => {
   const renderCards = () => {
     injectModeSelectCss()
-    const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    const { container } = render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
     return [...container.querySelectorAll<HTMLElement>('.mode-card')]
   }
   const cssRules = () => [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules])
@@ -367,7 +367,7 @@ describe('selection cue on the opponent cards', () => {
 const gamesGroup = () => screen.getByRole('radiogroup', { name: 'Games' })
 
 test('shows the Games picker with a single game selected by default', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   expect(within(gamesGroup()).getAllByRole('radio').map((r) => [r.textContent, r.getAttribute('aria-checked')])).toEqual([
@@ -380,7 +380,7 @@ test('shows the Games picker with a single game selected by default', () => {
 
 test('a single game sends no seriesLength', () => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
@@ -390,7 +390,7 @@ test('a single game sends no seriesLength', () => {
 
 test.each([3, 5])('choosing %i games sends seriesLength', (length) => {
   const onStartGame = vi.fn()
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(within(gamesGroup()).getByRole('radio', { name: String(length) }))
@@ -401,14 +401,14 @@ test.each([3, 5])('choosing %i games sends seriesLength', (length) => {
 
 test('persists settings to localStorage on Start Game and pre-fills them on the next mount', () => {
   const { unmount } = render(
-    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />,
+    <ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />,
   )
   fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
   fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
   unmount()
 
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   expect(screen.getByRole('radio', { name: 'Local 2P' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByRole('radio', { name: '23×23' })).toHaveAttribute('aria-checked', 'true')
@@ -420,7 +420,7 @@ describe('stored settings that are no longer valid', () => {
   function startWithStored(stored: unknown) {
     localStorage.setItem(STORAGE_KEY, typeof stored === 'string' ? stored : JSON.stringify(stored))
     const onStartGame = vi.fn()
-    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
     return onStartGame.mock.calls[0]![0]
   }
@@ -451,21 +451,21 @@ describe('stored settings that are no longer valid', () => {
 
   test('an unknown opponent leaves no mode chosen', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ opponent: 'robot' }))
-    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeDisabled()
   })
 
   test('a fallen-back value is not counted as changed from the defaults', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ opponent: 'local2p', boardSize: 21 }))
-    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
     expect(screen.queryByText(/changed from defaults/)).not.toBeInTheDocument()
   })
 
   test.each(['{not json', 'null', '5', '[]', '"text"'])('stored %s loads the defaults', (raw) => {
     localStorage.setItem(STORAGE_KEY, raw)
-    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: 'Start Game' })).toBeDisabled()
     fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
@@ -474,13 +474,38 @@ describe('stored settings that are no longer valid', () => {
 })
 
 test('while isConnecting, Start Game is disabled and reads Connecting…', () => {
-  render(<ModeSelectScreen isConnecting connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled()
 })
 
+test('while isConnecting, a Cancel button under Start Game calls onCancel', () => {
+  const onCancel = vi.fn()
+  render(<ModeSelectScreen isConnecting connectFailed={false} onStartGame={vi.fn()} onCancel={onCancel} />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+  expect(onCancel).toHaveBeenCalledTimes(1)
+})
+
+test('after Cancel, Start Game takes focus once the connection is gone', () => {
+  const { rerender } = render(<ModeSelectScreen isConnecting connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  rerender(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+  expect(screen.getByRole('button', { name: 'Start Game' })).toHaveFocus()
+})
+
+test('with no connection pending, there is no Cancel button', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+  expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument()
+})
+
 test('while connectFailed, names both likely causes in an inline retry message and Start Game stays enabled', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed onStartGame={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
 
   expect(
@@ -492,7 +517,7 @@ test('while connectFailed, names both likely causes in an inline retry message a
 })
 
 test('the failed-connect message is an alert, which screen readers announce when it appears with its text', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   const alert = screen.getByRole('alert')
 
@@ -501,7 +526,7 @@ test('the failed-connect message is an alert, which screen readers announce when
 })
 
 test('Reset to Defaults opens a confirm dialog', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
@@ -511,7 +536,7 @@ test('Reset to Defaults opens a confirm dialog', () => {
 })
 
 test('the reset dialog names every setting a reset restores', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
@@ -523,7 +548,7 @@ test('the reset dialog names every setting a reset restores', () => {
 })
 
 test('confirming the reset dialog restores match setup but keeps the chosen opponent', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
@@ -539,7 +564,7 @@ test('confirming the reset dialog restores match setup but keeps the chosen oppo
 })
 
 test('cancelling the reset dialog leaves settings untouched', () => {
-  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   fireEvent.click(screen.getByRole('radio', { name: '23×23' }))
@@ -552,7 +577,7 @@ test('cancelling the reset dialog leaves settings untouched', () => {
 })
 
 describe('changed-from-defaults cue', () => {
-  const renderScreen = () => render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} />)
+  const renderScreen = () => render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
   const pick = (name: string, group?: string) =>
     fireEvent.click((group ? within(screen.getByRole('radiogroup', { name: group })) : screen).getByRole('radio', { name }))
   const cue = () => screen.queryByText(/changed from defaults/)
@@ -677,7 +702,7 @@ describe('changed-from-defaults cue', () => {
 
   test('Reset stays available while a connection is in progress', () => {
     localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'local2p', boardSize: 27 }))
-    render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={vi.fn()} />)
+    render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: 'Reset to Defaults' })).toBeEnabled()
   })
@@ -690,7 +715,7 @@ describe('per-group All On and All Off links', () => {
     'Dice & turn': ['Wildcard roll', 'Reroll', 'Comeback'],
   }
   const renderRules = (onStartGame = vi.fn()) => {
-    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
     fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
   }
   const checked = (name: string) => screen.getByRole('checkbox', { name }).getAttribute('aria-checked') === 'true'

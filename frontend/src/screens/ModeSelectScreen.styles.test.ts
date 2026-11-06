@@ -18,6 +18,10 @@ test('the failed-connect line is a status block: 13px bold-ish text, a full dang
   expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
 })
 
+test('the Cancel link is centred under Start Game, like the button above it', () => {
+  expect(ruleFor(css, '.mode-cancel')).toMatch(/align-self:\s*center/)
+})
+
 test('Start Game, the screen\'s one primary button, gets a 2px border to set it apart from the 1px options', () => {
   expect(ruleFor(css, '.mode-select .btn.primary')).toMatch(/border-width:\s*2px/)
 })

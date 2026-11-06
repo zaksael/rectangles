@@ -66,6 +66,21 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Menu' })).toBeInTheDocument()
   })
 
+  it('Cancel while connecting closes the socket and returns to the idle form with no failure line', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+    const pending = FakeWebSocket.instances.at(-1)!
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await act(async () => {}) // the cancelled socket reports its close after the call returns
+
+    expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
+    expect(screen.queryByText(/Couldn’t connect/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument()
+    expect(FakeWebSocket.instances.at(-1)).toBe(pending)
+  })
+
   it('shows an inline retry message when the connection fails, and retrying opens a new socket', () => {
     render(<App />)
 
