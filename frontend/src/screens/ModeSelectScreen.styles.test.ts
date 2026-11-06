@@ -18,6 +18,16 @@ test('the failed-connect line is a status block: 13px bold-ish text, a full dang
   expect(contrast(danger, tint)).toBeGreaterThanOrEqual(4.5)
 })
 
+test('the section labels sit one level above the group and field labels: 13px, 600, full ink against their 11px muted', () => {
+  const section = ruleFor(css, '.mode-section-label')
+
+  expect(section).toMatch(/font-size:\s*13px/)
+  expect(section).toMatch(/font-weight:\s*600/)
+  expect(section).toMatch(/color:\s*var\(--ink\)/)
+  expect(ruleFor(css, '.mode-group-label')).toMatch(/font-size:\s*11px/)
+  expect(ruleFor(css, '.mode-field-label')).toMatch(/font-size:\s*11px/)
+})
+
 test('the Cancel link is centred under Start Game, like the button above it', () => {
   expect(ruleFor(css, '.mode-cancel')).toMatch(/align-self:\s*center/)
 })

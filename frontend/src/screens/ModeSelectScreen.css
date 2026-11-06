@@ -138,6 +138,12 @@
   color: var(--ink-muted);
 }
 
+.mode-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .mode-section-label-row {
   display: flex;
   align-items: baseline;
