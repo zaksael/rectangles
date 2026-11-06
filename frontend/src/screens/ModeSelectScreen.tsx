@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { HOUSE_RULE_GROUPS, type HouseRules } from '../game/houseRules'
 import { ResetConfirmDialog } from '../dialogs/ResetConfirmDialog'
 import './ModeSelectScreen.css'
@@ -213,6 +213,18 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame }: M
     saveSettings(settings)
     onStartGame(buildStartGameParams(settings))
   }
+
+  // Space starts only from the bare page: on a focused control it keeps that control's own meaning.
+  const startOnSpace = useEffectEvent((e: globalThis.KeyboardEvent) => {
+    if (e.key !== ' ' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target !== document.body || isConnecting || noModeSelected) return
+    e.preventDefault()
+    handleStartGame()
+  })
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => startOnSpace(e)
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const noModeSelected = settings.opponent === null
   const changed = changedCount(settings)

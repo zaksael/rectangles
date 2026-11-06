@@ -32,6 +32,68 @@ test('selecting a mode enables Start Game and clears the hint', () => {
   expect(screen.queryByText('Choose a mode to enable Start Game')).not.toBeInTheDocument()
 })
 
+test('Space with focus on the page starts the game', () => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.keyDown(document.body, { key: ' ' })
+
+  expect(onStartGame).toHaveBeenCalledTimes(1)
+})
+
+test('a held Space starts the game once, not on every key repeat', () => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.keyDown(document.body, { key: ' ' })
+  fireEvent.keyDown(document.body, { key: ' ', repeat: true })
+
+  expect(onStartGame).toHaveBeenCalledTimes(1)
+})
+
+test('Space does not start the game with Ctrl, Alt or Meta held', () => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.keyDown(document.body, { key: ' ', ctrlKey: true })
+  fireEvent.keyDown(document.body, { key: ' ', altKey: true })
+  fireEvent.keyDown(document.body, { key: ' ', metaKey: true })
+
+  expect(onStartGame).not.toHaveBeenCalled()
+})
+
+test('Space does not start the game again while connecting', () => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.keyDown(document.body, { key: ' ' })
+
+  expect(onStartGame).not.toHaveBeenCalled()
+})
+
+test('Space does not start the game while no mode is chosen', () => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.keyDown(document.body, { key: ' ' })
+
+  expect(onStartGame).not.toHaveBeenCalled()
+})
+
+test('Space does not start the game on a focused control', () => {
+  const onStartGame = vi.fn()
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+  fireEvent.keyDown(screen.getByRole('radio', { name: 'Vs Bot' }), { key: ' ' })
+
+  expect(onStartGame).not.toHaveBeenCalled()
+})
+
 test('Start Game with default settings passes the documented first-launch connect params, plus the house-rule flags', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} />)

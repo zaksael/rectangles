@@ -106,6 +106,7 @@ Window" notice takes their place and the game waits where it was.
 
 | Screen | Key | Action |
 |---|---|---|
+| Mode Select, nothing focused | `Space` | Start Game |
 | Playing | `D` | Roll |
 | Playing | `R` | Rotate the piece |
 | Playing | `S` | Skip a roll with no legal placement |
