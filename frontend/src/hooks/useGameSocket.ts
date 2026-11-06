@@ -58,6 +58,7 @@ type Paced = { kind: 'state'; state: GameState } | { kind: 'error'; error: GameE
 type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'connect-failed'
 
 const DEFAULT_PACING_DELAY_MS = 500
+const CONNECT_TIMEOUT_MS = 10_000
 
 export const botName = (difficulty?: string) => `Bot (${difficulty})`
 
@@ -171,7 +172,13 @@ export function useGameSocket(params: GameSocketParams) {
     const base = params.serverUrl ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
     const socket = new WebSocket(`${base}/ws?${query}`)
     socketRef.current = socket
+    // A handshake that never answers would leave Mode Select connecting for as long as the browser waits.
+    const connectTimeout = setTimeout(() => {
+      setStatus('connect-failed')
+      socket.close()
+    }, CONNECT_TIMEOUT_MS)
     socket.addEventListener('open', () => {
+      clearTimeout(connectTimeout)
       hasOpenedRef.current = true
       setStatus('open')
     })
@@ -232,6 +239,7 @@ export function useGameSocket(params: GameSocketParams) {
       }
     })
     return () => {
+      clearTimeout(connectTimeout)
       intentionalCloseRef.current = true
       if (drainTimeoutRef.current !== null) {
         clearTimeout(drainTimeoutRef.current)

@@ -275,6 +275,39 @@ test('status becomes "connect-failed" when the socket closes before ever opening
   expect(result.current.status).toBe('connect-failed')
 })
 
+test('status becomes "connect-failed" when the socket has not opened after 10 seconds', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    vi.advanceTimersByTime(10_000)
+  })
+
+  expect(result.current.status).toBe('connect-failed')
+})
+
+test('a socket that opens before the 10 seconds are up is not failed when they pass', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+
+  act(() => {
+    vi.advanceTimersByTime(9_000)
+    FakeWebSocket.instances[0]!.emit('open')
+    vi.advanceTimersByTime(5_000)
+  })
+
+  expect(result.current.status).toBe('open')
+})
+
+test('a connection turned off before the 10 seconds are up never reports connect-failed', () => {
+  const { result, rerender } = renderHook((enabled: boolean) => useGameSocket({ protocolVersion: 1, enabled }), { initialProps: true })
+
+  rerender(false)
+  act(() => {
+    vi.advanceTimersByTime(15_000)
+  })
+
+  expect(result.current.status).not.toBe('connect-failed')
+})
+
 test.each<[GameAction, unknown]>([
   [{ type: 'roll' }, { protocolVersion: 1, type: 'roll' }],
   [{ type: 'skip' }, { protocolVersion: 1, type: 'skip' }],
