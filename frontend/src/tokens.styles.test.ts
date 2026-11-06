@@ -71,6 +71,12 @@ test('a modal\'s actions are an even row 12px apart, each button taking an equal
 // The muted text colour is one token; a stylesheet that spells the mix out again would let the two drift apart.
 const INK_MUTED_MIX = 'color-mix(in srgb, var(--ink) 75%, transparent)'
 
+test('a mouse click on a rule row or segmented button leaves no focus ring: only dialog buttons use bare :focus', () => {
+  expect(tokensCss).not.toMatch(/\.rule:focus(?!-)/)
+  expect(tokensCss).not.toMatch(/\.segmented button:focus(?!-)/)
+  expect(ruleFor(tokensCss, 'button:focus-visible')).toMatch(/outline:\s*2px solid var\(--ink\)/)
+})
+
 test('tokens.css names the muted ink as --ink-muted', () => {
   expect(tokensCss).toContain(`--ink-muted: ${INK_MUTED_MIX};`)
 })
