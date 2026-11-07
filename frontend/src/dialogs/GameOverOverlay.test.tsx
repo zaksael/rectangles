@@ -609,6 +609,17 @@ test('the series card shows the deciding totals in a scoreboard, with the leader
   expect(board.children[1]).not.toHaveClass('winner')
 })
 
+test('the series ledger marks each round\'s higher score as the winner and the lower as the loser, a tied round neither', () => {
+  const dialog = renderSeriesResult(makeSeries({ gamesPlayed: 3, isComplete: true, winner: 1, scores: { '1': 456, '2': 454 }, rounds: roundTotals([162, 148], [139, 151], [155, 155]) }))
+  const marks = within(dialog).getAllByRole('row').slice(1).map((row) => Array.from(row.querySelectorAll('td')).map((c) => c.className))
+
+  expect(marks).toEqual([
+    ['round-win', 'round-lose'],
+    ['round-lose', 'round-win'],
+    ['', ''],
+  ])
+})
+
 test('a tied series marks neither scoreboard cell as the winner', () => {
   const dialog = renderSeriesResult(makeSeries({ gamesPlayed: 3, isComplete: true, winner: null, scores: { '1': 465, '2': 465 }, rounds: roundTotals([150, 160], [160, 150], [155, 155]) }))
   const board = within(dialog).getByRole('group', { name: 'Series score' })

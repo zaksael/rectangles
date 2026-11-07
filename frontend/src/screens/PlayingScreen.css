@@ -463,6 +463,13 @@ dialog.game-over h2 {
 .game-over table.breakdown tbody th {
   font-weight: 400;
 }
+/* The series ledger marks each round's winner: the higher score bold, the lower one stepping back like a scoreboard's trailing total. */
+.game-over table.breakdown td.round-win {
+  font-weight: 600;
+}
+.game-over table.breakdown td.round-lose {
+  color: var(--ink-muted);
+}
 .game-over table.breakdown thead th {
   white-space: nowrap; /* the dot stays beside the name, not wrapped above it */
   padding-left: 16px; /* so a name never touches the next column's dot */

@@ -21,6 +21,12 @@ test('the series total under a round score is a muted 12px+ mono line', () => {
   expect(block).toMatch(/color-mix/)
 })
 
+test('the series ledger bolds a round winner and mutes the loser, which still clears 4.5:1', () => {
+  expect(ruleFor(css, '.game-over table.breakdown td.round-win')).toMatch(/font-weight:\s*600/)
+  expect(ruleFor(css, '.game-over table.breakdown td.round-lose')).toMatch(/color:\s*var\(--ink-muted\)/)
+  expect(textContrast(css, '.game-over table.breakdown td.round-lose')).toBeGreaterThanOrEqual(4.5)
+})
+
 test('a breakdown header keeps its dot and name on one line, so the dot never stacks above the name', () => {
   expect(ruleFor(css, '.game-over table.breakdown thead th')).toMatch(/white-space:\s*nowrap/)
 })

@@ -380,8 +380,15 @@ export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onRe
           {series.rounds.map((round, index) => (
             <tr key={index}>
               <th scope="row">{`Round ${index + 1}`}</th>
-              <td>{round.total['1']}</td>
-              <td>{round.total['2']}</td>
+              {(['1', '2'] as const).map((id) => {
+                const mine = round.total[id]
+                const theirs = round.total[key(3 - Number(id))]
+                return (
+                  <td key={id} className={mine > theirs ? 'round-win' : mine < theirs ? 'round-lose' : undefined}>
+                    {mine}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>
