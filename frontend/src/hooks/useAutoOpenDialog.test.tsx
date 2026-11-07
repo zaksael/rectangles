@@ -78,6 +78,27 @@ test('a click on the dialog content does not cancel it', () => {
   expect(onCancel).not.toHaveBeenCalled()
 })
 
+test('leaves focus alone when something else took it as the dialog closed', () => {
+  const opener = openerButton()
+  const { rerender } = render(
+    <>
+      <Modal />
+      <button>Next</button>
+    </>,
+  )
+  screen.getByRole('button', { name: 'Next' }).focus() // what an autofocused replacement does as the dialog goes
+
+  rerender(
+    <>
+      {null}
+      <button>Next</button>
+    </>,
+  )
+
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Next' }))
+  opener.remove()
+})
+
 test('does nothing when the opener has since left the page', () => {
   const opener = openerButton()
   const { unmount } = render(<Modal />)

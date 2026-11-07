@@ -28,7 +28,9 @@ export function useAutoOpenDialog<T extends HTMLDialogElement>() {
     return () => {
       dialog?.removeEventListener('pointerdown', onPointerDown)
       dialog?.removeEventListener('click', onClick)
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
+      // Only when focus fell to the page: a replacement that took it as the dialog went (an autofocused button) keeps it.
+      const focusLost = !document.activeElement || document.activeElement === document.body
+      if (focusLost && previous instanceof HTMLElement && previous.isConnected) previous.focus()
     }
   }, [])
   return ref
