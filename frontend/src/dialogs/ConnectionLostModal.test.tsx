@@ -16,6 +16,13 @@ test('an out-of-date page offers only Reload Page, which reloads and does not st
   expect(onNewGame).not.toHaveBeenCalled()
 })
 
+test('a hidden placeholder backdrop stands behind the modal, since the last board may be stale', () => {
+  const { container } = render(<ConnectionLostModal isSeries={false} onNewGame={vi.fn()} />)
+  const backdrop = container.querySelector('.connection-lost-backdrop')
+  expect(backdrop).toBeInTheDocument()
+  expect(backdrop).toHaveAttribute('aria-hidden', 'true')
+})
+
 test('a series says the series cannot be resumed either', () => {
   render(<ConnectionLostModal isSeries onNewGame={vi.fn()} />)
   expect(screen.getByText(/couldn't be restored/)).toHaveTextContent("the series can't be resumed either")

@@ -18,21 +18,25 @@ export function ConnectionLostModal({ isSeries, onNewGame, outOfDate = false, on
     : "The connection to the server dropped and couldn't be restored. Rejoining an in-progress game isn't supported yet — you'll need to start a new one."
 
   return (
-    // Escape has no dismiss action here (only "New Game" clears this state), so cancel is suppressed.
-    <dialog
-      className="modal connection-lost"
-      ref={dialogRef}
-      aria-labelledby="connection-lost-title"
-      onCancel={(e) => e.preventDefault()}
-    >
-      <p className="reason">Connection lost</p>
-      <h2 id="connection-lost-title">{outOfDate ? 'This page is out of date' : "This game can't be resumed"}</h2>
-      <p className="body">{body}</p>
-      <div className="actions">
-        <button className="btn primary" onClick={outOfDate ? onReload : onNewGame} autoFocus>
-          {outOfDate ? 'Reload Page' : 'New Game'}
-        </button>
-      </div>
-    </dialog>
+    <>
+      {/* A placeholder, not the last board: after a drop that board may be stale or mid-update. */}
+      <div className="connection-lost-backdrop" aria-hidden="true" />
+      {/* Escape has no dismiss action here (only "New Game" clears this state), so cancel is suppressed. */}
+      <dialog
+        className="modal connection-lost"
+        ref={dialogRef}
+        aria-labelledby="connection-lost-title"
+        onCancel={(e) => e.preventDefault()}
+      >
+        <p className="reason">Connection lost</p>
+        <h2 id="connection-lost-title">{outOfDate ? 'This page is out of date' : "This game can't be resumed"}</h2>
+        <p className="body">{body}</p>
+        <div className="actions">
+          <button className="btn primary" onClick={outOfDate ? onReload : onNewGame} autoFocus>
+            {outOfDate ? 'Reload Page' : 'New Game'}
+          </button>
+        </div>
+      </dialog>
+    </>
   )
 }

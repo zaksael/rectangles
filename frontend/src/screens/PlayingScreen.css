@@ -558,6 +558,15 @@ dialog.game-over h2 {
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
+/* Stands in for the board the modal covers: after a drop the last board may be stale, so it is not shown. */
+.connection-lost-backdrop {
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--p1) 22%, var(--ledger)) 0 60px, color-mix(in srgb, var(--ledger) 96%, black) 60px 62px),
+    linear-gradient(to right, color-mix(in srgb, var(--p1) 30%, var(--ledger)) 0%, var(--ledger) 48%, var(--ledger) 52%, color-mix(in srgb, var(--p2) 30%, var(--ledger)) 100%);
+  filter: brightness(0.55) saturate(0.7);
+}
 dialog.connection-lost {
   width: 420px;
   padding: 24px;

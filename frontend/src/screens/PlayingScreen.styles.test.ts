@@ -158,3 +158,12 @@ test('the turn block has a 3px rule on its left edge, in the mover\'s colour', (
   expect(ruleFor(css, '.rail-turn.p1')).toMatch(/border-left-color:\s*var\(--p1\)/)
   expect(ruleFor(css, '.rail-turn.p2')).toMatch(/border-left-color:\s*var\(--p2\)/)
 })
+
+test('the connection-lost backdrop is a dimmed stripe placeholder over the whole viewport, behind the modal', () => {
+  const rule = ruleFor(css, '.connection-lost-backdrop')
+
+  expect(rule).toMatch(/position:\s*fixed/)
+  expect(rule).toMatch(/inset:\s*0/)
+  expect(rule).toMatch(/repeating-linear-gradient\(135deg/)
+  expect(rule).toMatch(/filter:\s*brightness\(0\.55\) saturate\(0\.7\)/)
+})
