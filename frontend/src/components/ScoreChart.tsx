@@ -143,7 +143,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
                 role="button"
                 tabIndex={turn === tabStop ? 0 : -1}
                 aria-current={turn === step ? 'true' : undefined}
-                aria-label={`Jump to turn ${turn}, ${names['1']} ${formatSigned(series['1'][turn]!)}, ${names['2']} ${formatSigned(series['2'][turn]!)}`}
+                aria-label={`Jump to turn ${turn}, ${names['1']} ${formatSigned(series['1'][turn]!)}, ${names['2']} ${formatSigned(series['2'][turn]!)}${flagged.includes(turn) ? ', better move existed' : ''}`}
                 onClick={() => onJump(turn)}
                 onFocus={() => setRoving(turn)}
                 onKeyDown={(e) => onKeyDown(e, turn)}

@@ -290,6 +290,13 @@ test('no flagged turns draws no rings and no key', () => {
   expect(screen.queryByText('Better move existed')).toBeNull()
 })
 
+test('a flagged turn says so in its jump label, and an unflagged one does not', () => {
+  drawFlagged([2])
+  const labels = targets().map((t) => t.getAttribute('aria-label'))
+  expect(labels[2]).toBe('Jump to turn 2, Player 1 25, Player 2 25, better move existed')
+  expect(labels[1]).toBe('Jump to turn 1, Player 1 25, Player 2 0')
+})
+
 test('a flagged turn rings the mover\'s own dot, centred on it', () => {
   const { container } = drawFlagged([2])
   const [ring] = rings(container)
