@@ -262,6 +262,13 @@ test('the header carries the hint and a readout of both scores and the turn', ()
   expect(readout).toHaveTextContent('Turn 1')
 })
 
+test('the readout says Start at turn 0', () => {
+  const { container } = draw(CLIMB, 0)
+  const readout = container.querySelector('.chart-readout')!
+  expect(readout).toHaveTextContent('Start')
+  expect(readout).not.toHaveTextContent('Turn 0')
+})
+
 test('a game with no moves has neither the hint nor the readout', () => {
   const { container } = draw([])
   expect(screen.queryByText('Select a turn to jump to it')).toBeNull()

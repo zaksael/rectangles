@@ -94,7 +94,7 @@ export function ScoreChart({ history, step, names, onJump, flagged = [] }: Score
                   {formatSigned(series[id][step]!)}
                 </span>
               ))}
-              <span>{`Turn ${step}`}</span>
+              <span>{step === 0 ? 'Start' : `Turn ${step}`}</span>
             </span>
             {flagged.length > 0 && (
               <span className="chart-key">
