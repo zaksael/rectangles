@@ -26,6 +26,18 @@ test('Escape on the surrender dialog cancels it without the native close', () =>
   expect(onCancel).toHaveBeenCalledOnce()
 })
 
+test('a scrim click does not dismiss the connection-lost modal', () => {
+  const onNewGame = vi.fn()
+  render(<ConnectionLostModal isSeries={false} onNewGame={onNewGame} />)
+  const dialog = screen.getByRole('dialog')
+
+  fireEvent.pointerDown(dialog, { clientX: -1, clientY: -1 })
+  fireEvent.click(dialog, { clientX: -1, clientY: -1 })
+
+  expect(dialog).toHaveAttribute('open')
+  expect(onNewGame).not.toHaveBeenCalled()
+})
+
 test('Escape does not dismiss the connection-lost modal', () => {
   const onNewGame = vi.fn()
   render(<ConnectionLostModal isSeries={false} onNewGame={onNewGame} />)

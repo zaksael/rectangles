@@ -20,6 +20,7 @@ export function SurrenderConfirmDialog({ opponentName, scores, isSeries, onCance
       aria-labelledby="surrender-title"
       onCancel={(e) => {
         e.preventDefault()
+        e.stopPropagation() // React bubbles cancel up the tree, and this dialog sits inside the Menu's
         onCancel()
       }}
     >

@@ -33,6 +33,9 @@ test('shows the match info: opponent, board size and skip limit', () => {
   expect(screen.getByText('Skip limit').nextSibling).toHaveTextContent('3')
 })
 
+// jsdom has no layout, so every box is 0x0 at the origin: a point left of it is on the scrim.
+const outsideTheBox = { clientX: -1, clientY: -1 }
+
 const midSeries = makeSeries({ scores: { '1': 301, '2': 299 }, gamesPlayed: 1 })
 
 test('shows the running round and the series score, Player 1 first, when reached mid-series', () => {
@@ -159,6 +162,21 @@ test('Cancel closes the Surrender dialog without sending anything or closing the
   expect(sendAction).not.toHaveBeenCalled()
   expect(onClose).not.toHaveBeenCalled()
   expect(screen.queryByRole('dialog', { name: /Surrender/ })).not.toBeInTheDocument()
+})
+
+test('a scrim click on the Surrender dialog cancels only it; on the Menu it closes the Menu', () => {
+  const { sendAction, onClose, dialog } = openSurrender()
+
+  fireEvent.pointerDown(dialog, outsideTheBox)
+  fireEvent.click(dialog, outsideTheBox)
+
+  expect(screen.queryByRole('dialog', { name: /Surrender/ })).not.toBeInTheDocument()
+  expect(onClose).not.toHaveBeenCalled()
+  const menu = screen.getByRole('dialog', { name: 'Menu' })
+  fireEvent.pointerDown(menu, outsideTheBox)
+  fireEvent.click(menu, outsideTheBox)
+  expect(onClose).toHaveBeenCalledTimes(1)
+  expect(sendAction).not.toHaveBeenCalled()
 })
 
 test('Surrender copy says the round, not the match, mid-series', () => {
