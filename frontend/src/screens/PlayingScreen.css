@@ -115,6 +115,21 @@
   font-weight: 500;
   text-wrap: pretty;
 }
+/* The result block's own faces, a step above the live status: the outcome must not read as a turn instruction. */
+.result-headline {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  text-wrap: pretty;
+}
+.result-reason {
+  margin: 0;
+  margin-top: auto; /* at the bottom of the status box, like the hint it replaces */
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
 .board-help {
   margin: 0;
   font-family: 'IBM Plex Mono', monospace;

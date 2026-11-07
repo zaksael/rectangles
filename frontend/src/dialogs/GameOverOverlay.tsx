@@ -217,8 +217,8 @@ export function GameOverBar({ game, series = null, seriesResult = false, onViewR
   return (
     <div className="rail-turn" role="region" aria-label={outcome.label}>
       <div className="rail-instr">
-        <div className="turn-status">{outcome.headline}</div>
-        <p className="board-help">{reason}</p>
+        <div className="result-headline">{outcome.headline}</div>
+        <p className="result-reason">{reason}</p>
       </div>
       <div className={`rail-dice${game.houseRules.wildcard.enabled ? ' reserves-picker' : ''}`} />
       <div className="rail-actions">

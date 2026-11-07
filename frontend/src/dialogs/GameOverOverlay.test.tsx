@@ -249,8 +249,19 @@ const barHeadline = (winner: 1 | 2 | null, reason: 'boardFull' | 'surrender', sc
   game.players['1'].score = { ...game.players['1'].score, totalScore: score[0] }
   game.players['2'].score = { ...game.players['2'].score, totalScore: score[1] }
   render(<GameOverBar game={game} series={series} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
-  return screen.getByRole('region', { name: 'Game result' }).querySelector('.turn-status')
+  return screen.getByRole('region', { name: 'Game result' }).querySelector('.result-headline')
 }
+
+test('the result bar headline and reason have their own classes, not the live turn status and key hint', () => {
+  const game = makeGame({ gameOver: { history: null, reason: 'surrender', playerId: 2, winner: 1 } })
+  render(<GameOverBar game={game} onViewResult={vi.fn()} onNewGame={vi.fn()} />)
+  const region = screen.getByRole('region', { name: 'Game result' })
+
+  expect(region.querySelector('.result-headline')).toHaveTextContent(/^Player.1 wins$/u)
+  expect(region.querySelector('.result-reason')).toHaveTextContent('Player 2 surrendered')
+  expect(region.querySelector('.turn-status')).toBeNull()
+  expect(region.querySelector('.board-help')).toBeNull()
+})
 
 test('the result bar states the margin of a win on score, in a series round too, and none for a tie or a surrender', () => {
   expect(barHeadline(2, 'boardFull', [132, 201])).toHaveTextContent(/^Player.2 wins on score by 69$/u)

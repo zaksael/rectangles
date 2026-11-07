@@ -44,6 +44,29 @@ test('the dice line is at least 12px and its muted ink still passes AA on the le
   expect(textContrast(css, '.game-over-luck')).toBeGreaterThanOrEqual(4.5)
 })
 
+test('the result bar headline is 16px at weight 600, a step above the 14px live turn status', () => {
+  const block = ruleFor(css, '.result-headline')
+
+  expect(block).toMatch(/font-size:\s*16px/)
+  expect(block).toMatch(/font-weight:\s*600/)
+})
+
+test('the result bar reason is 13px muted text that clears 4.5:1 and stays at the bottom of the status box', () => {
+  const block = ruleFor(css, '.result-reason')
+
+  expect(block).toMatch(/font-size:\s*13px/)
+  expect(block).toMatch(/color:\s*var\(--ink-muted\)/)
+  expect(block).toMatch(/margin-top:\s*auto/)
+  expect(textContrast(css, '.result-reason')).toBeGreaterThanOrEqual(4.5)
+})
+
+test('no touch-device rule blanks the result bar reason: it is an outcome, not a keyboard hint', () => {
+  const coarseBlocks = [...css.matchAll(/@media \(pointer: coarse\) \{(.*?)\n\}/gs)].map((m) => m[1]!)
+
+  expect(coarseBlocks.length).toBeGreaterThan(0)
+  for (const block of coarseBlocks) expect(block).not.toContain('.result-reason')
+})
+
 test('the trailing total is 70% ink, so it clears 4.5:1 and still reads as the lower number', () => {
   const rule = ruleFor(css, '.game-over-scoreboard .trail .n')
 
