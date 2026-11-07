@@ -43,13 +43,13 @@ test('the Area and Score rows show each player\'s totals', () => {
   expect(rowValues('Score')).toEqual(['12', '7'])
 })
 
-test('the Skips row shows each player\'s streak against the limit, and marks one skip from the limit', () => {
+test('the Skips row counts skips left against the limit, and marks one skip from the limit', () => {
   const game = makeGame({ board: { size: 3, skipLimit: 5 } })
   game.players['1'].board.consecutiveSkips = 4
   game.players['2'].board.consecutiveSkips = 2
   renderScreen({ game, series: null })
 
-  expect(rowValues('Skips')).toEqual(['4 / 5', '2 / 5'])
+  expect(rowValues('Skips')).toEqual(['1 / 5', '3 / 5'])
   expect(rowCells('Skips')[0]).toHaveClass('last-skip')
   expect(rowCells('Skips')[1]).not.toHaveClass('last-skip')
 })

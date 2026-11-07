@@ -370,7 +370,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                   <th scope="row">Skips</th>
                   {ids.map((id) => (
                     <td key={id} className={state.game.players[id].board.consecutiveSkips + 1 >= state.game.board.skipLimit ? 'last-skip' : undefined}>
-                      {state.game.players[id].board.consecutiveSkips} / {state.game.board.skipLimit}
+                      {state.game.board.skipLimit - state.game.players[id].board.consecutiveSkips} / {state.game.board.skipLimit}
                     </td>
                   ))}
                 </tr>
