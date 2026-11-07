@@ -26,7 +26,6 @@ function forcedColorsBlock(sheet: string) {
 test.each([
   ['tokens.css', '.pill.active'],
   ['ModeSelectScreen.css', '.segmented button.active'],
-  ['PlayingScreen.css', ".speed-options .btn[aria-pressed='true']"],
   ['ReplayScreen.css', ".replay .speed .btn[aria-pressed='true']"],
   ['ReplayScreen.css', ".replay .analysis-row .btn[aria-pressed='true']"],
 ])('%s: a selected %s is filled with Highlight under forced colors', (file, selector) => {

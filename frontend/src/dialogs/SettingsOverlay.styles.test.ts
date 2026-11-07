@@ -60,6 +60,13 @@ test('an off Menu rule is dimmed and struck through, an on rule is plain ink, an
   expect(ruleFor(css, '.settings-rule.on')).toMatch(/text-decoration:\s*none/)
 })
 
+test('the chosen bot speed is marked by a leading check, not a solid fill that outweighs Resume and Surrender', () => {
+  const pressed = ruleFor(css, ".speed-options .btn[aria-pressed='true']")
+
+  expect(pressed).toMatch(/background:\s*transparent/)
+  expect(ruleFor(css, ".speed-options .btn[aria-pressed='true']::before")).toMatch(/content:\s*"\\2713\\00a0"/)
+})
+
 test('the Bot speed heading is an 11px label like the rule headings and keeps AA contrast (4.5:1)', () => {
   expect(ruleFor(css, '.settings-speed h3')).toMatch(/font-size:\s*11px/)
   expect(textContrast(css, '.settings-speed h3')).toBeGreaterThanOrEqual(4.5)
