@@ -101,7 +101,7 @@ function App() {
           <SettingsOverlay
             game={gameSocket.state.game}
             series={gameSocket.state.series}
-            opponentLabel={connectParams.botSeats ? botName(connectParams.botDifficulty) : 'Local 2P'}
+            modeLabel={connectParams.botSeats ? `Vs ${botName(connectParams.botDifficulty)}` : 'Local 2P'}
             sendAction={gameSocket.sendAction}
             botSeat={connectParams.botSeats}
             botSpeed={

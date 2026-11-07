@@ -9,7 +9,7 @@ import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 interface SettingsOverlayProps {
   game: GameWireState
   series: SeriesWireState | null
-  opponentLabel: string
+  modeLabel: string
   sendAction: (action: GameAction) => void
   onClose: () => void
   botSeat?: number | undefined
@@ -17,7 +17,7 @@ interface SettingsOverlayProps {
   botSpeed?: { current: BotSpeedLabel; onChange: (label: BotSpeedLabel) => void } | undefined
 }
 
-export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClose, botSeat, botSpeed }: SettingsOverlayProps) {
+export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, botSeat, botSpeed }: SettingsOverlayProps) {
   const dialogRef = useAutoOpenDialog()
   const enabledCount = Object.values(game.houseRules).filter((rule) => rule.enabled).length
   const [confirmingSurrender, setConfirmingSurrender] = useState(false)
@@ -37,8 +37,8 @@ export function SettingsOverlay({ game, series, opponentLabel, sendAction, onClo
       <div className="settings-body">
         <dl className="match-info">
           <div>
-            <dt>Opponent</dt>
-            <dd>{opponentLabel}</dd>
+            <dt>Mode</dt>
+            <dd>{modeLabel}</dd>
           </div>
           <div>
             <dt>Board size</dt>

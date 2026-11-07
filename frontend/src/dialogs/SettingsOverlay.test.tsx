@@ -10,7 +10,7 @@ function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {
     <SettingsOverlay
       game={makeGame({ board: { size: 19, skipLimit: 3 } })}
       series={null}
-      opponentLabel="Bot (Greedy)"
+      modeLabel="Vs Bot (Greedy)"
       sendAction={sendAction}
       onClose={onClose}
       {...props}
@@ -25,10 +25,11 @@ test('the Menu lists house rules by name only, without the Mode Select descripti
   expect(screen.queryByText(/Cover a prize cell/)).not.toBeInTheDocument()
 })
 
-test('shows the match info: opponent, board size and skip limit', () => {
+test('shows the match info: mode, board size and skip limit', () => {
   renderOverlay()
 
-  expect(screen.getByText('Opponent').nextSibling).toHaveTextContent('Bot (Greedy)')
+  expect(screen.getByText('Mode').nextSibling).toHaveTextContent('Vs Bot (Greedy)')
+  expect(screen.queryByText('Opponent')).toBeNull()
   expect(screen.getByText('Board size').nextSibling).toHaveTextContent('19×19')
   expect(screen.getByText('Skip limit').nextSibling).toHaveTextContent('3')
 })
@@ -112,7 +113,7 @@ test('Escape closes the overlay through the same handler', () => {
 
 test('summarises the house rules: none enabled, or how many are on', () => {
   const base = makeGame()
-  const { unmount } = render(<SettingsOverlay game={base} series={null} opponentLabel="Bot" sendAction={vi.fn()} onClose={vi.fn()} />)
+  const { unmount } = render(<SettingsOverlay game={base} series={null} modeLabel="Vs Bot" sendAction={vi.fn()} onClose={vi.fn()} />)
   expect(screen.getByText('No house rules in this match')).toBeInTheDocument()
   expect(screen.queryByRole('list')).not.toBeInTheDocument()
   unmount()
@@ -219,7 +220,7 @@ test("clicking Surrender on the bot's turn opens no dialog and sends nothing", (
 })
 
 test("when the bot's turn ends with the menu open, Surrender becomes available at once", () => {
-  const props = { series: null, opponentLabel: 'Bot (Greedy)', sendAction: vi.fn(), onClose: vi.fn(), botSeat: 1 }
+  const props = { series: null, modeLabel: 'Vs Bot (Greedy)', sendAction: vi.fn(), onClose: vi.fn(), botSeat: 1 }
   const botTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const humanTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const { rerender } = render(<SettingsOverlay game={botTurn} {...props} />)
