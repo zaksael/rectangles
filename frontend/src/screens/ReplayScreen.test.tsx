@@ -611,6 +611,15 @@ test('Space on a focused button plays instead of also pressing that button', () 
   expect(fireEvent.keyUp(nextButton, { key: ' ' })).toBe(false)
 })
 
+test('Space on a speed button is left to that button instead of playing', () => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  const fast = screen.getByRole('button', { name: 'Fast' })
+  fast.focus()
+  expect(fireEvent.keyDown(fast, { key: ' ' })).toBe(true)
+  expect(fireEvent.keyUp(fast, { key: ' ' })).toBe(true)
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+})
+
 test('browser shortcuts with Ctrl, Cmd or Alt are left alone', () => {
   render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) press('ArrowRight', { [modifier]: true })

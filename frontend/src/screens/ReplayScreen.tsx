@@ -236,7 +236,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   }
 
   // Keys work from anywhere on the screen (the chart's own arrows come with the chart). Space is swallowed even on a focused
-  // button, so it plays instead of also pressing that button; Enter keeps its native action.
+  // transport button, so it plays instead of also pressing it; Enter keeps its native action.
   const actions: Record<string, () => void> = {
     ArrowRight: () => goTo((s) => s + 1),
     ArrowDown: () => goTo((s) => s + 1),
@@ -247,7 +247,9 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
     ' ': () => history.length > 0 && togglePlay(),
     Escape: onBack,
   }
-  const handled = (e: KeyboardEvent) => !(e.ctrlKey || e.metaKey || e.altKey) && e.key in actions
+  // Space on a button outside the transport row (Slow/Normal/Fast, Show Better Option) presses that button.
+  const ownsSpace = (e: KeyboardEvent) => e.key === ' ' && e.target instanceof Element && !!e.target.closest('button') && !e.target.closest('.transport')
+  const handled = (e: KeyboardEvent) => !(e.ctrlKey || e.metaKey || e.altKey) && e.key in actions && !ownsSpace(e)
   // One pair of listeners, bound once: the Effect Events always see this render's step and callbacks.
   const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
     if (!handled(e)) return
