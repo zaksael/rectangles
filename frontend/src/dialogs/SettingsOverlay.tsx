@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import type { GameAction, GameWireState, SeriesWireState } from '../game/gameTypes'
 import { BOT_SPEEDS, type BotSpeedLabel } from '../game/botSpeed'
+import { KeyBadge } from '../components/KeyBadge'
 import { HOUSE_RULE_GROUPS } from '../game/houseRules'
 import { seriesRound } from '../game/seriesRound'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
@@ -22,6 +23,15 @@ export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, 
   const enabledCount = Object.values(game.houseRules).filter((rule) => rule.enabled).length
   const [confirmingSurrender, setConfirmingSurrender] = useState(false)
   const isBotTurn = botSeat !== undefined && game.turn.currentPlayerId === botSeat
+  // The screen behind ignores keys while a dialog is open, so the key that opened the Menu closes it here (not over the confirm on top of it).
+  const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key.toLowerCase() === 'm' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && !confirmingSurrender) onClose()
+  })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => handleKeyDown(event)
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
   return (
     // Suppress the native auto-close so Escape routes through the same onClose as the button.
     <dialog
@@ -96,8 +106,9 @@ export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, 
         )}
         <div className="settings-footer">
           <div className="actions">
-            <button className="btn secondary" onClick={onClose} autoFocus>
+            <button className="btn secondary" onClick={onClose} aria-keyshortcuts="Escape" autoFocus>
               Resume
+              <KeyBadge>Esc</KeyBadge>
             </button>
             {game.turn.turnState !== 'gameOver' && (
               <button className="btn destructive quiet" onClick={() => !isBotTurn && setConfirmingSurrender(true)} aria-disabled={isBotTurn || undefined} aria-describedby={isBotTurn ? 'surrender-note' : undefined}>

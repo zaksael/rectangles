@@ -111,6 +111,31 @@ test('Escape closes the overlay through the same handler', () => {
   expect(onClose).toHaveBeenCalledTimes(1)
 })
 
+test('M closes the overlay, since the screen behind ignores keys while a dialog is open', () => {
+  const { onClose } = renderOverlay()
+
+  fireEvent.keyDown(window, { key: 'm' })
+
+  expect(onClose).toHaveBeenCalledTimes(1)
+})
+
+test('M does not close the overlay from behind the surrender confirm', () => {
+  const { onClose } = renderOverlay()
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+
+  fireEvent.keyDown(window, { key: 'm' })
+
+  expect(onClose).not.toHaveBeenCalled()
+})
+
+test('Resume names its key: aria-keyshortcuts and a key chip', () => {
+  renderOverlay()
+  const resume = screen.getByRole('button', { name: 'Resume' })
+
+  expect(resume).toHaveAttribute('aria-keyshortcuts', 'Escape')
+  expect(resume.querySelector('.key-badge')).toHaveTextContent('Esc')
+})
+
 test('summarises the house rules: none enabled, or how many are on', () => {
   const base = makeGame()
   const { unmount } = render(<SettingsOverlay game={base} series={null} modeLabel="Vs Bot" sendAction={vi.fn()} onClose={vi.fn()} />)
