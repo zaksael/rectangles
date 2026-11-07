@@ -587,15 +587,34 @@ test('the series card names the winner, the margin and the format', () => {
   expect(within(dialog).getByText('3 rounds · most points wins')).toBeTruthy()
 })
 
-test('the series card lists each round and ends on the series total', () => {
+test('the series card lists each round and ends on the last one: the scoreboard above is the total', () => {
   const dialog = renderSeriesResult(wonSeries)
   const rows = within(dialog).getAllByRole('row').slice(1).map((row) => Array.from(row.children).map((c) => c.textContent))
   expect(rows).toEqual([
     ['Round 1', '162', '148'],
     ['Round 2', '139', '151'],
     ['Round 3', '158', '141'],
-    ['Series total', '459', '440'],
   ])
+})
+
+test('the series card shows the deciding totals in a scoreboard, with the leader marked as the winner', () => {
+  const dialog = renderSeriesResult(wonSeries)
+  const board = within(dialog).getByRole('group', { name: 'Series score' })
+
+  expect(board.children).toHaveLength(2)
+  expect(board.children[0]).toHaveTextContent('Player 1459')
+  expect(board.children[1]).toHaveTextContent('Player 2440')
+  expect(board.children[0]).toHaveClass('lead', 'winner')
+  expect(board.children[1]).toHaveClass('trail')
+  expect(board.children[1]).not.toHaveClass('winner')
+})
+
+test('a tied series marks neither scoreboard cell as the winner', () => {
+  const dialog = renderSeriesResult(makeSeries({ gamesPlayed: 3, isComplete: true, winner: null, scores: { '1': 465, '2': 465 }, rounds: roundTotals([150, 160], [160, 150], [155, 155]) }))
+  const board = within(dialog).getByRole('group', { name: 'Series score' })
+
+  expect(board.querySelector('.winner')).toBeNull()
+  expect(board.querySelectorAll('.lead')).toHaveLength(2)
 })
 
 test('a tied series reads "Series tied" with no margin line', () => {

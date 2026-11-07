@@ -360,6 +360,20 @@ export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onRe
           by <b>{pointsText(Math.abs(series.scores['1'] - series.scores['2']))}</b>
         </p>
       )}
+      <div className="game-over-scoreboard" role="group" aria-label="Series score">
+        {(['1', '2'] as const).map((id) => {
+          const won = winner === Number(id)
+          return (
+            <div key={id} className={`${winner === null || won ? 'lead' : 'trail'}${won ? ' winner' : ''}`}>
+              <div className="who">
+                <span className={`swatch p${id}`} aria-hidden="true" />
+                {nameOf(game, Number(id))}
+              </div>
+              <div className="n">{series.scores[id]}</div>
+            </div>
+          )
+        })}
+      </div>
       <table className="breakdown">
         <ScoreTableHead game={game} label="Round" />
         <tbody>
@@ -370,14 +384,6 @@ export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onRe
               <td>{round.total['2']}</td>
             </tr>
           ))}
-          <tr className="total">
-            <th scope="row">Series total</th>
-            {(['1', '2'] as const).map((id) => (
-              <td key={id} className={winner === Number(id) ? 'win' : undefined}>
-                {series.scores[id]}
-              </td>
-            ))}
-          </tr>
         </tbody>
       </table>
       <div className="actions">
