@@ -496,7 +496,7 @@ describe('App replay analysis', () => {
   it('asks the server for the analysis when Replay opens, and shows it once it arrives', () => {
     gameOverAndReplay()
     expect(requests()).toHaveLength(1)
-    expect(screen.getByRole('status')).toHaveTextContent('Checking for better moves…')
+    expect(screen.getByText('Checking for better moves…')).toBeInTheDocument()
 
     answer()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))

@@ -99,7 +99,7 @@ function AnalysisLine({
 }) {
   if (analysis.status === 'loading') {
     return (
-      <p className="analysis pending" role="status">
+      <p className="analysis pending">
         Checking for better moves…
       </p>
     )
@@ -291,7 +291,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} />
         {analysis && (
-          <div className="analysis-slot">
+          <div className="analysis-slot" aria-live="polite">
             <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} showBetterOption={showBetterOption} onToggleBetterOption={onToggleBetterOption} />
           </div>
         )}

@@ -724,10 +724,13 @@ test('a turn that is not flagged has no note, with other turns flagged', () => {
   expect(screen.queryByText(/this turn; the best move/)).toBeNull()
 })
 
-test('while the analysis loads the note slot says it is checking, as a status', () => {
-  renderAnalysed({ status: 'loading' }, 1)
+test('the note slot is one polite live region, so every note it shows is announced', () => {
+  const { container } = renderAnalysed({ status: 'loading' }, 1)
+  const slot = container.querySelector('.analysis-slot')!
 
-  expect(screen.getByRole('status').textContent).toBe('Checking for better moves…')
+  expect(slot.getAttribute('aria-live')).toBe('polite')
+  expect(slot.textContent).toBe('Checking for better moves…')
+  expect(slot.querySelector('[role=status]')).toBeNull()
 })
 
 test('an unavailable analysis says so and Replay still steps', () => {
