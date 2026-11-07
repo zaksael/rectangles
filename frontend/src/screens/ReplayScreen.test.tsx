@@ -36,14 +36,19 @@ function replayGame(history: HistoryEntry[], tweak: (game: GameWireState) => voi
 const TWO_MOVES = [place(1, [0, 0], 2, 2), place(2, [3, 3], 2, 2)]
 
 const pieces = (container: HTMLElement) => container.querySelectorAll('.piece-outline')
+// A stepping button at the end of the game stays focusable (aria-disabled), so focus is not dropped to the page when it goes unavailable.
+const unavailable = (name: string) => {
+  const button = screen.getByRole('button', { name }) as HTMLButtonElement
+  return button.getAttribute('aria-disabled') === 'true' && !button.disabled
+}
 
 test('opens on the start of the game: empty board, no way back from step 0', () => {
   const { container } = render(<ReplayScreen game={replayGame(TWO_MOVES)} onBack={vi.fn()} />)
   expect(pieces(container)).toHaveLength(0)
   expect(screen.getByText('Start of game')).toBeTruthy()
-  expect(screen.getByRole('button', { name: 'First' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Prev' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+  expect(unavailable('First')).toBe(true)
+  expect(unavailable('Prev')).toBe(true)
+  expect(unavailable('Next')).toBe(false)
 })
 
 test('shows no connection notice while the connection is up', () => {
@@ -95,8 +100,8 @@ test('Last shows every piece and ends the stepping; First and Prev walk back', (
   fireEvent.click(screen.getByRole('button', { name: 'Last' }))
   expect(screen.getByText('Turn 2 of 2')).toBeTruthy()
   expect(pieces(container)).toHaveLength(2)
-  expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Last' })).toBeDisabled()
+  expect(unavailable('Next')).toBe(true)
+  expect(unavailable('Last')).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Prev' }))
   expect(screen.getByText('Turn 1 of 2')).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'First' }))
@@ -113,10 +118,17 @@ test('a skip step leaves the board as it was and marks no piece', () => {
   expect(container.querySelectorAll('.piece-outline.last')).toHaveLength(0)
 })
 
+test('an unavailable stepping button does nothing, so Prev at the start does not stop autoplay', () => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Prev' }))
+  expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
+})
+
 test('an empty history opens with nothing to step through', () => {
   render(<ReplayScreen game={replayGame([])} onBack={vi.fn()} />)
   expect(screen.getByText('Start of game')).toBeTruthy()
-  for (const name of ['First', 'Prev', 'Next', 'Last']) expect(screen.getByRole('button', { name })).toBeDisabled()
+  for (const name of ['First', 'Prev', 'Next', 'Last']) expect(unavailable(name)).toBe(true)
 })
 
 test('hatching follows the step: a pocket the first move seals shows only from then on', () => {

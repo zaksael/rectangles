@@ -14,9 +14,19 @@ test('the round and the series score stack, one above the other', () => {
 test('only the stepping buttons invert on hover, only where there is a hover, and a disabled one does not', () => {
   const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]!
 
-  expect(media).toMatch(/\.replay \.transport \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)/)
+  expect(media).toMatch(/\.replay \.transport \.btn:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\)\s*\{[^}]*background:\s*var\(--ink\)/)
   expect(media).not.toMatch(/\.replay \.rail \.btn:hover/)
   expect(css.replace(media, '')).not.toMatch(/:hover/)
+})
+
+test('an unavailable stepping button is dimmed by colour, not opacity, so its focus ring stays full ink, and has no hover tint', () => {
+  const rule = ruleFor(css, '.replay .transport .btn[aria-disabled="true"]')
+
+  expect(rule).toMatch(/color:\s*color-mix\(in srgb, var\(--ink\)/)
+  expect(rule).toMatch(/border-color:\s*currentcolor/)
+  expect(rule).toMatch(/background:\s*transparent/)
+  expect(rule).toMatch(/cursor:\s*default/)
+  expect(rule).not.toMatch(/opacity/)
 })
 
 test('on Replay the piece just placed gets a 3px ink outline and a light tint, heavier than Playing\'s', () => {

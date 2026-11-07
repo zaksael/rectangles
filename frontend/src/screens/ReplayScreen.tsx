@@ -214,6 +214,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(SPEEDS[1])
   const lastPlaced = history[step - 1]?.placed?.topLeft ?? null
   const atEnd = step === history.length
+  const atStart = step === 0
   const flaggedTurn = analysis?.status === 'ready' ? analysis.turns.find((t) => t.turn === step) : undefined
 
   useEffect(() => {
@@ -300,11 +301,12 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
         <ScoreChart flagged={analysis?.status === 'ready' ? analysis.turns.map((t) => t.turn) : []} history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
         <div className="controls">
           <div className="transport">
-            <button className="btn secondary" disabled={step === 0} onClick={() => goTo(() => 0)}>First</button>
-            <button className="btn secondary" disabled={step === 0} onClick={() => goTo((s) => s - 1)}>Prev</button>
+            {/* aria-disabled, not disabled: a focused button that disables would drop focus to the page. */}
+            <button className="btn secondary" aria-disabled={atStart} onClick={() => !atStart && goTo(() => 0)}>First</button>
+            <button className="btn secondary" aria-disabled={atStart} onClick={() => !atStart && goTo((s) => s - 1)}>Prev</button>
             <button className={`btn secondary play${playing ? ' playing' : ''}`} disabled={history.length === 0} onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
-            <button className="btn secondary" disabled={atEnd} onClick={() => goTo((s) => s + 1)}>Next</button>
-            <button className="btn secondary" disabled={atEnd} onClick={() => goTo(() => history.length)}>Last</button>
+            <button className="btn secondary" aria-disabled={atEnd} onClick={() => !atEnd && goTo((s) => s + 1)}>Next</button>
+            <button className="btn secondary" aria-disabled={atEnd} onClick={() => !atEnd && goTo(() => history.length)}>Last</button>
           </div>
           <div className="speed" role="group" aria-label="Playback speed">
             {SPEEDS.map((option) => (

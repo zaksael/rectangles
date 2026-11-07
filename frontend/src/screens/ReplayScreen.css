@@ -131,6 +131,14 @@
   grid-column: 2;
 }
 
+/* Unavailable at the ends of the game but still focusable (aria-disabled): dimmed by colour so the focus ring stays full ink. */
+.replay .transport .btn[aria-disabled="true"] {
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 45%, var(--ledger));
+  border-color: currentcolor;
+  cursor: default;
+}
+
 .replay .play.playing {
   background: var(--ink);
   color: var(--ledger);
@@ -143,7 +151,7 @@
 
 /* The stepping buttons are clicked over and over while scrubbing, so they invert on hover, but only where there is a hover. Speed and the analysis toggle stay put: inverted means pressed there. */
 @media (hover: hover) {
-  .replay .transport .btn:hover:not(:disabled) {
+  .replay .transport .btn:hover:not(:disabled):not([aria-disabled="true"]) {
     background: var(--ink);
     color: var(--ledger);
   }
