@@ -77,6 +77,14 @@
 .score-table thead th.p2:not(.current):not(.over) .dot {
   border-color: var(--p2);
 }
+/* The mover's header also takes weight and a bar in their colour under the name, so the turn does not rest on the dot alone. */
+.score-table thead th.current:not(.over) {
+  font-weight: 600;
+  box-shadow: inset 0 -3px 0 var(--p1);
+}
+.score-table thead th.p2.current:not(.over) {
+  box-shadow: inset 0 -3px 0 var(--p2);
+}
 /* One skip from the limit: the next skip ends the game. Bold as well as red, so it is not colour-only. */
 .score-table .last-skip {
   color: var(--danger);
@@ -87,6 +95,15 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* The mover's colour on the left edge, before the roll as well as while placing; none at game over (no .p1/.p2 then). */
+  border-left: 3px solid transparent;
+  padding-left: 9px;
+}
+.rail-turn.p1 {
+  border-left-color: var(--p1);
+}
+.rail-turn.p2 {
+  border-left-color: var(--p2);
 }
 /* The status line and its key hint always take the same room, whatever they say. */
 .rail-instr {

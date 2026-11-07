@@ -143,3 +143,18 @@ test('a modal is never wider or taller than the safe area less a 16px margin', (
 test('the Playing rail sets only its own gap; the rest comes from the shared .rail', () => {
   expect(ruleFor(css, '.playing .rail').trim()).toBe('gap: 8px;')
 })
+
+test('the mover is marked by weight and a 3px bar under the column header name, in their colour', () => {
+  const p1 = ruleFor(css, '.score-table thead th.current:not(.over)')
+  const p2 = ruleFor(css, '.score-table thead th.p2.current:not(.over)')
+
+  expect(p1).toMatch(/font-weight:\s*600/)
+  expect(p1).toMatch(/box-shadow:\s*inset 0 -3px 0 var\(--p1\)/)
+  expect(p2).toMatch(/box-shadow:\s*inset 0 -3px 0 var\(--p2\)/)
+})
+
+test('the turn block has a 3px rule on its left edge, in the mover\'s colour', () => {
+  expect(ruleFor(css, '.rail-turn')).toMatch(/border-left:\s*3px solid transparent/)
+  expect(ruleFor(css, '.rail-turn.p1')).toMatch(/border-left-color:\s*var\(--p1\)/)
+  expect(ruleFor(css, '.rail-turn.p2')).toMatch(/border-left-color:\s*var\(--p2\)/)
+})

@@ -388,7 +388,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
             {showResultBar ? (
               <GameOverBar game={state.game} series={state.series} seriesResult={seriesResultOpen} onViewResult={() => setResultHidden(false)} onNewGame={onNewGame} onNextRound={nextRound} onSeriesResult={openSeriesResult} />
             ) : (
-              <div className="rail-turn">
+              <div className={currentId ? `rail-turn p${currentId}` : 'rail-turn'}>
                 <div className="rail-instr">
                   {turnStatus && (
                     <div className="turn-status" data-testid="turn-status" aria-live="polite" aria-atomic="true">

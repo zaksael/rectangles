@@ -10,6 +10,20 @@ test('highlights the current player in the turn indicator', () => {
   expect(screen.getByRole('columnheader', { name: 'Player 2' })).toHaveClass('current')
 })
 
+test('the turn block carries the mover\'s player class', () => {
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
+
+  expect(document.querySelector('.rail-turn')).toHaveClass('p2')
+})
+
+test('the turn block carries no player class at game over', () => {
+  renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } }))
+
+  const turn = document.querySelector('.rail-turn') as HTMLElement
+  expect(turn).not.toHaveClass('p1')
+  expect(turn).not.toHaveClass('p2')
+})
+
 test('the rail opens with the Game title and the Menu button', () => {
   renderScreen(makeState())
 
