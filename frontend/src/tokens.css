@@ -99,7 +99,7 @@ dialog button:focus {
   color: var(--ink);
   background: var(--ledger);
   border: 1px solid var(--ink);
-  border-radius: 3px;
+  border-radius: 0;
   visibility: hidden;
   pointer-events: none;
 }

@@ -10,6 +10,10 @@ test('the key chip is hidden at rest and shown while Shift is held, without taki
   expect(ruleFor(tokensCss, '.btn')).toMatch(/position:\s*relative/) // the chip's anchor
 })
 
+test('the key chip has square corners like the rest of the ledger', () => {
+  expect(ruleFor(tokensCss, '.key-badge')).toMatch(/border-radius:\s*0\s*;/)
+})
+
 test('the key chip is 12px mono, and never shown on a device whose primary input is touch', () => {
   expect(ruleFor(tokensCss, '.key-badge')).toMatch(/font:[^;]*12px[^;]*'IBM Plex Mono'/)
   expect(tokensCss).toMatch(/@media \(pointer: coarse\) \{\s*\.key-badge \{\s*display:\s*none/)
