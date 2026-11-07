@@ -201,6 +201,28 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: 'Roll' })).not.toBeInTheDocument()
   })
 
+  it('an auto-skip waits while the Menu is open, so it cannot change whose turn it is behind the dialog', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+    const socket = FakeWebSocket.instances.at(-1)!
+    act(() => socket.emit('open'))
+    act(() => {
+      socket.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [1, 1], legalPlacements: [] } }),
+        series: null,
+      })
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+
+    act(() => vi.advanceTimersByTime(10_000))
+
+    expect(socket.sent.some((frame) => JSON.stringify(frame).includes('skip'))).toBe(false)
+  })
+
   it('dismisses an open Menu overlay once the connection-lost modal appears', () => {
     render(<App />)
     startGameAndOpen()

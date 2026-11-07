@@ -21,11 +21,14 @@ interface SettingsOverlayProps {
 export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, botSeat, botSpeed }: SettingsOverlayProps) {
   const dialogRef = useAutoOpenDialog()
   const enabledCount = Object.values(game.houseRules).filter((rule) => rule.enabled).length
-  const [confirmingSurrender, setConfirmingSurrender] = useState(false)
+  // The seat that opened the confirm: a turn change under it (a skip the server was still answering) closes it rather than make the other player concede.
+  const [surrenderSeat, setSurrenderSeat] = useState<1 | 2 | null>(null)
+  const currentSeat = game.turn.currentPlayerId === 1 ? 1 : 2
+  if (surrenderSeat !== null && surrenderSeat !== currentSeat) setSurrenderSeat(null)
   const isBotTurn = botSeat !== undefined && game.turn.currentPlayerId === botSeat
   // The screen behind ignores keys while a dialog is open, so the key that opened the Menu closes it here (not over the confirm on top of it).
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.key.toLowerCase() === 'm' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && !confirmingSurrender) onClose()
+    if (event.key.toLowerCase() === 'm' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && surrenderSeat === null) onClose()
   })
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => handleKeyDown(event)
@@ -111,7 +114,7 @@ export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, 
               <KeyBadge>Esc</KeyBadge>
             </button>
             {game.turn.turnState !== 'gameOver' && (
-              <button className="btn destructive quiet" onClick={() => !isBotTurn && setConfirmingSurrender(true)} aria-disabled={isBotTurn || undefined} aria-describedby={isBotTurn ? 'surrender-note' : undefined}>
+              <button className="btn destructive quiet" onClick={() => !isBotTurn && setSurrenderSeat(currentSeat)} aria-disabled={isBotTurn || undefined} aria-describedby={isBotTurn ? 'surrender-note' : undefined}>
                 Surrender
               </button>
             )}
@@ -123,15 +126,16 @@ export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, 
           )}
         </div>
       </div>
-      {confirmingSurrender && (
+      {surrenderSeat !== null && (
         <SurrenderConfirmDialog
-          opponentName={game.players[game.turn.currentPlayerId === 1 ? '2' : '1'].name}
+          playerName={game.players[surrenderSeat === 1 ? '1' : '2'].name}
+          opponentName={game.players[surrenderSeat === 1 ? '2' : '1'].name}
           scores={(['1', '2'] as const).map((id) => ({ name: game.players[id].name, score: game.players[id].score.totalScore }))}
           isSeries={series !== null}
-          onCancel={() => setConfirmingSurrender(false)}
+          onCancel={() => setSurrenderSeat(null)}
           onConfirm={() => {
             sendAction({ type: 'surrender' })
-            setConfirmingSurrender(false)
+            setSurrenderSeat(null)
             onClose()
           }}
         />

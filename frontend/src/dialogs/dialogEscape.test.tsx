@@ -20,7 +20,7 @@ test('Escape on the reset dialog cancels it without the native close', () => {
 test('Escape on the surrender dialog cancels it without the native close', () => {
   const onCancel = vi.fn()
   render(
-    <SurrenderConfirmDialog opponentName="Bot" scores={[]} isSeries={false} onCancel={onCancel} onConfirm={vi.fn()} />,
+    <SurrenderConfirmDialog playerName="You" opponentName="Bot"scores={[]} isSeries={false} onCancel={onCancel} onConfirm={vi.fn()} />,
   )
   expect(pressEscape().defaultPrevented).toBe(true)
   expect(onCancel).toHaveBeenCalledOnce()

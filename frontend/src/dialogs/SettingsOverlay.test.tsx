@@ -119,6 +119,19 @@ test('M closes the overlay, since the screen behind ignores keys while a dialog 
   expect(onClose).toHaveBeenCalledTimes(1)
 })
 
+test('the Surrender confirm closes when the turn changes under it, so the wrong player never concedes', () => {
+  const turnOf = (currentPlayerId: number) => makeGame({ turn: { recentTurns: [], currentPlayerId, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const props = { series: null, modeLabel: 'Local 2P', sendAction: vi.fn(), onClose: vi.fn() }
+  const { rerender } = render(<SettingsOverlay game={turnOf(1)} {...props} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
+  expect(screen.getByRole('dialog', { name: 'Surrender as Player 1?' })).toBeInTheDocument()
+
+  rerender(<SettingsOverlay game={turnOf(2)} {...props} />)
+
+  expect(screen.queryByRole('dialog', { name: /^Surrender as/ })).not.toBeInTheDocument()
+  expect(props.sendAction).not.toHaveBeenCalled()
+})
+
 test('M does not close the overlay from behind the surrender confirm', () => {
   const { onClose } = renderOverlay()
   fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
@@ -160,7 +173,7 @@ test('Surrender opens a confirm dialog naming the opponent as winner, without se
 
   fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
 
-  const dialog = screen.getByRole('dialog', { name: /Surrender the match/ })
+  const dialog = screen.getByRole('dialog', { name: 'Surrender as Player 1?' })
   expect(within(dialog).getByText(/Player 2 wins immediately/)).toBeInTheDocument()
   expect(sendAction).not.toHaveBeenCalled()
 })
@@ -208,7 +221,7 @@ test('a scrim click on the Surrender dialog cancels only it; on the Menu it clos
 test('Surrender copy says the round, not the match, mid-series', () => {
   const { dialog } = openSurrender({ series: makeSeries() })
 
-  expect(within(dialog).getByText('Surrender this round?')).toBeInTheDocument()
+  expect(within(dialog).getByText('Surrender this round as Player 1?')).toBeInTheDocument()
 })
 
 test('the Surrender button is gone once the game is over', () => {

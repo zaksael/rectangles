@@ -88,6 +88,7 @@ function App() {
           error={gameSocket.error}
           sendAction={gameSocket.sendAction}
           onOpenSettings={() => setSettingsOpen(true)}
+          paused={settingsOpen}
           onNewGame={handleNewGame}
           onReplay={(fromSeriesResult) => {
             setReplayFromSeriesResult(fromSeriesResult)

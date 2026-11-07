@@ -2,6 +2,7 @@ import { noBreak } from '../game/noBreak'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
 interface SurrenderConfirmDialogProps {
+  playerName: string
   opponentName: string
   scores: { name: string; score: number }[]
   isSeries: boolean
@@ -9,7 +10,7 @@ interface SurrenderConfirmDialogProps {
   onConfirm: () => void
 }
 
-export function SurrenderConfirmDialog({ opponentName, scores, isSeries, onCancel, onConfirm }: SurrenderConfirmDialogProps) {
+export function SurrenderConfirmDialog({ playerName, opponentName, scores, isSeries, onCancel, onConfirm }: SurrenderConfirmDialogProps) {
   const dialogRef = useAutoOpenDialog()
 
   return (
@@ -24,7 +25,7 @@ export function SurrenderConfirmDialog({ opponentName, scores, isSeries, onCance
         onCancel()
       }}
     >
-      <h2 id="surrender-title">{isSeries ? 'Surrender this round?' : 'Surrender the match?'}</h2>
+      <h2 id="surrender-title">{`Surrender${isSeries ? ' this round' : ''} as ${playerName}?`}</h2>
       <p>
         {noBreak(opponentName)} wins {isSeries ? 'this round ' : ''}immediately, regardless of the current score.
         {isSeries && ' The series continues to the next round.'} This can’t be undone.

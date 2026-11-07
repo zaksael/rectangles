@@ -30,6 +30,8 @@ interface PlayingScreenProps {
   // Back from Replay on a finished series: open the series card rather than the last round's.
   initialSeriesResultOpen?: boolean
   botSeat?: number | undefined
+  // A dialog is open over the board: the auto-skip waits, so nothing happens behind the player's back.
+  paused?: boolean
 }
 
 const ERROR_TOAST_MS = 4000
@@ -76,7 +78,7 @@ const ERROR_TEXT: Record<ErrorReason, string> = {
   malformedMessage: 'Something went wrong — try again.',
 }
 
-export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, onReplay, initialSeriesResultOpen = false, botSeat }: PlayingScreenProps) {
+export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewGame, onReplay, initialSeriesResultOpen = false, botSeat, paused = false }: PlayingScreenProps) {
   const turnState = state?.game.turn.turnState
   // The bot acts on its own turns; the human's controls stay inert until it hands back.
   const isBotTurn = botSeat !== undefined && state?.game.turn.currentPlayerId === botSeat
@@ -155,14 +157,16 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const canReroll = state?.game.houseRules.reroll.canReroll ?? false
   const rerollUsable = canReroll && ['choosingPlacement', 'skipped', 'choosingWildcard'].includes(humanTurnState ?? '')
   // Skipping is the only legal action then, so it is sent after a pause; a new state restarts the pause.
-  const autoSkip = humanTurnState === 'skipped' && !canReroll
+  // A skip that ends the game is never sent on a timer: the player presses S or clicks Skip for it.
+  const skipEndsGame = !!state && state.game.players[key(state.game.turn.currentPlayerId)].board.consecutiveSkips + 1 >= state.game.board.skipLimit
+  const autoSkip = humanTurnState === 'skipped' && !canReroll && !skipEndsGame
   const sendSkip = useEffectEvent(() => sendAction({ type: 'skip' }))
   useEffect(() => {
-    if (!autoSkip) return
+    if (!autoSkip || paused) return
     const timer = setTimeout(sendSkip, AUTO_SKIP_MS)
     return () => clearTimeout(timer)
   // oxlint-disable-next-line react/exhaustive-effect-dependencies -- state is a trigger: every new state restarts the pause
-  }, [autoSkip, state])
+  }, [autoSkip, paused, state])
 
   const lastPlaced = useLastPlaced(state?.game)
 
@@ -221,10 +225,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     }
     else if (turnState === 'choosingWildcard') turnStatus = `${currentName}: wildcard roll — pick the other die’s value${canReroll ? ', or reroll (E)' : ''}`
     else if (turnState === 'skipped') {
-      turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : `${currentName}: no legal move, skipping… (S)`
+      turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : autoSkip ? `${currentName}: no legal move, skipping… (S)` : `${currentName}: no legal move — skip (S)`
       const { skipLimit } = state.game.board
       const nextSkip = state.game.players[key(state.game.turn.currentPlayerId)].board.consecutiveSkips + 1
-      turnStatus += nextSkip >= skipLimit ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${nextSkip} of ${skipLimit}`
+      turnStatus += skipEndsGame ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${nextSkip} of ${skipLimit}`
     }
   }
 

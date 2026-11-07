@@ -154,6 +154,12 @@ test('the skip cue follows the reroll wording, and the skip that reaches the lim
   expect(screen.getByTestId('turn-status')).toHaveTextContent('· skip 5 of 5 ends the game')
 })
 
+test('a skip that ends the game is asked for, not announced as happening by itself', () => {
+  renderScreen({ game: deadRoll(4), series: null })
+
+  expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move — skip (S) · skip 5 of 5 ends the game')
+})
+
 test('the turn status line says when a dead roll must be skipped', () => {
   renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } }))
 
@@ -290,6 +296,33 @@ test('a dead roll with no reroll left skips by itself after a pause', () => {
   act(() => vi.advanceTimersByTime(1499))
   expect(sendAction).not.toHaveBeenCalled()
   act(() => vi.advanceTimersByTime(1))
+  expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
+})
+
+test('a dead roll is not skipped while the screen is paused, and the pause starts again when it clears', () => {
+  vi.useFakeTimers()
+  const sendAction = vi.fn()
+  const screenWith = (paused: boolean) => (
+    <PlayingScreen state={{ game: deadRoll(1), series: null }} error={null} sendAction={sendAction} onOpenSettings={vi.fn()} onNewGame={vi.fn()} paused={paused} />
+  )
+  const view = render(screenWith(true))
+
+  act(() => vi.advanceTimersByTime(10_000))
+  expect(sendAction).not.toHaveBeenCalled()
+  view.rerender(screenWith(false))
+  act(() => vi.advanceTimersByTime(1499))
+  expect(sendAction).not.toHaveBeenCalled()
+  act(() => vi.advanceTimersByTime(1))
+  expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
+})
+
+test('a dead roll whose skip would end the game waits for S or a click', () => {
+  vi.useFakeTimers()
+  const sendAction = renderScreen({ game: deadRoll(4), series: null })
+
+  act(() => vi.advanceTimersByTime(10_000))
+  expect(sendAction).not.toHaveBeenCalled()
+  fireEvent.keyDown(window, { key: 's' })
   expect(sendAction).toHaveBeenCalledWith({ type: 'skip' })
 })
 
