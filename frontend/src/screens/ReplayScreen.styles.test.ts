@@ -11,10 +11,11 @@ test('the round and the series score stack, one above the other', () => {
   expect(ruleFor(css, '.replay .rail-series')).toMatch(/flex-direction:\s*column/)
 })
 
-test('the stepping buttons invert on hover only where there is a hover, and a disabled one does not', () => {
+test('only the stepping buttons invert on hover, only where there is a hover, and a disabled one does not', () => {
   const media = css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]!
 
-  expect(media).toMatch(/\.replay \.rail \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)/)
+  expect(media).toMatch(/\.replay \.transport \.btn:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--ink\)/)
+  expect(media).not.toMatch(/\.replay \.rail \.btn:hover/)
   expect(css.replace(media, '')).not.toMatch(/:hover/)
 })
 

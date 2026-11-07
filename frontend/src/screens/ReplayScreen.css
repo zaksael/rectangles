@@ -141,9 +141,9 @@
   color: var(--ledger);
 }
 
-/* The stepping buttons are clicked over and over while scrubbing, so they invert on hover, but only where there is a hover. */
+/* The stepping buttons are clicked over and over while scrubbing, so they invert on hover, but only where there is a hover. Speed and the analysis toggle stay put: inverted means pressed there. */
 @media (hover: hover) {
-  .replay .rail .btn:hover:not(:disabled) {
+  .replay .transport .btn:hover:not(:disabled) {
     background: var(--ink);
     color: var(--ledger);
   }
