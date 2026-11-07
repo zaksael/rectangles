@@ -47,7 +47,7 @@ function biggestSwing(game: GameWireState, rows: ModifierRow[], margin: number):
   return best && best.size * 2 >= margin ? best.label : null
 }
 
-// A winner who trailed on territory is explained by the modifiers that went their way, not by the biggest swing.
+// A winner who trailed on area is explained by the modifiers that went their way, not by the biggest swing.
 function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null {
   const { winner } = game.gameOver
   if (winner === null) return null
@@ -56,7 +56,7 @@ function comebackClause(game: GameWireState, rows: ModifierRow[]): string | null
   const trailedBy = game.players[other].score.totalArea - game.players[id].score.totalArea
   if (trailedBy <= 0) return null
   const turned = rows.filter((row) => row.value(game, id) > row.value(game, other)).map((row) => row.label)
-  return turned.length ? `Trailed by ${trailedBy} on territory, won on ${new Intl.ListFormat('en-GB').format(turned)}.` : null
+  return turned.length ? `Trailed by ${trailedBy} on area, won on ${new Intl.ListFormat('en-GB').format(turned)}.` : null
 }
 
 // The placed move with the largest rise in its mover's own score, when one move holds that gain alone and a special-cell rule is on.
@@ -296,7 +296,7 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
           <ScoreTableHead game={game} label="Score" />
           <tbody>
             <tr>
-              <th scope="row">Territory</th>
+              <th scope="row">Area</th>
               <td>{game.players['1'].score.totalArea}</td>
               <td>{game.players['2'].score.totalArea}</td>
             </tr>

@@ -97,14 +97,14 @@ test('a swing under half the margin is not tagged', () => {
   expect(dialog).not.toHaveTextContent('Biggest swing')
 })
 
-test('a winner who trailed on territory names the modifiers that turned it, instead of the swing', () => {
+test('a winner who trailed on area names the modifiers that turned it, instead of the swing', () => {
   const dialog = renderOver({ winner: 2, area: [150, 144], score: [140, 154] }, (game) => {
     game.houseRules.prize = { enabled: true, cells: [], points: 10 }
     game.houseRules.pitfall = { enabled: true, cells: [], points: 10 }
     setParts(game, '2', { prize: 10 })
     setParts(game, '1', { pitfall: -10 })
   })
-  expect(dialog).toHaveAccessibleDescription('by 14 points. Trailed by 6 on territory, won on Prize and Pitfall.')
+  expect(dialog).toHaveAccessibleDescription('by 14 points. Trailed by 6 on area, won on Prize and Pitfall.')
 })
 
 test('each modifier row states its rule with the point value from the game', () => {
@@ -136,12 +136,12 @@ test('a modifier row where both players are at zero is hidden, but a single zero
   expect(theirs).toHaveClass('zero')
 })
 
-test('with modifier rows, the table keeps a Territory row', () => {
+test('with modifier rows, the table keeps an Area row, named as in the rail and Replay', () => {
   const dialog = renderOver({ winner: 1, area: [152, 141], score: [162, 141] }, (game) => {
     withRules(game)
     setParts(game, '1', { prize: 10 })
   })
-  expect(within(dialog).getByRole('row', { name: /^Territory/ })).toHaveTextContent('Territory152141')
+  expect(within(dialog).getByRole('row', { name: /^Area/ })).toHaveTextContent('Area152141')
 })
 
 test.each([
