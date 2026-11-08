@@ -279,8 +279,10 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
 
   const ids = ['1', '2'] as const
   const recentTurns = state?.game.turn.recentTurns ?? []
-  // A game in progress can't be resumed once the tab is gone, so ask first (the browser words the prompt itself).
-  const leaveGuarded = turnState !== 'gameOver' && recentTurns.length > 0
+  // A game in progress can't be resumed once the tab is gone, so ask first (the browser words the prompt itself); so is a series
+  // that has finished a round, even at the start of the next one or on the round-over card.
+  const seriesUnderway = !!state?.series && state.series.gamesPlayed > 0 && !state.series.isComplete
+  const leaveGuarded = (turnState !== 'gameOver' && recentTurns.length > 0) || seriesUnderway
   useEffect(() => {
     if (!leaveGuarded) return
     const guard = (event: BeforeUnloadEvent) => event.preventDefault()

@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
+import { makeSeries } from '../dev/fixtures/gameFixtures'
 import type { ErrorReason } from '../game/gameTypes'
 import type { GameError } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
@@ -253,6 +254,25 @@ test('closing or refreshing the tab mid-game asks the browser to confirm once a 
 test('nothing asks before the first move', () => {
   renderScreen(movesState([]))
 
+  expect(leavePrevented()).toBe(false)
+})
+
+test('a series that has finished a round asks even at the start of the next round', () => {
+  const state = movesState([])
+  state.series = makeSeries({ gamesPlayed: 1 })
+  renderScreen(state)
+
+  expect(leavePrevented()).toBe(true)
+})
+
+test('a finished series and a fresh series do not ask', () => {
+  renderScreen({ ...gameOverState(), series: makeSeries({ gamesPlayed: 3, isComplete: true }) })
+  expect(leavePrevented()).toBe(false)
+  cleanup()
+
+  const fresh = movesState([])
+  fresh.series = makeSeries({ gamesPlayed: 0 })
+  renderScreen(fresh)
   expect(leavePrevented()).toBe(false)
 })
 
