@@ -151,6 +151,15 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // oxlint-disable-next-line react/exhaustive-effect-dependencies -- dims is a trigger: re-check focus when the board resizes
   }, [dims])
 
+  // An action button that unmounts after use drops keyboard focus to body, so hand it to the board.
+  const railFocus = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (railFocus.current && !railFocus.current.isConnected && document.activeElement === document.body) {
+      document.querySelector<HTMLElement>('.board')?.focus()
+    }
+    if (!railFocus.current?.isConnected) railFocus.current = null
+  })
+
   const rerollEnabled = state?.game.houseRules.reroll.enabled ?? false
   // A Comeback grant makes Reroll usable with the rule off, so its charges are counted from the first turn.
   const comebackEnabled = state?.game.houseRules.comebackNudge.enabled ?? false
@@ -422,7 +431,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                     </div>
                   )}
                 </div>
-                <div className="rail-actions">
+                <div className="rail-actions" onFocus={(e) => { railFocus.current = e.target }}>
                   {/* Only buttons that can be clicked right now are shown. */}
                   {humanTurnState === 'awaitingRoll' && (
                     <button className="btn primary" onClick={() => sendAction({ type: 'roll' })} aria-keyshortcuts="d">

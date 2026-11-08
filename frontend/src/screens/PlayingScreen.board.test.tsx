@@ -287,6 +287,16 @@ test('keyboard focus stays on the board between turns, and the next placement st
   expect(document.querySelector('.preview.legal')).toBeInTheDocument()
 })
 
+test('focus moves to the board when the focused action button unmounts after use', () => {
+  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
+  const { rerender } = render(<PlayingScreen state={makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })} {...props} />)
+  screen.getByRole('button', { name: /Roll/ }).focus()
+
+  rerender(<PlayingScreen state={keyboardState()} {...props} />)
+
+  expect(getBoard()).toHaveFocus()
+})
+
 test('focusing the board puts the piece on the first legal spot', () => {
   renderScreen(keyboardState())
 
