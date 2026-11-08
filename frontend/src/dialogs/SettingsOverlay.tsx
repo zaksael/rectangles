@@ -5,6 +5,7 @@ import { KeyBadge } from '../components/KeyBadge'
 import { HOUSE_RULE_GROUPS } from '../game/houseRules'
 import { seriesRound } from '../game/seriesRound'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
+import { LeaveSeriesDialog } from './LeaveSeriesDialog'
 import { SurrenderConfirmDialog } from './SurrenderConfirmDialog'
 
 interface SettingsOverlayProps {
@@ -13,22 +14,24 @@ interface SettingsOverlayProps {
   modeLabel: string
   sendAction: (action: GameAction) => void
   onClose: () => void
+  onLeaveSeries: () => void
   botSeat?: number | undefined
   // Given in a Vs Bot match only: the Menu's one adjustable item.
   botSpeed?: { current: BotSpeedLabel; onChange: (label: BotSpeedLabel) => void } | undefined
 }
 
-export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, botSeat, botSpeed }: SettingsOverlayProps) {
+export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, onLeaveSeries, botSeat, botSpeed }: SettingsOverlayProps) {
   const dialogRef = useAutoOpenDialog()
   const enabledCount = Object.values(game.houseRules).filter((rule) => rule.enabled).length
   // The seat that opened the confirm: a turn change under it (a skip the server was still answering) closes it rather than make the other player concede.
   const [surrenderSeat, setSurrenderSeat] = useState<1 | 2 | null>(null)
   const currentSeat = game.turn.currentPlayerId === 1 ? 1 : 2
   if (surrenderSeat !== null && surrenderSeat !== currentSeat) setSurrenderSeat(null)
+  const [leaving, setLeaving] = useState(false)
   const isBotTurn = botSeat !== undefined && game.turn.currentPlayerId === botSeat
   // The screen behind ignores keys while a dialog is open, so the key that opened the Menu closes it here (not over the confirm on top of it).
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.key.toLowerCase() === 'm' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && surrenderSeat === null) onClose()
+    if (event.key.toLowerCase() === 'm' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && surrenderSeat === null && !leaving) onClose()
   })
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => handleKeyDown(event)
@@ -118,14 +121,20 @@ export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, 
                 Surrender
               </button>
             )}
+            {series && !series.isComplete && (
+              <button className="btn destructive quiet" onClick={() => setLeaving(true)}>
+                Leave series
+              </button>
+            )}
           </div>
           {isBotTurn && game.turn.turnState !== 'gameOver' && (
-            <p id="surrender-note" className="settings-footer-note">
+            <p id="surrender-note" className={series && !series.isComplete ? 'settings-footer-note centred' : 'settings-footer-note'}>
               Available on your turn
             </p>
           )}
         </div>
       </div>
+      {leaving && <LeaveSeriesDialog onCancel={() => setLeaving(false)} onConfirm={onLeaveSeries} />}
       {surrenderSeat !== null && (
         <SurrenderConfirmDialog
           playerName={game.players[surrenderSeat === 1 ? '1' : '2'].name}

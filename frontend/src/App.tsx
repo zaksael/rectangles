@@ -104,6 +104,7 @@ function App() {
             series={gameSocket.state.series}
             modeLabel={connectParams.botSeats ? `Vs ${botName(connectParams.botDifficulty)}` : 'Local 2P'}
             sendAction={gameSocket.sendAction}
+            onLeaveSeries={handleNewGame}
             botSeat={connectParams.botSeats}
             botSpeed={
               connectParams.botSeats === undefined

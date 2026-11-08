@@ -12,6 +12,10 @@ test('the Menu note explaining the unavailable Surrender keeps AA contrast (4.5:
   expect(textContrast(css, '.settings-footer-note')).toBeGreaterThanOrEqual(4.5)
 })
 
+test('with three buttons the note centres under the middle one', () => {
+  expect(ruleFor(css, '.settings-footer-note.centred')).toMatch(/text-align:\s*center/)
+})
+
 test('the quiet Surrender is an outline, a transparent fill with a danger-coloured label that keeps AA contrast (4.5:1) on the ledger', () => {
   const rule = ruleFor(tokensCss, '.btn.destructive.quiet')
 

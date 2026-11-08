@@ -98,6 +98,24 @@ describe('App', () => {
     expect(FakeWebSocket.instances).toHaveLength(2)
   })
 
+  it('leaving a series from the Menu returns to Mode Select and closes the connection', () => {
+    render(<App />)
+    startGameAndOpen()
+    const socket = FakeWebSocket.instances.at(-1)!
+    const close = vi.spyOn(socket, 'close')
+    act(() => {
+      socket.emit('message', { type: 'state', game: makeGame(), series: makeSeries({ gamesPlayed: 1 }) })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Leave series' }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Leave the series?' })).getByRole('button', { name: 'Leave series' }))
+
+    expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Menu' })).not.toBeInTheDocument()
+    expect(close).toHaveBeenCalled()
+  })
+
   it('opens the Menu overlay from Playing on Menu, and closes it back to Playing', () => {
     render(<App />)
     startGameAndOpen()

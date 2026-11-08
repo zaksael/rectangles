@@ -80,7 +80,9 @@ Window" notice takes their place and the game waits where it was.
   is worth), each player's skip streak, and the latest moves.
 - **Menu** (`M`) shows the match settings and has **Resume** and
   **Surrender**; surrender always asks for confirmation first, and your
-  opponent wins regardless of the area tally.
+  opponent wins regardless of the area tally. In a series it also has
+  **Leave series**, which asks first, then drops the series without saving
+  and returns to Mode Select.
 - When the game ends, a summary shows the winner (or tie), final scores, the
   score breakdown and the reason the game ended. **View Board** (`V`) looks at
   the final board with a slim result bar, **Replay** (`R`) steps through the

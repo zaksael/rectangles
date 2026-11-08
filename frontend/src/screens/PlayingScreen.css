@@ -749,6 +749,10 @@ dialog.settings {
   text-align: right;
   color: var(--ink-muted);
 }
+/* In a series the actions row has three equal columns, so the note sits under the middle one, Surrender's. */
+.settings-footer-note.centred {
+  text-align: center;
+}
 
 .board:focus {
   outline: 2px solid var(--ink);

@@ -6,6 +6,7 @@ import { SettingsOverlay } from './SettingsOverlay'
 function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {}) {
   const onClose = vi.fn()
   const sendAction = vi.fn()
+  const onLeaveSeries = vi.fn()
   render(
     <SettingsOverlay
       game={makeGame({ board: { size: 19, skipLimit: 3 } })}
@@ -13,10 +14,11 @@ function renderOverlay(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {
       modeLabel="Vs Bot (Greedy)"
       sendAction={sendAction}
       onClose={onClose}
+      onLeaveSeries={onLeaveSeries}
       {...props}
     />,
   )
-  return { onClose, sendAction }
+  return { onClose, sendAction, onLeaveSeries }
 }
 
 test('the Menu lists house rules by name only, without the Mode Select descriptions', () => {
@@ -50,6 +52,79 @@ test('once a round has ended, the Menu still names that round, not the next one'
   renderOverlay({ game, series: makeSeries({ gamesPlayed: 3, isComplete: true, scores: { '1': 459, '2': 440 } }) })
 
   expect(screen.getByText('Series').nextSibling).toHaveTextContent('Round 3 of 3 — 459–440')
+})
+
+test('a series offers Leave series in the footer, after Surrender', () => {
+  renderOverlay({ series: midSeries })
+
+  const footer = document.querySelector('.settings-footer') as HTMLElement
+  expect(within(footer).getAllByRole('button').map((b) => b.textContent)).toEqual(['ResumeEsc', 'Surrender', 'Leave series'])
+})
+
+test('Leave series asks first, and Cancel keeps the series', () => {
+  const { onLeaveSeries } = renderOverlay({ series: midSeries })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Leave series' }))
+  const dialog = screen.getByRole('dialog', { name: 'Leave the series?' })
+  expect(dialog).toHaveTextContent('Rounds played so far aren’t saved')
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+  expect(screen.queryByRole('dialog', { name: 'Leave the series?' })).not.toBeInTheDocument()
+  expect(onLeaveSeries).not.toHaveBeenCalled()
+})
+
+test('Escape on the Leave series confirm closes only the confirm, and M does not close the Menu behind it', () => {
+  const { onClose, onLeaveSeries } = renderOverlay({ series: midSeries })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Leave series' }))
+  fireEvent.keyDown(window, { key: 'm' })
+  fireEvent(screen.getByRole('dialog', { name: 'Leave the series?' }), new Event('cancel', { cancelable: true, bubbles: true }))
+
+  expect(screen.queryByRole('dialog', { name: 'Leave the series?' })).not.toBeInTheDocument()
+  expect(onClose).not.toHaveBeenCalled()
+  expect(onLeaveSeries).not.toHaveBeenCalled()
+})
+
+test('confirming Leave series leaves once', () => {
+  const { onLeaveSeries } = renderOverlay({ series: midSeries })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Leave series' }))
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Leave the series?' })).getByRole('button', { name: 'Leave series' }))
+
+  expect(onLeaveSeries).toHaveBeenCalledTimes(1)
+})
+
+test('a single game has no Leave series', () => {
+  renderOverlay({ series: null })
+
+  expect(screen.queryByRole('button', { name: 'Leave series' })).not.toBeInTheDocument()
+})
+
+test('Leave series stays enabled on the bot’s turn, while Surrender is not', () => {
+  renderOverlay({ series: midSeries, botSeat: 1, game: makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }) })
+
+  expect(screen.getByRole('button', { name: 'Surrender' })).toHaveAttribute('aria-disabled', 'true')
+  expect(screen.getByRole('button', { name: 'Leave series' })).not.toHaveAttribute('aria-disabled')
+})
+
+test('between rounds Leave series stays, and once the series is complete it is gone', () => {
+  const roundOver = makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] } })
+  const { unmount } = render(<SettingsOverlay game={roundOver} series={midSeries} modeLabel="Local 2P" sendAction={vi.fn()} onClose={vi.fn()} onLeaveSeries={vi.fn()} />)
+  expect(screen.getByRole('button', { name: 'Leave series' })).toBeInTheDocument()
+  unmount()
+
+  render(<SettingsOverlay game={roundOver} series={makeSeries({ gamesPlayed: 3, isComplete: true })} modeLabel="Local 2P" sendAction={vi.fn()} onClose={vi.fn()} onLeaveSeries={vi.fn()} />)
+  expect(screen.queryByRole('button', { name: 'Leave series' })).not.toBeInTheDocument()
+})
+
+test('the Surrender note centres under the middle button when a series makes three', () => {
+  const botTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
+  const { unmount } = render(<SettingsOverlay game={botTurn} series={midSeries} botSeat={1} modeLabel="Vs Bot" sendAction={vi.fn()} onClose={vi.fn()} onLeaveSeries={vi.fn()} />)
+  expect(screen.getByText('Available on your turn')).toHaveClass('centred')
+  unmount()
+
+  render(<SettingsOverlay game={botTurn} series={null} botSeat={1} modeLabel="Vs Bot" sendAction={vi.fn()} onClose={vi.fn()} onLeaveSeries={vi.fn()} />)
+  expect(screen.getByText('Available on your turn')).not.toHaveClass('centred')
 })
 
 test('has no Series row for a single game', () => {
@@ -121,7 +196,7 @@ test('M closes the overlay, since the screen behind ignores keys while a dialog 
 
 test('the Surrender confirm closes when the turn changes under it, so the wrong player never concedes', () => {
   const turnOf = (currentPlayerId: number) => makeGame({ turn: { recentTurns: [], currentPlayerId, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
-  const props = { series: null, modeLabel: 'Local 2P', sendAction: vi.fn(), onClose: vi.fn() }
+  const props = { series: null, modeLabel: 'Local 2P', sendAction: vi.fn(), onClose: vi.fn(), onLeaveSeries: vi.fn() }
   const { rerender } = render(<SettingsOverlay game={turnOf(1)} {...props} />)
   fireEvent.click(screen.getByRole('button', { name: 'Surrender' }))
   expect(screen.getByRole('dialog', { name: 'Surrender as Player 1?' })).toBeInTheDocument()
@@ -151,7 +226,7 @@ test('Resume names its key: aria-keyshortcuts and a key chip', () => {
 
 test('summarises the house rules: none enabled, or how many are on', () => {
   const base = makeGame()
-  const { unmount } = render(<SettingsOverlay game={base} series={null} modeLabel="Vs Bot" sendAction={vi.fn()} onClose={vi.fn()} />)
+  const { unmount } = render(<SettingsOverlay game={base} series={null} modeLabel="Vs Bot" sendAction={vi.fn()} onClose={vi.fn()} onLeaveSeries={vi.fn()} />)
   expect(screen.getByText('No house rules in this match')).toBeInTheDocument()
   expect(screen.queryByRole('list')).not.toBeInTheDocument()
   unmount()
@@ -258,7 +333,7 @@ test("clicking Surrender on the bot's turn opens no dialog and sends nothing", (
 })
 
 test("when the bot's turn ends with the menu open, Surrender becomes available at once", () => {
-  const props = { series: null, modeLabel: 'Vs Bot (Greedy)', sendAction: vi.fn(), onClose: vi.fn(), botSeat: 1 }
+  const props = { series: null, modeLabel: 'Vs Bot (Greedy)', sendAction: vi.fn(), onClose: vi.fn(), onLeaveSeries: vi.fn(), botSeat: 1 }
   const botTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const humanTurn = makeGame({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } })
   const { rerender } = render(<SettingsOverlay game={botTurn} {...props} />)
