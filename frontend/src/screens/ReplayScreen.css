@@ -139,7 +139,7 @@
   cursor: default;
 }
 
-.replay .play.playing {
+.replay .play.replay-playing {
   background: var(--ink);
   color: var(--ledger);
 }

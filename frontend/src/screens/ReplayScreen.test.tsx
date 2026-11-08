@@ -125,6 +125,12 @@ test('an unavailable stepping button does nothing, so Prev at the start does not
   expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy()
 })
 
+test('Pause carries no class the Playing screen styles, which would shrink it in the transport grid', () => {
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+  expect(screen.getByRole('button', { name: 'Pause' })).not.toHaveClass('playing')
+})
+
 test('an empty history opens with nothing to step through', () => {
   render(<ReplayScreen game={replayGame([])} onBack={vi.fn()} />)
   expect(screen.getByText('Start of game')).toBeTruthy()

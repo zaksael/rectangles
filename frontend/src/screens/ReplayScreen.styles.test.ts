@@ -46,7 +46,7 @@ test('the transport has five columns and the speed row three buttons centred und
 })
 
 test('Pause and the chosen speed are shown inverted, in ink on the ledger', () => {
-  for (const selector of ['.replay .play.playing', ".replay .speed .btn[aria-pressed='true']"]) {
+  for (const selector of ['.replay .play.replay-playing', ".replay .speed .btn[aria-pressed='true']"]) {
     const block = ruleFor(css, selector)
     expect(block).toMatch(/background:\s*var\(--ink\)/)
     expect(block).toMatch(/color:\s*var\(--ledger\)/)

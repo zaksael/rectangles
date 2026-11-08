@@ -304,7 +304,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
             {/* aria-disabled, not disabled: a focused button that disables would drop focus to the page. */}
             <button className="btn secondary" aria-disabled={atStart} onClick={() => !atStart && goTo(() => 0)}>First</button>
             <button className="btn secondary" aria-disabled={atStart} onClick={() => !atStart && goTo((s) => s - 1)}>Prev</button>
-            <button className={`btn secondary play${playing ? ' playing' : ''}`} disabled={history.length === 0} onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
+            <button className={`btn secondary play${playing ? ' replay-playing' : ''}`} disabled={history.length === 0} onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
             <button className="btn secondary" aria-disabled={atEnd} onClick={() => !atEnd && goTo((s) => s + 1)}>Next</button>
             <button className="btn secondary" aria-disabled={atEnd} onClick={() => !atEnd && goTo(() => history.length)}>Last</button>
           </div>
