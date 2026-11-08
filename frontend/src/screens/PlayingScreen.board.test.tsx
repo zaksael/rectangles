@@ -480,10 +480,28 @@ test('the piece position is announced as the keyboard moves it', () => {
   const board = getBoard()
 
   fireEvent.focus(board)
-  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1, 2 empty cells')
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1, 2 empty cells, legal')
   expect(screen.getByTestId('cursor-position')).toHaveAttribute('aria-live', 'assertive')
   fireEvent.keyDown(board, { key: 'ArrowRight' })
-  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2, 2 empty cells')
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2, 2 empty cells, legal')
+})
+
+test('the announced position says when the spot is not legal, with the reason when there is one', () => {
+  const state = makeState({
+    board: { size: 5, skipLimit: 5 },
+    turn: { recentTurns: [], currentPlayerId: 1, turnState: 'choosingPlacement', lastRoll: [2, 1], legalPlacements: [{ width: 2, height: 1, topLefts: [[2, 0]] }] },
+  })
+  state.game.players['1'].board.pieces = [{ topLeft: [0, 0], width: 2, height: 1, owner: 1 }]
+  renderScreen(state)
+  const board = getBoard()
+
+  fireEvent.focus(board)
+  fireEvent.keyDown(board, { key: 'ArrowUp' })
+  fireEvent.keyDown(board, { key: 'ArrowUp' })
+  expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1, 2 cells: 2 of your cells, not legal: overlaps your territory')
+
+  fireEvent.keyDown(board, { key: 'ArrowDown' })
+  expect(screen.getByTestId('cursor-position').textContent).toMatch(/, not legal$/)
 })
 
 test('a mouse hover is read once, by the status line, not also as a position', () => {

@@ -57,6 +57,14 @@ function boardSummary(game: GameWireState) {
   return parts.join(' ')
 }
 
+// What the keyboard cursor is on, for a screen reader: position, footprint, and whether the spot is legal and why not.
+function cursorText(game: GameWireState, topLeft: [number, number], dims: [number, number], illegal: boolean) {
+  const player = game.turn.currentPlayerId as 1 | 2
+  const reason = illegal ? placementReason(game, player, topLeft, dims) : null
+  const verdict = !illegal ? 'legal' : reason ? `not legal: ${reason}` : 'not legal'
+  return `Row ${topLeft[0] + 1}, column ${topLeft[1] + 1}, ${describeFootprint(game, player, topLeft, dims)}, ${verdict}`
+}
+
 function liveMoveText(turnState: string | undefined, size: readonly number[] | null) {
   if (turnState === 'awaitingRoll') return 'Waiting to roll…'
   if (turnState === 'choosingWildcard') return 'Wildcard roll, picking…'
@@ -317,7 +325,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
           </div>
           <p id="board-summary" className="visually-hidden">{boardSummary(state.game)}</p>
           <div className="visually-hidden" data-testid="cursor-position" aria-live="assertive" aria-atomic="true">
-            {previewSource === 'key' && previewTopLeft && dims && state ? `Row ${previewTopLeft[0] + 1}, column ${previewTopLeft[1] + 1}, ${describeFootprint(state.game, state.game.turn.currentPlayerId as 1 | 2, previewTopLeft, dims)}` : ''}
+            {previewSource === 'key' && previewTopLeft && dims && state ? cursorText(state.game, previewTopLeft, dims, previewKind === 'danger') : ''}
           </div>
         </div>
       )}
