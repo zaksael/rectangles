@@ -3,6 +3,14 @@ import { expect, test, vi } from 'vitest'
 import { makeGame } from '../dev/fixtures/gameFixtures'
 import { makeState, moves, movesState, recentTurn, renderScreen, rowCells, rowValues, scoreRow, scoreTable, specialRules } from '../dev/testUtils/playingScreenHarness'
 
+test('each score column header names its player in a span that carries the name for the reserved bold width', () => {
+  renderScreen(makeState())
+
+  const names = screen.getAllByRole('columnheader').map((h) => h.querySelector<HTMLElement>('.score-name'))
+  expect(names.map((n) => n?.textContent)).toEqual(['Player 1', 'Player 2'])
+  expect(names.map((n) => n?.getAttribute('data-name'))).toEqual(['Player 1', 'Player 2'])
+})
+
 test('highlights the current player in the turn indicator', () => {
   renderScreen(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'choosingPlacement', lastRoll: [3, 4], legalPlacements: [] } }))
 

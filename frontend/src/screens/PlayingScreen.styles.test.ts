@@ -153,6 +153,17 @@ test('the mover is marked by weight and a 3px bar under the column header name, 
   expect(p2).toMatch(/box-shadow:\s*inset 0 -3px 0 var\(--p2\)/)
 })
 
+test('every column header reserves the bold name width, so the mover change does not shift the columns', () => {
+  const reserve = ruleFor(css, '.score-table thead .score-name::after')
+
+  expect(reserve).toMatch(/content:\s*attr\(data-name\)/)
+  expect(reserve).toMatch(/font-weight:\s*600/)
+  expect(reserve).toMatch(/visibility:\s*hidden/)
+  expect(reserve).toMatch(/height:\s*0/)
+  // Inline-block, so the hidden bold line widens the name itself and not a separate line below it.
+  expect(ruleFor(css, '.score-table thead .score-name')).toMatch(/display:\s*inline-block/)
+})
+
 test('the turn block has a 3px rule on its left edge, in the mover\'s colour', () => {
   expect(ruleFor(css, '.rail-turn')).toMatch(/border-left:\s*3px solid transparent/)
   expect(ruleFor(css, '.rail-turn.p1')).toMatch(/border-left-color:\s*var\(--p1\)/)

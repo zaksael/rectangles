@@ -349,7 +349,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                   {ids.map((id) => (
                     <th key={id} scope="col" className={`p${id}${currentId === Number(id) ? ' current' : ''}${turnState === 'gameOver' ? ' over' : ''}`} aria-current={currentId === Number(id) ? 'true' : undefined}>
                       <span className="dot" aria-hidden="true" />
-                      {state.game.players[id].name}
+                      <span className="score-name" data-name={state.game.players[id].name}>{state.game.players[id].name}</span>
                     </th>
                   ))}
                 </tr>

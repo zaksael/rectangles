@@ -85,6 +85,18 @@
 .score-table thead th.p2.current:not(.over) {
   box-shadow: inset 0 -3px 0 var(--p2);
 }
+/* The name is as wide as its bold form in both states, so the mover changing does not move the columns. */
+.score-table thead .score-name {
+  display: inline-block;
+}
+.score-table thead .score-name::after {
+  content: attr(data-name);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 600;
+}
 /* One skip from the limit: the next skip ends the game. Bold as well as red, so it is not colour-only. */
 .score-table .last-skip {
   color: var(--danger);
