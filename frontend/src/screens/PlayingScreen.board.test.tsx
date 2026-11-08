@@ -481,7 +481,7 @@ test('the piece position is announced as the keyboard moves it', () => {
 
   fireEvent.focus(board)
   expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 1, 2 empty cells')
-  expect(screen.getByTestId('cursor-position')).toHaveAttribute('aria-live', 'polite')
+  expect(screen.getByTestId('cursor-position')).toHaveAttribute('aria-live', 'assertive')
   fireEvent.keyDown(board, { key: 'ArrowRight' })
   expect(screen.getByTestId('cursor-position')).toHaveTextContent('Row 1, column 2, 2 empty cells')
 })
