@@ -113,6 +113,12 @@
   }
 }
 
+@media (any-pointer: coarse) {
+  .replay .rail-head .btn {
+    min-height: 44px;
+  }
+}
+
 .replay .transport,
 .replay .speed {
   display: grid;

@@ -257,7 +257,7 @@
   .rail-actions {
     height: 66px;
   }
-  .rail-head .btn {
+  .playing .rail-head .btn {
     min-height: 44px;
   }
   /* The taller buttons cost the list a row. */

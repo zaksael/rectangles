@@ -53,10 +53,7 @@ test('a class another screen only uses as a modifier, and a state variable with 
 const SHARED = ['Board.css', 'ScoreTable.css', 'NarrowWindowGate.css', 'index.css', 'tokens.css'].map(readCss)
 
 // Known leaks, each with the rule that causes it: remove the entry when the rule is scoped.
-const KNOWN: Record<string, string[]> = {
-  // PlayingScreen.css `.rail-head .btn` in the coarse-pointer block is not scoped under `.playing`.
-  ReplayScreen: ['rail-head'],
-}
+const KNOWN: Record<string, string[]> = {}
 
 test.each(SCREENS)('%s writes no class that another screen\'s stylesheet styles on its own', screen => {
   const others = SCREENS.filter(s => s !== screen).map(s => readCss(`${s}.css`))
