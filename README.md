@@ -100,7 +100,9 @@ Window" notice takes their place and the game waits where it was.
   scored 14 (Prize)") — or, when the difference is purely strategic
   denial rather than real points, the cells denied instead (e.g. "Denied 1
   cell this turn; the best move denied 5"). Toggle **Show Better Option** to
-  outline the better placement on the board, tagged *Better move*. **Play** advances automatically
+  outline the better placement on the board, tagged *Better move*. **Prev Flagged**
+  and **Next Flagged** jump between the flagged turns, with a count such as
+  "Flagged 2 of 5". **Play** advances automatically
   at the Slow/Normal/Fast pace you pick; it stops at the last step, and any
   manual navigation pauses it. **Back** returns to the summary.
 

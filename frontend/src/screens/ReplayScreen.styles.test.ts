@@ -40,6 +40,12 @@ test('the caption\'s step label stays AA (4.5:1) on the ledger', () => {
   expect(textContrast(css, '.replay .caption .step')).toBeGreaterThanOrEqual(4.5)
 })
 
+test('the flagged-turn row is two buttons round a fixed 108px count, dimmed and inverting on hover like the transport', () => {
+  expect(css).toMatch(/\.replay \.flag-nav \{[^}]*grid-template-columns:\s*1fr 108px 1fr/)
+  expect(css).toMatch(/\.replay \.flag-nav \.btn\[aria-disabled="true"\]\s*\{[^}]*cursor:\s*default/)
+  expect(css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]).toMatch(/\.replay \.flag-nav \.btn:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\)/)
+})
+
 test('the transport has five columns and the speed row three buttons centred under the middle three', () => {
   expect(css).toMatch(/\.replay \.transport,\s*\.replay \.speed \{[^}]*grid-template-columns:\s*repeat\(5, 1fr\)/)
   expect(ruleFor(css, '.replay .speed .btn:first-child')).toMatch(/grid-column:\s*2/)
@@ -57,16 +63,16 @@ test('nothing on Replay animates, so autoplay has no motion to reduce', () => {
   expect(css).not.toMatch(/transition|animation|@keyframes/)
 })
 
-test('the chart is 300px tall but is the one thing that gives up height, down to 160px', () => {
+test('the chart is 300px tall but is the one thing that gives up height, down to 144px', () => {
   const block = ruleFor(css, '.replay .chart-body')
 
   expect(block).toMatch(/flex:\s*1 1 300px/)
-  expect(block).toMatch(/min-height:\s*160px/)
+  expect(block).toMatch(/min-height:\s*144px/)
   expect(block).toMatch(/max-height:\s*300px/)
   expect(block).toMatch(/overflow:\s*hidden/) // so the drawing never props the box open
 })
 
-test('the chart wrapper has no box, so the chart shrinks to its 160px floor instead of spilling over the controls', () => {
+test('the chart wrapper has no box, so the chart shrinks to its 144px floor instead of spilling over the controls', () => {
   const block = ruleFor(css, '.replay .chart-wrap')
 
   expect(block).toMatch(/display:\s*contents/)

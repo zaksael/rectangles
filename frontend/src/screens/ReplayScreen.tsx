@@ -216,6 +216,10 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   const atEnd = step === history.length
   const atStart = step === 0
   const flaggedTurn = analysis?.status === 'ready' ? analysis.turns.find((t) => t.turn === step) : undefined
+  const flaggedTurns = analysis?.status === 'ready' ? analysis.turns.map((t) => t.turn) : []
+  const nextFlagged = flaggedTurns.find((turn) => turn > step)
+  const prevFlagged = flaggedTurns.findLast((turn) => turn < step)
+  const flaggedPlace = flaggedTurns.indexOf(step) + 1
 
   useEffect(() => {
     if (!playing) return
@@ -298,7 +302,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
             <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} showBetterOption={showBetterOption} onToggleBetterOption={onToggleBetterOption} />
           </div>
         )}
-        <ScoreChart flagged={analysis?.status === 'ready' ? analysis.turns.map((t) => t.turn) : []} history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
+        <ScoreChart flagged={flaggedTurns} history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
         <div className="controls">
           <div className="transport">
             {/* aria-disabled, not disabled: a focused button that disables would drop focus to the page. */}
@@ -308,6 +312,13 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
             <button className="btn secondary" aria-disabled={atEnd} onClick={() => !atEnd && goTo((s) => s + 1)}>Next</button>
             <button className="btn secondary" aria-disabled={atEnd} onClick={() => !atEnd && goTo(() => history.length)}>Last</button>
           </div>
+          {flaggedTurns.length > 0 && (
+            <div className="flag-nav">
+              <button className="btn secondary" aria-disabled={prevFlagged === undefined} onClick={() => prevFlagged !== undefined && goTo(() => prevFlagged)}>Prev Flagged</button>
+              <span className="flag-count">{flaggedPlace ? `Flagged ${flaggedPlace} of ${flaggedTurns.length}` : `${flaggedTurns.length} flagged`}</span>
+              <button className="btn secondary" aria-disabled={nextFlagged === undefined} onClick={() => nextFlagged !== undefined && goTo(() => nextFlagged)}>Next Flagged</button>
+            </div>
+          )}
           <div className="speed" role="group" aria-label="Playback speed">
             {SPEEDS.map((option) => (
               <button key={option.label} className="btn secondary" aria-pressed={option === speed} onClick={() => setSpeed(option)}>

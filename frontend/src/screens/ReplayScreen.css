@@ -132,13 +132,35 @@
   min-width: 0;
 }
 
+/* Prev Flagged, the count and Next Flagged under the transport; the count column is fixed so the buttons stay put as its text changes. */
+.replay .flag-nav {
+  display: grid;
+  grid-template-columns: 1fr 108px 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.replay .flag-nav .btn {
+  padding: 8px 0;
+  min-width: 0;
+}
+
+.replay .flag-count {
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
 /* Slow, Normal and Fast sit under the middle three transport buttons. */
 .replay .speed .btn:first-child {
   grid-column: 2;
 }
 
 /* Unavailable at the ends of the game but still focusable (aria-disabled): dimmed by colour so the focus ring stays full ink. */
-.replay .transport .btn[aria-disabled="true"] {
+.replay .transport .btn[aria-disabled="true"],
+.replay .flag-nav .btn[aria-disabled="true"] {
   background: transparent;
   color: color-mix(in srgb, var(--ink) 45%, var(--ledger));
   border-color: currentcolor;
@@ -157,6 +179,7 @@
 
 /* The stepping buttons are clicked over and over while scrubbing, so they invert on hover, but only where there is a hover. Speed and the analysis toggle stay put: inverted means pressed there. */
 @media (hover: hover) {
+  .replay .flag-nav .btn:hover:not(:disabled):not([aria-disabled="true"]),
   .replay .transport .btn:hover:not(:disabled):not([aria-disabled="true"]) {
     background: var(--ink);
     color: var(--ledger);
@@ -180,10 +203,10 @@
   color: var(--ink-muted);
 }
 
-/* The one flexible thing in the rail: 300px when there is room, down to 160px in a short window. */
+/* The one flexible thing in the rail: 300px when there is room, down to 144px in a short window. */
 .replay .chart-body {
   flex: 1 1 300px;
-  min-height: 160px;
+  min-height: 144px;
   max-height: 300px;
   overflow: hidden;
   margin-top: -10px; /* the rail's 16px gap less the 6px the head sits above it */

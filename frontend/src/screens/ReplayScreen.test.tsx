@@ -779,6 +779,65 @@ test('no analysis asked for shows nothing in the note slot', () => {
   expect(screen.queryByText(/better moves|Turn analysis|this turn; the best/)).toBeNull()
 })
 
+// --- flagged-turn row ---
+
+const renderFlagged = (turns: number[], step = 0) => {
+  const view = render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={() => {}} analysis={ready(...turns.map((turn) => flagged({ turn, chosen: turn })))} />)
+  for (let i = 0; i < step; i++) next()
+  return view
+}
+
+test('before the first flagged turn the row counts them and Next Flagged jumps to it', () => {
+  renderFlagged([2, 3])
+
+  expect(screen.getByText('2 flagged')).toBeTruthy()
+  click('Next Flagged')
+  expect(screen.getByText('Scored 2 this turn; the best move scored 10 (Prize)')).toBeTruthy()
+})
+
+test('on a flagged turn the count gives its place and Prev Flagged goes back one', () => {
+  renderFlagged([1, 2, 3], 2)
+
+  expect(screen.getByText('Flagged 2 of 3')).toBeTruthy()
+  click('Prev Flagged')
+  expect(screen.getByText('Scored 1 this turn; the best move scored 10 (Prize)')).toBeTruthy()
+})
+
+test('at the first and last flagged turn the button that would go past it is aria-disabled and does nothing', () => {
+  renderFlagged([1, 2, 3], 1)
+  const prev = screen.getByRole('button', { name: 'Prev Flagged' })
+  const nextFlagged = screen.getByRole('button', { name: 'Next Flagged' })
+
+  expect(prev.getAttribute('aria-disabled')).toBe('true')
+  expect(nextFlagged.getAttribute('aria-disabled')).not.toBe('true')
+  fireEvent.click(prev)
+  expect(screen.getByText('Flagged 1 of 3')).toBeTruthy()
+  fireEvent.click(nextFlagged)
+  fireEvent.click(nextFlagged)
+  expect(nextFlagged.getAttribute('aria-disabled')).toBe('true')
+  fireEvent.click(nextFlagged)
+  expect(screen.getByText('Flagged 3 of 3')).toBeTruthy()
+})
+
+test('no flagged-turn row without a ready analysis that holds a flagged turn', () => {
+  for (const analysis of [null, { status: 'loading' } as Analysis, { status: 'unavailable' } as Analysis, ready()]) {
+    const { unmount } = render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={() => {}} analysis={analysis} />)
+    expect(screen.queryByRole('button', { name: 'Next Flagged' })).toBeNull()
+    unmount()
+  }
+})
+
+test('Next Flagged during autoplay stops it', () => {
+  vi.useFakeTimers()
+  render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={() => {}} analysis={ready(flagged({ turn: 2 }))} />)
+  click('Play')
+  click('Next Flagged')
+  tick(5000)
+
+  expect(caption()).toHaveTextContent('Turn 2 of 3')
+  expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
+})
+
 
 test('flagged turns ring the chart and the chart says what a ring means', () => {
   const { container } = renderAnalysed(ready(flagged({ turn: 1 })), 1)
