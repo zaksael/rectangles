@@ -19,6 +19,10 @@ object BalanceSweep:
       second <- BotDifficulty.values.toVector
     yield Pairing(first, second)
 
+  /** Default rules plus the special cells and rerolls, which the bots' scores react to. */
+  def specialRules(boardSize: Int): Rules =
+    Rules(boardSize = boardSize, prize = true, pitfall = true, steal = true, reroll = true)
+
   private val Header =
     "pairing (first/second)    games  first  second  ties  seat-One  margin  fill  end reasons"
 
@@ -71,11 +75,17 @@ object BalanceSweep:
     }
 
 /**
- * Every pairing on default rules, one table on stdout. Run it with the full class name:
+ * Every pairing on default rules, then on the special rules: two tables on stdout. Run it with the
+ * full class name:
  * `sbt "core/runMain dev.zaksael.rectangles.rules.runBalanceSweep [games] [boardSize] [seed]"`.
  */
 @main def runBalanceSweep(games: Int = 100, boardSize: Int = 19, seed: Long = 1L): Unit =
-  val rules = Rules(boardSize = boardSize)
-  println(BalanceSweep.report(BalanceSweep.pairings.map(p =>
-    p -> BalanceSweep.play(rules, p, games, seed)
-  )))
+  Seq(
+    "default rules"    -> Rules(boardSize = boardSize),
+    "special rules on" -> BalanceSweep.specialRules(boardSize),
+  ).foreach((label, rules) =>
+    println(s"== $label")
+    println(BalanceSweep.report(BalanceSweep.pairings.map(p =>
+      p -> BalanceSweep.play(rules, p, games, seed)
+    )))
+  )

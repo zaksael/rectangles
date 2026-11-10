@@ -12,6 +12,11 @@ import dev.zaksael.rectangles.domain.Seats
 class BalanceSweepSpec extends AnyFlatSpec with Matchers:
   private val small = Rules(boardSize = 6)
 
+  "the special rules" should "turn on prize, pitfall, steal and reroll at the given board size" in {
+    BalanceSweep.specialRules(23) shouldBe
+      Rules(boardSize = 23, prize = true, pitfall = true, steal = true, reroll = true)
+  }
+
   "a pairing sweep" should "swap the seat of its first difficulty every game" in {
     val games =
       BalanceSweep.play(small, Pairing(BotDifficulty.Basic, BotDifficulty.Blocking), 4, 1L)
