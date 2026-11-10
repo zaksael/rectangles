@@ -106,3 +106,10 @@ test('the group links share the Reset link\u2019s style and its coarse-pointer p
   expect(css).toMatch(/\.mode-reset-link,\s*\.mode-group-link \{/)
   expect(css).toMatch(/@media \(any-pointer: coarse\) \{[\s\S]*\.mode-reset-link,\s*\.mode-group-link \{[^}]*padding:\s*12px 0/)
 })
+
+test('the difficulty strength pips take the pill’s own colour, filled up to the tier, and stay visible in forced colours', () => {
+  expect(ruleFor(css, '.mode-pill-scale')).toMatch(/display:\s*inline-flex/)
+  expect(ruleFor(css, '.mode-pill-scale i')).toMatch(/border:\s*1px solid currentColor/)
+  expect(ruleFor(css, '.mode-pill-scale i.on')).toMatch(/background:\s*currentColor/)
+  expect(ruleFor(css, '.mode-pill-scale i')).toMatch(/forced-color-adjust:\s*none/)
+})

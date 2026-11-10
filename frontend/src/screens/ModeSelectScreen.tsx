@@ -288,6 +288,11 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
                 onClick={() => setSettings((s) => ({ ...s, botDifficulty: difficulty }))}
               >
                 {difficulty}
+                <span className="mode-pill-scale" aria-hidden="true">
+                  {DIFFICULTIES.map((tier, tierIndex) => (
+                    <i key={tier} className={tierIndex <= index ? 'on' : undefined} />
+                  ))}
+                </span>
               </button>
             ))}
           </div>

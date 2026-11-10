@@ -296,6 +296,18 @@ describe('Opponent cards', () => {
     ])
   })
 
+  test('each Difficulty pill shows a three-pip strength scale filled up to its own tier', () => {
+    const [bot] = renderCards()
+    fireEvent.click(bot!)
+
+    const pills = within(screen.getByRole('group', { name: 'Difficulty' })).getAllByRole('radio')
+    expect(pills.map((p) => [p.querySelectorAll('.mode-pill-scale i').length, p.querySelectorAll('.mode-pill-scale i.on').length])).toEqual([
+      [3, 1],
+      [3, 2],
+      [3, 3],
+    ])
+  })
+
   test('an arrow from the first card selects and focuses the other, and wraps back', () => {
     const [bot, local] = renderCards()
 

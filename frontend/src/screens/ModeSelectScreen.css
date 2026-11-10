@@ -119,6 +119,25 @@
   visibility: hidden;
 }
 
+/* Strength scale in each difficulty pill: pips in the pill's own colour (the active pill is a dark fill), filled up to its tier. */
+.mode-pill-scale {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.mode-pill-scale i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  forced-color-adjust: none; /* a forced-colors fill would blank the filled pips; currentColor already follows the pill's text colour */
+}
+.mode-pill-scale i.on {
+  background: currentColor;
+}
+
 /* Keyboard focus only (:focus-visible), so a mouse click leaves no ring and the selection cue stays unambiguous.
    Vs Bot's radio is the inner .mode-card-select, so its ring still wraps the whole card via :has(); Local 2P's
    role="radio" is .mode-card itself. Neither is a native <button>, so this repeats the app-wide focus treatment. */
