@@ -169,6 +169,11 @@ object Turns:
             .find(who => state.players(who).consecutiveSkips >= state.rules.skipLimit)
             .fold(state)(who => ended(state, GameOverReason.SkipLimit(who)))
 
+  /** After a placement or a skip: end the game if it is over, else pass the turn. */
+  def advance(state: GameState): GameState =
+    val checked = checkGameOver(state)
+    if checked.turn == TurnState.GameOver then checked else endTurn(checked)
+
   private def ended(state: GameState, reason: GameOverReason): GameState =
     state.copy(turn = TurnState.GameOver, gameOver = Some(reason))
 

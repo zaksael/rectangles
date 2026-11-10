@@ -3,38 +3,15 @@ package dev.zaksael.rectangles.server.session
 import scala.annotation.tailrec
 
 import dev.zaksael.rectangles.domain.BotDifficulty
-import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.TurnState
-import dev.zaksael.rectangles.rules.Bot
-import dev.zaksael.rectangles.rules.Turns
+import dev.zaksael.rectangles.rules.BotMatch
 
 /** The bot's moves for Player Two, one atomic action per step so each can be sent on its own. */
 object BotTurns:
   /** None when the game is over, or when the action the bot picked is refused. */
   def step(play: Play, difficulty: BotDifficulty): Option[Play] =
-    val state = play.state
-    if Bot.shouldReroll(state, difficulty) then
-      Turns.reroll(state, play.dice).toOption.map(play.stepped.tupled)
-    else
-      state.turn match
-        case TurnState.AwaitingRoll =>
-          Turns.rollDice(state, play.dice).toOption.map(play.stepped.tupled)
-        case TurnState.ChoosingWildcard =>
-          Bot.chooseWildcardValue(state, difficulty, play.dice).flatMap((value, next) =>
-            Turns.chooseWildcard(state, value).toOption.map(play.stepped(_, next))
-          )
-        case TurnState.ChoosingPlacement =>
-          Bot.choosePlacement(state, difficulty, play.dice).flatMap((pick, next) =>
-            Turns.attemptPlace(state, pick.topLeft, pick.width, pick.height).toOption.map(placed =>
-              play.stepped(Actions.advance(placed), next)
-            )
-          )
-        case TurnState.Skipped =>
-          Turns.confirmSkip(state).toOption.map(skipped =>
-            play.stepped(Actions.advance(skipped), play.dice)
-          )
-        case TurnState.GameOver => None
+    BotMatch.step(play.state, difficulty, play.dice).map(play.stepped.tupled)
 
   /** Steps while it is Player Two's turn; the play it ends on and the play after every step. */
   def run(play: Play, difficulty: BotDifficulty): (Play, Vector[Play]) =

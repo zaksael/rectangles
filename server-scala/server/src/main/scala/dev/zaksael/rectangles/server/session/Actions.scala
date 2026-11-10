@@ -30,10 +30,10 @@ object Actions:
           .attemptPlace(play.state, topLeft, width, height)
           .left
           .map(rejected)
-          .map(placed => play.stepped(advance(placed), play.dice))
+          .map(placed => play.stepped(Turns.advance(placed), play.dice))
       case ClientMessage.Skip =>
         Turns.confirmSkip(play.state).left.map(rejected).map(skipped =>
-          play.stepped(advance(skipped), play.dice)
+          play.stepped(Turns.advance(skipped), play.dice)
         )
       case ClientMessage.Reroll =>
         Turns.reroll(play.state, play.dice).left.map(rejected).map(play.stepped.tupled)
@@ -55,11 +55,6 @@ object Actions:
         val (state, dice) = series.newGame(play.dice)
         Right(Play(state, dice, Some(series)))
       case None => Left(ErrorMsg(ErrorReason.InvalidAction, "no series round to continue"))
-
-  /** After a placement or a skip: end the game if it is over, else pass the turn. */
-  private[session] def advance(state: GameState): GameState =
-    val checked = Turns.checkGameOver(state)
-    if checked.turn == TurnState.GameOver then checked else Turns.endTurn(checked)
 
   private def rejected(error: RuleError): ErrorMsg = error match
     case RuleError.WrongState =>

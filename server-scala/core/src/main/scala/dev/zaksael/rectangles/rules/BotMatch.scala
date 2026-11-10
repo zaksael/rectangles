@@ -41,8 +41,11 @@ object BotMatch:
         case None                => None
         case Some((next, after)) => finish(next, difficulties, after)
 
-  /** One atomic action for the player to move, as the server takes it for the bot. */
-  private def step(
+  /**
+   * One atomic action for the player to move; None when the game is over or the bot's pick is
+   * refused.
+   */
+  def step(
       state: GameState,
       difficulty: BotDifficulty,
       dice: Dice,
@@ -60,16 +63,11 @@ object BotMatch:
             Turns
               .attemptPlace(state, pick.topLeft, pick.width, pick.height)
               .toOption
-              .map(placed => (advance(placed), next))
+              .map(placed => (Turns.advance(placed), next))
           )
         case TurnState.Skipped =>
-          Turns.confirmSkip(state).toOption.map(skipped => (advance(skipped), dice))
+          Turns.confirmSkip(state).toOption.map(skipped => (Turns.advance(skipped), dice))
         case TurnState.GameOver => None
-
-  /** After a placement or a skip: end the game if it is over, else pass the turn. */
-  private def advance(state: GameState): GameState =
-    val checked = Turns.checkGameOver(state)
-    if checked.turn == TurnState.GameOver then checked else Turns.endTurn(checked)
 
   private def result(end: GameState): Option[MatchResult] =
     end.gameOver.map { reason =>

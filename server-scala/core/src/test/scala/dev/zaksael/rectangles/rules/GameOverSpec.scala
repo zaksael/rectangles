@@ -50,6 +50,12 @@ class GameOverSpec extends AnyFlatSpec with Matchers with EitherValues:
     over.gameOver shouldBe Some(GameOverReason.PlayerBlocked(PlayerId.One))
   }
 
+  "advancing a game that is not over" should "pass the turn to the other player" in {
+    val next = Turns.advance(placed(game(4), PlayerId.One, Cell(0, 0), 1, 1))
+    next.current shouldBe PlayerId.Two
+    next.turn shouldBe TurnState.AwaitingRoll
+  }
+
   "a player who has not moved yet" should "not count as blocked" in {
     val onlyTwoMoved = placed(game(4), PlayerId.Two, Cell(3, 3), 1, 1)
     Turns.checkGameOver(onlyTwoMoved).turn should not be TurnState.GameOver
