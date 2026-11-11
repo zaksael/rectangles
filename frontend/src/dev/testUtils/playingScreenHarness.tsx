@@ -55,12 +55,6 @@ export const deadRoll = (consecutiveSkips: number) => {
   return game
 }
 
-export function renderRerenderable(state: GameState) {
-  const props = { error: null, sendAction: vi.fn(), onOpenSettings: vi.fn(), onNewGame: vi.fn() }
-  const view = render(<PlayingScreen state={state} {...props} />)
-  return (next: GameState) => view.rerender(<PlayingScreen state={next} {...props} />)
-}
-
 // jsdom skips the imported stylesheet, so tests that assert computed style inject the real files, the shared tokens first as in the bundle.
 export function injectPlayingCss() {
   const style = document.createElement('style')

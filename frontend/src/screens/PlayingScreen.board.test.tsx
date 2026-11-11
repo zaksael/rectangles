@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 import { makeGame } from '../dev/fixtures/gameFixtures'
 import type { GameState } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
-import { getBoard, keyboardState, makeState, recentTurn, renderRerenderable, renderScreen, renderVsBot, specialRules } from '../dev/testUtils/playingScreenHarness'
+import { getBoard, keyboardState, makeState, recentTurn, renderPlaying, renderScreen, renderVsBot, specialRules } from '../dev/testUtils/playingScreenHarness'
 
 test.each([
   ['awaitingRoll', ['Roll']],
@@ -208,7 +208,7 @@ const outlineAt = (row: number, col: number) => {
 }
 
 test('outlines the piece that was just placed, and keeps it through a skip', () => {
-  const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
+  const update = renderPlaying(withPieces([[0, 0]], [[5, 5]]))
   expect(document.querySelector('.piece-outline.last')).not.toBeInTheDocument()
 
   update(withPieces([[0, 0], [0, 1]], [[5, 5]], [[0, 1]]))
@@ -220,7 +220,7 @@ test('outlines the piece that was just placed, and keeps it through a skip', () 
 })
 
 test("moves the last-placed outline to the opponent's next piece", () => {
-  const update = renderRerenderable(withPieces([[0, 0]], [[5, 5]]))
+  const update = renderPlaying(withPieces([[0, 0]], [[5, 5]]))
   update(withPieces([[0, 0], [0, 1]], [[5, 5]], [[0, 1]]))
   update(withPieces([[0, 0], [0, 1]], [[5, 5], [5, 4]], [[0, 1], [5, 4]]))
 
@@ -391,7 +391,7 @@ test.each([
 
 test('the placement hint points at the starting corner first, then at the adjacency rule once a piece is down', () => {
   const state = keyboardState()
-  const update = renderRerenderable(state)
+  const update = renderPlaying(state)
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 2 wide × 1 tall — your first piece must cover your starting corner')
 
   const placed = keyboardState()

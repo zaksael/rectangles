@@ -4,7 +4,7 @@ import { makeGame } from '../dev/fixtures/gameFixtures'
 import type { GameWireState } from '../game/gameTypes'
 import type { GameState } from '../hooks/useGameSocket'
 import { PlayingScreen } from './PlayingScreen'
-import { deadRoll, gameOverState, injectPlayingCss, keyboardState, makeState, renderRerenderable, renderScreen, renderVsBot } from '../dev/testUtils/playingScreenHarness'
+import { deadRoll, gameOverState, injectPlayingCss, keyboardState, makeState, renderPlaying, renderScreen, renderVsBot } from '../dev/testUtils/playingScreenHarness'
 
 afterEach(() => vi.useRealTimers())
 
@@ -214,7 +214,7 @@ const rolledState = (turnState: 'choosingPlacement' | 'awaitingRoll', lastRoll: 
   makeState({ turn: { recentTurns: [], currentPlayerId: 1, turnState, lastRoll, legalPlacements: [] } })
 
 test('keeps the last roll on screen, marked as the last roll, once the next turn awaits a roll', () => {
-  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const update = renderPlaying(rolledState('choosingPlacement', [3, 5]))
   expect(screen.getByRole('img', { name: 'Player 1 rolled 3 and 5' })).toBeInTheDocument()
 
   update(rolledState('awaitingRoll', null))
@@ -235,7 +235,7 @@ test('the dice are border-box, so their 34px matches the buttons and the toolbar
 
 test('the last roll is marked by a dashed border alone, not by dimming its digits', () => {
   injectPlayingCss()
-  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const update = renderPlaying(rolledState('choosingPlacement', [3, 5]))
   const dice = () => [...document.querySelectorAll('.die')].map((d) => getComputedStyle(d))
 
   expect(dice().map((c) => c.borderTopStyle)).not.toContain('dashed')
@@ -253,7 +253,7 @@ test('shows no dice before the first roll of the game', () => {
 })
 
 test('a new roll replaces the dimmed last roll', () => {
-  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const update = renderPlaying(rolledState('choosingPlacement', [3, 5]))
   update(rolledState('awaitingRoll', null))
   update(rolledState('choosingPlacement', [1, 6]))
 
@@ -263,7 +263,7 @@ test('a new roll replaces the dimmed last roll', () => {
 })
 
 test('once the game is over no dice show in the rail, not even the last roll dimmed', () => {
-  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const update = renderPlaying(rolledState('choosingPlacement', [3, 5]))
   expect(screen.getByRole('img', { name: 'Player 1 rolled 3 and 5' })).toBeInTheDocument()
 
   update(gameOverState())
@@ -273,7 +273,7 @@ test('once the game is over no dice show in the rail, not even the last roll dim
 })
 
 test('the next round does not open on the previous round\'s last roll', () => {
-  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const update = renderPlaying(rolledState('choosingPlacement', [3, 5]))
   update(gameOverState())
 
   update(rolledState('awaitingRoll', null))
@@ -398,7 +398,7 @@ test('the dice name who rolled them for assistive tech but draw no dot or label'
 })
 
 test("a dimmed last roll keeps its roller's name for assistive tech through the next player's turn", () => {
-  const update = renderRerenderable(rolledState('choosingPlacement', [3, 5]))
+  const update = renderPlaying(rolledState('choosingPlacement', [3, 5]))
 
   update(makeState({ turn: { recentTurns: [], currentPlayerId: 2, turnState: 'awaitingRoll', lastRoll: null, legalPlacements: [] } }))
 
