@@ -5,7 +5,7 @@ import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from '../dialogs/Ga
 import type { ErrorReason, GameAction, GameWireState, RecentTurn } from '../game/gameTypes'
 import { describeFootprint } from '../game/footprint'
 import { ADJACENCY_RULE, placementReason, START_CORNER_RULE } from '../game/placementReason'
-import { useLastPlaced } from '../hooks/useLastPlaced'
+import { lastPlacedTopLeft } from '../game/lastPlaced'
 import { useShownRoll } from '../hooks/useShownRoll'
 import { usePlacementInput } from '../hooks/usePlacementInput'
 import type { GameError, GameState } from '../hooks/useGameSocket'
@@ -185,7 +185,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   // oxlint-disable-next-line react/exhaustive-effect-dependencies -- state is a trigger: every new state restarts the pause
   }, [autoSkip, paused, state])
 
-  const lastPlaced = useLastPlaced(state?.game)
+  const lastPlaced = lastPlacedTopLeft(state?.game)
 
   const roll = state?.game.turn.lastRoll ?? null
   // The wire clears the roll once a piece is placed; keep it on screen (dimmed) until the next roll.
