@@ -259,6 +259,17 @@ function openSurrender(props: Partial<Parameters<typeof SettingsOverlay>[0]> = {
   return { sendAction, onClose, dialog: screen.getByRole('dialog', { name: /Surrender/ }) }
 }
 
+test('the Surrender confirm lists each player with their current total, in order', () => {
+  const game = makeGame({ board: { size: 19, skipLimit: 3 } })
+  game.players['1'].score.totalScore = 12
+  game.players['2'].score.totalScore = 7
+  const { dialog } = openSurrender({ game })
+
+  const text = (el: HTMLElement) => el.textContent?.replace(/ /g, ' ')
+  expect(within(dialog).getAllByRole('term').map(text)).toEqual(['Player 1', 'Player 2'])
+  expect(within(dialog).getAllByRole('definition').map(text)).toEqual(['12', '7'])
+})
+
 test('confirming Surrender sends the action and closes both dialogs', () => {
   const { sendAction, onClose, dialog } = openSurrender()
 
