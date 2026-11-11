@@ -413,6 +413,16 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
     log should include("connection closed")
   }
 
+  it should "not be logged as open for a request that never upgrades" in {
+    val log = logged(_.contains("connection closed")) {
+      TestServer.use(ws => WsRoutes.routes(ws, playerOneStarts).orNotFound) { port =>
+        httpGet(port, s"/ws?$vanilla"): Unit
+      }
+      connected()(_.next(): Unit)
+    }
+    log.split("connection opened").length - 1 shouldBe 1
+  }
+
   it should "log why a connect was refused" in {
     val log = logged(_.contains("badParameters"))(
       TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>

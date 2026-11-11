@@ -95,23 +95,30 @@ object WsRoutes:
             outbox  <- Queue.bounded[IO, Option[WebSocketFrame]](outboxSize)
             opening <- session.state
             _       <- opening.traverse_(message => send(outbox, message))
-            _ <- IO.delay(openConnections.incrementAndGet()).flatMap(open =>
-              log.info("connection opened", open.asLogValue("open"))
-            )
             socket <- ws.build(
               Stream
                 .fromQueueNoneTerminated(outbox)
                 .mergeHaltL(Stream.awakeEvery[IO](keepAlive).as(WebSocketFrame.Ping())),
-              _.evalMap {
-                case WebSocketFrame.Text(text, _) =>
-                  session.handle(text).flatMap(_.traverse_(message => send(outbox, message)))
-                case _ => IO.unit
-              }.onFinalize(
-                outbox.tryOffer(None).void *>
-                  IO.delay(openConnections.decrementAndGet()).flatMap(open =>
-                    log.info("connection closed", open.asLogValue("open"))
+              // Ember runs this pipe only after the 101, so a request that never upgrades is not counted.
+              incoming =>
+                Stream
+                  .bracket(
+                    IO.delay(openConnections.incrementAndGet()).flatMap(open =>
+                      log.info("connection opened", open.asLogValue("open"))
+                    )
+                  )(_ =>
+                    outbox.tryOffer(None).void *>
+                      IO.delay(openConnections.decrementAndGet()).flatMap(open =>
+                        log.info("connection closed", open.asLogValue("open"))
+                      )
                   )
-              ),
+                  .flatMap(_ =>
+                    incoming.evalMap {
+                      case WebSocketFrame.Text(text, _) =>
+                        session.handle(text).flatMap(_.traverse_(message => send(outbox, message)))
+                      case _ => IO.unit
+                    }
+                  ),
             )
           yield socket
     }
