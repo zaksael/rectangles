@@ -204,6 +204,22 @@ class BotSpec extends AnyFlatSpec with Matchers with EitherValues with OptionVal
     reroll(state, BotDifficulty.Greedy) shouldBe true
   }
 
+  it should "not go to Greedy when the only Prize in reach is already captured" in {
+    val state = rolled(
+      placed(
+        withSpecialCells(rerollRules(6), CellKind.Prize, Cell(0, 1)),
+        PlayerId.One,
+        Cell(0, 0),
+        2,
+        1,
+      ),
+      1,
+      1,
+    )
+    state.turn shouldBe TurnState.ChoosingPlacement
+    reroll(state, BotDifficulty.Greedy) shouldBe false
+  }
+
   it should "go to Greedy when a Steal cell exists but is out of this roll's reach" in {
     val state = rolled(
       placed(

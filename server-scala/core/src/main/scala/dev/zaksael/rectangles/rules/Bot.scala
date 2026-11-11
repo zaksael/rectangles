@@ -88,7 +88,8 @@ object Bot:
 
   /** The cells whose capture would lift this difficulty's score above zero. */
   private def gainableCells(state: GameState, difficulty: BotDifficulty): Set[Cell] =
-    val gains = state.board.cellsOfKind(CellKind.Prize) ++ state.board.cellsOfKind(CellKind.Steal)
+    val gains = (state.board.cellsOfKind(CellKind.Prize) ++ state.board.cellsOfKind(CellKind.Steal))
+      .filter(state.board.isEmpty)
     if difficulty == BotDifficulty.Blocking then gains ++ state.board.frontier(state.current.other)
     else gains
 
