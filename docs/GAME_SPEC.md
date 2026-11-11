@@ -216,7 +216,7 @@ the penalty is pressure to plug gaps promptly, not a trap.
 
 When enabled: each player may discard their current roll — both dice —
 and roll fresh, instead of accepting it, up to 2 times per game (not per
-turn, not per round of a series). A reroll is available any time a roll
+turn). Each round of a series is a new game, so the charges reset every round. A reroll is available any time a roll
 is pending and not yet committed: while choosing where to place it,
 while picking a Wildcard Roll value (§6.6, discarding that pending edit
 entirely), or when it would otherwise result in a skip. Each use costs
@@ -291,7 +291,8 @@ levels may be offered:
   once, not just a one-sided gain). With none of Prize/Steal/Pitfall in
   play, or when no candidate reaches one, this behaves exactly like
   Blocking (denying the opponent's frontier) instead of Basic's plain random
-  pick; ties are broken randomly.
+  pick. Placements with equal special-cell value go to the one that denies
+  more of the opponent's frontier; any tie left is broken randomly.
 - **Blocking** — prefers whichever legal placement takes away the most
   currently-available cells from its opponent (i.e. cells the opponent
   could otherwise have used for at least a 1×1 piece). It also scores

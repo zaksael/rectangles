@@ -33,7 +33,7 @@ Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`.
 | `skip` | — | accept a roll with no legal placement |
 | `reroll` | — | discard the roll for a fresh one |
 | `chooseWildcard` | `value` (1–6) | set the editable die of a wildcard roll |
-| `surrender` | — | concede the game |
+| `surrender` | — | concede the game; after the game is over it changes nothing and the server resends the unchanged `state` |
 | `requestAnalysis` | — | ask for the turn analysis; only after the game is over |
 | `continueSeries` | — | start the next round; only after a finished round of an unfinished series |
 
@@ -46,6 +46,8 @@ Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`.
 | `error` | `reason`, `message` | an action was refused; the game is unchanged |
 
 With a bot, the answer to an action is one `state` per step, in order: the human's action, then each roll, reroll, wildcard choice, placement or skip the bot makes until it is the human's turn again. A bot that moves first sends its steps right after connect. The last `state` is the current one.
+
+`game.turn.legalPlacements` lists the legal spots of the current roll, one entry per orientation with `width`, `height` and `topLefts`; the `topLefts` come in row-major order (by row, then column), which the client's cycling through spots relies on.
 
 `analysis.turns` lists the turns where a better move existed: `turn` (1-based), `axis` (`prize`, `pitfall`, `steal`, `denial` or `enclosure`), `chosen` and `best` (points on that axis; cells denied for `denial`), and the better placement as `topLeft`, `width` and `height`.
 

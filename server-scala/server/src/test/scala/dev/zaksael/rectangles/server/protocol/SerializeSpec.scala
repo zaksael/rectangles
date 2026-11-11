@@ -73,6 +73,19 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     at(Serialize.game(game(11)), "turn").get[List[Json]]("recentTurns").value shouldBe empty
   }
 
+  "the legal placements" should "list each roll's top lefts in row-major order" in {
+    val roll = Roll(1, 1)
+    val ready = game(11).copy(
+      lastRoll = Some(roll),
+      legal = Map(roll -> Set(Cell(2, 0), Cell(0, 5), Cell(1, 3), Cell(0, 1))),
+      turn = TurnState.ChoosingPlacement,
+    )
+
+    val spots = at(Serialize.game(ready), "turn").get[List[Json]]("legalPlacements").value.head
+    spots.hcursor.get[List[List[Int]]]("topLefts").value shouldBe
+      List(List(0, 1), List(0, 5), List(1, 3), List(2, 0))
+  }
+
   /**
    * One move for the current player: the roll and its only legal spot are set by hand, then placed.
    */

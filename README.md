@@ -69,7 +69,7 @@ Window" notice takes their place and the game waits where it was.
   the board (or tap, then tap again to place) to preview the exact placement,
   centered on the pointer, and click to place the piece.
 - Rotate the piece with the **Rotate** button or `R`.
-- A roll with no legal placement waits for you to press **Skip** (`S`) while you can still reroll it; with no reroll to use, the game skips it for you after a moment (`S` skips at once).
+- A roll with no legal placement waits for you to press **Skip** (`S`) while you can still reroll it; with no reroll to use, the game skips it for you after a moment (`S` skips at once). A skip that would end the game is never taken for you: you press **Skip** yourself.
 - A [Wildcard Roll](#house-rules) turn shows a row of value buttons (greyed
   out for any value without a legal placement) to choose the editable die's
   value before placement continues.
@@ -163,6 +163,7 @@ the Vite proxy preserves.
 - `sbt server/stage` builds a launcher at `server-scala/target/stage/bin/rectangles-server`. The frontend integration tests start it by default; set `RECTANGLES_SERVER_CMD` to a command (split on whitespace, run from the repo root) to run them against another server that speaks [the protocol](docs/PROTOCOL.md), for example `RECTANGLES_SERVER_CMD=server-scala/target/stage/bin/rectangles-server npm test` from `frontend/`.
 - `docker build -t rectangles-server .` builds the image: node builds `frontend/`, sbt stages the server, and a JRE 25 stage runs it as a non-root user on port 8765, with a healthcheck on `/health`. The container listens on all interfaces and logs JSON lines; `docker run -p 8765:8765 rectangles-server` then serves the game at `http://127.0.0.1:8765/`.
 - Check the style from `server-scala/` with `sbt "scalafmtCheckAll; scalafixAll --check"` (format with `sbt scalafmtAll`, fix with `sbt scalafixAll`); the compiler runs with warnings fatal, and `var`, `null` and `throw` are compile errors.
+- Play bots against each other without a server: `sbt "core/runMain dev.zaksael.rectangles.rules.runBalanceSweep 100 19 1"` from `server-scala/` (games, board size, seed) prints a table per pairing of difficulties (wins, ties, mean margin) for the default rules and for the special rules.
 - Run the tests from `server-scala/` with `sbt testFull`. Plain `sbt test` caches its result, so a re-run with no changes prints no summary.
 - `sbt -batch` already goes through sbt 2's built-in thin client: a warm run takes about half a second, a cold start about 35 seconds. There is no separate `sbtn` to install.
 
@@ -232,7 +233,7 @@ the full wording of every rule see [docs/GAME_SPEC.md](docs/GAME_SPEC.md).
 | **Steal** | Two cells (one mirrored pair). Covering one is zero-sum: you gain 10 and your opponent loses 10, a 20-point swing. Scores can go negative. | A plus-over-minus mark that disappears once covered; the Steal row shows each player's net swing. |
 | **Wildcard Roll** | Every double becomes a wildcard roll: one of the two numbers (picked at random) is yours to change to any value 1–6, the other stays fixed. If no value could fit, the pick is skipped and the turn resolves to a skip. | A row of value buttons, greyed out for values without a legal placement. |
 | **Enclosure Penalty** | Each empty cell fully surrounded by your own territory docks you 1 point, recomputed after every move. Filling the hole drops the penalty. A gap bordered by both players, by neither, or touching the board's edge is never penalized. | Enclosed cells hatched in your colour; the Enclosure row in the score table. |
-| **Reroll** | Two rerolls per player per game (not per series round) to discard both dice and roll again, while placing, while picking a wildcard value, or when a roll would skip your turn. | The Rerolls row shows what's left (also with Reroll off and Comeback on, where it reads 0 / 0 until a grant), and the Reroll button disappears at zero. |
+| **Reroll** | Two rerolls per player per game (each series round is a new game, so they reset) to discard both dice and roll again, while placing, while picking a wildcard value, or when a roll would skip your turn. | The Rerolls row shows what's left (also with Reroll off and Comeback on, where it reads 0 / 0 until a grant), and the Reroll button disappears at zero. |
 | **Comeback** | When the trailing player falls behind by 8% of the board's cells (rounded up: 29/43/59 points on 19×19/23×23/27×27), they're permanently granted one extra reroll charge for that game, even if Reroll itself is off. | A "Comeback! Player N gets +1 reroll" notice. |
 
 ## Bot opponent
@@ -251,7 +252,8 @@ The three difficulties:
   score gap both ways at once), and avoids a [Pitfall](#house-rules) cell when a
   Pitfall-free placement is available; with none of those on the board, or
   when no candidate reaches one, it falls back to denying cells in your
-  frontier, same as Blocking.
+  frontier, same as Blocking. Among placements of equal special-cell value, it
+  also takes the one that denies more, and draws at random only among what is left.
 - **Blocking** — prefers a placement that covers cells in *your* frontier,
   denying you those spots. It also grabs Prize and Steal cells and avoids
   Pitfall cells the way Greedy does, weighing them against the denial; falls
@@ -293,7 +295,7 @@ server-scala/
 ├── core/                 # rules engine, no server dependency
 │   └── src/main/scala/dev/zaksael/rectangles/
 │       ├── domain/       # board, game state, players, rules and constants
-│       └── rules/        # placement, turns, scoring, setup, bot, analysis, series
+│       └── rules/        # placement, turns, scoring, setup, bot, analysis, series, balance sweep
 └── server/               # HTTP and WebSocket server
     └── src/main/scala/dev/zaksael/rectangles/server/
         ├── http/         # /health, /ws and the static frontend
