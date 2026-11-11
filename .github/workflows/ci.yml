@@ -59,7 +59,7 @@ jobs:
           RECTANGLES_SERVER_CMD: ${{ github.workspace }}/server-scala/target/stage/bin/rectangles-server
         run: |
           npm ci
-          npx vitest run src/hooks/useGameSocket.integration.test.ts src/hooks/wireContract.integration.test.ts
+          npx vitest run integration.test.ts
 
   docker:
     runs-on: ubuntu-24.04
