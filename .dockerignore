@@ -6,3 +6,6 @@
 **/target
 **/.DS_Store
 frontend/dist
+frontend/coverage
+**/.bsp
+**/.idea
