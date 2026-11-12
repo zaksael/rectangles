@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import { readCss } from '../dev/testUtils/styles'
 
@@ -60,6 +60,27 @@ test.each(SCREENS)('%s writes no class that another screen\'s stylesheet styles 
   const found = borrowedClasses(readFileSync(`src/screens/${screen}.tsx`, 'utf8'), readCss(`${screen}.css`), others, SHARED)
 
   expect(found.filter(name => !KNOWN[screen]?.includes(name))).toEqual([])
+})
+
+const SHARED_COMPONENTS = ['dialogs', 'components'].flatMap(dir =>
+  readdirSync(`src/${dir}`).filter(f => f.endsWith('.tsx') && !f.includes('.test.')).map(f => `${dir}/${f}`))
+
+// The screen sheets a dialog or component may style its classes in; a file not listed has none, so any screen-owned class in it is a leak.
+const HOME: Record<string, string[]> = {
+  'dialogs/ResetConfirmDialog.tsx': ['ModeSelectScreen'],
+  'dialogs/ConnectionLostModal.tsx': ['PlayingScreen'],
+  'dialogs/GameOverOverlay.tsx': ['PlayingScreen'],
+  'dialogs/SettingsOverlay.tsx': ['PlayingScreen'],
+  'dialogs/SurrenderConfirmDialog.tsx': ['PlayingScreen'],
+}
+
+test.each(SHARED_COMPONENTS)('%s writes no class that a screen\'s stylesheet outside its home styles on its own', file => {
+  const home = HOME[file] ?? []
+  const own = home.map(s => readCss(`${s}.css`))
+  const others = SCREENS.filter(s => !home.includes(s)).map(s => readCss(`${s}.css`))
+  const found = borrowedClasses(readFileSync(`src/${file}`, 'utf8'), own.join('\n'), others, SHARED)
+
+  expect(found).toEqual([])
 })
 
 test('a class a shared stylesheet owns is not borrowed, even when a screen also styles it', () => {
