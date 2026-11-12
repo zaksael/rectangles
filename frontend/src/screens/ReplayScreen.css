@@ -350,6 +350,12 @@
     color: HighlightText;
   }
 
+  .replay .transport .btn[aria-disabled="true"],
+  .replay .flag-nav .btn[aria-disabled="true"] {
+    color: GrayText;
+    border-color: GrayText;
+  }
+
   /* The chart keeps its own colours (above), so it brings the light page colour its dark ink was drawn on. */
   .replay .chart {
     background: var(--ledger);

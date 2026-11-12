@@ -197,6 +197,11 @@ dialog button:focus {
     background: Highlight;
     color: HighlightText;
   }
+  /* The colour-mix dimming of an aria-disabled button is dropped here, so name the disabled text colour. */
+  .btn.destructive.quiet[aria-disabled="true"] {
+    color: GrayText;
+    border-color: GrayText;
+  }
 }
 .pill:hover:not(.active) {
   background: color-mix(in srgb, var(--ink) 8%, transparent);

@@ -37,6 +37,19 @@ test.each([
   expect(rule?.[1] ?? '').toMatch(/color:\s*HighlightText/)
 })
 
+// Dimming by a colour mix is dropped in this mode, so a focusable-but-unavailable button would look like an available one.
+test.each([
+  ['ReplayScreen.css', '.replay .transport .btn[aria-disabled="true"]'],
+  ['ReplayScreen.css', '.replay .flag-nav .btn[aria-disabled="true"]'],
+  ['tokens.css', '.btn.destructive.quiet[aria-disabled="true"]'],
+])('%s: an unavailable %s reads as disabled (GrayText) under forced colors', (file, selector) => {
+  const block = forcedColorsBlock(readCss(file))
+  const rule = block.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^{}]*\\{([^}]*)\\}`))
+
+  expect(rule?.[1] ?? '').toMatch(/color:\s*GrayText/)
+  expect(rule?.[1] ?? '').toMatch(/border-color:\s*GrayText/)
+})
+
 test('the score chart sits on the ledger colour under forced colors, so its dark ink stays readable on a dark theme', () => {
   const block = forcedColorsBlock(readCss('ReplayScreen.css'))
   const rule = block.match(/\.replay \.chart\s*\{([^}]*)\}/)
