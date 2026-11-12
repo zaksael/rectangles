@@ -11,6 +11,7 @@ test('the screen title is a heading', () => {
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
 
   expect(screen.getByRole('heading', { name: 'New Game' })).toBeInTheDocument()
+  expect(within(screen.getByRole('main')).getByRole('heading', { name: 'New Game' })).toBeInTheDocument() // the landmark a screen reader jumps to
 })
 
 test('on first launch, no mode is selected and Start Game is disabled with a hint', () => {

@@ -240,7 +240,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
   const changed = changedCount(settings)
 
   return (
-    <div className="mode-select">
+    <main className="mode-select">
       <div className="mode-screen-header">
         <h1 className="title">New Game</h1>
       </div>
@@ -456,6 +456,6 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
           }}
         />
       )}
-    </div>
+    </main>
   )
 }
