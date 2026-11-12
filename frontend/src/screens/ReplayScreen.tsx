@@ -59,10 +59,10 @@ function endText(game: GameWireState, history: HistoryEntry[]): string | null {
   return reason && `${reason}, ${result}`
 }
 
-function Caption({ game, history, step }: { game: GameWireState; history: HistoryEntry[]; step: number }) {
+function Caption({ game, history, step, playing }: { game: GameWireState; history: HistoryEntry[]; step: number; playing: boolean }) {
   const notes = step === 0 ? [] : [...effectTexts(game, history, step), step === history.length ? endText(game, history) : null].filter(Boolean)
   return (
-    <p className="caption" data-testid="replay-caption" aria-live="polite">
+    <p className="caption" data-testid="replay-caption" aria-live={playing ? 'off' : 'polite'}>
       {step === 0 ? (
         <>
           <span className="step">Start of game</span>No moves played yet
@@ -208,6 +208,8 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   const history = game.gameOver.history ?? []
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
+  // True from the moment autoplay stops until it starts again or a step is taken by hand: the caption is silent while it runs, so the turn is read out once on the stop.
+  const [justPaused, setJustPaused] = useState(false)
   // Behind the narrow-window notice nobody is watching, so the replay holds the turn it was on.
   const { narrow } = useNarrowWindow()
   if (narrow && playing) setPlaying(false)
@@ -225,7 +227,10 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
     if (!playing) return
     const timer = setTimeout(() => {
       setStep(step + 1)
-      if (step + 1 === history.length) setPlaying(false)
+      if (step + 1 === history.length) {
+        setPlaying(false)
+        setJustPaused(true)
+      }
     }, speed.ms)
     return () => clearTimeout(timer)
   }, [playing, step, speed, history.length])
@@ -233,10 +238,12 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   // Stepping by hand takes over from autoplay.
   const goTo = (to: (step: number) => number) => {
     setPlaying(false)
+    setJustPaused(playing)
     setStep((s) => Math.max(0, Math.min(history.length, to(s))))
   }
   const togglePlay = () => {
     if (!playing && atEnd) setStep(0)
+    setJustPaused(playing)
     setPlaying(!playing)
   }
 
@@ -296,9 +303,10 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
           </div>
         )}
         <ScoreTable game={game} history={history} step={step} />
-        <Caption game={game} history={history} step={step} />
+        <Caption game={game} history={history} step={step} playing={playing} />
+        <p className="visually-hidden" data-testid="replay-paused" aria-live="polite">{justPaused ? `Paused on turn ${step} of ${history.length}` : ''}</p>
         {analysis && (
-          <div className="analysis-slot" aria-live="polite">
+          <div className="analysis-slot" aria-live={playing ? 'off' : 'polite'}>
             <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} showBetterOption={showBetterOption} onToggleBetterOption={onToggleBetterOption} />
           </div>
         )}

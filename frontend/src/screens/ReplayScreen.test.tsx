@@ -466,6 +466,46 @@ test('Play sits between Prev and Next, turns into Pause and steps once a Normal 
   expect(caption()).toHaveTextContent('Turn 1 of 3')
 })
 
+test('the caption and the note slot are live only while autoplay is paused, so a running replay is not read out turn by turn', () => {
+  vi.useFakeTimers()
+  const { container } = render(<ReplayScreen game={replayGame(THREE_MOVES)} onBack={vi.fn()} analysis={{ status: 'loading' }} />)
+  const slot = container.querySelector('.analysis-slot')!
+  expect(caption()).toHaveAttribute('aria-live', 'polite')
+  expect(slot).toHaveAttribute('aria-live', 'polite')
+
+  click('Play')
+  expect(caption()).toHaveAttribute('aria-live', 'off')
+  expect(slot).toHaveAttribute('aria-live', 'off')
+
+  click('Pause')
+  expect(caption()).toHaveAttribute('aria-live', 'polite')
+  expect(slot).toHaveAttribute('aria-live', 'polite')
+})
+
+test('pausing autoplay announces the turn it stopped on, and the announcement is empty while it runs', () => {
+  renderPlaying()
+  const announcement = () => screen.getByTestId('replay-paused')
+  expect(announcement()).toHaveAttribute('aria-live', 'polite')
+  expect(announcement()).toBeEmptyDOMElement()
+
+  click('Play')
+  tick(600)
+  expect(announcement()).toBeEmptyDOMElement()
+
+  click('Pause')
+  expect(announcement()).toHaveTextContent('Paused on turn 1 of 3')
+})
+
+test('autoplay reaching the last turn announces where it stopped', () => {
+  renderPlaying()
+  click('Play')
+  tick(600)
+  tick(600)
+  tick(600)
+
+  expect(screen.getByTestId('replay-paused')).toHaveTextContent('Paused on turn 3 of 3')
+})
+
 test('speed buttons are a labelled group of toggles with Normal pressed, and Slow and Fast set 1200 and 250 ms', () => {
   renderPlaying()
   const group = screen.getByRole('group', { name: 'Playback speed' })
