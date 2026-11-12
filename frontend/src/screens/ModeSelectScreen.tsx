@@ -160,7 +160,7 @@ function SegmentedField<T>({ id, label, hint, options, value, onChange, checkedR
   return (
     <div className="mode-field">
       <span className="mode-field-label" id={`${id}-label`}>{label}</span>
-      <div className="segmented" role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={hint ? `${id}-hint` : undefined}>
+      <div className="mode-segmented" role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={hint ? `${id}-hint` : undefined}>
         {options.map((option) => (
           <button
             key={option.label}
@@ -395,14 +395,14 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
                       <button
                         key={key}
                         type="button"
-                        className={settings.houseRules[key] ? 'rule on' : 'rule'}
+                        className={settings.houseRules[key] ? 'mode-rule on' : 'mode-rule'}
                         role="checkbox"
                         aria-checked={settings.houseRules[key]}
                         aria-labelledby={`rule-name-${key}`}
                         aria-describedby={`rule-desc-${key}`}
                         onClick={() => updateHouseRule(key, !settings.houseRules[key])}
                       >
-                        <span className="checkbox" aria-hidden="true"></span>
+                        <span className="mode-checkbox" aria-hidden="true"></span>
                         <span className="mode-rule-text">
                           <span id={`rule-name-${key}`}>{label}</span>
                           <span id={`rule-desc-${key}`} className="mode-rule-desc">

@@ -89,11 +89,11 @@
   .mode-card.selected .mode-marker {
     border-width: 5px;
   }
-  .segmented button.active {
+  .mode-segmented button.active {
     background: Highlight;
     color: HighlightText;
   }
-  .rule.on .checkbox::after {
+  .mode-rule.on .mode-checkbox::after {
     background: CanvasText;
   }
 }
@@ -238,12 +238,12 @@ dialog.mode-reset-confirm {
 .mode-field:not(:first-child) {
   padding-left: 16px;
 }
-.segmented {
+.mode-segmented {
   display: flex;
   border: 1px solid var(--ink);
   width: fit-content;
 }
-.segmented button {
+.mode-segmented button {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-family: "IBM Plex Sans", sans-serif;
@@ -256,17 +256,17 @@ dialog.mode-reset-confirm {
   padding: 8px 16px;
   cursor: pointer;
 }
-.segmented button:last-child {
+.mode-segmented button:last-child {
   border-right: none;
 }
-.segmented button.active {
+.mode-segmented button.active {
   background: var(--ink);
   color: var(--ledger);
 }
-.segmented button:hover:not(.active) {
+.mode-segmented button:hover:not(.active) {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
-.segmented button:active:not(.active) {
+.mode-segmented button:active:not(.active) {
   background: color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
@@ -306,7 +306,7 @@ dialog.mode-reset-confirm {
   flex-direction: column;
   gap: 10px;
 }
-.rule {
+.mode-rule {
   appearance: none;
   display: flex;
   align-items: flex-start;
@@ -321,7 +321,7 @@ dialog.mode-reset-confirm {
   cursor: pointer;
   user-select: none;
 }
-.checkbox {
+.mode-checkbox {
   width: 16px;
   height: 16px;
   flex: none;
@@ -330,7 +330,7 @@ dialog.mode-reset-confirm {
   align-items: center;
   justify-content: center;
 }
-.rule .checkbox {
+.mode-rule .mode-checkbox {
   margin-top: 1px; /* sits on the name's line, not the block's middle */
 }
 .mode-rule-text {
@@ -342,19 +342,19 @@ dialog.mode-reset-confirm {
   font-size: 12px;
   color: var(--ink-muted);
 }
-.rule.on .checkbox {
+.mode-rule.on .mode-checkbox {
   background: var(--ink);
 }
-.rule.on .checkbox::after {
+.mode-rule.on .mode-checkbox::after {
   content: "";
   width: 7px;
   height: 7px;
   background: var(--ledger);
 }
-.rule:hover {
+.mode-rule:hover {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
-.rule:active {
+.mode-rule:active {
   background: color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
@@ -406,7 +406,7 @@ dialog.mode-reset-confirm {
    input (a touchscreen laptop's primary pointer is fine, so `pointer` alone
    misses it) without touching layout on mouse-only devices. */
 @media (any-pointer: coarse) {
-  .segmented button {
+  .mode-segmented button {
     padding: 13px 16px;
   }
   .mode-reset-link,

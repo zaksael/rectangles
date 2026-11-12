@@ -54,7 +54,7 @@ test('the touch-target growth applies to any device with a touch input, so touch
   expect(css).toContain('@media (any-pointer: coarse)')
   expect(css).not.toContain('@media (pointer: coarse)')
   const block = css.match(/@media \(any-pointer: coarse\) \{([\s\S]*?)\n\}/)![1]
-  for (const selector of ['.segmented button', '.mode-group-link']) expect(block).toContain(`${selector} {`)
+  for (const selector of ['.mode-segmented button', '.mode-group-link']) expect(block).toContain(`${selector} {`)
   expect(block).toContain('.mode-reset-link,')
   expect(block).not.toContain('.pill {') // the shared pill grows in tokens.css
 })
@@ -62,11 +62,11 @@ test('the touch-target growth applies to any device with a touch input, so touch
 test('a described house rule is already taller than a 44px touch target, so it gets no extra touch padding', () => {
   const block = css.match(/@media \(any-pointer: coarse\) \{([\s\S]*?)\n\}/)![1]
 
-  expect(block).not.toContain('.rule {')
+  expect(block).not.toContain('.mode-rule {')
 })
 
 test('a house rule puts its checkbox on the name line, spaces blocks 10px apart, and shows its description at 12px and AA contrast', () => {
-  expect(ruleFor(css, '.rule')).toMatch(/align-items:\s*flex-start/)
+  expect(ruleFor(css, '.mode-rule')).toMatch(/align-items:\s*flex-start/)
   expect(ruleFor(css, '.mode-rules-grid')).toMatch(/gap:\s*10px/)
   expect(ruleFor(css, '.mode-rule-desc')).toMatch(/font-size:\s*12px/)
   expect(textContrast(css, '.mode-rule-desc')).toBeGreaterThanOrEqual(4.5)
@@ -90,7 +90,7 @@ test('the Mode Select title is a 24px screen title whose weight comes from .titl
 })
 
 // Every stylesheet is global, so a screen's own class must carry its prefix; these are shared (tokens.css) or states.
-const SHARED_OR_STATE = ['active', 'btn', 'checkbox', 'connecting', 'hidden', 'on', 'primary', 'rule', 'segmented', 'selected', 'title']
+const SHARED_OR_STATE = ['active', 'btn', 'connecting', 'hidden', 'on', 'primary', 'selected', 'title']
 
 test("Mode Select's own classes all carry the mode- prefix", () => {
   const selectors = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{[^}]*\}/g, '{}')

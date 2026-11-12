@@ -26,7 +26,7 @@ function forcedColorsBlock(sheet: string) {
 
 test.each([
   ['tokens.css', '.pill.active'],
-  ['ModeSelectScreen.css', '.segmented button.active'],
+  ['ModeSelectScreen.css', '.mode-segmented button.active'],
   ['ReplayScreen.css', ".replay .speed .btn[aria-pressed='true']"],
   ['ReplayScreen.css', ".replay .analysis-row .btn[aria-pressed='true']"],
 ])('%s: a selected %s is filled with Highlight under forced colors', (file, selector) => {
@@ -60,5 +60,5 @@ test('the score chart sits on the ledger colour under forced colors, so its dark
 test('a switched-on rule checkbox keeps a visible mark under forced colors', () => {
   const block = forcedColorsBlock(readCss('ModeSelectScreen.css'))
 
-  expect(block).toMatch(/\.rule\.on \.checkbox::after[^{}]*\{[^}]*background:\s*CanvasText/)
+  expect(block).toMatch(/\.mode-rule\.on \.mode-checkbox::after[^{}]*\{[^}]*background:\s*CanvasText/)
 })

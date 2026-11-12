@@ -72,8 +72,8 @@ test('a modal\'s actions are an even row 12px apart, each button taking an equal
 const INK_MUTED_MIX = 'color-mix(in srgb, var(--ink) 75%, transparent)'
 
 test('a mouse click on a rule row or segmented button leaves no focus ring: only dialog buttons use bare :focus', () => {
-  expect(tokensCss).not.toMatch(/\.rule:focus(?!-)/)
-  expect(tokensCss).not.toMatch(/\.segmented button:focus(?!-)/)
+  expect(tokensCss).not.toMatch(/\.mode-rule:focus(?!-)/)
+  expect(tokensCss).not.toMatch(/\.mode-segmented button:focus(?!-)/)
   expect(ruleFor(tokensCss, 'button:focus-visible')).toMatch(/outline:\s*2px solid var\(--ink\)/)
 })
 

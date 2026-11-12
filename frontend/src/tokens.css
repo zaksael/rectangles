@@ -45,8 +45,8 @@ body {
 /* Radius: flat everywhere; circular is reserved for status dots and swatches. */
 
 .btn,
-.checkbox,
-.segmented {
+.mode-checkbox,
+.mode-segmented {
   border-radius: 0;
 }
 
@@ -155,7 +155,7 @@ dialog button:focus {
 }
 
 .btn:disabled,
-.segmented button:disabled {
+.mode-segmented button:disabled {
   /* One rule that works across every variant regardless of its base color. */
   opacity: 0.55;
   cursor: default;
