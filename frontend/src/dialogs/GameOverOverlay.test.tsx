@@ -229,6 +229,17 @@ test('a held n (auto-repeat) never starts a new game, even after the guard windo
   expect(handlers.onNewGame).not.toHaveBeenCalled()
 })
 
+test('a held v or r (auto-repeat) does not toggle the board or open the replay', () => {
+  const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn(), onReplay: vi.fn() }
+  const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
+
+  fireEvent.keyDown(dialog, { key: 'v', repeat: true })
+  fireEvent.keyDown(dialog, { key: 'r', repeat: true })
+
+  expect(handlers.onViewBoard).not.toHaveBeenCalled()
+  expect(handlers.onReplay).not.toHaveBeenCalled()
+})
+
 test('a browser combo such as Ctrl+N is left alone on the overlay', () => {
   const handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }
   const dialog = renderOver({ winner: 1, area: [158, 141] }, undefined, handlers)
