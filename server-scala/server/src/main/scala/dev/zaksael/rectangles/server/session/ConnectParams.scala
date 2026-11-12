@@ -13,6 +13,7 @@ final case class Connect(
     rules: Rules,
     bot: Option[BotDifficulty],
     seriesLength: Option[Int] = None,
+    heartbeat: Boolean = false,
 )
 
 object ConnectParams:
@@ -45,6 +46,7 @@ object ConnectParams:
       "botSeats",
       "botDifficulty",
       "seriesLength",
+      "heartbeat",
     ) ++ ruleFlags.keySet
 
   /** True when the connect names a whole protocol version other than this server's. */
@@ -65,6 +67,8 @@ object ConnectParams:
       seriesLength <- params.get("seriesLength").fold(Option(Option.empty[Int]))(length =>
         length.toIntOption.filter(Constants.SERIES_LENGTH_PRESETS.contains).map(Some(_))
       )
+      heartbeat <-
+        params.get("heartbeat").fold(Option(false))(Map("true" -> true, "false" -> false).get)
       difficulty <- params.get("botDifficulty").fold(Option(BotDifficulty.Basic))(name =>
         BotDifficulty.values.find(wireName(_) == name)
       )
@@ -77,7 +81,12 @@ object ConnectParams:
               case _                    => None
           )
       }
-    yield Connect(rules, Option.when(params.contains("botSeats"))(difficulty), seriesLength)
+    yield Connect(
+      rules,
+      Option.when(params.contains("botSeats"))(difficulty),
+      seriesLength,
+      heartbeat,
+    )
 
   /** A new game for `rules`; a coin flip from `dice` says who moves first. */
   def start(rules: Rules, dice: Dice): Play =

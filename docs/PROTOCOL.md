@@ -14,11 +14,12 @@ How a client talks to the server: connect parameters, the messages each side sen
 | `seriesLength` | `3`, `5` | none (a single game) |
 | `botSeats` | `2` (the bot takes Player 2) | no bot |
 | `botDifficulty` | `Basic`, `Greedy`, `Blocking`; used only with `botSeats` | `Basic` |
+| `heartbeat` | `true` or `false` | `false` |
 | `prizeEnabled`, `pitfallEnabled`, `stealEnabled`, `wallsEnabled`, `obstaclesEnabled`, `selfEnclosedPenaltyEnabled`, `wildcardEnabled`, `rerollEnabled`, `comebackNudgeEnabled` | `true` or `false` | `false` |
 
 The server answers `403` and does not upgrade when a parameter is unknown or given twice, a value is not allowed, or the page's `Origin` is a different host and port than the server's (compared ignoring letter case; no `Origin`, as from a script, is accepted). A connect whose `protocolVersion` is a whole number other than `1` (a page cached across a server upgrade) is upgraded, gets one `protocolVersionMismatch` error and is closed, so the client can say the page is out of date; with a different `Origin` it is still refused with `403`. A single game starts with a coin flip for the first player; round 1 of a series is started by Player 1.
 
-The server sends a ping every 20 seconds so idle connections stay open.
+The server sends a ping every 20 seconds so idle connections stay open. Page code cannot see ping frames, so a connection with `heartbeat=true` also gets a `heartbeat` message at the same time; a page that hears nothing for much longer than 20 seconds knows the link is dead.
 
 ## Messages
 
@@ -44,6 +45,7 @@ Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`.
 | `state` | `game`, `series` (`null` outside a series) | after connect and after every accepted action |
 | `analysis` | `turns` | answer to `requestAnalysis` |
 | `error` | `reason`, `message` | an action was refused; the game is unchanged |
+| `heartbeat` | — | every 20 seconds, only on a connection that asked with `heartbeat=true` |
 
 With a bot, the answer to an action is one `state` per step, in order: the human's action, then each roll, reroll, wildcard choice, placement or skip the bot makes until it is the human's turn again. A bot that moves first sends its steps right after connect. The last `state` is the current one.
 

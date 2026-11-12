@@ -39,6 +39,16 @@ class ConnectParamsSpec extends AnyFlatSpec with Matchers with OptionValues with
     ConnectParams.parse(vanilla).map(_.seriesLength) shouldBe Some(None)
   }
 
+  "a connect that asks for heartbeats" should "have them on, and off when it does not ask" in {
+    ConnectParams.parse(vanilla + ("heartbeat" -> "true")).map(_.heartbeat) shouldBe Some(true)
+    ConnectParams.parse(vanilla).map(_.heartbeat) shouldBe Some(false)
+  }
+
+  "a connect with a heartbeat value that is not true or false" should "be refused" in {
+    ConnectParams.parse(vanilla + ("heartbeat" -> "yes")) shouldBe None
+    ConnectParams.parse(vanilla + ("heartbeat" -> "false")).map(_.heartbeat) shouldBe Some(false)
+  }
+
   private def botOf(params: Map[String, String]): Option[Option[BotDifficulty]] =
     ConnectParams.parse(params).map(_.bot)
 

@@ -23,6 +23,7 @@ import org.typelevel.ci.CIString
 import dev.zaksael.rectangles.rules.SplitMix64
 import dev.zaksael.rectangles.server.protocol.ErrorMsg
 import dev.zaksael.rectangles.server.protocol.ErrorReason
+import dev.zaksael.rectangles.server.protocol.HeartbeatMsg
 import dev.zaksael.rectangles.server.session.Connect
 import dev.zaksael.rectangles.server.session.ConnectParams
 import dev.zaksael.rectangles.server.session.GameSession
@@ -98,7 +99,16 @@ object WsRoutes:
             socket <- ws.build(
               Stream
                 .fromQueueNoneTerminated(outbox)
-                .mergeHaltL(Stream.awakeEvery[IO](keepAlive).as(WebSocketFrame.Ping())),
+                .mergeHaltL(
+                  Stream.awakeEvery[IO](keepAlive).flatMap(_ =>
+                    Stream.emits(
+                      WebSocketFrame.Ping() +:
+                        Option.when(connect.heartbeat)(
+                          WebSocketFrame.Text(HeartbeatMsg.toJson.noSpaces)
+                        ).toList
+                    )
+                  )
+                ),
               // Ember runs this pipe only after the 101, so a request that never upgrades is not counted.
               incoming =>
                 Stream

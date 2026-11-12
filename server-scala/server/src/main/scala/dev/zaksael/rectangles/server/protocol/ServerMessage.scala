@@ -29,3 +29,13 @@ final case class AnalysisMsg(turns: Json):
     "type"            -> Json.fromString("analysis"),
     "turns"           -> turns,
   )
+
+/**
+ * Sent each keep-alive period to a connection that asked for it, so a page can tell silence from a
+ * dead link.
+ */
+object HeartbeatMsg:
+  def toJson: Json = Json.obj(
+    "protocolVersion" -> Json.fromInt(Protocol.Version),
+    "type"            -> Json.fromString("heartbeat"),
+  )

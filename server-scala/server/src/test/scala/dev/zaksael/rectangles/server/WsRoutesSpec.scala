@@ -353,6 +353,29 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       finally client.close()
     }
 
+  "a client that asks for heartbeats" should "get a heartbeat message each keep-alive period" in
+    TestServer.use(ws => WsRoutes.routes(ws, playerOneStarts, keepAlive = 200.millis).orNotFound) {
+      port =>
+        val client = WsTestClient.connect(port, s"$vanilla&heartbeat=true").value
+        try
+          client.next()
+          val beat = client.next()
+          beat.hcursor.get[String]("type").value shouldBe "heartbeat"
+          beat.hcursor.get[Int]("protocolVersion").value shouldBe 1
+        finally client.close()
+    }
+
+  "a client that does not ask for heartbeats" should "get none, so its next reply answers what it sent" in
+    TestServer.use(ws => WsRoutes.routes(ws, playerOneStarts, keepAlive = 200.millis).orNotFound) {
+      port =>
+        val client = WsTestClient.connect(port, vanilla).value
+        try
+          client.next()
+          Thread.sleep(700)
+          say(client, action("roll")).hcursor.get[String]("type").value shouldBe "state"
+        finally client.close()
+    }
+
   "a message far larger than any real one" should "close the connection (Ember drops it past its fragment limit)" in
     connected() { client =>
       client.next()
