@@ -241,6 +241,37 @@ describe('App', () => {
     expect(socket.sent.some((frame) => JSON.stringify(frame).includes('skip'))).toBe(false)
   })
 
+  it('an auto-skip waits while the narrow-window notice shows, and restarts when the window is widened', () => {
+    vi.useFakeTimers()
+    render(<App />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+    const socket = FakeWebSocket.instances.at(-1)!
+    act(() => socket.emit('open'))
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1100 })
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+    act(() => {
+      socket.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({ turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [1, 1], legalPlacements: [] } }),
+        series: null,
+      })
+    })
+
+    act(() => vi.advanceTimersByTime(10_000))
+    expect(socket.sent.some((frame) => JSON.stringify(frame).includes('skip'))).toBe(false)
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1400 })
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+    act(() => vi.advanceTimersByTime(10_000))
+    expect(socket.sent.some((frame) => JSON.stringify(frame).includes('skip'))).toBe(true)
+  })
+
   it('dismisses an open Menu overlay once the connection-lost modal appears', () => {
     render(<App />)
     startGameAndOpen()

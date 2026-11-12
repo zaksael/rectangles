@@ -8,6 +8,7 @@ import { BOT_SPEEDS, loadBotSpeed, saveBotSpeed } from './game/botSpeed'
 import { SettingsOverlay } from './dialogs/SettingsOverlay'
 import { botName, useGameSocket } from './hooks/useGameSocket'
 import { useShiftHeld } from './hooks/useShiftHeld'
+import { useNarrowWindow } from './hooks/useNarrowWindow'
 
 type Screen = 'MODE_SELECT' | 'PLAYING' | 'REPLAY'
 
@@ -26,6 +27,7 @@ const IDLE_CONNECT_PARAMS: Pick<StartGameParams, 'botSeats' | 'botDifficulty'> &
 function App() {
   const [screen, setScreen] = useState<Screen>('MODE_SELECT')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const { narrow } = useNarrowWindow()
   // Back from Replay shows the card Replay was opened from; only the series card differs from the default.
   const [replayFromSeriesResult, setReplayFromSeriesResult] = useState(false)
   // Kept here, not in Replay, so it survives leaving and reopening the screen.
@@ -88,7 +90,7 @@ function App() {
           error={gameSocket.error}
           sendAction={gameSocket.sendAction}
           onOpenSettings={() => setSettingsOpen(true)}
-          paused={settingsOpen}
+          paused={settingsOpen || narrow}
           onNewGame={handleNewGame}
           onReplay={(fromSeriesResult) => {
             setReplayFromSeriesResult(fromSeriesResult)
