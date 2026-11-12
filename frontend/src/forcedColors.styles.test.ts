@@ -3,12 +3,13 @@ import { readCss, ruleFor, tokensCss } from './dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 
-test('the board, player dots and swatches, and the game-over outcome rule keep their colours under forced colors (they are backgrounds that mode would drop)', () => {
+test('the board, player dots and swatches, the game-over outcome rule and the Replay score chart keep their colours under forced colors (backgrounds that mode would drop, and lines it would recolour)', () => {
   const board = ruleFor(readCss('Board.css'), '.board')
   const dots = ruleFor(tokensCss, '.dot,\n.swatch')
   const outcome = ruleFor(css, 'dialog.game-over::before')
+  const chart = ruleFor(readCss('ReplayScreen.css'), '.replay .chart')
 
-  for (const rule of [board, dots, outcome]) expect(rule).toMatch(/forced-color-adjust:\s*none/)
+  for (const rule of [board, dots, outcome, chart]) expect(rule).toMatch(/forced-color-adjust:\s*none/)
 })
 
 // A selected control is a background fill, which forced colors replaces with Canvas, so it must name system colours there.
@@ -34,6 +35,13 @@ test.each([
 
   expect(rule?.[1] ?? '').toMatch(/background:\s*Highlight/)
   expect(rule?.[1] ?? '').toMatch(/color:\s*HighlightText/)
+})
+
+test('the score chart sits on the ledger colour under forced colors, so its dark ink stays readable on a dark theme', () => {
+  const block = forcedColorsBlock(readCss('ReplayScreen.css'))
+  const rule = block.match(/\.replay \.chart\s*\{([^}]*)\}/)
+
+  expect(rule?.[1] ?? '').toMatch(/background:\s*var\(--ledger\)/)
 })
 
 test('a switched-on rule checkbox keeps a visible mark under forced colors', () => {

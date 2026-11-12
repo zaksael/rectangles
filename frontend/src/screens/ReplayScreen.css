@@ -214,6 +214,7 @@
 
 .replay .chart {
   display: block;
+  forced-color-adjust: none; /* the two players' lines are told apart by colour; forced colors would paint both the same */
 }
 
 .replay .chart-head {
@@ -347,5 +348,10 @@
   .replay .analysis-row .btn[aria-pressed='true'] {
     background: Highlight;
     color: HighlightText;
+  }
+
+  /* The chart keeps its own colours (above), so it brings the light page colour its dark ink was drawn on. */
+  .replay .chart {
+    background: var(--ledger);
   }
 }
