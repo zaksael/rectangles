@@ -2,7 +2,14 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, ScoreParts } from '../game/gameTypes'
 import { makeGame, makeHistoryEntry, makeSeries, reach } from '../dev/fixtures/gameFixtures'
+import { Board } from '../components/Board'
 import { ReplayScreen } from './ReplayScreen'
+
+// Spies on Board's props; the real Board still renders.
+vi.mock('../components/Board', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../components/Board')>()
+  return { ...original, Board: vi.fn(original.Board) }
+})
 
 afterEach(() => {
   cleanup()
@@ -502,6 +509,15 @@ test('pausing autoplay before the first step announces the start of the game, no
   click('Pause')
 
   expect(screen.getByTestId('replay-paused')).toHaveTextContent('Paused at the start of the game')
+})
+
+test('changing the speed re-renders the board with the same game object, so its memoised layers hold', () => {
+  renderPlaying()
+  const boardGame = () => vi.mocked(Board).mock.lastCall![0].game
+  const before = boardGame()
+  click('Slow')
+
+  expect(boardGame()).toBe(before)
 })
 
 test('autoplay reaching the last turn announces where it stopped', () => {

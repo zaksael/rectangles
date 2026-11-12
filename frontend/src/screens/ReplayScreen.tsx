@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { Board } from '../components/Board'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts, SeriesWireState } from '../game/gameTypes'
 import { noBreak } from '../game/noBreak'
@@ -18,6 +18,9 @@ function gameAt(game: GameWireState, history: HistoryEntry[], step: number): Gam
   const player = (id: 1 | 2) => ({ ...game.players[id], board: { ...game.players[id].board, pieces: piecesOf(id) } })
   return { ...game, players: { '1': player(1), '2': player(2) } }
 }
+
+// One shared empty list, so the memoised board below does not rebuild every render when a game carries no history.
+const NO_HISTORY: HistoryEntry[] = []
 
 const rollText = (roll: [number, number]) => roll.join(', ')
 
@@ -205,7 +208,7 @@ interface ReplayScreenProps {
 }
 
 export function ReplayScreen({ game, series = null, onBack, analysis = null, showBetterOption = false, onToggleBetterOption = () => {}, connectionLost = false, onNewGame = () => {} }: ReplayScreenProps) {
-  const history = game.gameOver.history ?? []
+  const history = game.gameOver.history ?? NO_HISTORY
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
   // True from the moment autoplay stops until it starts again or a step is taken by hand: the caption is silent while it runs, so the turn is read out once on the stop.
@@ -214,6 +217,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   const { narrow } = useNarrowWindow()
   if (narrow && playing) setPlaying(false)
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(SPEEDS[1])
+  const boardGame = useMemo(() => gameAt(game, history, step), [game, history, step])
   const lastPlaced = history[step - 1]?.placed?.topLeft ?? null
   const atEnd = step === history.length
   const atStart = step === 0
@@ -283,7 +287,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   return (
     <main className="replay">
       <div className="board-wrap">
-        <Board game={gameAt(game, history, step)} lastPlaced={lastPlaced} betterOption={showBetterOption ? flaggedTurn : null} />
+        <Board game={boardGame} lastPlaced={lastPlaced} betterOption={showBetterOption ? flaggedTurn : null} />
       </div>
       <aside className="rail" aria-label="Replay controls">
         <div className="rail-head">
