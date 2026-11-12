@@ -27,8 +27,11 @@ test('below 1320px the screen gives way to the notice, naming the minimum and th
   expect(screen.getByRole('status')).toHaveTextContent('Window too narrow')
   expect(screen.getByRole('heading', { name: 'Widen the Window' })).toBeTruthy()
   expect(screen.getByRole('status')).toHaveTextContent(
-    'Playing needs a window at least 1320px wide, and yours is 1024px. Widen it to carry on: your game is paused where it was and nothing is lost.',
+    'Playing needs a window at least 1320px wide. Widen it to carry on: your game is paused where it was and nothing is lost.',
   )
+  // The live width sits outside the status, so a resize does not make a screen reader read the notice again.
+  expect(screen.getByRole('status')).not.toHaveTextContent('1024')
+  expect(screen.getByText('Your window is 1024px wide.')).not.toBeNull()
   expect(screen.queryByRole('button', { name: 'count 0' })).toBeNull() // hidden from the accessibility tree and the eye
   expect(screen.getByText('count 0', { selector: 'button' })).not.toBeVisible()
 })
@@ -43,7 +46,7 @@ test('at exactly 1320px the screen shows and there is no notice', () => {
   expect(screen.queryByRole('status')).toBeNull()
   expect(screen.getByRole('button', { name: 'count 0' })).toBeVisible()
   setWidth(1319)
-  expect(screen.getByRole('status')).toHaveTextContent('yours is 1319px')
+  expect(screen.getByText('Your window is 1319px wide.')).not.toBeNull()
 })
 
 test('the notice follows the window as it is resized, and Replay has its own advice', () => {
@@ -54,10 +57,11 @@ test('the notice follows the window as it is resized, and Replay has its own adv
     </NarrowWindowGate>,
   )
   expect(screen.getByRole('status')).toHaveTextContent(
-    'Replay needs a window at least 1320px wide, and yours is 1180px. Widen it to watch the replay: it stays on the turn you were on.',
+    'Replay needs a window at least 1320px wide. Widen it to watch the replay: it stays on the turn you were on.',
   )
+  expect(screen.getByText('Your window is 1180px wide.')).not.toBeNull()
   setWidth(1250)
-  expect(screen.getByRole('status')).toHaveTextContent('yours is 1250px')
+  expect(screen.getByText('Your window is 1250px wide.')).not.toBeNull()
   setWidth(1320)
   expect(screen.queryByRole('status')).toBeNull()
 })

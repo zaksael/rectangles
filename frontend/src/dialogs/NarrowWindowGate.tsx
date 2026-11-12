@@ -22,11 +22,14 @@ export function NarrowWindowGate({ screen, children }: { screen: keyof typeof AD
     <>
       <div hidden={narrow}>{children}</div>
       {narrow && (
-        <div className="narrow-notice" role="status">
+        <div className="narrow-notice">
           <div className="narrow-notice-body">
-            <div className="narrow-notice-reason">Window too narrow</div>
-            <h1 className="title narrow-notice-title">Widen the Window</h1>
-            <p className="narrow-notice-text">{`${screen} needs a window at least ${MIN_WINDOW_WIDTH}px wide, and yours is ${width}px. ${ADVICE[screen]}`}</p>
+            <div role="status">
+              <div className="narrow-notice-reason">Window too narrow</div>
+              <h1 className="title narrow-notice-title">Widen the Window</h1>
+              <p className="narrow-notice-text">{`${screen} needs a window at least ${MIN_WINDOW_WIDTH}px wide. ${ADVICE[screen]}`}</p>
+            </div>
+            <p className="narrow-notice-text">{`Your window is ${width}px wide.`}</p>
           </div>
         </div>
       )}

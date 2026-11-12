@@ -33,6 +33,10 @@
   margin: 0;
 }
 
+[role='status'] + .narrow-notice-text {
+  margin-top: 8px;
+}
+
 /* The render error card reuses the notice and adds one action under the text. */
 .narrow-notice-actions {
   margin-top: 20px;
