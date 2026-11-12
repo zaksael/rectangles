@@ -17,7 +17,7 @@ function midGame(): GameWireState {
       ...base.houseRules,
       reroll: { enabled: true, canReroll: false },
       comebackNudge: { enabled: true },
-      obstacles: { enabled: true, cells: [[4, 4]] },
+      obstacles: { enabled: true, cells: [[5, 4]] },
       prize: { enabled: true, cells: [[4, 5]], points: 5 },
       pitfall: { enabled: true, cells: [[6, 3]], points: 3 },
       steal: { enabled: true, cells: [[2, 7]], points: 4 },
@@ -60,7 +60,7 @@ export const FIXTURE_ANALYSIS: Analysis = {
   status: 'ready',
   turns: [
     { turn: 2, axis: 'denial', chosen: 6, best: 9, topLeft: [6, 8], width: 2, height: 4 },
-    { turn: 3, axis: 'prize', chosen: 0, best: 5, topLeft: [4, 5], width: 2, height: 3 },
+    { turn: 3, axis: 'prize', chosen: 0, best: 5, topLeft: [3, 3], width: 3, height: 2 },
   ],
 }
 

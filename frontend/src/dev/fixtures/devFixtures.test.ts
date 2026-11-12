@@ -70,6 +70,28 @@ describe('buildFixture', () => {
     expect(turns.map((t) => shape(t.width, t.height))).toEqual(turns.map((t) => shape(...history[t.turn - 1]!.roll)))
   })
 
+  it('the canned Prize suggestion is a placement the mover could make: it covers a Prize cell, avoids obstacles and earlier pieces, and shares an edge with the mover\'s own piece', () => {
+    const { game } = buildFixture('gameover')!
+    const history = game.gameOver.history!
+    const turns = FIXTURE_ANALYSIS.status === 'ready' ? FIXTURE_ANALYSIS.turns.filter((t) => t.axis === 'prize') : []
+    const cells = (top: number, left: number, width: number, height: number) =>
+      Array.from({ length: width * height }, (_, i): [number, number] => [top + Math.floor(i / width), left + (i % width)])
+    const key = ([r, c]: [number, number]) => `${r},${c}`
+
+    expect(turns.length).toBeGreaterThan(0)
+    for (const t of turns) {
+      const before = history.slice(0, t.turn - 1).flatMap((e) => (e.placed ? [{ owner: e.playerId, ...e.placed }] : []))
+      const taken = new Set(before.flatMap((p) => cells(p.topLeft[0], p.topLeft[1], p.width, p.height).map(key)))
+      const mine = new Set(before.filter((p) => p.owner === history[t.turn - 1]!.playerId).flatMap((p) => cells(p.topLeft[0], p.topLeft[1], p.width, p.height).map(key)))
+      const move = cells(t.topLeft[0], t.topLeft[1], t.width, t.height)
+
+      expect(move.some((c) => game.houseRules.prize.cells.some((p) => key(p) === key(c)))).toBe(true)
+      expect(move.some((c) => game.houseRules.obstacles.cells.some((o) => key(o) === key(c)))).toBe(false)
+      expect(move.some((c) => taken.has(key(c)))).toBe(false)
+      expect(move.some(([r, c]) => [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some((n) => mine.has(`${n[0]},${n[1]}`)))).toBe(true)
+    }
+  })
+
   it('series: an incomplete series on a finished round', () => {
     const state = buildFixture('series')
     expect(state?.game.turn.turnState).toBe('gameOver')
