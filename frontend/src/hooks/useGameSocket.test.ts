@@ -183,6 +183,29 @@ test('a state frame without a usable game surfaces a malformedMessage error and 
   expect(result.current.state).toBeNull()
 })
 
+test('an analysis frame without a turns list surfaces a malformedMessage error and sets no analysis', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  expect(() => act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'analysis' }))).not.toThrow()
+
+  expect(result.current.error?.reason).toBe('malformedMessage')
+  expect(result.current.analysis).toBeNull()
+})
+
+test('an error frame without a text reason and message surfaces malformedMessage, not an error with undefined fields', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  onTestFinished(() => void vi.restoreAllMocks())
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'error' }))
+
+  expect(result.current.error?.reason).toBe('malformedMessage')
+})
+
 test('a frame of a type this client does not know surfaces a malformedMessage error', () => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
   onTestFinished(() => void vi.restoreAllMocks())

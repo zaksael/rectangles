@@ -230,9 +230,9 @@ export function useGameSocket(params: GameSocketParams) {
         if (drainTimeoutRef.current === null) {
           drainNext()
         }
-      } else if (data.type === 'analysis') {
+      } else if (data.type === 'analysis' && Array.isArray(data.turns)) {
         enqueueUnpaced({ kind: 'analysis', turns: data.turns })
-      } else if (data.type === 'error') {
+      } else if (data.type === 'error' && typeof data.reason === 'string' && typeof data.message === 'string') {
         enqueueUnpaced({ kind: 'error', error: { reason: data.reason, message: data.message } })
       } else {
         reject(data)
