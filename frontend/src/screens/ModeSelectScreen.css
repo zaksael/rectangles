@@ -193,6 +193,21 @@
   color: var(--ink);
 }
 
+dialog.mode-reset-confirm {
+  width: 400px;
+  padding: 24px;
+}
+.mode-reset-confirm h2 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.mode-reset-confirm p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+  margin: 0 0 24px;
+}
+
 .mode-config {
   border: 1px solid var(--line);
   padding: 16px;

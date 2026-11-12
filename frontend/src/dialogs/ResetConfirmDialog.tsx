@@ -11,7 +11,7 @@ export function ResetConfirmDialog({ onCancel, onConfirm }: ResetConfirmDialogPr
   return (
     // Suppress the native auto-close so Escape routes through the same onCancel as the button.
     <dialog
-      className="modal reset-confirm"
+      className="modal mode-reset-confirm"
       ref={dialogRef}
       aria-labelledby="reset-title"
       onCancel={(e) => {

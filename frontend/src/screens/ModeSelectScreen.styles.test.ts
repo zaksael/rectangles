@@ -113,3 +113,8 @@ test('the difficulty strength pips take the pill’s own colour, filled up to th
   expect(ruleFor(css, '.mode-pill-scale i.on')).toMatch(/background:\s*currentColor/)
   expect(ruleFor(css, '.mode-pill-scale i')).toMatch(/forced-color-adjust:\s*none/)
 })
+
+test('the Reset dialog’s width and text styles live in Mode Select’s sheet, not Playing’s', () => {
+  expect(css).toMatch(/dialog\.mode-reset-confirm \{[^}]*width:\s*400px/)
+  expect(readCss('PlayingScreen.css')).not.toContain('reset-confirm')
+})
