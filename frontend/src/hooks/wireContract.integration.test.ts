@@ -3,7 +3,7 @@ import { WebSocket as NodeWebSocket } from 'ws'
 import { makeGame, makeSeries, reach } from '../dev/fixtures/gameFixtures'
 import { startServer } from '../dev/testUtils/realServer'
 import { shapeDiff } from '../dev/testUtils/shapeDiff'
-import type { AnalysisTurn, GameAction, HistoryEntry, RecentTurn } from '../game/gameTypes'
+import type { AnalysisTurn, GameAction, GameWireState, HistoryEntry, PieceState, RecentTurn } from '../game/gameTypes'
 
 // The real server's payloads, key for key, against typed exemplars: tsc keeps each exemplar identical to the TS wire types, so a
 // renamed, dropped or added server key (or a TS type that drifted) fails here. Values are not compared, only the key structure.
@@ -61,6 +61,21 @@ async function play(client: Awaited<ReturnType<typeof connect>>, state: any, mov
   return state
 }
 
+// Rolls (and picks a wildcard value, or skips a dead roll) until the turn offers a placement.
+async function untilPlacement(client: Awaited<ReturnType<typeof connect>>, state: any) {
+  for (let step = 0; step < 20 && state.game.turn.turnState !== 'choosingPlacement'; step++) {
+    const { turnState } = state.game.turn
+    state = await client.act(
+      turnState === 'awaitingRoll'
+        ? { type: 'roll' }
+        : turnState === 'choosingWildcard'
+          ? { type: 'chooseWildcard', value: state.game.houseRules.wildcard.legalValues[0] }
+          : { type: 'skip' },
+    )
+  }
+  return state
+}
+
 const ENTRY: HistoryEntry = {
   playerId: 1,
   roll: [2, 3],
@@ -77,22 +92,31 @@ const { potential: _potential, ...ENTRY_FIELDS } = ENTRY
 const RECENT: RecentTurn = { ...ENTRY_FIELDS, turn: 1, points: 0 }
 const ANALYSIS_TURN: AnalysisTurn = { turn: 1, axis: 'prize', chosen: 0, best: 1, topLeft: [0, 0], width: 1, height: 1 }
 
+const PIECE: PieceState = { topLeft: [0, 0], width: 1, height: 1, owner: 1 }
+const LEGAL: GameWireState['turn']['legalPlacements'][number] = { width: 1, height: 1, topLefts: [[0, 0]] }
+
 // An exemplar state message: makeGame's keys, with entries (empty lists and nulls stop the comparison) filled in.
-const stateMessage = (over = false) => ({
-  protocolVersion: 1,
-  type: 'state',
-  game: makeGame({
-    turn: { ...makeGame().turn, recentTurns: [RECENT] },
-    gameOver: { reason: null, playerId: null, winner: null, history: over ? [ENTRY] : null },
-  }),
-  series: makeSeries(),
-})
+const stateMessage = (over = false) => {
+  const { '1': one, '2': two } = makeGame().players
+  return {
+    protocolVersion: 1,
+    type: 'state',
+    game: makeGame({
+      turn: { ...makeGame().turn, legalPlacements: [LEGAL], recentTurns: [RECENT] },
+      players: { '1': { ...one, board: { ...one.board, pieces: [PIECE] } }, '2': { ...two, board: { ...two.board, pieces: [PIECE] } } },
+      gameOver: { reason: null, playerId: null, winner: null, history: over ? [ENTRY] : null },
+    }),
+    series: makeSeries(),
+  }
+}
 
 test('a mid-game state with every rule on has the keys the TS wire types describe', async () => {
   const client = await connect(`seriesLength=3&${ALL_RULES}`)
-  const state = await play(client, await client.first, 3)
+  const state = await untilPlacement(client, await play(client, await client.first, 3))
 
   expect(state.game.turn.recentTurns.length).toBeGreaterThan(0) // the moves were played, so the entries below were compared
+  expect(state.game.turn.legalPlacements.length).toBeGreaterThan(0) // a placement is on offer, so its keys were compared
+  for (const id of ['1', '2']) expect(state.game.players[id].board.pieces.length, `player ${id} has a piece`).toBeGreaterThan(0)
   expect(shapeDiff(state, stateMessage())).toEqual([])
   for (const turn of state.game.turn.recentTurns) expect(shapeDiff(turn, RECENT), `recentTurns[${turn.turn}]`).toEqual([])
   client.close()
