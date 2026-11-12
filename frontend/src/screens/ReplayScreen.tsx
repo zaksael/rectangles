@@ -304,7 +304,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
         )}
         <ScoreTable game={game} history={history} step={step} />
         <Caption game={game} history={history} step={step} playing={playing} />
-        <p className="visually-hidden" data-testid="replay-paused" aria-live="polite">{justPaused ? `Paused on turn ${step} of ${history.length}` : ''}</p>
+        <p className="visually-hidden" data-testid="replay-paused" aria-live="polite">{justPaused ? (atStart ? 'Paused at the start of the game' : `Paused on turn ${step} of ${history.length}`) : ''}</p>
         {analysis && (
           <div className="analysis-slot" aria-live={playing ? 'off' : 'polite'}>
             <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} showBetterOption={showBetterOption} onToggleBetterOption={onToggleBetterOption} />

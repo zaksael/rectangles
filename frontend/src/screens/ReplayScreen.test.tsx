@@ -496,6 +496,14 @@ test('pausing autoplay announces the turn it stopped on, and the announcement is
   expect(announcement()).toHaveTextContent('Paused on turn 1 of 3')
 })
 
+test('pausing autoplay before the first step announces the start of the game, not turn 0', () => {
+  renderPlaying()
+  click('Play')
+  click('Pause')
+
+  expect(screen.getByTestId('replay-paused')).toHaveTextContent('Paused at the start of the game')
+})
+
 test('autoplay reaching the last turn announces where it stopped', () => {
   renderPlaying()
   click('Play')
