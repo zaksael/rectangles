@@ -352,6 +352,56 @@ test.each<[GameAction, unknown]>([
   expect(FakeWebSocket.instances[0]!.sent).toEqual([expected])
 })
 
+test('a second place sent before the server has answered the first is not sent', () => {
+  const place: GameAction = { type: 'place', topLeft: [2, 3], width: 4, height: 5 }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => {
+    result.current.sendAction(place)
+    result.current.sendAction(place)
+  })
+
+  expect(FakeWebSocket.instances[0]!.sent).toHaveLength(1)
+})
+
+test('a place is sent again once the server has answered the last one with a state', () => {
+  const place: GameAction = { type: 'place', topLeft: [2, 3], width: 4, height: 5 }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  act(() => result.current.sendAction(place))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'state', game: fakeGame, series: null }))
+  act(() => result.current.sendAction(place))
+
+  expect(FakeWebSocket.instances[0]!.sent).toHaveLength(2)
+})
+
+test('a place is sent again once the server has refused the last one', () => {
+  const place: GameAction = { type: 'place', topLeft: [2, 3], width: 4, height: 5 }
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  act(() => result.current.sendAction(place))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'error', reason: 'illegalPlacement', message: 'x' }))
+  act(() => result.current.sendAction(place))
+
+  expect(FakeWebSocket.instances[0]!.sent).toHaveLength(2)
+})
+
+test('a place whose answer never came is sent again on a new connection', () => {
+  const place: GameAction = { type: 'place', topLeft: [2, 3], width: 4, height: 5 }
+  const { result, rerender } = renderHook(({ connectionId }) => useGameSocket({ protocolVersion: 1, connectionId }), { initialProps: { connectionId: 1 } })
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  act(() => result.current.sendAction(place))
+
+  rerender({ connectionId: 2 })
+  act(() => FakeWebSocket.instances[1]!.emit('open'))
+  act(() => result.current.sendAction(place))
+
+  expect(FakeWebSocket.instances[1]!.sent).toHaveLength(1)
+})
+
 test('an error arriving behind a queued state shows only after that state has', () => {
   const secondGame: GameWireState = { ...fakeGame, turn: { ...fakeGame.turn, lastRoll: [3, 4] } }
   const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))

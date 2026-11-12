@@ -86,6 +86,7 @@ export function useGameSocket(params: GameSocketParams) {
   const socketRef = useRef<WebSocket | null>(null)
   const intentionalCloseRef = useRef(false)
   const hasOpenedRef = useRef(false)
+  const placeInFlightRef = useRef(false)
   const pacedQueueRef = useRef<Paced[]>([])
   const drainTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Read when each wait starts, so a change applies from the next one without a new connection.
@@ -172,6 +173,7 @@ export function useGameSocket(params: GameSocketParams) {
     const base = params.serverUrl ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
     const socket = new WebSocket(`${base}/ws?${query}`)
     socketRef.current = socket
+    placeInFlightRef.current = false
     // A handshake that never answers would leave Mode Select connecting for as long as the browser waits.
     const connectTimeout = setTimeout(() => {
       setStatus('connect-failed')
@@ -216,6 +218,8 @@ export function useGameSocket(params: GameSocketParams) {
         failPendingAnalysis()
         return
       }
+      // The server answers every place with a state or an error.
+      if (data.type === 'state' || data.type === 'error') placeInFlightRef.current = false
       if (data.type === 'state') {
         if (!isObject(data.game) || !isObject(data.game.players) || !isObject(data.game.turn) || !isObject(data.game.gameOver) || (data.series !== null && !isObject(data.series))) {
           reject(data)
@@ -257,6 +261,11 @@ export function useGameSocket(params: GameSocketParams) {
   }
 
   function sendAction(action: GameAction) {
+    if (action.type === 'place') {
+      // A double click or a held Enter would send a second place on the same roll, which the server refuses.
+      if (placeInFlightRef.current) return
+      placeInFlightRef.current = true
+    }
     socketRef.current?.send(JSON.stringify({ protocolVersion: params.protocolVersion, ...action }))
   }
 
