@@ -185,6 +185,8 @@ export function useGameSocket(params: GameSocketParams) {
       setStatus('open')
     })
     socket.addEventListener('close', () => {
+      // The refs below now belong to the newer connection, so this late close says nothing about it.
+      if (socketRef.current !== socket) return
       failPendingAnalysis()
       if (intentionalCloseRef.current) {
         setStatus('closed-intentional')

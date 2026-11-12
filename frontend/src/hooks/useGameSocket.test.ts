@@ -653,6 +653,20 @@ test('a fresh connection starts with no status again, until its socket opens', (
   expect(result.current.status).toBe('open')
 })
 
+test('a late close from the socket before this connection does not overwrite this connection\'s status', async () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0 },
+  })
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  rerender({ protocolVersion: 1, connectionId: 1 }) // the first socket is closed, but reports it a tick later
+  act(() => FakeWebSocket.instances[1]!.emit('open'))
+  expect(result.current.status).toBe('open')
+
+  await act(async () => {}) // the first socket's close arrives now
+  expect(result.current.status).toBe('open')
+})
+
 test('turning the connection off keeps the last game state and reads closed, so the board can still be shown', async () => {
   const { result, rerender } = renderHook((params) => useGameSocket(params), {
     initialProps: { protocolVersion: 1, connectionId: 0, enabled: true },
