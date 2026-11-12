@@ -11,7 +11,7 @@ test('the Total is the table\'s strongest figure', () => {
   const block = ruleFor(css, '.score-table tfoot td')
 
   expect(block).toMatch(/font-size:\s*20px/)
-  expect(block).toMatch(/font-weight:\s*600/)
+  expect(block).toMatch(/font-weight:\s*500/) // the only Plex Mono weight that is loaded, so the browser never fakes a bold
 })
 
 test('muted zeros stay AA (4.5:1) on the ledger', () => {
