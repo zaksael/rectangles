@@ -10,6 +10,11 @@ test('the rail buttons invert on hover only where there is a hover, and a disabl
   expect(css.replace(media, '')).not.toMatch(/\.btn:hover/)
 })
 
+test('the board shows its focus ring for keyboard focus only, so a mouse click leaves none behind', () => {
+  expect(ruleFor(css, '.board:focus-visible')).toMatch(/outline:\s*2px solid var\(--ink\)/)
+  expect(css).not.toMatch(/\.board:focus\s*\{/)
+})
+
 test('on touch screens the key hint is blanked by colour (also under forced colors), so its height stays reserved and the board keeps its description', () => {
   const block = css.match(/@media \(pointer: coarse\) \{\s*\.board-help \{([^}]*)\}/)![1]
 

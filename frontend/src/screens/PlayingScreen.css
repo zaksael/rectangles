@@ -754,7 +754,7 @@ dialog.settings {
   text-align: center;
 }
 
-.board:focus {
+.board:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: -2px; /* inside the board, so the surrounding frame can't clip it */
 }
