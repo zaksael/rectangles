@@ -365,7 +365,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
               <SegmentedField
                 id="games"
                 label="Games"
-                hint="1 game, or a best of 3 or 5"
+                hint="1 game, or a series of 3 or 5 rounds, most points wins"
                 options={GAMES_OPTIONS}
                 value={settings.seriesLength}
                 onChange={(seriesLength) => setSettings((s) => ({ ...s, seriesLength }))}

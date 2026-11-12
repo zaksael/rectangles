@@ -387,7 +387,7 @@ test('shows the Games picker with a single game selected by default', () => {
     ['3', 'false'],
     ['5', 'false'],
   ])
-  expect(gamesGroup()).toHaveAccessibleDescription('1 game, or a best of 3 or 5')
+  expect(gamesGroup()).toHaveAccessibleDescription('1 game, or a series of 3 or 5 rounds, most points wins')
 })
 
 test('a single game sends no seriesLength', () => {
