@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { placementReason } from '../../game/placementReason'
 import { buildFixture, FIXTURE_ANALYSIS, fixtureNameFromSearch } from './devFixtures'
 
 describe('buildFixture', () => {
@@ -10,11 +11,23 @@ describe('buildFixture', () => {
     expect(state?.game.houseRules.wildcard.legalValues.length).toBeGreaterThan(0)
   })
 
-  it('placing: a 2x2 roll to place, with a legal spot that covers the fixture\'s Prize cell', () => {
-    const state = buildFixture('placing')
-    expect(state?.game.turn.turnState).toBe('choosingPlacement')
-    expect(state?.game.turn.lastRoll).toEqual([2, 2])
-    expect(state?.game.turn.legalPlacements).toEqual([{ width: 2, height: 2, topLefts: [[0, 4], [4, 5]] }])
+  it('wildcard: the original roll is a double, the only roll that triggers a wildcard', () => {
+    const wildcard = buildFixture('wildcard')!.game.houseRules.wildcard
+    expect(wildcard.originalRoll![0]).toBe(wildcard.originalRoll![1])
+    expect(buildFixture('wildcard')!.game.turn.lastRoll).toEqual(wildcard.originalRoll)
+  })
+
+  it('placing: a 2x2 roll to place, and every offered spot is one the placement rules accept', () => {
+    const state = buildFixture('placing')!
+    expect(state.game.turn.turnState).toBe('choosingPlacement')
+    expect(state.game.turn.lastRoll).toEqual([2, 2])
+    expect(state.game.turn.currentPlayerId).toBe(1)
+    const [offer] = state.game.turn.legalPlacements
+    expect(offer).toMatchObject({ width: 2, height: 2 })
+    expect(offer!.topLefts.length).toBeGreaterThan(1)
+    for (const topLeft of offer!.topLefts) {
+      expect(placementReason(state.game, 1, topLeft, [2, 2])).toBeNull()
+    }
   })
 
   it('deadroll: a skipped turn with a roll and no legal placement', () => {
@@ -32,12 +45,29 @@ describe('buildFixture', () => {
     expect(state?.series).toBeNull()
   })
 
+  it('gameover: no turn reports more reachable cells than the 10x10 board has empty after it', () => {
+    const history = buildFixture('gameover')!.game.gameOver.history!
+    let filled = 0
+    for (const entry of history) {
+      filled += entry.placed ? entry.placed.width * entry.placed.height : 0
+      for (const id of ['1', '2'] as const) expect(entry.potential[id].area).toBeLessThanOrEqual(100 - filled)
+    }
+  })
+
   it('the canned analysis flags turns that exist in the gameover fixture\'s history', () => {
     const history = buildFixture('gameover')!.game.gameOver.history!
     const turns = FIXTURE_ANALYSIS.status === 'ready' ? FIXTURE_ANALYSIS.turns.map((t) => t.turn) : []
 
     expect(turns.length).toBeGreaterThan(0)
     expect(turns.every((turn) => history[turn - 1]?.placed)).toBe(true)
+  })
+
+  it('the canned analysis suggests the shape that was rolled, in either orientation', () => {
+    const history = buildFixture('gameover')!.game.gameOver.history!
+    const turns = FIXTURE_ANALYSIS.status === 'ready' ? FIXTURE_ANALYSIS.turns : []
+    const shape = (a: number, b: number) => [a, b].sort().join('x')
+
+    expect(turns.map((t) => shape(t.width, t.height))).toEqual(turns.map((t) => shape(...history[t.turn - 1]!.roll)))
   })
 
   it('series: an incomplete series on a finished round', () => {

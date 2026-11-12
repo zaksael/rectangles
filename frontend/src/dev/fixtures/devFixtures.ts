@@ -48,19 +48,19 @@ const move = (playerId: number, topLeft: [number, number], width: number, height
   potential: reach(...potential),
 })
 const HISTORY: HistoryEntry[] = [
-  move(1, [0, 0], 4, 3, [12, 0], [330, 337]),
-  move(2, [8, 6], 4, 2, [12, 8], [322, 322]),
-  move(1, [3, 0], 2, 3, [18, 8], [310, 316]),
-  move(2, [5, 8], 2, 3, [18, 14], [304, 304]),
-  { playerId: 1, roll: [6, 6], placed: null, wildcardOriginalRoll: null, score: { '1': 18, '2': 14 }, breakdown: { '1': area(18), '2': area(14) }, potential: reach(304, 304) },
+  move(1, [0, 0], 4, 3, [12, 0], [70, 76]),
+  move(2, [8, 6], 4, 2, [12, 8], [66, 66]),
+  move(1, [3, 0], 2, 3, [18, 8], [58, 62]),
+  move(2, [5, 8], 2, 3, [18, 14], [52, 52]),
+  { playerId: 1, roll: [6, 6], placed: null, wildcardOriginalRoll: null, score: { '1': 18, '2': 14 }, breakdown: { '1': area(18), '2': area(14) }, potential: reach(52, 52) },
 ]
 
 // Turns 2 and 3 of HISTORY had a better move: Player 2 denied less than it could have, then Player 1 missed the Prize.
 export const FIXTURE_ANALYSIS: Analysis = {
   status: 'ready',
   turns: [
-    { turn: 2, axis: 'denial', chosen: 6, best: 9, topLeft: [6, 6], width: 3, height: 2 },
-    { turn: 3, axis: 'prize', chosen: 0, best: 5, topLeft: [4, 5], width: 2, height: 2 },
+    { turn: 2, axis: 'denial', chosen: 6, best: 9, topLeft: [6, 8], width: 2, height: 4 },
+    { turn: 3, axis: 'prize', chosen: 0, best: 5, topLeft: [4, 5], width: 2, height: 3 },
   ],
 }
 
@@ -87,10 +87,10 @@ const BUILDERS: Record<string, () => GameState> = {
     return {
       game: {
         ...game,
-        turn: { ...game.turn, turnState: 'choosingWildcard', lastRoll: [3, 4] },
+        turn: { ...game.turn, turnState: 'choosingWildcard', lastRoll: [3, 3] },
         houseRules: {
           ...game.houseRules,
-          wildcard: { enabled: true, originalRoll: [3, 4], legalValues: [2, 3, 4, 5], editableIndex: 0 },
+          wildcard: { enabled: true, originalRoll: [3, 3], legalValues: [2, 3, 4, 5], editableIndex: 0 },
         },
       },
       series: null,
@@ -101,7 +101,7 @@ const BUILDERS: Record<string, () => GameState> = {
     return {
       game: {
         ...game,
-        turn: { ...game.turn, turnState: 'choosingPlacement', lastRoll: [2, 2], legalPlacements: [{ width: 2, height: 2, topLefts: [[0, 4], [4, 5]] }] },
+        turn: { ...game.turn, turnState: 'choosingPlacement', lastRoll: [2, 2], legalPlacements: [{ width: 2, height: 2, topLefts: [[0, 4], [3, 2]] }] },
       },
       series: null,
     }
