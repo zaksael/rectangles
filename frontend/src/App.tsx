@@ -37,7 +37,7 @@ function App() {
   // Kept here so it survives leaving a game; remembered between page loads.
   const [botSpeed, setBotSpeed] = useState(loadBotSpeed)
 
-  const gameSocket = useGameSocket({ ...connectParams, pacingDelayMs: connectParams.botSeats === undefined ? 0 : botSpeed.ms })
+  const gameSocket = useGameSocket({ ...connectParams, heartbeat: true, pacingDelayMs: connectParams.botSeats === undefined ? 0 : botSpeed.ms })
   useShiftHeld()
 
   // The game screen takes over the moment the socket opens (set during render, so Mode Select never shows a frame of the open game).

@@ -88,6 +88,13 @@ test('includes skipLimit/seriesLength/botSeats/botDifficulty/house-rule flags in
   )
 })
 
+test('asks the server for heartbeats in the connect query when heartbeat is set', () => {
+  pageAt('http:', 'game.test:8765')
+  renderHook(() => useGameSocket({ protocolVersion: 1, heartbeat: true }))
+
+  expect(FakeWebSocket.instances[0]!.url).toBe('ws://game.test:8765/ws?protocolVersion=1&heartbeat=true')
+})
+
 test('uses wss on an https page', () => {
   pageAt('https:', 'game.test')
   renderHook(() => useGameSocket({ protocolVersion: 1 }))
@@ -650,6 +657,95 @@ test('a fresh connection starts with no status again, until its socket opens', (
   expect(result.current.status).toBeUndefined()
 
   act(() => FakeWebSocket.instances[1]!.emit('open'))
+  expect(result.current.status).toBe('open')
+})
+
+test('45 seconds without any message after open read as a lost connection, and the socket is closed', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1, heartbeat: true }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  const close = vi.spyOn(FakeWebSocket.instances[0]!, 'close')
+
+  act(() => vi.advanceTimersByTime(44_999))
+  expect(result.current.status).toBe('open')
+
+  act(() => vi.advanceTimersByTime(1))
+  expect(result.current.status).toBe('closed-unexpected')
+  expect(close).toHaveBeenCalledTimes(1)
+})
+
+test('a message restarts the 45 second count', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1, heartbeat: true }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => vi.advanceTimersByTime(44_000))
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'heartbeat' }))
+  act(() => vi.advanceTimersByTime(44_000))
+  expect(result.current.status).toBe('open')
+
+  act(() => vi.advanceTimersByTime(1_000))
+  expect(result.current.status).toBe('closed-unexpected')
+})
+
+test('a heartbeat message is neither an error nor a game state', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1, heartbeat: true }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'heartbeat' }))
+
+  expect(result.current.error).toBeNull()
+  expect(result.current.state).toBeNull()
+})
+
+test('a connection that did not ask for heartbeats stays open through any silence', () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1 }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+
+  act(() => vi.advanceTimersByTime(600_000))
+
+  expect(result.current.status).toBe('open')
+})
+
+test('the silence count of the connection before does not close the new one', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0, heartbeat: true },
+  })
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  rerender({ protocolVersion: 1, connectionId: 1, heartbeat: true })
+  act(() => FakeWebSocket.instances[1]!.emit('open'))
+
+  for (let beat = 0; beat < 3; beat++) {
+    act(() => vi.advanceTimersByTime(20_000))
+    act(() => FakeWebSocket.instances[1]!.emit('message', { protocolVersion: 1, type: 'heartbeat' }))
+  }
+
+  expect(result.current.status).toBe('open')
+})
+
+test('a connection the player left stays closed-intentional through the silence count', async () => {
+  const { result } = renderHook(() => useGameSocket({ protocolVersion: 1, heartbeat: true }))
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  act(() => result.current.disconnect())
+  await act(async () => {}) // the socket reports its close a tick later
+
+  act(() => vi.advanceTimersByTime(60_000))
+
+  expect(result.current.status).toBe('closed-intentional')
+})
+
+test('a late message from the socket before this connection does not start a count that closes the new one', () => {
+  const { result, rerender } = renderHook((params) => useGameSocket(params), {
+    initialProps: { protocolVersion: 1, connectionId: 0, heartbeat: true },
+  })
+  act(() => FakeWebSocket.instances[0]!.emit('open'))
+  rerender({ protocolVersion: 1, connectionId: 1, heartbeat: true })
+  act(() => FakeWebSocket.instances[1]!.emit('open'))
+  act(() => FakeWebSocket.instances[0]!.emit('message', { protocolVersion: 1, type: 'heartbeat' })) // queued before its close
+
+  for (let beat = 0; beat < 3; beat++) {
+    act(() => vi.advanceTimersByTime(20_000))
+    act(() => FakeWebSocket.instances[1]!.emit('message', { protocolVersion: 1, type: 'heartbeat' }))
+  }
+
   expect(result.current.status).toBe('open')
 })
 

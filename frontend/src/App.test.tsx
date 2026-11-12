@@ -49,6 +49,15 @@ describe('App', () => {
     expect(FakeWebSocket.instances).toHaveLength(0)
   })
 
+  it('connects asking the server for heartbeats', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
+
+    expect(FakeWebSocket.instances.at(-1)!.url).toContain('heartbeat=true')
+  })
+
   it('shows a disabled "Connecting…" button after Start Game, before the socket opens', () => {
     render(<App />)
 

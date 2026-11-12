@@ -17,6 +17,7 @@ interface GameSocketParams {
   stealEnabled?: boolean
   selfEnclosedPenaltyEnabled?: boolean
   comebackNudgeEnabled?: boolean
+  heartbeat?: boolean
   // The wait between two queued states; not a connect param, so changing it never reconnects.
   pacingDelayMs?: number | undefined
   serverUrl?: string
@@ -40,6 +41,7 @@ const QUERY_PARAM_KEYS = [
   'stealEnabled',
   'selfEnclosedPenaltyEnabled',
   'comebackNudgeEnabled',
+  'heartbeat',
 ] as const satisfies readonly (keyof GameSocketParams)[]
 
 export interface GameState {
@@ -59,6 +61,8 @@ type ConnectionStatus = 'open' | 'closed-intentional' | 'closed-unexpected' | 'c
 
 const DEFAULT_PACING_DELAY_MS = 500
 const CONNECT_TIMEOUT_MS = 10_000
+// Two missed 20 s heartbeats plus margin.
+const HEARTBEAT_TIMEOUT_MS = 45_000
 
 export const botName = (difficulty?: string) => `Bot (${difficulty})`
 
@@ -179,14 +183,26 @@ export function useGameSocket(params: GameSocketParams) {
       setStatus('connect-failed')
       socket.close()
     }, CONNECT_TIMEOUT_MS)
+    // A dropped link can leave the socket reading open, so a connection that asked for heartbeats treats long silence as lost.
+    let silenceTimeout: ReturnType<typeof setTimeout> | undefined
+    const heard = () => {
+      if (!params.heartbeat || socketRef.current !== socket) return
+      clearTimeout(silenceTimeout)
+      silenceTimeout = setTimeout(() => {
+        setStatus('closed-unexpected')
+        socket.close()
+      }, HEARTBEAT_TIMEOUT_MS)
+    }
     socket.addEventListener('open', () => {
       clearTimeout(connectTimeout)
+      heard()
       hasOpenedRef.current = true
       setStatus('open')
     })
     socket.addEventListener('close', () => {
       // The refs below now belong to the newer connection, so this late close says nothing about it.
       if (socketRef.current !== socket) return
+      clearTimeout(silenceTimeout)
       failPendingAnalysis()
       if (intentionalCloseRef.current) {
         setStatus('closed-intentional')
@@ -197,6 +213,7 @@ export function useGameSocket(params: GameSocketParams) {
       }
     })
     socket.addEventListener('message', (event) => {
+      heard()
       // States are full snapshots, so the next valid one heals the board; meanwhile say so instead of freezing silently.
       const reject = (cause: unknown) => {
         console.error('Unreadable message from the server', cause)
@@ -220,6 +237,7 @@ export function useGameSocket(params: GameSocketParams) {
         failPendingAnalysis()
         return
       }
+      if (data.type === 'heartbeat') return
       // The server answers every place with a state or an error.
       if (data.type === 'state' || data.type === 'error') placeInFlightRef.current = false
       if (data.type === 'state') {
@@ -246,6 +264,7 @@ export function useGameSocket(params: GameSocketParams) {
     })
     return () => {
       clearTimeout(connectTimeout)
+      clearTimeout(silenceTimeout)
       intentionalCloseRef.current = true
       if (drainTimeoutRef.current !== null) {
         clearTimeout(drainTimeoutRef.current)
@@ -253,7 +272,7 @@ export function useGameSocket(params: GameSocketParams) {
       }
       socket.close()
     }
-  }, [connection, query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty, params.protocolVersion])
+  }, [connection, query, params.serverUrl, params.enabled, params.connectionId, params.botSeats, params.botDifficulty, params.protocolVersion, params.heartbeat])
 
   function disconnect() {
     intentionalCloseRef.current = true
