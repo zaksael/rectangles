@@ -3,6 +3,12 @@ import { readCss, ruleFor, textContrast } from '../dev/testUtils/styles'
 
 const css = readCss('ScoreTable.css')
 
+test('the cells keep 8px at the sides and the header names are 13px, so a long name like Bot (Blocking) fits the 319px rail', () => {
+  expect(ruleFor(css, '.score-table td')).toMatch(/padding:\s*5px 8px/)
+  expect(ruleFor(css, '.score-table thead th')).toMatch(/padding:\s*10px 8px/)
+  expect(ruleFor(css, '.score-table thead th')).toMatch(/font-size:\s*13px/)
+})
+
 test('the score table sits in a 1px card border in the line colour', () => {
   expect(css).toMatch(/\.score-table\s*\{[^}]*border:\s*1px solid var\(--line\)/)
 })
@@ -28,7 +34,7 @@ test('a resource row (In reach) is set apart by a line-colour hairline and is pl
   const inFooter = ruleFor(css, '.score-table tfoot .res-first td')
   expect(inFooter).toMatch(/font-size:\s*13px/)
   expect(inFooter).toMatch(/font-weight:\s*400/)
-  expect(inFooter).toMatch(/padding:\s*5px 12px/)
+  expect(inFooter).toMatch(/padding:\s*5px 8px/)
 })
 
 test('the note under a resource row is a muted 12px left-aligned line with no rule of its own', () => {
@@ -36,7 +42,7 @@ test('the note under a resource row is a muted 12px left-aligned line with no ru
   expect(block).toMatch(/font-size:\s*12px/)
   expect(block).toMatch(/text-align:\s*left/)
   expect(block).toMatch(/border-top:\s*0/)
-  expect(block).toMatch(/padding:\s*0 12px 6px/)
+  expect(block).toMatch(/padding:\s*0 8px 6px/)
   expect(textContrast(css, '.score-table .note-row td')).toBeGreaterThanOrEqual(4.5)
 })
 

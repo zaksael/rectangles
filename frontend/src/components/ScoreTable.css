@@ -8,7 +8,7 @@
 
 .score-table th,
 .score-table td {
-  padding: 5px 12px;
+  padding: 5px 8px;
   text-align: right;
   font-family: 'IBM Plex Mono', monospace;
   font-variant-numeric: tabular-nums;
@@ -25,10 +25,10 @@
 
 .score-table thead th,
 .score-table thead td {
-  padding: 10px 12px;
+  padding: 10px 8px;
   font-family: inherit;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
@@ -60,7 +60,7 @@
 .score-table .score-row td,
 .score-table .score-row th {
   border-top: 1px solid var(--ink);
-  padding: 8px 12px;
+  padding: 8px 8px;
 }
 
 /* A resource row (In reach) under the figures it explains: a hairline, and plain 13px even when it follows the Total in the footer. */
@@ -71,14 +71,14 @@
 
 .score-table tfoot .res-first th,
 .score-table tfoot .res-first td {
-  padding: 5px 12px;
+  padding: 5px 8px;
   font-size: 13px;
   font-weight: 400;
 }
 
 /* The line under a resource row that says what its figure counts: muted, full width, one line. */
 .score-table .note-row td {
-  padding: 0 12px 6px;
+  padding: 0 8px 6px;
   border-top: 0;
   text-align: left;
   font-family: inherit;

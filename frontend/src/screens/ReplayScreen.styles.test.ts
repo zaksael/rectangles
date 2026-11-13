@@ -211,11 +211,11 @@ test('any touch input keeps the playback buttons at their old 36px height', () =
 })
 
 test('the Replay score table packs its rows tighter than the shared one: 3px body rows, a 7px head, a 6px Total and a 3px In reach row', () => {
-  expect(ruleFor(css, '.replay .score-table td')).toMatch(/padding:\s*3px 12px/)
-  expect(ruleFor(css, '.replay .score-table thead th')).toMatch(/padding:\s*7px 12px/)
-  expect(ruleFor(css, '.replay .score-table tfoot td')).toMatch(/padding:\s*6px 12px/)
-  expect(ruleFor(css, '.replay .score-table tfoot .res-first td')).toMatch(/padding:\s*3px 12px/)
-  expect(ruleFor(css, '.replay .score-table .note-row td')).toMatch(/padding:\s*0 12px 4px/)
+  expect(ruleFor(css, '.replay .score-table td')).toMatch(/padding:\s*3px 8px/)
+  expect(ruleFor(css, '.replay .score-table thead th')).toMatch(/padding:\s*7px 8px/)
+  expect(ruleFor(css, '.replay .score-table tfoot td')).toMatch(/padding:\s*6px 8px/)
+  expect(ruleFor(css, '.replay .score-table tfoot .res-first td')).toMatch(/padding:\s*3px 8px/)
+  expect(ruleFor(css, '.replay .score-table .note-row td')).toMatch(/padding:\s*0 8px 4px/)
 })
 
 test('the Replay rail packs its blocks with a 10px gap and 16px padding; the rest comes from the shared .rail', () => {

@@ -96,25 +96,25 @@
 /* Tighter rows than the shared table, which Playing keeps: the rail has to fit a short window. */
 .replay .score-table td,
 .replay .score-table th {
-  padding: 3px 12px;
+  padding: 3px 8px;
 }
 
 .replay .score-table thead th {
-  padding: 7px 12px;
+  padding: 7px 8px;
 }
 
 .replay .score-table tfoot td,
 .replay .score-table tfoot th {
-  padding: 6px 12px;
+  padding: 6px 8px;
 }
 
 .replay .score-table tfoot .res-first td,
 .replay .score-table tfoot .res-first th {
-  padding: 3px 12px;
+  padding: 3px 8px;
 }
 
 .replay .score-table .note-row td {
-  padding: 0 12px 4px;
+  padding: 0 8px 4px;
 }
 
 .replay .controls {
