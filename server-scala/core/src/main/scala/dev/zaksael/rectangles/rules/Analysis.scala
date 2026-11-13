@@ -112,10 +112,11 @@ object Analysis:
       if rules.selfEnclosedPenalty then enclosureBefore * Constants.SELF_ENCLOSED_PENALTY_PER_CELL
       else 0
     pool.foldLeft(Option.empty[(Int, Candidate, AxisBreakdown)]) { (best, candidate) =>
-      val partial = partialAxes(rules, board, player, opponent, candidate, reachableBefore)
+      val after   = placeOn(board, player, candidate)
+      val partial = partialOn(rules, board, opponent, candidate, reachableBefore, after)
       if best.exists(_._1 >= rankingValue(partial) + ceiling) then best
       else
-        val axes  = withEnclosure(rules, board, player, candidate, partial, enclosureBefore)
+        val axes  = withEnclosure(rules, player, partial, after, enclosureBefore)
         val value = rankingValue(axes)
         if best.forall(value > _._1) then Some((value, candidate, axes)) else best
     }
@@ -163,9 +164,19 @@ object Analysis:
       candidate: Candidate,
       reachableBefore: Int,
   ): AxisBreakdown =
+    partialOn(rules, board, opponent, candidate, reachableBefore, placeOn(board, player, candidate))
+
+  /** `partialAxes` with the candidate already placed on `after`. */
+  private def partialOn(
+      rules: Rules,
+      board: Board,
+      opponent: Player,
+      candidate: Candidate,
+      reachableBefore: Int,
+      after: Board,
+  ): AxisBreakdown =
     def covered(enabled: Boolean, kind: CellKind) =
       if enabled then Bot.cellOverlapScore(candidate, board.cellsOfKind(kind)) else 0
-    val after = placeOn(board, player, candidate)
     AxisBreakdown(
       prizeCells = covered(rules.prize, CellKind.Prize),
       pitfallCells = covered(rules.pitfall, CellKind.Pitfall),
@@ -183,12 +194,12 @@ object Analysis:
       reachableBefore: Int,
       enclosureBefore: Int,
   ): AxisBreakdown =
+    val after = placeOn(board, player, candidate)
     withEnclosure(
       rules,
-      board,
       player,
-      candidate,
-      partialAxes(rules, board, player, opponent, candidate, reachableBefore),
+      partialOn(rules, board, opponent, candidate, reachableBefore, after),
+      after,
       enclosureBefore,
     )
 
@@ -213,16 +224,16 @@ object Analysis:
 
   private def withEnclosure(
       rules: Rules,
-      board: Board,
       player: Player,
-      candidate: Candidate,
       axes: AxisBreakdown,
+      after: Board,
       enclosureBefore: Int,
   ): AxisBreakdown =
     if !rules.selfEnclosedPenalty then axes
     else
-      val after = placeOn(board, player, candidate).selfEnclosedCellCounts.getOrElse(player.id, 0)
-      axes.copy(enclosureDelta = after - enclosureBefore)
+      axes.copy(enclosureDelta =
+        after.selfEnclosedCellCounts.getOrElse(player.id, 0) - enclosureBefore
+      )
 
   /**
    * Every placement this turn could have used: the rolled orientation pair, or every wildcard
