@@ -33,7 +33,7 @@ test('the Match setup fields sit on the same three columns and gap as the house-
   const groups = ruleFor(css, '.mode-rules-groups')
 
   expect(row).toMatch(/display:\s*grid/)
-  expect(row).toMatch(/grid-template-columns:\s*repeat\(3, minmax\(max-content, 1fr\)\)/)
+  expect(row).toMatch(/grid-template-columns:\s*repeat\(3, minmax\(min-content, 1fr\)\)/)
   expect(row.match(/gap:\s*([^;]+);/)![1]).toBe(groups.match(/gap:\s*([^;]+);/)![1])
 })
 
