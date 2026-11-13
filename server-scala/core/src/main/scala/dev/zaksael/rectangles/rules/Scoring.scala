@@ -38,10 +38,11 @@ object Scoring:
 
   def winner(state: GameState): Option[PlayerId] = state.gameOver match
     case Some(GameOverReason.Surrendered(who)) => Some(who.other)
-    case _ =>
-      val one = total(state, PlayerId.One)
-      val two = total(state, PlayerId.Two)
-      if one > two then Some(PlayerId.One) else if two > one then Some(PlayerId.Two) else None
+    case _ => leader(total(state, PlayerId.One), total(state, PlayerId.Two))
+
+  /** The player with the higher total; None when the totals are equal. */
+  def leader(one: Int, two: Int): Option[PlayerId] =
+    if one > two then Some(PlayerId.One) else if two > one then Some(PlayerId.Two) else None
 
   /**
    * The breakdown after each history record from index `from` on. The board is replayed from the

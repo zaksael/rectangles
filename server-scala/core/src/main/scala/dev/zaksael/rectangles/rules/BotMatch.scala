@@ -72,12 +72,9 @@ object BotMatch:
   private def result(end: GameState): Option[MatchResult] =
     end.gameOver.map { reason =>
       val scores = Seats(Scoring.total(end, PlayerId.One), Scoring.total(end, PlayerId.Two))
-      val winner =
-        if scores.one == scores.two then None
-        else Some(if scores.one > scores.two then PlayerId.One else PlayerId.Two)
-      val owned = PlayerId.values.map(who => Scoring.breakdown(end, who).area).sum
+      val owned  = PlayerId.values.map(who => Scoring.breakdown(end, who).area).sum
       MatchResult(
-        winner,
+        Scoring.leader(scores.one, scores.two),
         scores,
         reason,
         owned.toDouble / (end.rules.boardSize * end.rules.boardSize),

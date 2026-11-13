@@ -31,9 +31,7 @@ final case class Series(length: Int, rules: Rules, rounds: Vector[RoundResult] =
   /** None when the totals are equal. */
   def winner: Option[PlayerId] =
     val totals = scores
-    if totals(PlayerId.One) > totals(PlayerId.Two) then Some(PlayerId.One)
-    else if totals(PlayerId.Two) > totals(PlayerId.One) then Some(PlayerId.Two)
-    else None
+    Scoring.leader(totals(PlayerId.One), totals(PlayerId.Two))
 
   /** The series after a finished game is added as its next round. */
   def record(state: GameState): Series =
