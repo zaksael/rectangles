@@ -36,6 +36,8 @@ lazy val server = project
     executableScriptName := "rectangles-server",
     // scala-library's LazyVals calls sun.misc.Unsafe, which JDK 24+ warns about on every `sbt server/run` (the staged launcher does not warn)
     javaOptions += "--sun-misc-unsafe-memory-access=allow",
+    // WsRoutesSpec's log tests read System.out, which every suite's server shares
+    Test / parallelExecution := false,
     Universal / UniversalPlugin.autoImport.stagingDirectory := (ThisBuild / baseDirectory).value / "target" / "stage",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % "0.23.38",

@@ -229,10 +229,11 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
   it should "be refused as illegal at a spot that is not anchored to the start corner" in
     connected() { client =>
       client.next()
-      say(client, action("roll"))
+      val legal           = turn(say(client, action("roll"))).downField("legalPlacements").downArray
+      val (width, height) = (legal.get[Int]("width").value, legal.get[Int]("height").value)
       reason(say(
         client,
-        """{"protocolVersion":1,"type":"place","topLeft":[18,18],"width":1,"height":1}""",
+        s"""{"protocolVersion":1,"type":"place","topLeft":[9,9],"width":$width,"height":$height}""",
       )) shouldBe "illegalPlacement"
     }
 
