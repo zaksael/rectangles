@@ -102,8 +102,15 @@ class ProtocolSpec extends AnyFlatSpec with Matchers with EitherValues:
       ErrorReason.ProtocolVersionMismatch
   }
 
+  "a message with a missing or string protocol version" should "be a version mismatch" in {
+    for text <- Seq("""{"type":"roll"}""", """{"protocolVersion":"1","type":"roll"}""") do
+      withClue(text) {
+        ClientMessage.decode(text).left.value.reason shouldBe ErrorReason.ProtocolVersionMismatch
+      }
+  }
+
   "a choose-wildcard value that is not a whole JSON number" should "be a malformed message" in {
-    for value <- Seq(""""4"""", "4.0", "true", "[4]", "null") do
+    for value <- Seq(""""4"""", "4.0", "4e0", "99999999999", "true", "[4]", "null") do
       withClue(value) {
         ClientMessage
           .decode(s"""{"protocolVersion":1,"type":"chooseWildcard","value":$value}""")
@@ -118,6 +125,9 @@ class ProtocolSpec extends AnyFlatSpec with Matchers with EitherValues:
       """"topLeft":[[0],[0]],"width":2,"height":2""",
       """"topLeft":["0","0"],"width":2,"height":2""",
       """"topLeft":[0],"width":2,"height":2""",
+      """"topLeft":[0,0,0],"width":2,"height":2""",
+      """"topLeft":[0,0],"width":99999999999,"height":2""",
+      """"topLeft":[0,0],"width":4e0,"height":2""",
       """"topLeft":[0,0],"width":[2],"height":2""",
       """"topLeft":[0,0],"width":2.0,"height":2""",
       """"topLeft":[0,0],"width":true,"height":2""",
