@@ -28,10 +28,10 @@ object Rerolls:
   def maybeGrantNudge(state: GameState): GameState =
     if !state.rules.comebackNudge then state
     else
+      val totals = Scoring.breakdowns(state).map(_.total)
       val trailing =
-        if Scoring.total(state, PlayerId.One) < Scoring.total(state, PlayerId.Two) then PlayerId.One
-        else PlayerId.Two
-      val gap = Scoring.total(state, trailing.other) - Scoring.total(state, trailing)
+        if totals(PlayerId.One) < totals(PlayerId.Two) then PlayerId.One else PlayerId.Two
+      val gap = totals(trailing.other) - totals(trailing)
       if gap >= comebackThreshold(state.rules.boardSize) then
         state.copy(players =
           state.players.updated(trailing, state.players(trailing).copy(comebackNudgeGranted = true))

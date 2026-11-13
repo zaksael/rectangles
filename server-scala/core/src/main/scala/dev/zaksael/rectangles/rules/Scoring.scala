@@ -20,6 +20,21 @@ object Scoring:
     else 0
 
   def breakdown(state: GameState, who: PlayerId): ScoreBreakdown =
+    breakdown(state, who, enclosedCounts(state))
+
+  /** Both players' breakdowns from one flood fill: use it instead of two `breakdown` calls. */
+  def breakdowns(state: GameState): Seats[ScoreBreakdown] =
+    val counts = enclosedCounts(state)
+    state.players.map(player => breakdown(state, player.id, counts))
+
+  private def enclosedCounts(state: GameState): Map[PlayerId, Int] =
+    if state.rules.selfEnclosedPenalty then state.board.selfEnclosedCellCounts else Map.empty
+
+  private def breakdown(
+      state: GameState,
+      who: PlayerId,
+      enclosed: Map[PlayerId, Int],
+  ): ScoreBreakdown =
     val mine   = state.players(who)
     val theirs = state.players(who.other)
     val points = Constants.SPECIAL_CELL_KINDS.map { (kind, effect) =>
@@ -31,7 +46,7 @@ object Scoring:
       prize = points(CellKind.Prize),
       pitfall = points(CellKind.Pitfall),
       steal = points(CellKind.Steal),
-      enclosure = -selfEnclosedCells(state, who) * Constants.SELF_ENCLOSED_PENALTY_PER_CELL,
+      enclosure = -enclosed.getOrElse(who, 0) * Constants.SELF_ENCLOSED_PENALTY_PER_CELL,
     )
 
   def total(state: GameState, who: PlayerId): Int = breakdown(state, who).total
@@ -52,7 +67,7 @@ object Scoring:
       state: GameState,
       from: Int = 0,
   ): Vector[Seats[ScoreBreakdown]] =
-    replay(state).drop(from).map(step => step.players.map(player => breakdown(step, player.id)))
+    replay(state).drop(from).map(breakdowns)
 
   def potential(board: Board, player: Player): Potential =
     val reachable = board.reachableEmptyCells(player)

@@ -71,8 +71,8 @@ object BotMatch:
 
   private def result(end: GameState): Option[MatchResult] =
     end.gameOver.map { reason =>
-      val scores = Seats(Scoring.total(end, PlayerId.One), Scoring.total(end, PlayerId.Two))
-      val owned  = PlayerId.values.map(who => Scoring.breakdown(end, who).area).sum
+      val scores = Scoring.breakdowns(end).map(_.total)
+      val owned  = end.players.values.map(_.totalArea).sum
       MatchResult(
         Scoring.leader(scores.one, scores.two),
         scores,

@@ -246,6 +246,7 @@ object Serialize:
   private def player(state: GameState, who: PlayerId): Json =
     val self    = state.players(who)
     val figures = Scoring.potential(state.board, self)
+    val parts   = Scoring.breakdown(state, who)
     def captured(kind: CellKind) =
       Json.obj("captured" -> Json.fromInt(self.specialCaptures.getOrElse(kind, 0)))
     Json.obj(
@@ -259,8 +260,8 @@ object Serialize:
       ),
       "score" -> Json.obj(
         "totalArea"  -> Json.fromInt(self.totalArea),
-        "totalScore" -> Json.fromInt(Scoring.total(state, who)),
-        "breakdown"  -> breakdown(Scoring.breakdown(state, who)),
+        "totalScore" -> Json.fromInt(parts.total),
+        "breakdown"  -> breakdown(parts),
         "potential"  -> potential(figures),
       ),
       "houseRules" -> Json.obj(
