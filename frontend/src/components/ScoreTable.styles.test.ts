@@ -3,9 +3,9 @@ import { readCss, ruleFor, textContrast } from '../dev/testUtils/styles'
 
 const css = readCss('ScoreTable.css')
 
-test('the cells keep 8px at the sides and the header names are 13px, so a long name like Bot (Blocking) fits the 319px rail', () => {
-  expect(ruleFor(css, '.score-table td')).toMatch(/padding:\s*5px 8px/)
-  expect(ruleFor(css, '.score-table thead th')).toMatch(/padding:\s*10px 8px/)
+test('the cells keep 5px at the sides and the header names are 13px, so a long name like Bot (Blocking) fits the 319px rail', () => {
+  expect(ruleFor(css, '.score-table td')).toMatch(/padding:\s*5px 5px/)
+  expect(ruleFor(css, '.score-table thead th')).toMatch(/padding:\s*10px 5px/)
   expect(ruleFor(css, '.score-table thead th')).toMatch(/font-size:\s*13px/)
 })
 
@@ -18,6 +18,7 @@ test('the Total is the table\'s strongest figure', () => {
 
   expect(block).toMatch(/font-size:\s*20px/)
   expect(block).toMatch(/font-weight:\s*500/) // the only Plex Mono weight that is loaded, so the browser never fakes a bold
+  expect(css).toMatch(/\.score-table \.score-row th\s*\{[^}]*padding:\s*8px 5px/) // the last selector of the border-and-padding group
 })
 
 test('muted zeros stay AA (4.5:1) on the ledger', () => {
@@ -34,7 +35,7 @@ test('a resource row (In reach) is set apart by a line-colour hairline and is pl
   const inFooter = ruleFor(css, '.score-table tfoot .res-first td')
   expect(inFooter).toMatch(/font-size:\s*13px/)
   expect(inFooter).toMatch(/font-weight:\s*400/)
-  expect(inFooter).toMatch(/padding:\s*5px 8px/)
+  expect(inFooter).toMatch(/padding:\s*5px 5px/)
 })
 
 test('the note under a resource row is a muted 12px left-aligned line with no rule of its own', () => {
@@ -42,7 +43,7 @@ test('the note under a resource row is a muted 12px left-aligned line with no ru
   expect(block).toMatch(/font-size:\s*12px/)
   expect(block).toMatch(/text-align:\s*left/)
   expect(block).toMatch(/border-top:\s*0/)
-  expect(block).toMatch(/padding:\s*0 8px 6px/)
+  expect(block).toMatch(/padding:\s*0 5px 6px/)
   expect(textContrast(css, '.score-table .note-row td')).toBeGreaterThanOrEqual(4.5)
 })
 
