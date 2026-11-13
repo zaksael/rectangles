@@ -13,6 +13,7 @@ import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.SpecialCell
 import dev.zaksael.rectangles.domain.TurnRecord
+import dev.zaksael.rectangles.placed
 import dev.zaksael.rectangles.withSpecialCells
 
 class AnalysisSpec extends AnyFlatSpec with Matchers:
@@ -258,6 +259,36 @@ class AnalysisSpec extends AnyFlatSpec with Matchers:
       ).toMap
 
     val analysis = flagged(state).getOrElse(1, fail("turn 1 was not flagged"))
+
+    values(analysis.better) shouldBe values.values.max
+  }
+
+  it should "find the same winner as an exhaustive scan when the mover already has a hole" in {
+    // The ring around (2, 2) is closed before the analysed move, so the prune ceiling is not 0:
+    // filling the hole scores the most, but its cheap value ties every other candidate.
+    val rules = six.copy(wildcard = true, selfEnclosedPenalty = true)
+    val start = wallAcross(GameState.initial(rules))
+    val ring  = List((1, 2), (3, 2), (2, 1), (2, 3))
+    val setup = ring.foldLeft(placed(start, PlayerId.Two, Cell(5, 5), 1, 1))((state, cell) =>
+      placed(state, PlayerId.One, Cell(cell._1, cell._2), 1, 1)
+    )
+    val last = move(PlayerId.One, (1, 1), (0, 1), 1, 1, Some(Roll(1, 1)))
+    val history =
+      single(PlayerId.Two, 5, 5) +: ring.map(c => single(PlayerId.One, c._1, c._2)) :+ last
+    val state    = played(start, history*)
+    val (p1, p2) = (setup.players(PlayerId.One), setup.players(PlayerId.Two))
+    val before   = setup.board.reachableEmptyCells(p2).size
+    val hole     = setup.board.selfEnclosedCellCounts.getOrElse(PlayerId.One, 0)
+    val pool     = Analysis.candidatePool(last, setup.board, p1)
+    val values =
+      pool.map(c =>
+        c -> Analysis.rankingValue(
+          Analysis.fullAxes(rules, setup.board, p1, p2, c, before, hole)
+        )
+      ).toMap
+
+    hole should be > 0
+    val analysis = flagged(state).getOrElse(6, fail("turn 6 was not flagged"))
 
     values(analysis.better) shouldBe values.values.max
   }
