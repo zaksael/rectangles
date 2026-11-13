@@ -18,7 +18,7 @@
 }
 
 .replay .rail {
-  gap: 10px;
+  gap: 8px;
   padding: 16px;
 }
 
@@ -238,7 +238,7 @@
   min-height: 112px;
   max-height: 300px;
   overflow: hidden;
-  margin-top: -4px; /* the rail's 10px gap less the 6px the head sits above it */
+  margin-top: -2px; /* the rail's 8px gap less the 6px the head sits above it */
 }
 
 .replay .chart {
@@ -263,7 +263,6 @@
 }
 
 .replay .chart-hint {
-  flex-basis: 100%;
   font-size: 12px;
   color: var(--ink-muted);
 }

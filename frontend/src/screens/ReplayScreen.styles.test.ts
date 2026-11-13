@@ -133,7 +133,7 @@ test('lines, dots and the marker let the pointer through to the jump targets und
   expect(css).toMatch(/\.replay \.chart-line,\s*\.replay \.chart-dot,\s*\.replay \.chart-marker \{[^}]*pointer-events:\s*none/)
 })
 
-test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.5:1) on its own row', () => {
+test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.5:1), free to share a row with the chart key', () => {
   const readout = ruleFor(css, '.replay .chart-readout')
   const hint = ruleFor(css, '.replay .chart-hint')
 
@@ -141,7 +141,7 @@ test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.
   expect(readout).toMatch(/font-size:\s*12px/)
   expect(readout).toMatch(/margin-left:\s*auto/)
   expect(hint).toMatch(/font-size:\s*12px/)
-  expect(hint).toMatch(/flex-basis:\s*100%/)
+  expect(hint).not.toMatch(/flex-basis/)
   expect(textContrast(css, '.replay .chart-hint')).toBeGreaterThanOrEqual(4.5)
 })
 
@@ -218,10 +218,10 @@ test('the Replay score table packs its rows tighter than the shared one: 3px bod
   expect(ruleFor(css, '.replay .score-table .note-row td')).toMatch(/padding:\s*0 8px 4px/)
 })
 
-test('the Replay rail packs its blocks with a 10px gap and 16px padding; the rest comes from the shared .rail', () => {
-  expect(ruleFor(css, '.replay .rail').replace(/\s+/g, ' ').trim()).toBe('gap: 10px; padding: 16px;')
+test('the Replay rail packs its blocks with an 8px gap and 16px padding; the rest comes from the shared .rail', () => {
+  expect(ruleFor(css, '.replay .rail').replace(/\s+/g, ' ').trim()).toBe('gap: 8px; padding: 16px;')
 })
 
 test('the chart head sits 6px above the chart, so the chart pulls up by the rail gap less 6px', () => {
-  expect(ruleFor(css, '.replay .chart-body')).toMatch(/margin-top:\s*-4px/)
+  expect(ruleFor(css, '.replay .chart-body')).toMatch(/margin-top:\s*-2px/)
 })
