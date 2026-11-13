@@ -1,4 +1,4 @@
-package dev.zaksael.rectangles.server
+package dev.zaksael.rectangles.domain
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,26 +8,19 @@ import scala.annotation.tailrec
 import io.circe.Json
 import io.circe.Printer
 
-import dev.zaksael.rectangles.domain.Board
-import dev.zaksael.rectangles.domain.BotDifficulty
-import dev.zaksael.rectangles.domain.Cell
-import dev.zaksael.rectangles.domain.Edge
-import dev.zaksael.rectangles.domain.GameState
-import dev.zaksael.rectangles.domain.Player
-import dev.zaksael.rectangles.domain.PlayerId
-import dev.zaksael.rectangles.domain.Rules
-import dev.zaksael.rectangles.domain.TurnState
+import dev.zaksael.rectangles.rules.BotMatch
+import dev.zaksael.rectangles.rules.Dice
 import dev.zaksael.rectangles.rules.Placement
 import dev.zaksael.rectangles.rules.Setup
 import dev.zaksael.rectangles.rules.SplitMix64
-import dev.zaksael.rectangles.server.session.BotTurns
-import dev.zaksael.rectangles.server.session.Play
 
 /**
  * Writes `frontend/src/dev/fixtures/enclosureCases.json`: boards with the self-enclosed counts the
  * engine computes for them. The web client re-implements the enclosure flood fill to hatch the
  * cells (the wire sends only counts), and `selfEnclosed.test.ts` checks that port against this
- * file; `EnclosureCasesSpec` checks each stored board still gets its stored counts.
+ * file; `EnclosureCasesSpec` checks each stored board still gets its stored counts. Run it from
+ * `server-scala/` with
+ * `sbt "core/Test/runMain dev.zaksael.rectangles.domain.generateEnclosureCases"`.
  */
 object EnclosureCasesGenerator:
   val defaultOut = "../frontend/src/dev/fixtures/enclosureCases.json"
@@ -154,20 +147,18 @@ object EnclosureCasesGenerator:
    */
   private def played(seed: Long, stopAt: Option[Int]): GameState =
     val (state, dice) = Setup.newGame(allRules, Some(PlayerId.One), SplitMix64(seed))
-    @tailrec def go(play: Play): GameState =
+    @tailrec def go(current: GameState, dice: Dice): GameState =
       val atStop =
-        stopAt.exists(n =>
-          play.state.turn == TurnState.AwaitingRoll && play.state.history.size >= n
-        )
-      if play.state.turn == TurnState.GameOver || atStop then play.state
+        stopAt.exists(n => current.turn == TurnState.AwaitingRoll && current.history.size >= n)
+      if current.turn == TurnState.GameOver || atStop then current
       else
         val difficulty =
-          if play.state.current == PlayerId.One then BotDifficulty.Greedy
+          if current.current == PlayerId.One then BotDifficulty.Greedy
           else BotDifficulty.Blocking
-        BotTurns.step(play, difficulty) match
-          case Some(next) => go(next)
-          case None       => play.state
-    go(Play(state, dice))
+        BotMatch.step(current, difficulty, dice) match
+          case Some((next, after)) => go(next, after)
+          case None                => current
+    go(state, dice)
 
   private def realGames: List[Json] =
     (1L to 3L).toList.flatMap { seed =>
