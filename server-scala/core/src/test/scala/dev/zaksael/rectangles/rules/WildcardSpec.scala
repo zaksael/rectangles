@@ -60,6 +60,20 @@ class WildcardSpec extends AnyFlatSpec with Matchers with EitherValues:
     state.history.lastOption.flatMap(_.wildcardOriginalRoll) shouldBe Some(Roll(6, 6))
   }
 
+  "a placement after an edited wildcard value" should "record the roll the picker opened on" in {
+    val (state, _) = rolled(game(6), 5, 5, 0)
+    val chosen     = Turns.chooseWildcard(state, 3).value
+    val placed     = Turns.attemptPlace(chosen, Cell(0, 0), 3, 5).value
+    placed.history.last.wildcardOriginalRoll shouldBe Some(Roll(5, 5))
+  }
+
+  "a placement after a kept wildcard value" should "record the roll the picker opened on" in {
+    val (state, _) = rolled(game(6), 5, 5, 0)
+    val chosen     = Turns.chooseWildcard(state, 5).value
+    val placed     = Turns.attemptPlace(chosen, Cell(0, 0), 5, 5).value
+    placed.history.last.wildcardOriginalRoll shouldBe Some(Roll(5, 5))
+  }
+
   "the placements for a wildcard value" should "use the value in place of the editable die" in {
     val (state, _) = rolled(game(6), 5, 5, 0)
     val spots      = Turns.legalPlacementsForValue(state, 3)
