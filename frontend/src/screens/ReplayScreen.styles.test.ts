@@ -63,16 +63,16 @@ test('nothing on Replay animates, so autoplay has no motion to reduce', () => {
   expect(css).not.toMatch(/transition|animation|@keyframes/)
 })
 
-test('the chart is 300px tall but is the one thing that gives up height, down to 144px', () => {
+test('the chart is 300px tall but is the one thing that gives up height, down to 112px', () => {
   const block = ruleFor(css, '.replay .chart-body')
 
   expect(block).toMatch(/flex:\s*1 1 300px/)
-  expect(block).toMatch(/min-height:\s*144px/)
+  expect(block).toMatch(/min-height:\s*112px/)
   expect(block).toMatch(/max-height:\s*300px/)
   expect(block).toMatch(/overflow:\s*hidden/) // so the drawing never props the box open
 })
 
-test('the chart wrapper has no box, so the chart shrinks to its 144px floor instead of spilling over the controls', () => {
+test('the chart wrapper has no box, so the chart shrinks to its 112px floor instead of spilling over the controls', () => {
   const block = ruleFor(css, '.replay .chart-wrap')
 
   expect(block).toMatch(/display:\s*contents/)
@@ -200,6 +200,28 @@ test('the key hint is muted like the chart hint, and a touch screen, which has n
   expect(css).toMatch(/@media \(pointer: coarse\) \{\s*\.replay \.controls-hint \{[^}]*display:\s*none/)
 })
 
-test('the Replay rail sets only its own gap; the rest comes from the shared .rail', () => {
-  expect(ruleFor(css, '.replay .rail').trim()).toBe('gap: 16px;')
+test('the Replay rail buttons are 30px tall: 5px of padding above and below, in the head, transport, speed and flag rows alike', () => {
+  for (const selector of ['.replay .rail .btn', '.replay .transport .btn', '.replay .speed .btn', '.replay .flag-nav .btn']) {
+    expect(ruleFor(css, selector)).toMatch(/padding:\s*5px (0|16px)/)
+  }
+})
+
+test('any touch input keeps the playback buttons at their old 36px height', () => {
+  expect(css).toMatch(/@media \(any-pointer: coarse\) \{[^@]*\.replay \.controls \.btn \{[^}]*min-height:\s*36px/)
+})
+
+test('the Replay score table packs its rows tighter than the shared one: 3px body rows, a 7px head, a 6px Total and a 3px In reach row', () => {
+  expect(ruleFor(css, '.replay .score-table td')).toMatch(/padding:\s*3px 12px/)
+  expect(ruleFor(css, '.replay .score-table thead th')).toMatch(/padding:\s*7px 12px/)
+  expect(ruleFor(css, '.replay .score-table tfoot td')).toMatch(/padding:\s*6px 12px/)
+  expect(ruleFor(css, '.replay .score-table tfoot .res-first td')).toMatch(/padding:\s*3px 12px/)
+  expect(ruleFor(css, '.replay .score-table .note-row td')).toMatch(/padding:\s*0 12px 4px/)
+})
+
+test('the Replay rail packs its blocks with a 10px gap and 16px padding; the rest comes from the shared .rail', () => {
+  expect(ruleFor(css, '.replay .rail').replace(/\s+/g, ' ').trim()).toBe('gap: 10px; padding: 16px;')
+})
+
+test('the chart head sits 6px above the chart, so the chart pulls up by the rail gap less 6px', () => {
+  expect(ruleFor(css, '.replay .chart-body')).toMatch(/margin-top:\s*-4px/)
 })

@@ -18,7 +18,8 @@
 }
 
 .replay .rail {
-  gap: 16px;
+  gap: 10px;
+  padding: 16px;
 }
 
 .replay .rail-head {
@@ -89,7 +90,31 @@
 
 .replay .rail .btn {
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 5px 16px;
+}
+
+/* Tighter rows than the shared table, which Playing keeps: the rail has to fit a short window. */
+.replay .score-table td,
+.replay .score-table th {
+  padding: 3px 12px;
+}
+
+.replay .score-table thead th {
+  padding: 7px 12px;
+}
+
+.replay .score-table tfoot td,
+.replay .score-table tfoot th {
+  padding: 6px 12px;
+}
+
+.replay .score-table tfoot .res-first td,
+.replay .score-table tfoot .res-first th {
+  padding: 3px 12px;
+}
+
+.replay .score-table .note-row td {
+  padding: 0 12px 4px;
 }
 
 .replay .controls {
@@ -117,6 +142,10 @@
   .replay .rail-head .btn {
     min-height: 44px;
   }
+
+  .replay .controls .btn {
+    min-height: 36px;
+  }
 }
 
 .replay .transport,
@@ -128,7 +157,7 @@
 
 .replay .transport .btn,
 .replay .speed .btn {
-  padding: 8px 0;
+  padding: 5px 0;
   min-width: 0;
 }
 
@@ -141,7 +170,7 @@
 }
 
 .replay .flag-nav .btn {
-  padding: 8px 0;
+  padding: 5px 0;
   min-width: 0;
 }
 
@@ -203,13 +232,13 @@
   color: var(--ink-muted);
 }
 
-/* The one flexible thing in the rail: 300px when there is room, down to 144px in a short window. */
+/* The one flexible thing in the rail: 300px when there is room, down to 112px in a short window. */
 .replay .chart-body {
   flex: 1 1 300px;
-  min-height: 144px;
+  min-height: 112px;
   max-height: 300px;
   overflow: hidden;
-  margin-top: -10px; /* the rail's 16px gap less the 6px the head sits above it */
+  margin-top: -4px; /* the rail's 10px gap less the 6px the head sits above it */
 }
 
 .replay .chart {
