@@ -61,7 +61,7 @@ class SelfEnclosedSpec extends AnyFlatSpec with Matchers:
         record(PlayerId.One, Cell(2, 3)),
       )
     )
-    val totals = Scoring.breakdownHistory(state).map(_.view.mapValues(_.total).toMap)
+    val totals = Scoring.breakdownHistory(state).map(_.map(_.total))
     totals.map(_(PlayerId.One)) shouldBe Vector(1, 1, 2, 2, 3, 4 - penalty)
     totals.map(_(PlayerId.Two)) shouldBe Vector(0, 1, 1, 1, 1, 1)
   }

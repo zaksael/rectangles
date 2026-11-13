@@ -8,6 +8,7 @@ import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.Player
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.ScoreBreakdown
+import dev.zaksael.rectangles.domain.Seats
 
 /** What a player could still end up with: the empty cells they can reach. */
 final case class Potential(area: Int, prizePoints: Int)
@@ -49,10 +50,8 @@ object Scoring:
   def breakdownHistory(
       state: GameState,
       from: Int = 0,
-  ): Vector[Map[PlayerId, ScoreBreakdown]] =
-    replay(state).drop(from).map(step =>
-      PlayerId.values.map(who => who -> breakdown(step, who)).toMap
-    )
+  ): Vector[Seats[ScoreBreakdown]] =
+    replay(state).drop(from).map(step => step.players.map(player => breakdown(step, player.id)))
 
   def potential(board: Board, player: Player): Potential =
     val reachable = board.reachableEmptyCells(player)
@@ -61,8 +60,8 @@ object Scoring:
       (reachable & board.cellsOfKind(CellKind.Prize)).size * Constants.PRIZE_BONUS_POINTS,
     )
 
-  def potentialHistory(state: GameState): Vector[Map[PlayerId, Potential]] =
-    replay(state).map(step => step.players.map(potential(step.board, _)).toMap)
+  def potentialHistory(state: GameState): Vector[Seats[Potential]] =
+    replay(state).map(step => step.players.map(potential(step.board, _)))
 
   /**
    * The same board geometry with nothing placed, and the players unplayed at their start corners.

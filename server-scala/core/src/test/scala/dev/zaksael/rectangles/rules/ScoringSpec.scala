@@ -13,6 +13,7 @@ import dev.zaksael.rectangles.domain.Rectangle
 import dev.zaksael.rectangles.domain.Roll
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.ScoreBreakdown
+import dev.zaksael.rectangles.domain.Seats
 import dev.zaksael.rectangles.domain.TurnRecord
 import dev.zaksael.rectangles.placed
 import dev.zaksael.rectangles.withSpecialCells
@@ -56,21 +57,21 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
     val (rolled, _) = Turns.rollDice(game(6), ScriptedDice.of(2, 3)).value
     val state       = Turns.attemptPlace(rolled, Cell(0, 0), 2, 3).value
     Scoring.breakdownHistory(state) shouldBe Vector(
-      Map(PlayerId.One -> ScoreBreakdown(area = 6), PlayerId.Two -> ScoreBreakdown())
+      Seats(ScoreBreakdown(area = 6), ScoreBreakdown())
     )
   }
 
   it should "leave out the steps before the index it is given" in {
     val played = twoMoveGame._2
     Scoring.breakdownHistory(played, 1) shouldBe Vector(
-      Map(PlayerId.One -> ScoreBreakdown(area = 6), PlayerId.Two -> ScoreBreakdown(area = 1))
+      Seats(ScoreBreakdown(area = 6), ScoreBreakdown(area = 1))
     )
   }
 
   "the potential history" should "end at each player's live potential" in {
     val (state, played) = twoMoveGame
-    val live            = state.players.map(Scoring.potential(state.board, _)).toMap
-    live shouldBe Map(PlayerId.One -> Potential(29, 0), PlayerId.Two -> Potential(29, 0))
+    val live            = state.players.map(Scoring.potential(state.board, _))
+    live shouldBe Seats(Potential(29, 0), Potential(29, 0))
     Scoring.potentialHistory(played).lastOption shouldBe Some(live)
   }
 
@@ -126,10 +127,7 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).value
     val state = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
     Scoring.breakdownHistory(state) shouldBe Vector(
-      Map(
-        PlayerId.One -> ScoreBreakdown(area = 4, prize = 10),
-        PlayerId.Two -> ScoreBreakdown(),
-      )
+      Seats(ScoreBreakdown(area = 4, prize = 10), ScoreBreakdown())
     )
   }
 
@@ -140,9 +138,9 @@ class ScoringSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).value
     val state = Turns.attemptPlace(rolled, Cell(0, 0), 6, 6).value
     Scoring.breakdownHistory(state).lastOption shouldBe Some(
-      Map(
-        PlayerId.One -> Scoring.breakdown(state, PlayerId.One),
-        PlayerId.Two -> Scoring.breakdown(state, PlayerId.Two),
+      Seats(
+        Scoring.breakdown(state, PlayerId.One),
+        Scoring.breakdown(state, PlayerId.Two),
       )
     )
     Scoring.breakdown(state, PlayerId.One).prize shouldBe 10

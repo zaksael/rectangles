@@ -13,6 +13,7 @@ import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.ScoreBreakdown
+import dev.zaksael.rectangles.domain.Seats
 import dev.zaksael.rectangles.generated
 import dev.zaksael.rectangles.placed
 import dev.zaksael.rectangles.withSpecialCells
@@ -92,9 +93,9 @@ class PitfallSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).value
     val state = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
     Scoring.breakdownHistory(state) shouldBe Vector(
-      Map(
-        PlayerId.One -> ScoreBreakdown(area = 4, pitfall = -Constants.PITFALL_PENALTY_POINTS),
-        PlayerId.Two -> ScoreBreakdown(),
+      Seats(
+        ScoreBreakdown(area = 4, pitfall = -Constants.PITFALL_PENALTY_POINTS),
+        ScoreBreakdown(),
       )
     )
   }

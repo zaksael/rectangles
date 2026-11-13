@@ -11,6 +11,7 @@ import dev.zaksael.rectangles.domain.Constants
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
 import dev.zaksael.rectangles.domain.ScoreBreakdown
+import dev.zaksael.rectangles.domain.Seats
 import dev.zaksael.rectangles.generated
 import dev.zaksael.rectangles.withSpecialCells
 
@@ -77,7 +78,7 @@ class StealSpec extends AnyFlatSpec with Matchers with EitherValues:
         val (rolled, next) = Turns.rollDice(current, dice).value
         (Turns.endTurn(Turns.attemptPlace(rolled, topLeft, width, height).value), next)
     }
-    val totals = Scoring.breakdownHistory(state).map(_.view.mapValues(_.total).toMap)
+    val totals = Scoring.breakdownHistory(state).map(_.map(_.total).toMap)
     val ten    = Constants.STEAL_POINTS
     totals shouldBe Vector(
       Map(PlayerId.One -> (36 + ten), PlayerId.Two -> -ten),
@@ -96,9 +97,9 @@ class StealSpec extends AnyFlatSpec with Matchers with EitherValues:
     ).value
     val state = Turns.attemptPlace(rolled, Cell(0, 0), 2, 2).value
     Scoring.breakdownHistory(state) shouldBe Vector(
-      Map(
-        PlayerId.One -> ScoreBreakdown(area = 4, steal = Constants.STEAL_POINTS),
-        PlayerId.Two -> ScoreBreakdown(steal = -Constants.STEAL_POINTS),
+      Seats(
+        ScoreBreakdown(area = 4, steal = Constants.STEAL_POINTS),
+        ScoreBreakdown(steal = -Constants.STEAL_POINTS),
       )
     )
   }
