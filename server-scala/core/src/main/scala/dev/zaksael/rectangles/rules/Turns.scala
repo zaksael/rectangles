@@ -72,7 +72,8 @@ object Turns:
   /** Discards the roll for a fresh one, spending a charge; allowed while a roll is pending. */
   def reroll(state: GameState, dice: Dice): Either[RuleError, (GameState, Dice)] =
     val pending = Set(TurnState.ChoosingWildcard, TurnState.ChoosingPlacement, TurnState.Skipped)
-    if !pending(state.turn) || !Rerolls.canReroll(state) then Left(RuleError.WrongState)
+    if !pending(state.turn) || state.lastRoll.isEmpty || !Rerolls.canReroll(state) then
+      Left(RuleError.WrongState)
     else
       val player = state.players(state.current)
       rollDice(
@@ -142,6 +143,8 @@ object Turns:
               players =
                 state.players.updated(state.current, result.player.copy(consecutiveSkips = 0)),
               history = state.history :+ record,
+              lastRoll = None,
+              legal = Map.empty,
             )
           )
         )

@@ -38,6 +38,12 @@ class TurnFlowSpec extends AnyFlatSpec with Matchers with EitherValues:
     next.turn shouldBe TurnState.AwaitingRoll
   }
 
+  it should "refuse a second placement on the same roll" in {
+    val (rolled, _) = Turns.rollDice(game(), ScriptedDice.of(2, 3)).value
+    val placed      = Turns.attemptPlace(rolled, Cell(0, 0), 2, 3).value
+    Turns.attemptPlace(placed, Cell(0, 0), 3, 2).left.value shouldBe RuleError.IllegalPlacement
+  }
+
   "a roll with no legal placement" should "skip the turn" in {
     val (state, _) = Turns.rollDice(stuckGame(), ScriptedDice.of(6, 6)).value
     state.turn shouldBe TurnState.Skipped

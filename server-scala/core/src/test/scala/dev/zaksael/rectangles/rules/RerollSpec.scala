@@ -5,6 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.ScriptedDice
+import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.Constants
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
@@ -49,6 +50,12 @@ class RerollSpec extends AnyFlatSpec with Matchers with EitherValues:
 
   "a reroll with no roll to discard" should "be refused" in {
     Turns.reroll(game(6), ScriptedDice.of(2, 3)) shouldBe Left(RuleError.WrongState)
+  }
+
+  "a reroll after the placement" should "be refused" in {
+    val (rolled, dice) = Turns.rollDice(game(6), ScriptedDice.of(2, 3, 4, 5)).value
+    val placed         = Turns.attemptPlace(rolled, Cell(0, 0), 2, 3).value
+    Turns.reroll(placed, dice) shouldBe Left(RuleError.WrongState)
   }
 
   private val deadRoll = ScriptedDice.of(6, 6)
