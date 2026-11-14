@@ -1,0 +1,44 @@
+/* The score bar above Playing's score table. The Player 2 segment is darker than --p2 so white 20px numbers pass AA on it. */
+.score-bar {
+  --bar-p2: #B04E1C;
+  position: relative;
+  display: flex;
+  flex: none;
+  height: 36px;
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.score-bar-seg {
+  display: block;
+  height: 100%;
+}
+
+.score-bar-p1 {
+  background: var(--p1);
+}
+
+.score-bar-p2 {
+  background: var(--bar-p2);
+}
+
+/* Both numbers sit above both segments at the bar's ends, so a segment with no width still shows its number. */
+.score-bar-num {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.score-bar-num.left {
+  left: 8px;
+}
+
+.score-bar-num.right {
+  right: 8px;
+}

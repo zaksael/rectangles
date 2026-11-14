@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Board } from '../components/Board'
 import { RuleRowLabel } from '../components/RuleRowLabel'
+import { ScoreBar } from '../components/ScoreBar'
 import { GameOverBar, GameOverOverlay, SeriesResultOverlay } from '../dialogs/GameOverOverlay'
 import type { ErrorReason, GameAction, GameWireState, RecentTurn } from '../game/gameTypes'
 import { describeFootprint } from '../game/footprint'
@@ -342,6 +343,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
         </div>
         {state && (
           <>
+            <ScoreBar names={[state.game.players['1'].name, state.game.players['2'].name]} scores={[state.game.players['1'].score.totalScore, state.game.players['2'].score.totalScore]} />
             <table className="score-table">
               <caption className="visually-hidden">Score</caption>
               <thead>
@@ -376,10 +378,6 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                     })}
                   </tr>
                 ))}
-                <tr className="score-row">
-                  <th scope="row">Score</th>
-                  {ids.map((id) => <td key={id}>{state.game.players[id].score.totalScore}</td>)}
-                </tr>
                 <tr className="res-first">
                   <th scope="row" aria-describedby={REACH_NOTE_ID}>In reach</th>
                   {ids.map((id) => <td key={id}>{state.game.players[id].score.potential.area}</td>)}

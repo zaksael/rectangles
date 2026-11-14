@@ -35,7 +35,7 @@ test('View Board hides the result dialog and turns the rail\'s turn block into t
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   const bar = screen.getByRole('region', { name: 'Game result' })
   expect(bar).toHaveTextContent('Player 1 wins on score')
-  expect(rowValues('Score')).toEqual(['158', '141'])
+  expect(screen.getByRole('img', { name: 'Score: Player 1 158, Player 2 141' })).toBeInTheDocument()
   expect(screen.getByRole('group', { name: / board$/ })).toBeInTheDocument()
 })
 
@@ -153,12 +153,12 @@ test('View Result brings the dialog back, and View Board swaps it for the result
   expect(screen.getByRole('region', { name: 'Game result' })).toBeInTheDocument()
 })
 
-test('the table keeps the real score, Player 1 first, even when the winner trails after a surrender', () => {
+test('the score bar keeps the real score, Player 1 first, even when the winner trails after a surrender', () => {
   const bar = resultBar({ history: null, reason: 'surrender', playerId: 2, winner: 1 }, (game) => {
     game.players['1'].score = { ...game.players['1'].score, totalScore: 120 }
     game.players['2'].score = { ...game.players['2'].score, totalScore: 158 }
   })
-  expect(rowValues('Score')).toEqual(['120', '158'])
+  expect(screen.getByRole('img', { name: 'Score: Player 1 120, Player 2 158' })).toBeInTheDocument()
   expect(bar).not.toHaveTextContent(/by \d+ point/)
 })
 
@@ -173,13 +173,13 @@ test('focus lands on View Result in the bar after Escape', () => {
   expect(within(screen.getByRole('region', { name: 'Game result' })).getByRole('button', { name: 'View Result' })).toHaveFocus()
 })
 
-test('the table shows total score beside territory when modifiers make them differ', () => {
+test('the bar shows total score and the table territory when modifiers make them differ', () => {
   resultBar({ history: null, reason: 'boardFull', playerId: null, winner: 1 }, (game) => {
     game.players['1'].score = { ...game.players['1'].score, totalScore: 162, breakdown: { ...game.players['1'].score.breakdown, area: 152 } }
     game.players['2'].score = { ...game.players['2'].score, totalScore: 141, breakdown: { ...game.players['2'].score.breakdown, area: 141 } }
   })
   expect(rowValues('Area')).toEqual(['152', '141'])
-  expect(rowValues('Score')).toEqual(['162', '141'])
+  expect(screen.getByRole('img', { name: 'Score: Player 1 162, Player 2 141' })).toBeInTheDocument()
 })
 
 test('in series play a caption gives the round and the running series score', () => {

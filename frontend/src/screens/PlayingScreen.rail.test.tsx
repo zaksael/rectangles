@@ -55,14 +55,13 @@ test('each column header carries the player\'s dot', () => {
   }
 })
 
-test('the Area and Score rows show each player\'s totals', () => {
+test('the Area row shows each player\'s territory', () => {
   const game = makeGame()
   game.players['1'].score = { ...game.players['1'].score, totalScore: 12, breakdown: { ...game.players['1'].score.breakdown, area: 9 } }
   game.players['2'].score = { ...game.players['2'].score, totalScore: 7, breakdown: { ...game.players['2'].score.breakdown, area: 5 } }
   renderScreen({ game, series: null })
 
   expect(rowValues('Area')).toEqual(['9', '5'])
-  expect(rowValues('Score')).toEqual(['12', '7'])
 })
 
 test('the Skips row counts skips left against the limit, and marks one skip from the limit', () => {
@@ -163,10 +162,10 @@ test('with no special-cell rule on there is no mark or value in the table', () =
   renderScreen(makeState())
 
   expect(document.querySelector('.score-table .rule-mark')).toBeNull()
-  expect(rowHeaders()).toEqual(['Area', 'Score', 'In reach', 'Skips'])
+  expect(rowHeaders()).toEqual(['Area', 'In reach', 'Skips'])
 })
 
-// A game with each scoring rule on and a breakdown that sums to the Score row.
+// A game with each scoring rule on and a breakdown that sums to the total on the score bar.
 function breakdownGame(on: { prize?: boolean; pitfall?: boolean; steal?: boolean; enclosure?: boolean }) {
   const game = makeGame()
   game.houseRules.prize = { ...game.houseRules.prize, enabled: !!on.prize }
@@ -178,11 +177,11 @@ function breakdownGame(on: { prize?: boolean; pitfall?: boolean; steal?: boolean
   return { game, series: null }
 }
 
-test('each scoring rule that is on gets a row between Area and Score, in the order Prize, Pitfall, Steal, Enclosure, with signed values', () => {
+test('each scoring rule that is on gets a row after Area, in the order Prize, Pitfall, Steal, Enclosure, with signed values', () => {
   renderScreen(breakdownGame({ prize: true, pitfall: true, steal: true, enclosure: true }))
 
   const labels = rowHeaders().map((h) => h!.replace(/ [+−±]\d+$/, '')) // a special-cell row's label ends with its value
-  expect(labels).toEqual(['Area', 'Prize', 'Pitfall', 'Steal', 'Enclosure', 'Score', 'In reach', 'Skips'])
+  expect(labels).toEqual(['Area', 'Prize', 'Pitfall', 'Steal', 'Enclosure', 'In reach', 'Skips'])
   expect(rowValues('Prize')).toEqual(['+5', '0'])
   expect(rowValues('Pitfall')).toEqual(['−3', '−3'])
   expect(rowValues('Steal')).toEqual(['+4', '−4'])
@@ -200,10 +199,10 @@ test.each([
   expect(within(scoreTable()).queryByRole('rowheader', { name: label })).not.toBeInTheDocument()
 })
 
-test('with no scoring rule on the table is just Area and Score above the resources', () => {
+test('with no scoring rule on the table is just Area above the resources', () => {
   renderScreen(breakdownGame({}))
 
-  expect(within(scoreTable()).getAllByRole('rowheader').map((h) => h.textContent)).toEqual(['Area', 'Score', 'In reach', 'Skips'])
+  expect(within(scoreTable()).getAllByRole('rowheader').map((h) => h.textContent)).toEqual(['Area', 'In reach', 'Skips'])
 })
 
 test('a rule row that adds nothing is dimmed, and one that adds points is not', () => {
@@ -280,4 +279,25 @@ test('before any move the list says nothing has been played', () => {
   renderScreen(movesState([]))
 
   expect(screen.getByText('Nothing played yet')).toBeInTheDocument()
+})
+
+test('a bar above the score table names both scores and splits by their share', () => {
+  const game = makeGame()
+  game.players['1'].score = { ...game.players['1'].score, totalScore: 12 }
+  game.players['2'].score = { ...game.players['2'].score, totalScore: 8 }
+  renderScreen({ game, series: null })
+
+  const bar = screen.getByRole('img', { name: 'Score: Player 1 12, Player 2 8' })
+  expect([...bar.querySelectorAll<HTMLElement>('.score-bar-seg')].map((s) => s.style.width)).toEqual(['60%', '40%'])
+})
+
+test('with both scores negative the bar still shows both numbers, the smaller loss with the larger share', () => {
+  const game = makeGame()
+  game.players['1'].score = { ...game.players['1'].score, totalScore: -4 }
+  game.players['2'].score = { ...game.players['2'].score, totalScore: -1 }
+  renderScreen({ game, series: null })
+
+  const bar = screen.getByRole('img', { name: 'Score: Player 1 −4, Player 2 −1' })
+  expect([...bar.querySelectorAll<HTMLElement>('.score-bar-num')].map((n) => n.textContent)).toEqual(['−4', '−1'])
+  expect([...bar.querySelectorAll<HTMLElement>('.score-bar-seg')].map((s) => s.style.width)).toEqual(['20%', '80%'])
 })
