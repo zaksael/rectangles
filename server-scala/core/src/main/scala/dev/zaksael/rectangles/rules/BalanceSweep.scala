@@ -23,6 +23,21 @@ object BalanceSweep:
   def specialRules(boardSize: Int): Rules =
     Rules(boardSize = boardSize, prize = true, pitfall = true, steal = true, reroll = true)
 
+  /**
+   * Default rules, each special rule alone, then all four: the sets that tell which rule moves a
+   * win rate.
+   */
+  def ruleSets(boardSize: Int): Vector[(String, Rules)] =
+    val plain = Rules(boardSize = boardSize)
+    Vector(
+      "default"  -> plain,
+      "prize"    -> plain.copy(prize = true),
+      "pitfall"  -> plain.copy(pitfall = true),
+      "steal"    -> plain.copy(steal = true),
+      "reroll"   -> plain.copy(reroll = true),
+      "all four" -> specialRules(boardSize),
+    )
+
   private val Header =
     "pairing (first/second)    games  first  second  ties  seat-One  margin  fill  end reasons"
 
@@ -73,6 +88,20 @@ object BalanceSweep:
         .play(rules, seats, Some(PlayerId.One), SplitMix64(seed + i))
         .map(PairingGame(firstSeat, _))
     }
+
+/**
+ * The two smart self-play pairings under each rule set, to see which special rule gives seat One
+ * its edge:
+ * `sbt "core/runMain dev.zaksael.rectangles.rules.runRuleSweep [games] [boardSize] [seed]"`.
+ */
+@main def runRuleSweep(games: Int = 300, boardSize: Int = 19, seed: Long = 1L): Unit =
+  val smart = BalanceSweep.pairings.filter(p =>
+    p.first == p.second && p.first != BotDifficulty.Basic
+  )
+  BalanceSweep.ruleSets(boardSize).foreach((label, rules) =>
+    println(s"== $label")
+    println(BalanceSweep.report(smart.map(p => p -> BalanceSweep.play(rules, p, games, seed))))
+  )
 
 /**
  * Every pairing on default rules, then on the special rules: two tables on stdout. Run it with the

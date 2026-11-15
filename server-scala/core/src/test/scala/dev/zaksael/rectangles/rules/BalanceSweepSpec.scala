@@ -17,6 +17,17 @@ class BalanceSweepSpec extends AnyFlatSpec with Matchers:
       Rules(boardSize = 23, prize = true, pitfall = true, steal = true, reroll = true)
   }
 
+  "the rule sets" should "be default, each special rule alone, then all four" in {
+    BalanceSweep.ruleSets(19) shouldBe Vector(
+      "default"  -> Rules(boardSize = 19),
+      "prize"    -> Rules(boardSize = 19, prize = true),
+      "pitfall"  -> Rules(boardSize = 19, pitfall = true),
+      "steal"    -> Rules(boardSize = 19, steal = true),
+      "reroll"   -> Rules(boardSize = 19, reroll = true),
+      "all four" -> BalanceSweep.specialRules(19),
+    )
+  }
+
   "a pairing sweep" should "swap the seat of its first difficulty every game" in {
     val games =
       BalanceSweep.play(small, Pairing(BotDifficulty.Basic, BotDifficulty.Blocking), 4, 1L)
