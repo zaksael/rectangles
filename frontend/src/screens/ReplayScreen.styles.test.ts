@@ -40,8 +40,7 @@ test('the caption\'s step label stays AA (4.5:1) on the ledger', () => {
   expect(textContrast(css, '.replay .caption .step')).toBeGreaterThanOrEqual(4.5)
 })
 
-test('the flagged-turn row is two buttons round a fixed 108px count, dimmed and inverting on hover like the transport', () => {
-  expect(css).toMatch(/\.replay \.flag-nav \{[^}]*grid-template-columns:\s*1fr 108px 1fr/)
+test('the flagged-turn row buttons are dimmed when unavailable and invert on hover like the transport', () => {
   expect(css).toMatch(/\.replay \.flag-nav \.btn\[aria-disabled="true"\]\s*\{[^}]*cursor:\s*default/)
   expect(css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]).toMatch(/\.replay \.flag-nav \.btn:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\)/)
 })
@@ -149,8 +148,8 @@ test('the readout is 12px mono beside the label, and the hint is 12px and AA (4.
 
 const boardCss = readCss('Board.css')
 
-test('the note slot reserves a stacked note (text, then the toggle on its own row) so a note coming and going never resizes the chart', () => {
-  expect(ruleFor(css, '.replay .analysis-slot')).toMatch(/min-height:\s*56px/)
+test('the note slot reserves a two-line note so a note coming and going never resizes the chart', () => {
+  expect(ruleFor(css, '.replay .analysis-slot')).toMatch(/min-height:\s*44px/)
 })
 
 test('the muted note lines and the chart key stay AA (4.5:1) on the ledger', () => {
@@ -163,16 +162,21 @@ test('a flagged note has a full-ink rule on its left and a muted one has a hairl
   expect(ruleFor(css, '.replay .analysis.pending')).toMatch(/border-left-color:\s*var\(--line\)/)
 })
 
+test('the count that leads a flagged note is muted and ends with a period', () => {
+  expect(ruleFor(css, '.replay .analysis-lead')).toMatch(/color:\s*var\(--ink-muted\)/)
+  expect(ruleFor(css, '.replay .analysis-lead::after')).toMatch(/content:\s*'\.'/)
+})
+
 test('the pressed Show Better Option toggle is inverted, in ink on the ledger', () => {
-  const block = ruleFor(css, ".replay .analysis-row .btn[aria-pressed='true']")
+  const block = ruleFor(css, ".replay .flag-nav .btn[aria-pressed='true']:not([aria-disabled='true'])")
 
   expect(block).toMatch(/background:\s*var\(--ink\)/)
   expect(block).toMatch(/color:\s*var\(--ledger\)/)
 })
 
-test('a long note stacks the toggle under it, and the toggle never wraps its label', () => {
-  expect(ruleFor(css, '.replay .analysis-row.stacked')).toMatch(/flex-direction:\s*column/)
-  expect(ruleFor(css, '.replay .analysis-row .btn')).toMatch(/white-space:\s*nowrap/)
+test('the flagged row has the toggle between two equal buttons, and no label wraps', () => {
+  expect(ruleFor(css, '.replay .flag-nav')).toMatch(/grid-template-columns:\s*1fr auto 1fr/)
+  expect(ruleFor(css, '.replay .flag-nav .btn')).toMatch(/white-space:\s*nowrap/)
 })
 
 test('the better placement is a 3px dashed ink outline with a light ink tint, above the pieces', () => {
@@ -202,7 +206,7 @@ test('the key hint is muted like the chart hint, and a touch screen, which has n
 
 test('the Replay rail buttons are 30px tall: 5px of padding above and below, in the head, transport, speed and flag rows alike', () => {
   for (const selector of ['.replay .rail .btn', '.replay .transport .btn', '.replay .speed .btn', '.replay .flag-nav .btn']) {
-    expect(ruleFor(css, selector)).toMatch(/padding:\s*5px (0|16px)/)
+    expect(ruleFor(css, selector)).toMatch(/padding:\s*5px (0|8px|16px)/)
   }
 })
 

@@ -28,7 +28,7 @@ test.each([
   ['tokens.css', '.pill.active'],
   ['ModeSelectScreen.css', '.mode-segmented button.active'],
   ['ReplayScreen.css', ".replay .speed .btn[aria-pressed='true']"],
-  ['ReplayScreen.css', ".replay .analysis-row .btn[aria-pressed='true']"],
+  ['ReplayScreen.css', ".replay .flag-nav .btn[aria-pressed='true']:not([aria-disabled='true'])"],
 ])('%s: a selected %s is filled with Highlight under forced colors', (file, selector) => {
   const block = forcedColorsBlock(readCss(file))
   const rule = block.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^{}]*\\{([^}]*)\\}`))

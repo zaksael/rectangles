@@ -89,17 +89,7 @@ function analysisText({ axis, chosen, best }: AnalysisTurn): string {
 }
 
 // The note for a flagged turn, or the one muted line saying why there is none.
-function AnalysisLine({
-  analysis,
-  flaggedTurn,
-  showBetterOption,
-  onToggleBetterOption,
-}: {
-  analysis: Analysis
-  flaggedTurn: AnalysisTurn | undefined
-  showBetterOption: boolean
-  onToggleBetterOption: () => void
-}) {
+function AnalysisLine({ analysis, flaggedTurn, count }: { analysis: Analysis; flaggedTurn: AnalysisTurn | undefined; count: string }) {
   if (analysis.status === 'loading') {
     return (
       <p className="analysis pending">
@@ -109,17 +99,11 @@ function AnalysisLine({
   }
   if (analysis.status === 'unavailable') return <p className="analysis pending">Turn analysis unavailable</p>
   if (analysis.turns.length === 0) return <p className="analysis pending">No better moves found</p>
-  if (!flaggedTurn) return null
+  if (!flaggedTurn) return <p className="analysis pending">{count}</p>
   const text = analysisText(flaggedTurn)
-  // A note this long would wrap to three lines beside the toggle, so the toggle takes its own row.
   return (
     <div className="analysis">
-      <div className={`analysis-row${text.length > 50 ? ' stacked' : ''}`}>
-        <span>{text}</span>
-        <button className="btn secondary" aria-pressed={showBetterOption} onClick={onToggleBetterOption}>
-          Show Better Option
-        </button>
-      </div>
+      <span className="analysis-lead">{count}</span> <span>{text}</span>
     </div>
   )
 }
@@ -226,6 +210,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   const nextFlagged = flaggedTurns.find((turn) => turn > step)
   const prevFlagged = flaggedTurns.findLast((turn) => turn < step)
   const flaggedPlace = flaggedTurns.indexOf(step) + 1
+  const flaggedCount = flaggedPlace ? `Flagged ${flaggedPlace} of ${flaggedTurns.length}` : `${flaggedTurns.length} flagged`
 
   useEffect(() => {
     if (!playing) return
@@ -311,7 +296,7 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
         <p className="visually-hidden" data-testid="replay-paused" aria-live="polite">{justPaused ? (atStart ? 'Paused at the start of the game' : `Paused on turn ${step} of ${history.length}`) : ''}</p>
         {analysis && (
           <div className="analysis-slot" aria-live={playing ? 'off' : 'polite'}>
-            <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} showBetterOption={showBetterOption} onToggleBetterOption={onToggleBetterOption} />
+            <AnalysisLine analysis={analysis} flaggedTurn={flaggedTurn} count={flaggedCount} />
           </div>
         )}
         <ScoreChart flagged={flaggedTurns} history={history} step={step} names={{ '1': game.players['1'].name, '2': game.players['2'].name }} onJump={(turn) => goTo(() => turn)} />
@@ -326,9 +311,11 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
           </div>
           {flaggedTurns.length > 0 && (
             <div className="flag-nav">
-              <button className="btn secondary" aria-disabled={prevFlagged === undefined} onClick={() => prevFlagged !== undefined && goTo(() => prevFlagged)}>Prev Flagged</button>
-              <span className="flag-count">{flaggedPlace ? `Flagged ${flaggedPlace} of ${flaggedTurns.length}` : `${flaggedTurns.length} flagged`}</span>
-              <button className="btn secondary" aria-disabled={nextFlagged === undefined} onClick={() => nextFlagged !== undefined && goTo(() => nextFlagged)}>Next Flagged</button>
+              <button className="btn secondary" aria-label="Prev Flagged" aria-disabled={prevFlagged === undefined} onClick={() => prevFlagged !== undefined && goTo(() => prevFlagged)}>‹ Flagged</button>
+              <button className="btn secondary" aria-pressed={showBetterOption} aria-disabled={!flaggedTurn} onClick={() => flaggedTurn && onToggleBetterOption()}>
+                Show Better Option
+              </button>
+              <button className="btn secondary" aria-label="Next Flagged" aria-disabled={nextFlagged === undefined} onClick={() => nextFlagged !== undefined && goTo(() => nextFlagged)}>Flagged ›</button>
             </div>
           )}
           <div className="speed" role="group" aria-label="Playback speed">

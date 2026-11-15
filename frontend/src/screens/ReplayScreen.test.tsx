@@ -867,6 +867,19 @@ test('on a flagged turn the count gives its place and Prev Flagged goes back one
   expect(screen.getByText('Scored 1 this turn; the best move scored 10 (Prize)')).toBeTruthy()
 })
 
+test('on a flagged turn the note leads with the count, and the flagged row has no count of its own', () => {
+  const { container } = renderFlagged([1, 2, 3], 2)
+
+  expect(screen.getByText('Flagged 2 of 3').closest('.analysis')).not.toBeNull()
+  expect(container.querySelector('.flag-nav .flag-count')).toBeNull()
+})
+
+test('on a turn that is not flagged the note is the muted count', () => {
+  renderFlagged([2, 3])
+
+  expect(screen.getByText('2 flagged').closest('.analysis.pending')).not.toBeNull()
+})
+
 test('at the first and last flagged turn the button that would go past it is aria-disabled and does nothing', () => {
   renderFlagged([1, 2, 3], 1)
   const prev = screen.getByRole('button', { name: 'Prev Flagged' })
@@ -932,10 +945,33 @@ test('a flagged turn offers Show Better Option, not pressed by default', () => {
   expect(toggle()?.getAttribute('aria-pressed')).toBe('false')
 })
 
-test('a turn that is not flagged has no toggle', () => {
-  renderToggle({ turn: flagged({ turn: 2 }) })
+test('the toggle sits between Prev Flagged and Next Flagged in the flagged row', () => {
+  renderToggle()
+  const row = toggle()!.parentElement!
 
-  expect(toggle()).toBeNull()
+  expect(within(row).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Prev Flagged', 'Show Better Option', 'Next Flagged'])
+})
+
+test('the flagged buttons read ‹ Flagged and Flagged › but keep the names Prev Flagged and Next Flagged', () => {
+  renderToggle()
+
+  expect(screen.getByRole('button', { name: 'Prev Flagged' }).textContent).toBe('‹ Flagged')
+  expect(screen.getByRole('button', { name: 'Next Flagged' }).textContent).toBe('Flagged ›')
+})
+
+test('a turn that is not flagged keeps the toggle in the row, aria-disabled and doing nothing', () => {
+  const onToggle = vi.fn()
+  renderToggle({ turn: flagged({ turn: 2 }), onToggle })
+
+  expect(toggle()?.getAttribute('aria-disabled')).toBe('true')
+  fireEvent.click(toggle()!)
+  expect(onToggle).not.toHaveBeenCalled()
+})
+
+test('a flagged turn leaves the toggle enabled', () => {
+  renderToggle()
+
+  expect(toggle()?.getAttribute('aria-disabled')).toBe('false')
 })
 
 test('pressing the toggle asks the owner of the state to flip it', () => {
@@ -961,24 +997,11 @@ test('with it off there is no outline', () => {
   expect(outline(container)).toBeNull()
 })
 
-test('with it on, stepping to a turn that is not flagged drops the outline and the button', () => {
+test('with it on, stepping to a turn that is not flagged drops the outline and disables the button', () => {
   const { container } = renderToggle({ showBetterOption: true })
 
   fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
   expect(outline(container)).toBeNull()
-  expect(toggle()).toBeNull()
-})
-
-test('a note over 50 characters puts the toggle on its own row', () => {
-  const { container } = renderToggle({ turn: flagged({ axis: 'enclosure', chosen: -100, best: 100 }) })
-
-  expect(container.querySelector('.analysis-row.stacked')).not.toBeNull()
-})
-
-test('a shorter note keeps the toggle beside it', () => {
-  const { container } = renderToggle({ turn: flagged({ axis: 'denial', chosen: 5, best: 25 }) })
-
-  expect(container.querySelector('.analysis-row')).not.toBeNull()
-  expect(container.querySelector('.analysis-row.stacked')).toBeNull()
+  expect(toggle()?.getAttribute('aria-disabled')).toBe('true')
 })

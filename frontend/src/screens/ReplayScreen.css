@@ -161,25 +161,19 @@
   min-width: 0;
 }
 
-/* Prev Flagged, the count and Next Flagged under the transport; the count column is fixed so the buttons stay put as its text changes. */
+/* Prev Flagged, the Show Better Option toggle and Next Flagged under the transport. The toggle stays in the row on every turn
+   (inert without a flag), so the buttons never move as steps come and go. */
 .replay .flag-nav {
   display: grid;
-  grid-template-columns: 1fr 108px 1fr;
+  grid-template-columns: 1fr auto 1fr;
   gap: 6px;
   align-items: center;
 }
 
 .replay .flag-nav .btn {
-  padding: 5px 0;
+  padding: 5px 8px;
   min-width: 0;
-}
-
-.replay .flag-count {
-  font-size: 14px;
-  line-height: 20px;
   white-space: nowrap;
-  text-align: center;
-  color: var(--ink-muted);
 }
 
 /* Slow, Normal and Fast sit under the middle three transport buttons. */
@@ -312,11 +306,10 @@
   color: var(--ink-muted);
 }
 
-/* The turn analysis: a note under the caption for a flagged turn, or the one muted line saying why there is none. The slot
-   keeps the height of a stacked note (a line, then the toggle on its own row) whether or not this step has one, so the chart
-   below never resizes as steps come and go. */
+/* The turn analysis: a note under the caption for a flagged turn, or the muted count of flagged turns. The slot keeps the
+   height of a two-line note whether or not this step has one, so the chart below never resizes as steps come and go. */
 .replay .analysis-slot {
-  min-height: 56px;
+  min-height: 44px;
   margin-top: -8px;
 }
 
@@ -333,27 +326,17 @@
   color: var(--ink-muted);
 }
 
-.replay .analysis-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+/* The place among the flagged turns leads the note; the full stop is drawn, so the count's text stays whole for lookups. */
+.replay .analysis-lead {
+  color: var(--ink-muted);
 }
 
-/* A note over 50 characters would wrap to three lines beside the toggle, so the toggle takes its own row. */
-.replay .analysis-row.stacked {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+.replay .analysis-lead::after {
+  content: '.';
 }
 
-.replay .analysis-row .btn {
-  padding: 4px 10px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.replay .analysis-row .btn[aria-pressed='true'] {
+/* Not while inert: on a turn with no flag the toggle keeps its state but must not look pressed, or it reads as working. */
+.replay .flag-nav .btn[aria-pressed='true']:not([aria-disabled='true']) {
   background: var(--ink);
   color: var(--ledger);
 }
@@ -373,7 +356,7 @@
 
 @media (forced-colors: active) {
   .replay .speed .btn[aria-pressed='true'],
-  .replay .analysis-row .btn[aria-pressed='true'] {
+  .replay .flag-nav .btn[aria-pressed='true']:not([aria-disabled='true']) {
     background: Highlight;
     color: HighlightText;
   }
