@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import cats.syntax.parallel.*
 import io.circe.Json
 import io.circe.parser.parse
 import org.scalatest.EitherValues
@@ -158,6 +159,19 @@ class GameSessionSpec extends AnyFlatSpec with Matchers with EitherValues with O
       only(counted.handle(request)).hcursor.get[Json]("turns").value shouldBe flaggedTurns
     )
     calls.get shouldBe 1
+  }
+
+  it should "run at most two analyses at a time across games" in {
+    val running = AtomicInteger(0)
+    val peak    = AtomicInteger(0)
+    val slow = (_: GameState) =>
+      peak.accumulateAndGet(running.incrementAndGet(), math.max)
+      Thread.sleep(100)
+      running.decrementAndGet()
+      flagged
+    val sessions = Vector.fill(6)(finished(slow))
+    sessions.parTraverse(_.handle(request)).unsafeRunSync()
+    peak.get shouldBe 2
   }
 
   it should "also answer for a finished game against the bot" in {

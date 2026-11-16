@@ -2,6 +2,8 @@ package dev.zaksael.rectangles.server.session
 
 import cats.effect.IO
 import cats.effect.Ref
+import cats.effect.SyncIO
+import cats.effect.std.Semaphore
 import io.circe.Json
 
 import dev.zaksael.rectangles.domain.BotDifficulty
@@ -55,8 +57,11 @@ final class GameSession private (
         analysed.get.flatMap {
           case Some((seen, turns)) if seen == state => IO.pure(Vector(AnalysisMsg(turns).toJson))
           case _ =>
-            IO.blocking(Serialize.analysis(analyse(state))).flatMap { turns =>
-              analysed.set(Some((state, turns))).as(Vector(AnalysisMsg(turns).toJson))
+            GameSession.analysisSlots.permit.surround(
+              IO.blocking(Serialize.analysis(analyse(state)))
+            ).flatMap {
+              turns =>
+                analysed.set(Some((state, turns))).as(Vector(AnalysisMsg(turns).toJson))
             }
         }
     }
@@ -72,6 +77,9 @@ private def stateMessage(play: Play): Json =
   StateMsg(Serialize.game(play.state), play.series.fold(Json.Null)(Serialize.series)).toJson
 
 object GameSession:
+  /** Analyses running at once across every game: each takes up to a second of a blocking thread. */
+  private val analysisSlots: Semaphore[IO] = Semaphore.in[SyncIO, IO](2).unsafeRunSync()
+
   def create(
       first: Play,
       bot: Option[BotDifficulty] = None,
