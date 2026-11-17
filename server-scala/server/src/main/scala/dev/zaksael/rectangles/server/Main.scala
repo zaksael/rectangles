@@ -10,6 +10,7 @@ import logging4s.console.ConsoleInstances.given
 import logging4s.core.Logging
 import logging4s.core.syntax.loggable.*
 
+import dev.zaksael.rectangles.server.http.ErrorLogging
 import dev.zaksael.rectangles.server.http.HealthRoutes
 import dev.zaksael.rectangles.server.http.StaticRoutes
 import dev.zaksael.rectangles.server.http.WsRoutes
@@ -32,12 +33,20 @@ object Main extends IOApp.Simple:
         .withHost(config.host)
         .withPort(config.port)
         .withHttpWebSocketApp(ws =>
-          (HealthRoutes.routes <+> WsRoutes.routes(
-            ws,
-            maxConnections = config.maxConnections,
-          ) <+> StaticRoutes.routes(
-            config.frontendDist
-          )).orNotFound
+          ErrorLogging(
+            (HealthRoutes.routes <+> WsRoutes.routes(
+              ws,
+              maxConnections = config.maxConnections,
+            ) <+> StaticRoutes.routes(
+              config.frontendDist
+            )).orNotFound,
+            (request, problem) =>
+              log.error(
+                "request failed",
+                request.asLogValue("request"),
+                problem.asLogValue("problem"),
+              ),
+          )
         )
         .build
         .use(server =>
