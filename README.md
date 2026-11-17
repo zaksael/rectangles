@@ -4,8 +4,8 @@ A two-player pen-and-paper dice game, implemented as a Scala rules engine and We
 frontend that runs in the browser.
 
 Two players share one grid board and grow their territory inward from
-opposite corners by rolling dice and placing rectangles. Whoever covers more
-area when the game ends wins.
+opposite corners by rolling dice and placing rectangles. Whoever has the higher
+score (area plus the special-cell points) when the game ends wins.
 
 ## Index
 
