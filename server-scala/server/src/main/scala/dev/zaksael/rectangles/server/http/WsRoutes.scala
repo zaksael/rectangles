@@ -63,7 +63,7 @@ object WsRoutes:
       keepAlive: FiniteDuration = 20.seconds,
       maxConnections: Int = Int.MaxValue,
   ): HttpRoutes[IO] =
-    // shortcut: the count rises only after the upgrade, so a burst of connects can pass the limit by a few; reserve the slot atomically if exactness matters.
+    // shortcut: the count rises only after the upgrade, so a burst of connects can pass the limit, up to Ember's own cap of 1024; reserve the slot atomically if exactness matters.
     val openConnections = new AtomicInteger
     HttpRoutes.of[IO] { case req @ GET -> Root / "ws" =>
       def header(name: String) = req.headers.get(CIString(name)).map(_.head.value)
