@@ -12,9 +12,15 @@ import pureconfig.error.CannotConvert
 import pureconfig.error.ConfigReaderException
 
 final case class Config(host: Host, port: Port, frontendDist: Path, maxConnections: Int)
-    derives ConfigReader
 
 object Config:
+  given ConfigReader[Config] = ConfigReader.derived[Config].emap(c =>
+    Either.cond(
+      c.maxConnections >= 1,
+      c,
+      CannotConvert(c.maxConnections.toString, "max-connections", "must be at least 1"),
+    )
+  )
   given ConfigReader[Host] = ConfigReader.fromNonEmptyString(s =>
     Host.fromString(s).toRight(CannotConvert(s, "Host", "not a valid host"))
   )

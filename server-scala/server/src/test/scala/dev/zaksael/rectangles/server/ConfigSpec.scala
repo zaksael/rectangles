@@ -21,8 +21,19 @@ class ConfigSpec extends AnyFlatSpec with Matchers:
     Config.from(source) shouldBe Right(Config(ipv4"0.0.0.0", port"9000", Path.of("/srv/web"), 3))
   }
 
+  it should "reject a connection limit below 1" in {
+    for limit <- List(0, -1) do
+      Config.from(
+        ConfigSource.string(
+          s"server { host = \"x\", port = 9000, frontend-dist = \"d\", max-connections = $limit }"
+        )
+      ).isLeft shouldBe true
+  }
+
   it should "reject a port out of range" in {
     Config.from(
-      ConfigSource.string("server { host = \"x\", port = 70000, frontend-dist = \"d\" }")
+      ConfigSource.string(
+        "server { host = \"x\", port = 70000, frontend-dist = \"d\", max-connections = 3 }"
+      )
     ).isLeft shouldBe true
   }
