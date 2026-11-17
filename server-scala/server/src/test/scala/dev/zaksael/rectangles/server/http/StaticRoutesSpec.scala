@@ -59,6 +59,11 @@ class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues with 
       }
     }
 
+  it should "answer 400 to a path with a control character instead of failing" in
+    withBuild { dist =>
+      served(dist)(port => get(port, "/assets/%00").statusCode shouldBe 400)
+    }
+
   it should "forbid framing and sniffing on every response" in
     withBuild { dist =>
       served(dist) { port =>

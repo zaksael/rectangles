@@ -53,7 +53,15 @@ object StaticRoutes:
     else
       val files = fileService[IO](FileService.Config(dist.toString))
       HttpRoutes[IO] { request =>
-        files(request).orElse(OptionT.pure[IO](Response[IO](Status.NotFound))).map(response =>
-          response.putHeaders(hardening :+ caching(request, response))
-        )
+        val served =
+          if hasControlCharacter(request) then OptionT.pure[IO](Response[IO](Status.BadRequest))
+          else files(request).orElse(OptionT.pure[IO](Response[IO](Status.NotFound)))
+        served.map(response => response.putHeaders(hardening :+ caching(request, response)))
       }
+
+  /**
+   * The file service cannot open a path with a NUL or other control character: it must not reach
+   * it.
+   */
+  private def hasControlCharacter(request: Request[IO]): Boolean =
+    request.uri.path.segments.exists(_.decoded().exists(_.isControl))
