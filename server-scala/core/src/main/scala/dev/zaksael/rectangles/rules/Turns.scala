@@ -69,10 +69,14 @@ object Turns:
         TurnRecord(state.current, roll, None, state.wildcard.map(_.originalRoll)),
     )
 
-  /** Discards the roll for a fresh one, spending a charge; allowed while a roll is pending. */
+  /**
+   * Discards the roll for a fresh one, spending a charge; allowed while a roll is pending, not once
+   * its skip is recorded.
+   */
   def reroll(state: GameState, dice: Dice): Either[RuleError, (GameState, Dice)] =
     val pending = Set(TurnState.ChoosingWildcard, TurnState.ChoosingPlacement, TurnState.Skipped)
-    if !pending(state.turn) || state.lastRoll.isEmpty || !Rerolls.canReroll(state) then
+    val settled = state.turn == TurnState.Skipped && recorded(state)
+    if !pending(state.turn) || state.lastRoll.isEmpty || !Rerolls.canReroll(state) || settled then
       Left(RuleError.WrongState)
     else
       val player = state.players(state.current)

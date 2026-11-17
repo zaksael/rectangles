@@ -97,3 +97,9 @@ class RerollSpec extends AnyFlatSpec with Matchers with EitherValues:
     again.history shouldBe empty
     again.lastRoll shouldBe Some(Roll(1, 1))
   }
+
+  it should "not be rerolled once it is recorded" in {
+    val (rolled, dice) = Turns.rollDice(game(2), ScriptedDice.of(6, 6, 1, 1)).value
+    val confirmed      = Turns.confirmSkip(rolled).value
+    Turns.reroll(confirmed, dice) shouldBe Left(RuleError.WrongState)
+  }
