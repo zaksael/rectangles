@@ -262,9 +262,9 @@ The three difficulties:
 Greedy and Blocking also play [Wildcard Roll](#house-rules) and
 [Reroll](#house-rules) with the same underlying strategy: on a wildcard roll they
 pick whichever value scores best on their own metric (a reachable
-Prize/Steal/Pitfall for Greedy, a deniable frontier cell for Blocking); if
-every value ties at zero, Blocking picks randomly among them, while Greedy
-instead prefers whichever value gives the larger piece. With Reroll on,
+Prize/Steal/Pitfall for Greedy; the same plus a deniable frontier cell for
+Blocking); among values tied for the best score, Blocking picks randomly,
+while Greedy prefers whichever value gives the larger piece. With Reroll on,
 they spend a charge to discard a roll that would cost them points (a forced
 Pitfall), or that scores nothing while a Prize or Steal (Greedy), or those and a cell of
 your frontier (Blocking), is still within a roll's reach; with nothing in

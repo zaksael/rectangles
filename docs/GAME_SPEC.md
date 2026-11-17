@@ -110,8 +110,9 @@ fixed for the whole match (and, in series play, for every round of it).
 The special cells, walls and obstacles below are placed with two distance
 rules, both measured in cells as the larger of the row and column difference.
 "Kept clear of a starting corner" means at least 6 cells away from it, and
-"a minimum distance apart" means at least 3 cells apart (this also applies
-between a cell and its own mirror).
+"a minimum distance apart" means at least 3 cells apart (this applies
+between cells of one kind of feature, and between a cell and its own mirror;
+cells of different features only must not share a cell).
 
 ### 6.1 Prize
 
@@ -303,11 +304,11 @@ Greedy and Blocking apply the same underlying strategy to Wildcard Roll
 (§6.6) and Reroll (§6.8), where enabled:
 
 - On a wildcard roll, each picks whichever value scores best by its own
-  metric (most special-cell value reachable for Greedy, most opponent cells
-  deniable for Blocking). If every value ties — for Greedy, this includes
-  every turn none of Prize/Steal/Pitfall are in play — Blocking picks among
-  the tied values at random, while Greedy instead prefers the value
-  yielding the largest piece.
+  metric (most special-cell value reachable for Greedy; for Blocking, the
+  same special-cell value plus the most opponent cells deniable). Among
+  values tied for the best score, Blocking picks at random, while Greedy
+  prefers the value yielding the largest piece (and picks at random only
+  if those still tie).
 - With Reroll on and a charge left, both always discard a roll that would
   skip the turn. Otherwise each scores the best placement of the roll by its
   own metric (Greedy by special cells alone; Blocking by those plus the
@@ -375,7 +376,7 @@ were placed in — the tournament champion.
 | Wall lines | 2 mirrored pairs, each line 5 cells (fixed) | 4 lines |
 | Obstacle cells | 2 mirrored pairs (fixed) | 4 cells |
 | Distance from a starting corner | at least 6 cells (fixed) | 6 |
-| Distance between features | at least 3 cells (fixed) | 3 |
+| Distance between cells of one feature | at least 3 cells (fixed) | 3 |
 | Bot difficulty | Basic, Greedy, Blocking | Basic |
 | Series length | 3 or 5 rounds | — |
 | Tournament size | 4 or 8 participants | — |
