@@ -53,7 +53,7 @@ With a bot, the answer to an action is one `state` per step, in order: the human
 
 `game.turn.legalPlacements` lists the legal spots of the current roll, one entry per orientation with `width`, `height` and `topLefts`; the `topLefts` come in row-major order (by row, then column), which the client's cycling through spots relies on.
 
-`analysis.turns` lists the turns where a better move existed: `turn` (1-based), `axis` (`prize`, `pitfall`, `steal`, `denial` or `enclosure`), `chosen` and `best` (points on that axis; cells denied for `denial`), and the better placement as `topLeft`, `width` and `height`.
+`analysis.turns` lists the turns where a better move existed: `turn` (1-based), `axis` (`prize`, `pitfall`, `steal`, `denial` or `enclosure`), `chosen` and `best` (the move's total special-cell and enclosure points, not only those on `axis`; cells denied for `denial`), and the better placement as `topLeft`, `width` and `height`.
 
 ## Errors
 

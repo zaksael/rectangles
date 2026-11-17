@@ -25,8 +25,9 @@ enum AnalysisAxis:
   case Prize, Pitfall, Steal, Denial, Enclosure
 
 /**
- * `chosen` and `best` are cells denied for `Denial` and real points for the rest; `better` is the
- * candidate that ranked higher than the move played.
+ * `chosen` and `best` are cells denied for `Denial`, and otherwise the move's total special-cell
+ * and enclosure points, not only those on `axis`; `better` is the candidate that ranked higher than
+ * the move played.
  */
 final case class TurnAnalysis(axis: AnalysisAxis, chosen: Int, best: Int, better: Candidate)
 
