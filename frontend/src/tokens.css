@@ -3,7 +3,7 @@
  *
  * "Ledger" aesthetic: flat, no rounded corners, no drop shadows.
  * One exception: a true modal dialog (connection lost, Surrender
- * confirm, Settings, Game-over) floats over a dimmed backdrop scrim. It
+ * confirm, Leave series, Reset, Settings, Game-over) floats over a dimmed backdrop scrim. It
  * elevates one layer above another rather than decorating a flat card, and
  * needs the shadow to read as lifted rather than pasted on. Everything else
  * stays flat.
@@ -217,7 +217,7 @@ dialog button:focus {
   }
 }
 
-/* The modal dialogs (connection lost, Surrender, Reset, Settings, game-over): one shell, each dialog sets its own width. */
+/* The modal dialogs (connection lost, Surrender, Leave series, Reset, Settings, game-over): one shell, each dialog sets its own width. */
 dialog.modal {
   box-sizing: border-box;
   /* A modal's auto margins centre it between its insets: pull them in to the notch and corner insets so it
