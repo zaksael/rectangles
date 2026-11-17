@@ -19,6 +19,8 @@ How a client talks to the server: connect parameters, the messages each side sen
 
 The server answers `403` and does not upgrade when a parameter is unknown or given twice, a value is not allowed, or the page's `Origin` is a different host and port than the server's (compared ignoring letter case; no `Origin`, as from a script, is accepted). A connect whose `protocolVersion` is a whole number other than `1` (a page cached across a server upgrade) is upgraded, gets one `protocolVersionMismatch` error and is closed, so the client can say the page is out of date; with a different `Origin` it is still refused with `403`. A single game starts with a coin flip for the first player; round 1 of a series is started by Player 1.
 
+The server answers `503` and does not upgrade when it already holds its limit of open game connections (64 by default; `RECTANGLES_MAX_CONNECTIONS` changes it). A browser cannot read the body of a refused upgrade, so the page sees only a failed connect; a slot frees when a game connection closes, and `GET /health` answers whatever the count.
+
 The server sends a ping every 20 seconds so idle connections stay open. Page code cannot see ping frames, so a connection with `heartbeat=true` also gets a `heartbeat` message at the same time; a page that hears nothing for much longer than 20 seconds knows the link is dead.
 
 ## Messages

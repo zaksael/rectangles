@@ -305,6 +305,31 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       WsTestClient.connect(port, "protocolVersion=abc").left.value shouldBe 403
     }
 
+  "a connect over the connection limit" should "get HTTP 503 while the earlier ones stay open" in
+    TestServer.use(ws => WsRoutes.routes(ws, maxConnections = 1).orNotFound) { port =>
+      val first = WsTestClient.connect(port, "protocolVersion=1").value
+      try
+        first.next().hcursor.get[String]("type").value shouldBe "state"
+        WsTestClient.connect(port, "protocolVersion=1").left.value shouldBe 503
+      finally first.close()
+    }
+
+  it should "be accepted once the earlier connection has closed" in
+    TestServer.use(ws => WsRoutes.routes(ws, maxConnections = 1).orNotFound) { port =>
+      val first = WsTestClient.connect(port, "protocolVersion=1").value
+      first.next()
+      first.close()
+      // The server frees the slot a moment after the close arrives.
+      val second = (1 to 40).iterator
+        .map { _ =>
+          Thread.sleep(50)
+          WsTestClient.connect(port, "protocolVersion=1")
+        }
+        .collectFirst { case Right(client) => client }
+      try second should not be None
+      finally second.foreach(_.close())
+    }
+
   "a connect the server refuses" should "get HTTP 403 for parameters it does not know or a page from another host" in
     TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
       WsTestClient.connect(port, "protocolVersion=1&boardSize=20").left.value shouldBe 403

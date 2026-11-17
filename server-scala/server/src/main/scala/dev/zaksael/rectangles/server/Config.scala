@@ -11,7 +11,8 @@ import pureconfig.ConfigSource
 import pureconfig.error.CannotConvert
 import pureconfig.error.ConfigReaderException
 
-final case class Config(host: Host, port: Port, frontendDist: Path) derives ConfigReader
+final case class Config(host: Host, port: Port, frontendDist: Path, maxConnections: Int)
+    derives ConfigReader
 
 object Config:
   given ConfigReader[Host] = ConfigReader.fromNonEmptyString(s =>

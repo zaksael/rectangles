@@ -9,16 +9,16 @@ import org.scalatest.matchers.should.Matchers
 import pureconfig.ConfigSource
 
 class ConfigSpec extends AnyFlatSpec with Matchers:
-  "Config" should "default to 127.0.0.1 on port 8765, serving frontend/dist" in {
+  "Config" should "default to 127.0.0.1 on port 8765, serving frontend/dist, with 64 connections" in {
     Config.from(ConfigSource.default) shouldBe
-      Right(Config(ipv4"127.0.0.1", port"8765", Path.of("frontend/dist")))
+      Right(Config(ipv4"127.0.0.1", port"8765", Path.of("frontend/dist"), 64))
   }
 
-  it should "read a host, port and frontend folder from its source" in {
+  it should "read a host, port, frontend folder and connection limit from its source" in {
     val source = ConfigSource.string(
-      "server { host = \"0.0.0.0\", port = 9000, frontend-dist = \"/srv/web\" }"
+      "server { host = \"0.0.0.0\", port = 9000, frontend-dist = \"/srv/web\", max-connections = 3 }"
     )
-    Config.from(source) shouldBe Right(Config(ipv4"0.0.0.0", port"9000", Path.of("/srv/web")))
+    Config.from(source) shouldBe Right(Config(ipv4"0.0.0.0", port"9000", Path.of("/srv/web"), 3))
   }
 
   it should "reject a port out of range" in {

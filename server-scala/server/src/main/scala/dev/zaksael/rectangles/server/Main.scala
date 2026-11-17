@@ -31,9 +31,11 @@ object Main extends IOApp.Simple:
       _ <- ServerBuilder.ember
         .withHost(config.host)
         .withPort(config.port)
-        .withMaxConnections(64)
         .withHttpWebSocketApp(ws =>
-          (HealthRoutes.routes <+> WsRoutes.routes(ws) <+> StaticRoutes.routes(
+          (HealthRoutes.routes <+> WsRoutes.routes(
+            ws,
+            maxConnections = config.maxConnections,
+          ) <+> StaticRoutes.routes(
             config.frontendDist
           )).orNotFound
         )

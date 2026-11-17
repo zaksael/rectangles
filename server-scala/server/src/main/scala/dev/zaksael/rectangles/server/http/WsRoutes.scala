@@ -15,6 +15,7 @@ import logging4s.console.ConsoleInstances.given
 import logging4s.core.Logging
 import logging4s.core.syntax.loggable.*
 import org.http4s.HttpRoutes
+import org.http4s.Response
 import org.http4s.dsl.io.*
 import org.http4s.server.websocket.WebSocketBuilder2
 import org.http4s.websocket.WebSocketFrame
@@ -48,9 +49,6 @@ object WsRoutes:
    */
   private val outboxSize = 64
 
-  /** Connections open right now, across the whole process; only the log lines read it. */
-  private val openConnections = new AtomicInteger
-
   private def send(outbox: Queue[IO, Option[WebSocketFrame]], message: Json): IO[Unit] =
     outbox.offer(Some(WebSocketFrame.Text(message.noSpaces)))
 
@@ -63,14 +61,17 @@ object WsRoutes:
       ws: WebSocketBuilder2[IO],
       sessions: Connect => IO[Session] = newGame,
       keepAlive: FiniteDuration = 20.seconds,
+      maxConnections: Int = Int.MaxValue,
   ): HttpRoutes[IO] =
+    // shortcut: the count rises only after the upgrade, so a burst of connects can pass the limit by a few; reserve the slot atomically if exactness matters.
+    val openConnections = new AtomicInteger
     HttpRoutes.of[IO] { case req @ GET -> Root / "ws" =>
       def header(name: String) = req.headers.get(CIString(name)).map(_.head.value)
       val keys                 = req.uri.query.pairs.map(_._1)
-      def refuse(reason: String) =
+      def refuse(reason: String, response: IO[Response[IO]] = Forbidden()) =
         Logging.create[IO]("WsRoutes").flatMap(
           _.warn("connect refused", reason.asLogValue("reason"))
-        ) *> Forbidden()
+        ) *> response
       ConnectParams.parse(req.uri.query.params) match
         // A stale tab gets the error a message would, since a browser cannot read a 403's body.
         case None
@@ -89,6 +90,8 @@ object WsRoutes:
         case Some(_) if keys.distinct.size != keys.size => refuse("repeatedParameter")
         case Some(_) if !OriginCheck.allowed(header("Origin"), header("Host")) =>
           refuse("badOrigin")
+        case Some(_) if openConnections.get >= maxConnections =>
+          refuse("full", ServiceUnavailable())
         case Some(connect) =>
           for
             log     <- Logging.create[IO]("WsRoutes")
