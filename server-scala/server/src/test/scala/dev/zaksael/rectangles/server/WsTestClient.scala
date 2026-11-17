@@ -47,6 +47,9 @@ final class WsTestClient private (
   def close(): Unit =
     Try(socket.sendClose(WebSocket.NORMAL_CLOSURE, "").get(5, TimeUnit.SECONDS)): Unit
 
+  /** Drops the connection without a close frame, as a crashed tab does. */
+  def abort(): Unit = socket.abort()
+
 object WsTestClient:
   /**
    * Connects to `/ws?query` with the extra request headers; Left is the status of a refused

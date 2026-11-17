@@ -319,16 +319,29 @@ class WsRoutesSpec extends AnyFlatSpec with Matchers with EitherValues:
       val first = WsTestClient.connect(port, "protocolVersion=1").value
       first.next()
       first.close()
-      // The server frees the slot a moment after the close arrives.
-      val second = (1 to 40).iterator
-        .map { _ =>
-          Thread.sleep(50)
-          WsTestClient.connect(port, "protocolVersion=1")
-        }
-        .collectFirst { case Right(client) => client }
+      val second = connectWhenFree(port)
       try second should not be None
       finally second.foreach(_.close())
     }
+
+  it should "be accepted once the earlier connection was dropped without a close" in
+    TestServer.use(ws => WsRoutes.routes(ws, maxConnections = 1).orNotFound) { port =>
+      val first = WsTestClient.connect(port, "protocolVersion=1").value
+      first.next()
+      first.abort()
+      val second = connectWhenFree(port)
+      try second should not be None
+      finally second.foreach(_.close())
+    }
+
+  /** The server frees a slot a moment after the connection ends, so retry the connect. */
+  private def connectWhenFree(port: Int): Option[WsTestClient] =
+    (1 to 40).iterator
+      .map { _ =>
+        Thread.sleep(50)
+        WsTestClient.connect(port, "protocolVersion=1")
+      }
+      .collectFirst { case Right(client) => client }
 
   "a connect the server refuses" should "get HTTP 403 for parameters it does not know or a page from another host" in
     TestServer.use(ws => WsRoutes.routes(ws).orNotFound) { port =>
