@@ -131,3 +131,30 @@ class BotMatchSpec extends AnyFlatSpec with Matchers with OptionValues:
 
     blockingWins should be >= 20
   }
+
+  it should "finish with every rule on at each difficulty" in {
+    val everyRule = Rules(
+      boardSize = 19,
+      wildcard = true,
+      reroll = true,
+      walls = true,
+      obstacles = true,
+      prize = true,
+      pitfall = true,
+      steal = true,
+      selfEnclosedPenalty = true,
+      comebackNudge = true,
+    )
+    for
+      difficulty <- BotDifficulty.values
+      seed       <- 1L to 3L
+    do
+      withClue(s"$difficulty seed $seed") {
+        BotMatch.play(
+          everyRule,
+          Seats(difficulty, difficulty),
+          Some(PlayerId.One),
+          SplitMix64(seed),
+        ) should not be None
+      }
+  }
