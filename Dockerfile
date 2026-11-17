@@ -26,6 +26,7 @@ RUN useradd --system --uid 10001 rectangles
 WORKDIR /app
 COPY --from=server /app/server-scala/target/stage/ ./
 COPY --from=frontend /app/frontend/dist ./frontend/dist
+# JSON covers the app's own log lines; Ember's lines (a few at startup) stay plain text, so a line-by-line JSON shipper must tolerate them
 ENV RECTANGLES_SERVER_HOST=0.0.0.0 \
     LOGGING4S_CONSOLE_FORMAT=json \
     JAVA_OPTS=-XX:MaxRAMPercentage=75
