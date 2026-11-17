@@ -30,6 +30,7 @@ object StaticRoutes:
     Header.Raw(ci"X-Frame-Options", "DENY"),
     Header.Raw(ci"X-Content-Type-Options", "nosniff"),
     Header.Raw(ci"Content-Security-Policy", policy),
+    Header.Raw(ci"Vary", "Accept-Encoding"),
   )
 
   /**

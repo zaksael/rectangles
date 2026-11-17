@@ -74,6 +74,7 @@ class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues with 
           .build()
         val response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString())
         header(response, "Content-Encoding") shouldBe Some("gzip")
+        header(response, "Vary") shouldBe Some("Accept-Encoding")
       }
     }
 
