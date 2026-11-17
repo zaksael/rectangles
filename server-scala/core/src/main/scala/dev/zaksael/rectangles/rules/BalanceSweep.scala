@@ -92,7 +92,8 @@ object BalanceSweep:
 /**
  * The two smart self-play pairings under each rule set, to see which special rule gives seat One
  * its edge:
- * `sbt "core/runMain dev.zaksael.rectangles.rules.runRuleSweep [games] [boardSize] [seed]"`.
+ * `sbt "core/runMain dev.zaksael.rectangles.rules.runRuleSweep <games> <boardSize> <seed>"`; all
+ * three arguments are required, whatever the defaults below say.
  */
 @main def runRuleSweep(games: Int = 300, boardSize: Int = 19, seed: Long = 1L): Unit =
   val smart = BalanceSweep.pairings.filter(p =>
@@ -106,7 +107,8 @@ object BalanceSweep:
 /**
  * Every pairing on default rules, then on the special rules: two tables on stdout. Run it with the
  * full class name:
- * `sbt "core/runMain dev.zaksael.rectangles.rules.runBalanceSweep [games] [boardSize] [seed]"`.
+ * `sbt "core/runMain dev.zaksael.rectangles.rules.runBalanceSweep <games> <boardSize> <seed>"`; all
+ * three arguments are required, whatever the defaults below say.
  */
 @main def runBalanceSweep(games: Int = 100, boardSize: Int = 19, seed: Long = 1L): Unit =
   Seq(
