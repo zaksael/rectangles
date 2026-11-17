@@ -7,5 +7,6 @@
 **/.DS_Store
 frontend/dist
 frontend/coverage
+frontend/.impeccable
 **/.bsp
 **/.idea
