@@ -10,6 +10,7 @@ import org.http4s.HttpRoutes
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Status
+import org.http4s.server.middleware.GZip
 import org.http4s.server.staticcontent.FileService
 import org.http4s.server.staticcontent.fileService
 import org.typelevel.ci.*
@@ -44,20 +45,21 @@ object StaticRoutes:
 
   /**
    * The built frontend in `dist` at `/`: `index.html` at the root, the assets, and 404 for any
-   * other path (the app has no client routes). Every response forbids framing and sniffing. Nothing
-   * at all when the folder is missing, so development (the Vite proxy) and the tests are unchanged.
-   * Mount it after `/ws`: it answers every GET.
+   * other path (the app has no client routes). Every response forbids framing and sniffing, and a
+   * client that accepts gzip gets a compressed body (these routes only, not `/ws`). Nothing at all
+   * when the folder is missing, so development (the Vite proxy) and the tests are unchanged. Mount
+   * it after `/ws`: it answers every GET.
    */
   def routes(dist: Path): HttpRoutes[IO] =
     if !Files.isDirectory(dist) then HttpRoutes.empty[IO]
     else
       val files = fileService[IO](FileService.Config(dist.toString))
-      HttpRoutes[IO] { request =>
+      GZip(HttpRoutes[IO] { request =>
         val served =
           if hasControlCharacter(request) then OptionT.pure[IO](Response[IO](Status.BadRequest))
           else files(request).orElse(OptionT.pure[IO](Response[IO](Status.NotFound)))
         served.map(response => response.putHeaders(hardening :+ caching(request, response)))
-      }
+      })
 
   /**
    * The file service cannot open a path with a NUL or other control character: it must not reach

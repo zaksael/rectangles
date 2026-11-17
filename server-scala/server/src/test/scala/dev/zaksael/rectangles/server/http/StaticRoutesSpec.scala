@@ -64,6 +64,19 @@ class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues with 
       served(dist)(port => get(port, "/assets/%00").statusCode shouldBe 400)
     }
 
+  it should "gzip an asset for a client that accepts it" in
+    withBuild { dist =>
+      served(dist) { port =>
+        val request = HttpRequest
+          .newBuilder(URI.create(s"http://127.0.0.1:$port/assets/app.js"))
+          .header("Accept-Encoding", "gzip")
+          .GET()
+          .build()
+        val response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString())
+        header(response, "Content-Encoding") shouldBe Some("gzip")
+      }
+    }
+
   it should "forbid framing and sniffing on every response" in
     withBuild { dist =>
       served(dist) { port =>
