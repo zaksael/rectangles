@@ -154,6 +154,17 @@ test('lists every house rule as on or off from the match state, read-only', () =
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
 })
 
+test('each house rule row shows its On or Off word to everyone, not only to a screen reader', () => {
+  const base = makeGame()
+  renderOverlay({ game: makeGame({ houseRules: { ...base.houseRules, wildcard: { ...base.houseRules.wildcard, enabled: true } } }) })
+
+  for (const item of screen.getAllByRole('listitem')) {
+    const word = within(item).getByText(/^(On|Off)$/)
+    expect(word).not.toHaveClass('visually-hidden')
+    expect(word).toHaveClass('settings-rule-state')
+  }
+})
+
 test('the Menu title sits directly in the dialog, with no header band, and still names the dialog', () => {
   renderOverlay()
 

@@ -89,7 +89,7 @@ export function SettingsOverlay({ game, series, modeLabel, sendAction, onClose, 
                     return (
                       <li key={rule.key} className={on ? 'settings-rule on' : 'settings-rule'}>
                         <span>{rule.label}</span>
-                        <span className="visually-hidden">{on ? 'On' : 'Off'}</span>
+                        <span className="settings-rule-state">{on ? 'On' : 'Off'}</span>
                       </li>
                     )
                   })}

@@ -708,15 +708,26 @@ dialog.settings {
   padding: 0;
 }
 .settings-rule {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
   min-height: 23px;
   font-size: 14px;
   color: var(--ink-muted);
+}
+/* Only the name is struck through, so the On/Off word beside it stays readable. */
+.settings-rule:not(.on) > :first-child {
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--ink) 60%, transparent);
 }
 .settings-rule.on {
   color: var(--ink);
-  text-decoration: none;
+}
+.settings-rule-state {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 /* The Bot speed group (Vs Bot only): the Menu's one adjustable item, set above the footer divider. */
 .settings-speed {

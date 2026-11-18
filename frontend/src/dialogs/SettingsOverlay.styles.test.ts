@@ -57,11 +57,16 @@ test('the unavailable Surrender keeps 3:1 against the ledger (it is the button\'
   expect(contrast(dimmed, ledger)).toBeLessThan(contrast(danger, ledger))
 })
 
-test('an off Menu rule is dimmed and struck through, an on rule is plain ink, and no box is drawn', () => {
+test('an off Menu rule is dimmed and its name struck through but not its On/Off word, an on rule is plain ink, and no box is drawn', () => {
   expect(css).not.toContain('.settings-box')
-  expect(ruleFor(css, '.settings-rule')).toMatch(/text-decoration:\s*line-through/)
+  expect(ruleFor(css, '.settings-rule:not(.on) > :first-child')).toMatch(/text-decoration:\s*line-through/)
+  expect(ruleFor(css, '.settings-rule')).not.toMatch(/text-decoration:\s*line-through/)
   expect(ruleFor(css, '.settings-rule.on')).toMatch(/color:\s*var\(--ink\)/)
-  expect(ruleFor(css, '.settings-rule.on')).toMatch(/text-decoration:\s*none/)
+})
+
+test('a Menu rule row puts its name at the left and its On/Off word at the right edge', () => {
+  expect(ruleFor(css, '.settings-rule')).toMatch(/display:\s*flex[^}]*justify-content:\s*space-between/)
+  expect(ruleFor(css, '.settings-rule-state')).toMatch(/font-size:\s*11px[^}]*text-transform:\s*uppercase/)
 })
 
 test('the chosen bot speed is marked by a leading check, not a solid fill that outweighs Resume and Surrender', () => {
