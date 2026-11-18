@@ -96,7 +96,7 @@
     color: HighlightText;
   }
   .mode-rule.on .mode-checkbox::after {
-    background: CanvasText;
+    border-color: CanvasText;
   }
 }
 .mode-card .mode-name {
@@ -328,8 +328,8 @@ dialog.mode-reset-confirm {
   user-select: none;
 }
 .mode-checkbox {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex: none;
   border: 1.5px solid var(--ink);
   display: flex;
@@ -353,9 +353,18 @@ dialog.mode-reset-confirm {
 }
 .mode-rule.on .mode-checkbox::after {
   content: "";
-  width: 7px;
-  height: 7px;
-  background: var(--ledger);
+  width: 5px;
+  height: 10px;
+  border: solid var(--ledger);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+.mode-rule:not(.on) {
+  color: var(--ink-muted);
+}
+.mode-rule:not(.on) .mode-checkbox {
+  border-style: dashed;
+  border-color: var(--ink-muted);
 }
 @media (hover: hover) {
   .mode-rule:hover {

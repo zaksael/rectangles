@@ -61,7 +61,7 @@ test('the score chart sits on the ledger colour under forced colors, so its dark
 test('a switched-on rule checkbox keeps a visible mark under forced colors', () => {
   const block = forcedColorsBlock(readCss('ModeSelectScreen.css'))
 
-  expect(block).toMatch(/\.mode-rule\.on \.mode-checkbox::after[^{}]*\{[^}]*background:\s*CanvasText/)
+  expect(block).toMatch(/\.mode-rule\.on \.mode-checkbox::after[^{}]*\{[^}]*border-color:\s*CanvasText/)
 })
 
 // Their marks are backgrounds drawn in dark ink, so under a dark forced-colors theme they need the light page colour back.

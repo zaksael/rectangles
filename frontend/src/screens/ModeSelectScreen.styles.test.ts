@@ -13,6 +13,24 @@ test('secondary text uses the one muted-ink token, not its own ink mix', () => {
   }
 })
 
+test('a switched-on rule shows a tick in an 18px box, drawn as a ledger-coloured corner rather than a filled square', () => {
+  const mark = css.match(/\n\.mode-rule\.on \.mode-checkbox::after \{([^}]*)\}/)![1] // at line start: the forced-colors copy is indented
+
+  expect(ruleFor(css, '.mode-checkbox')).toMatch(/width:\s*18px/)
+  expect(ruleFor(css, '.mode-checkbox')).toMatch(/height:\s*18px/)
+  expect(mark).toMatch(/border:\s*solid var\(--ledger\)/)
+  expect(mark).not.toMatch(/background:\s*var\(--ledger\)/)
+})
+
+test('a switched-off rule reads as off at a glance: a dashed muted box and muted text', () => {
+  const off = css.match(/\n\.mode-rule:not\(\.on\) \{([^}]*)\}/)?.[1] ?? ''
+  const box = css.match(/\n\.mode-rule:not\(\.on\) \.mode-checkbox \{([^}]*)\}/)?.[1] ?? ''
+
+  expect(off).toMatch(/color:\s*var\(--ink-muted\)/)
+  expect(box).toMatch(/border-style:\s*dashed/)
+  expect(box).toMatch(/border-color:\s*var\(--ink-muted\)/)
+})
+
 test('the failed-connect line is a status block: 13px bold-ish text, a full danger border and tint, and AA (4.5:1) on that tint', () => {
   const rule = ruleFor(css, '.mode-start-error')
   const tint = mix(danger, mixShare(rule, 'background', '--danger'), ledger)
