@@ -443,7 +443,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
       )}
       {connectFailed && (
         <div className="mode-start-error" role="alert">
-          Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again
+          Couldn’t connect — the server may be down, full or refusing this page. Your settings are unchanged, try again
         </div>
       )}
       {confirmingReset && (

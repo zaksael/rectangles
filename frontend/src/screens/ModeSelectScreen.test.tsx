@@ -530,7 +530,7 @@ test('while connectFailed, names both likely causes in an inline retry message a
 
   expect(
     screen.getByText(
-      'Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again',
+      'Couldn’t connect — the server may be down, full or refusing this page. Your settings are unchanged, try again',
     ),
   ).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
@@ -541,7 +541,7 @@ test('the failed-connect message is an alert, which screen readers announce when
 
   const alert = screen.getByRole('alert')
 
-  expect(alert).toHaveTextContent('Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again')
+  expect(alert).toHaveTextContent('Couldn’t connect — the server may be down, full or refusing this page. Your settings are unchanged, try again')
   expect(alert).not.toHaveAttribute('aria-live') // an alert is already assertive
 })
 

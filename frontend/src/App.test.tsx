@@ -99,7 +99,7 @@ describe('App', () => {
       FakeWebSocket.instances[0]!.emit('close')
     })
 
-    expect(screen.getByText('Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again')).toBeInTheDocument()
+    expect(screen.getByText('Couldn’t connect — the server may be down, full or refusing this page. Your settings are unchanged, try again')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Game' }))
@@ -306,7 +306,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Game' }))
 
     expect(screen.getByRole('button', { name: 'Start Game' })).not.toBeDisabled()
-    expect(screen.queryByText('Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again')).not.toBeInTheDocument()
+    expect(screen.queryByText('Couldn’t connect — the server may be down, full or refusing this page. Your settings are unchanged, try again')).not.toBeInTheDocument()
   })
 
   it('a late close from the previous game is not read as the next game failing to connect', () => {
@@ -331,7 +331,7 @@ describe('App', () => {
       first.emit('close')
     })
 
-    expect(screen.queryByText('Couldn’t connect — the server may be down or refusing this page. Your settings are unchanged, try again')).not.toBeInTheDocument()
+    expect(screen.queryByText('Couldn’t connect — the server may be down, full or refusing this page. Your settings are unchanged, try again')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Connecting…' })).toBeDisabled()
   })
 
