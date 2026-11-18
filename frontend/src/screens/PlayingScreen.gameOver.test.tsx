@@ -232,7 +232,7 @@ test('a new round shows its own result dialog even after the last one was put aw
 
 function lastRoundState() {
   const zero = { '1': 0, '2': 0 }
-  const round = { area: zero, prizeCaptured: zero, pitfallCaptured: zero, stealCaptured: zero, total: { '1': 158, '2': 141 } }
+  const round = { area: zero, prizeCaptured: zero, pitfallCaptured: zero, stealCaptured: zero, total: { '1': 158, '2': 141 }, winner: 1 }
   const series = makeSeries({ gamesPlayed: 3, isComplete: true, winner: 1, scores: { '1': 459, '2': 440 }, rounds: [round, round, round] })
   return { ...gameOverState(), series }
 }

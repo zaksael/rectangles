@@ -39,6 +39,7 @@ object Serialize:
           "pitfallCaptured" -> round(result)(_.pitfallCaptured),
           "stealCaptured"   -> round(result)(_.stealCaptured),
           "total"           -> round(result)(_.total),
+          "winner"          -> result.winner.fold(Json.Null)(who => Json.fromInt(who.value)),
         )
       )*),
       "isComplete" -> Json.fromBoolean(series.isComplete),

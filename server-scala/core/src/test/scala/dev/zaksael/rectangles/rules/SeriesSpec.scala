@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 
 import dev.zaksael.rectangles.domain.Cell
 import dev.zaksael.rectangles.domain.CellKind
+import dev.zaksael.rectangles.domain.GameOverReason
 import dev.zaksael.rectangles.domain.GameState
 import dev.zaksael.rectangles.domain.PlayerId
 import dev.zaksael.rectangles.domain.Rules
@@ -75,6 +76,16 @@ class SeriesSpec extends AnyFlatSpec with Matchers:
 
     (round(one).pitfallCaptured, round(two).pitfallCaptured) shouldBe (1, 0)
     (round(one).stealCaptured, round(two).stealCaptured) shouldBe (0, 2)
+  }
+
+  it should "name the opponent as the winner of a round the leader surrendered" in {
+    val surrendered = finished(10, 0, 4, 0).copy(gameOver = Some(GameOverReason.Surrendered(one)))
+
+    series().record(surrendered).rounds.head.winner shouldBe Some(two)
+  }
+
+  it should "name the leader on score as the winner of a round nobody surrendered" in {
+    series().record(finished(4, 0, 10, 0)).rounds.head.winner shouldBe Some(two)
   }
 
   "a series" should "not be complete until every round is played, whatever the score gap" in {

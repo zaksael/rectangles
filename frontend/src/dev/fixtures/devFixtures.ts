@@ -79,6 +79,7 @@ const round = (a: number, b: number) => ({
   pitfallCaptured: { '1': 0, '2': 0 },
   stealCaptured: { '1': 0, '2': 0 },
   total: { '1': a, '2': b },
+  winner: a > b ? 1 : b > a ? 2 : null,
 })
 
 const BUILDERS: Record<string, () => GameState> = {

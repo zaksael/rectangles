@@ -489,7 +489,21 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     analysed(game(6), TurnRecord(PlayerId.One, Roll(6, 6), None)) shouldBe Json.arr()
   }
 
-  "a serialized series" should "carry the scores and each round's breakdown" in {
+  "a serialized series" should "write a null winner for a round that ended level" in {
+    val rules = Rules(boardSize = 6, skipLimit = 2)
+    val level = placed(
+      placed(GameState.initial(rules), PlayerId.One, Cell(0, 0), 3, 1),
+      PlayerId.Two,
+      Cell(0, 2),
+      3,
+      1,
+    )
+
+    Serialize.series(Series(3, rules).record(level)).hcursor
+      .downField("rounds").downArray.downField("winner").focus shouldBe Some(Json.Null)
+  }
+
+  it should "carry the scores and each round's breakdown" in {
     val rules = Rules(boardSize = 6, skipLimit = 2, prize = true)
     val played = placed(
       placed(GameState.initial(rules), PlayerId.One, Cell(0, 0), 5, 1),
@@ -509,7 +523,7 @@ class SerializeSpec extends AnyFlatSpec with Matchers with EitherValues:
     Serialize.series(Series(3, rules).record(finished)) shouldBe parse(
       """{"length":3,"scores":{"1":15,"2":2},"gamesPlayed":1,
         |"rounds":[{"area":{"1":5,"2":2},"prizeCaptured":{"1":1,"2":0},
-        |"pitfallCaptured":{"1":0,"2":0},"stealCaptured":{"1":0,"2":0},"total":{"1":15,"2":2}}],
+        |"pitfallCaptured":{"1":0,"2":0},"stealCaptured":{"1":0,"2":0},"total":{"1":15,"2":2},"winner":1}],
         |"isComplete":false,"winner":1}""".stripMargin
     ).value
   }

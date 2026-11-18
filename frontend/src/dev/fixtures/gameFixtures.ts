@@ -66,7 +66,7 @@ export function makeSeries(overrides: Partial<SeriesWireState> = {}): SeriesWire
     length: 3,
     scores: { ...zero },
     gamesPlayed: 1,
-    rounds: [{ area: { ...zero }, prizeCaptured: { ...zero }, pitfallCaptured: { ...zero }, stealCaptured: { ...zero }, total: { ...zero } }],
+    rounds: [{ area: { ...zero }, prizeCaptured: { ...zero }, pitfallCaptured: { ...zero }, stealCaptured: { ...zero }, total: { ...zero }, winner: null }],
     isComplete: false,
     winner: null,
     ...overrides,

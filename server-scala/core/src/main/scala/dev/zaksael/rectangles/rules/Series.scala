@@ -14,7 +14,11 @@ final case class PlayerRound(
     total: Int,
 )
 
-final case class RoundResult(players: Map[PlayerId, PlayerRound])
+/**
+ * `winner` is the game's winner: the opponent of a surrendering player, else the leader on score;
+ * None on a tie.
+ */
+final case class RoundResult(players: Map[PlayerId, PlayerRound], winner: Option[PlayerId])
 
 /**
  * A fixed number of rounds on the same rules, scored by the sum of every round's total. It always
@@ -44,7 +48,12 @@ final case class Series(length: Int, rules: Rules, rounds: Vector[RoundResult] =
         stealCaptured = player.specialCaptures.getOrElse(CellKind.Steal, 0),
         total = Scoring.total(state, who),
       )
-    copy(rounds = rounds :+ RoundResult(PlayerId.values.map(who => who -> round(who)).toMap))
+    copy(rounds =
+      rounds :+ RoundResult(
+        PlayerId.values.map(who => who -> round(who)).toMap,
+        Scoring.winner(state),
+      )
+    )
 
   /** The next round's game: the starter alternates, beginning with Player One. */
   def newGame(dice: Dice): (GameState, Dice) =

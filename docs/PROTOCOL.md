@@ -44,7 +44,7 @@ Every message is one JSON text frame with `"protocolVersion": 1` and a `"type"`.
 
 | `type` | Fields | When |
 |---|---|---|
-| `state` | `game`, `series` (`null` outside a series) | after connect and after every accepted action |
+| `state` | `game`, `series` (`null` outside a series; each entry of its `rounds` carries `winner`: `1`, `2`, or `null` for a tie, the opponent of a player who surrendered) | after connect and after every accepted action |
 | `analysis` | `turns` | answer to `requestAnalysis` |
 | `error` | `reason`, `message` | an action was refused; the game is unchanged |
 | `heartbeat` | — | every 20 seconds, only on a connection that asked with `heartbeat=true` |

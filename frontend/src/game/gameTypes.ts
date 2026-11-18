@@ -157,6 +157,7 @@ export interface SeriesWireState {
     pitfallCaptured: { '1': number; '2': number }
     stealCaptured: { '1': number; '2': number }
     total: { '1': number; '2': number }
+    winner: number | null
   }[]
   isComplete: boolean
   winner: number | null

@@ -582,7 +582,7 @@ test('after the last round, the round bar offers Series Result in place of Next 
 
 function roundTotals(...totals: [number, number][]) {
   const zero = { '1': 0, '2': 0 }
-  return totals.map(([a, b]) => ({ area: zero, prizeCaptured: zero, pitfallCaptured: zero, stealCaptured: zero, total: { '1': a, '2': b } }))
+  return totals.map(([a, b]) => ({ area: zero, prizeCaptured: zero, pitfallCaptured: zero, stealCaptured: zero, total: { '1': a, '2': b }, winner: a > b ? 1 : b > a ? 2 : null }))
 }
 
 function renderSeriesResult(series: ReturnType<typeof makeSeries>, handlers = { onNewGame: vi.fn(), onViewBoard: vi.fn() }) {
