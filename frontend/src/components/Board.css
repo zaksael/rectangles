@@ -143,6 +143,7 @@
   background: var(--ink);
   box-shadow: 0 0 0 1px var(--ledger);
   z-index: 1;
+  pointer-events: none;
 }
 .wall-v {
   left: calc(var(--c) * var(--cell) - 2.5px);
