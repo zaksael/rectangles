@@ -61,6 +61,18 @@ function changedCount(s: ModeSelectSettings): number {
   ].filter(Boolean).length
 }
 
+function recapText(s: ModeSelectSettings): string {
+  const games = s.seriesLength ?? 1
+  const rulesOn = HOUSE_RULES.filter((r) => s.houseRules[r.key]).length
+  return [
+    s.opponent === 'bot' ? `Vs Bot (${s.botDifficulty})` : 'Local 2P',
+    `${s.boardSize}×${s.boardSize}`,
+    `Skip ${s.skipLimit}`,
+    `${games} ${games === 1 ? 'game' : 'games'}`,
+    `${rulesOn} ${rulesOn === 1 ? 'rule' : 'rules'} on`,
+  ].join(' · ')
+}
+
 const BOARD_SIZE_OPTIONS = [19, 23, 27].map((size) => ({ value: size, label: `${size}×${size}` }))
 const SKIP_LIMIT_OPTIONS = [3, 5].map((limit) => ({ value: limit, label: String(limit) }))
 const DIFFICULTIES: BotDifficulty[] = ['Basic', 'Greedy', 'Blocking']
@@ -418,6 +430,8 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
           </div>
         </div>
       )}
+
+      {!noModeSelected && <p className="mode-recap">{recapText(settings)}</p>}
 
       <button
         ref={startButton}

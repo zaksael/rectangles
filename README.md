@@ -57,7 +57,8 @@ reloading or closing the tab ends it (the browser asks before leaving a game in 
 The game opens on Mode Select. Pick the opponent (**Local 2P** or **Vs Bot** and
 its difficulty), a board size and skip limit, how many games to play (1, 3 or
 5, see [Series mode](#series-mode)), and which of the nine
-[house rules](#house-rules) to switch on, then **Start Game**. Your last choices
+[house rules](#house-rules) to switch on, then **Start Game**, with a one-line
+recap of the setup above it. Your last choices
 are remembered, and **Reset to Defaults** appears once any differ. Each group
 of house rules has **All On** and **All Off** links to switch its three rules together.
 

@@ -219,6 +219,12 @@ dialog.mode-reset-confirm {
   flex-direction: column;
   gap: 16px;
 }
+.mode-recap {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-align: center;
+}
 .mode-empty-hint-box {
   border: 1px dashed var(--line);
   padding: 16px;

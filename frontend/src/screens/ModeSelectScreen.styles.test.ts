@@ -31,6 +31,14 @@ test('a switched-off rule reads as off at a glance: a dashed muted box and muted
   expect(box).toMatch(/border-color:\s*var\(--ink-muted\)/)
 })
 
+test('the setup recap is a muted 12px line centred over the centred Start Game button', () => {
+  const recap = ruleFor(css, '.mode-recap')
+
+  expect(recap).toMatch(/font-size:\s*12px/)
+  expect(recap).toMatch(/color:\s*var\(--ink-muted\)/)
+  expect(recap).toMatch(/text-align:\s*center/)
+})
+
 test('the failed-connect line is a status block: 13px bold-ish text, a full danger border and tint, and AA (4.5:1) on that tint', () => {
   const rule = ruleFor(css, '.mode-start-error')
   const tint = mix(danger, mixShare(rule, 'background', '--danger'), ledger)

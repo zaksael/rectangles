@@ -814,3 +814,50 @@ describe('per-group All On and All Off links', () => {
     expect(screen.getByRole('button', { name: 'All Off, Special cells' })).toBeEnabled()
   })
 })
+
+describe('the setup recap above Start Game', () => {
+  const recap = (text: string) => screen.queryByText(text)
+
+  test('Vs Bot at the defaults reads the opponent, difficulty, board, skip limit, games and rules on', () => {
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+    expect(recap('Vs Bot (Greedy) · 19×19 · Skip 5 · 1 game · 9 rules on')).toBeInTheDocument()
+  })
+
+  test('changed settings show in the line: difficulty, board, skip limit, games and the count of rules on', () => {
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Vs Bot' }))
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Blocking' }))
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Board size' })).getByRole('radio', { name: '27×27' }))
+    fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Skip limit' })).getByRole('radio', { name: '3' }))
+    fireEvent.click(within(gamesGroup()).getByRole('radio', { name: '3' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Walls' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Reroll' }))
+
+    expect(recap('Vs Bot (Blocking) · 27×27 · Skip 3 · 3 games · 7 rules on')).toBeInTheDocument()
+  })
+
+  test('Local 2P leaves out the difficulty', () => {
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+
+    expect(recap('Local 2P · 19×19 · Skip 5 · 1 game · 9 rules on')).toBeInTheDocument()
+  })
+
+  test('with no mode chosen there is no recap', () => {
+    render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+    expect(document.querySelector('.mode-recap')).toBeNull()
+  })
+
+  test('the recap stays while connecting', () => {
+    localStorage.setItem('rectangles.modeSelectSettings:v1', JSON.stringify({ opponent: 'bot' }))
+    render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+    expect(recap('Vs Bot (Greedy) · 19×19 · Skip 5 · 1 game · 9 rules on')).toBeInTheDocument()
+  })
+})
