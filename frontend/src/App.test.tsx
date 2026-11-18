@@ -296,6 +296,45 @@ describe('App', () => {
     expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
   })
 
+  function sendGameOver(series: ReturnType<typeof makeSeries> | null) {
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('message', {
+        protocolVersion: 1,
+        type: 'state',
+        game: makeGame({
+          turn: { recentTurns: [], currentPlayerId: 1, turnState: 'gameOver', lastRoll: null, legalPlacements: [] },
+          gameOver: { reason: 'boardFull', playerId: null, winner: 1, history: [] },
+        }),
+        series,
+      })
+    })
+  }
+
+  it('keeps the finished result and its Replay when the connection drops after the game is over', () => {
+    render(<App />)
+    startGameAndOpen()
+    sendGameOver(null)
+
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('close')
+    })
+
+    expect(screen.queryByText("This game can't be resumed")).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Replay/ })).toBeInTheDocument()
+  })
+
+  it('still reports the lost connection when a round ends in an unfinished series, which needs the server for the next round', () => {
+    render(<App />)
+    startGameAndOpen()
+    sendGameOver(makeSeries({ isComplete: false }))
+
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.emit('close')
+    })
+
+    expect(screen.getByText("This game can't be resumed")).toBeInTheDocument()
+  })
+
   it('returns to a clean Mode Select from the connection-lost modal on New Game', () => {
     render(<App />)
     startGameAndOpen()

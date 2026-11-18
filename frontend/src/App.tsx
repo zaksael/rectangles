@@ -73,7 +73,9 @@ function App() {
   }
 
   if (screen === 'PLAYING') {
-    if (gameSocket.status === 'closed-unexpected') {
+    // A finished game or series needs no server: its result and Replay stay reachable after a drop.
+    const finished = gameSocket.state?.game.turn.turnState === 'gameOver' && (gameSocket.state.series?.isComplete ?? true)
+    if (gameSocket.status === 'closed-unexpected' && !finished) {
       return (
         <ConnectionLostModal
           isSeries={gameSocket.state?.series != null}
