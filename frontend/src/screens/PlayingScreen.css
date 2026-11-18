@@ -598,15 +598,18 @@ dialog.connection-lost .reason {
   margin: 0 0 24px;
 }
 
-dialog.surrender-confirm {
+dialog.surrender-confirm,
+dialog.leave-series-confirm {
   width: 420px;
   padding: 28px 28px 24px;
 }
-.surrender-confirm h2 {
+.surrender-confirm h2,
+.leave-series-confirm h2 {
   font-size: 22px;
   margin-bottom: 12px;
 }
-.surrender-confirm p {
+.surrender-confirm p,
+.leave-series-confirm p {
   font-size: 14px;
   margin: 0 0 24px;
 }

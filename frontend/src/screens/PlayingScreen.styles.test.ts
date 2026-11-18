@@ -183,3 +183,9 @@ test('the connection-lost backdrop is a dimmed stripe placeholder over the whole
   expect(rule).toMatch(/repeating-linear-gradient\(135deg/)
   expect(rule).toMatch(/filter:\s*brightness\(0\.55\) saturate\(0\.7\)/)
 })
+
+test('the Leave series confirm is sized and spaced like the Surrender confirm, not by the browser default dialog', () => {
+  expect(ruleFor(css, 'dialog.leave-series-confirm')).toMatch(/width:\s*420px[^}]*padding:\s*28px 28px 24px/)
+  expect(ruleFor(css, '.leave-series-confirm h2')).toMatch(/font-size:\s*22px/)
+  expect(ruleFor(css, '.leave-series-confirm p')).toMatch(/margin:\s*0 0 24px/)
+})

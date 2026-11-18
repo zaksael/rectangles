@@ -72,6 +72,7 @@ const HOME: Record<string, string[]> = {
   'dialogs/GameOverOverlay.tsx': ['PlayingScreen'],
   'dialogs/SettingsOverlay.tsx': ['PlayingScreen'],
   'dialogs/SurrenderConfirmDialog.tsx': ['PlayingScreen'],
+  'dialogs/LeaveSeriesDialog.tsx': ['PlayingScreen'],
 }
 
 test.each(SHARED_COMPONENTS)('%s writes no class that a screen\'s stylesheet outside its home styles on its own', file => {
