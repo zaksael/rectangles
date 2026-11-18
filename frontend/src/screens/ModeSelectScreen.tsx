@@ -48,9 +48,9 @@ const DEFAULT_SETTINGS: ModeSelectSettings = {
   },
 }
 
-// How many visible settings differ from DEFAULT_SETTINGS: what Reset to Defaults would change (the opponent is kept).
 const HOUSE_RULES = HOUSE_RULE_GROUPS.flatMap((g) => g.rules)
 
+// How many visible settings differ from DEFAULT_SETTINGS: what Reset to Defaults would change (the opponent is kept).
 function changedCount(s: ModeSelectSettings): number {
   return [
     s.boardSize !== DEFAULT_SETTINGS.boardSize,
