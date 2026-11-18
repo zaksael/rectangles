@@ -142,6 +142,31 @@ test('the client explains a spot exactly when the server does not offer it', asy
   client.close()
 })
 
+// The server places obstacles and walls at random and has no seed on the wire, so a fresh game is drawn until each rule has decided at least
+// one spot: a spot the client refuses only because of that rule (without it, placementReason would allow the spot) that the server also withholds.
+test('the client names the obstacle or wall that rules out a spot, exactly where the server withholds it', async () => {
+  const decided = { obstacle: 0, wall: 0 }
+  for (let drawn = 0; drawn < 80 && (decided.obstacle === 0 || decided.wall === 0); drawn++) {
+    const client = await connect(ALL_RULES)
+    const { game } = (await untilPlacement(client, await play(client, await client.first, 12))) as { game: GameWireState }
+    const withoutThem = { ...game, houseRules: { ...game.houseRules, obstacles: { ...game.houseRules.obstacles, enabled: false }, walls: { ...game.houseRules.walls, enabled: false } } }
+    const mover = game.turn.currentPlayerId as 1 | 2
+    for (const { width, height, topLefts } of game.turn.legalPlacements) {
+      const offered = new Set(topLefts.map(([r, c]) => `${r},${c}`))
+      for (let r = 0; r + height <= game.board.size; r++) {
+        for (let c = 0; c + width <= game.board.size; c++) {
+          const reason = placementReason(game, mover, [r, c], [width, height])
+          expect(reason === null, `${width}x${height} at ${r},${c}: ${reason}`).toBe(offered.has(`${r},${c}`))
+          if (reason !== null && placementReason(withoutThem, mover, [r, c], [width, height]) === null) decided[reason === 'covers an obstacle' ? 'obstacle' : 'wall']++
+        }
+      }
+    }
+    client.close()
+  }
+  expect(decided.obstacle, 'a spot an obstacle decided').toBeGreaterThan(0)
+  expect(decided.wall, 'a spot a wall decided').toBeGreaterThan(0)
+}, 60_000)
+
 test('a finished game carries history entries, the series rounds and the analysis reply in the TS shape', async () => {
   const client = await connect(`seriesLength=3&${ALL_RULES}`)
   const played = await play(client, await client.first, 4)
