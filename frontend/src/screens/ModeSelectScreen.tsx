@@ -245,7 +245,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
         <h1 className="title">New Game</h1>
       </div>
 
-      <div className="mode-cards" role="radiogroup" aria-label="Opponent">
+      <div className="mode-cards" role="radiogroup" aria-label="Opponent" inert={isConnecting}>
         {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a mouse shortcut for the radio inside, which takes the keys */}
         <div
           className={settings.opponent === 'bot' ? 'mode-card selected' : 'mode-card'}
@@ -323,7 +323,7 @@ export function ModeSelectScreen({ isConnecting, connectFailed, onStartGame, onC
           </p>
         </div>
       ) : (
-        <div className="mode-config">
+        <div className="mode-config" inert={isConnecting}>
           <div className="mode-config-section">
             <div className="mode-section-label-row">
               <span className="mode-section-label">Match setup</span>

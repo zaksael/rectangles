@@ -76,6 +76,27 @@ test('Space does not start the game again while connecting', () => {
   expect(onStartGame).not.toHaveBeenCalled()
 })
 
+test('the opponent cards cannot be changed while connecting, since the connection already carries the choice', () => {
+  render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+
+  expect(screen.getByRole('radiogroup', { name: 'Opponent' })).toHaveAttribute('inert')
+})
+
+test('the match setup and house rules cannot be changed while connecting', () => {
+  render(<ModeSelectScreen isConnecting={true} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+
+  expect(screen.getByText('Match setup').closest('.mode-config')).toHaveAttribute('inert')
+})
+
+test('the opponent cards and the match setup stay editable when not connecting', () => {
+  render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={vi.fn()} onCancel={vi.fn()} />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Local 2P' }))
+
+  expect(screen.getByRole('radiogroup', { name: 'Opponent' })).not.toHaveAttribute('inert')
+  expect(screen.getByText('Match setup').closest('.mode-config')).not.toHaveAttribute('inert')
+})
+
 test('Space does not start the game while no mode is chosen', () => {
   const onStartGame = vi.fn()
   render(<ModeSelectScreen isConnecting={false} connectFailed={false} onStartGame={onStartGame} onCancel={vi.fn()} />)
