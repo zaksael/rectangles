@@ -1,4 +1,5 @@
 import { noBreak } from '../game/noBreak'
+import { formatSigned } from '../game/resultText'
 import { useAutoOpenDialog } from '../hooks/useAutoOpenDialog'
 
 interface SurrenderConfirmDialogProps {
@@ -34,7 +35,7 @@ export function SurrenderConfirmDialog({ playerName, opponentName, scores, isSer
         {scores.map(({ name, score }) => (
           <div key={name}>
             <dt>{noBreak(name)}</dt>
-            <dd>{score}</dd>
+            <dd>{formatSigned(score)}</dd>
           </div>
         ))}
       </dl>

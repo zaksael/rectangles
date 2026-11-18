@@ -931,3 +931,8 @@ test('a headline followed straight by the scoreboard keeps 18px below it', () =>
 
   expect(getComputedStyle(within(dialog).getByRole('heading', { name: 'Tied' })).marginBottom).toBe('18px')
 })
+
+test('a negative total shows a true minus sign in its result card', () => {
+  const dialog = renderOver({ winner: 1, area: [30, 40], score: [20, -5] })
+  expect(dialog.querySelectorAll('.n')[1]).toHaveTextContent('−5')
+})
