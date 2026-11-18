@@ -64,7 +64,8 @@ function endText(game: GameWireState, history: HistoryEntry[]): string | null {
 }
 
 function Caption({ game, history, step, playing }: { game: GameWireState; history: HistoryEntry[]; step: number; playing: boolean }) {
-  const notes = step === 0 ? [] : [...effectTexts(game, history, step), step === history.length ? endText(game, history) : null].filter(Boolean)
+  const notes = step === 0 ? [] : effectTexts(game, history, step)
+  const verdict = step === history.length && step > 0 ? endText(game, history) : null
   return (
     <p className="caption" data-testid="replay-caption" aria-live={playing ? 'off' : 'polite'}>
       {step === 0 ? (
@@ -75,6 +76,7 @@ function Caption({ game, history, step, playing }: { game: GameWireState; histor
         <>
           <span className="step">{`Turn ${step} of ${history.length}`}</span>
           {moveText(game, history[step - 1]!) + (notes.length ? ` — ${notes.join(', ')}` : '')}
+          {verdict && <span className="verdict">{verdict[0]!.toUpperCase() + verdict.slice(1)}</span>}
         </>
       )}
     </p>

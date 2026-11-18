@@ -225,7 +225,7 @@ test('an all-skips game plays through: every step reads skipped, the board stays
   expect(caption()).toHaveTextContent('Turn 1 of 4Player 1 skipped (rolled 1, 2)')
   for (let step = 0; step < 3; step++) act(() => void vi.advanceTimersByTime(600)) // one timer per step, re-armed after each render
 
-  expect(caption()).toHaveTextContent('Turn 4 of 4Player 2 skipped (rolled 1, 1) — Player 2 hit the skip limit (5 of 5)')
+  expect(caption()).toHaveTextContent('Turn 4 of 4Player 2 skipped (rolled 1, 1)Player 2 hit the skip limit (5 of 5)')
   expect(pieces(container)).toHaveLength(0)
   expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy()
 })
@@ -283,14 +283,18 @@ const lastStepCaption = (reason: GameWireState['gameOver']['reason'], playerId: 
   return caption()
 }
 
-test('the last step names the end reason in the game-over dialog\'s words', () => {
-  expect(lastStepCaption('boardFull', null, 1)).toHaveTextContent('Player 2 skipped (rolled 2, 2) — no room left to build')
+const verdictOf = (el: HTMLElement) => (el.querySelector('.verdict')?.textContent ?? '').replaceAll(' ', ' ')
+
+test('the last step puts the end reason in its own line, in the game-over dialog\'s words', () => {
+  const boardFull = lastStepCaption('boardFull', null, 1)
+  expect(verdictOf(boardFull)).toMatch(/^No room left to build/)
+  expect(boardFull).toHaveTextContent(/Player 2 skipped \(rolled 2, 2\)No room left to build/)
   cleanup()
-  expect(lastStepCaption('playerBlocked', 2, 1)).toHaveTextContent('— Player 2 had no legal move left')
+  expect(verdictOf(lastStepCaption('playerBlocked', 2, 1))).toMatch(/^Player 2 had no legal move left/)
   cleanup()
-  expect(lastStepCaption('skipLimit', 2, 1)).toHaveTextContent('— Player 2 hit the skip limit (5 of 5)')
+  expect(verdictOf(lastStepCaption('skipLimit', 2, 1))).toMatch(/^Player 2 hit the skip limit \(5 of 5\)/)
   cleanup()
-  expect(lastStepCaption('surrender', 2, 1)).toHaveTextContent('— Player 2 surrendered, Player 1 wins')
+  expect(verdictOf(lastStepCaption('surrender', 2, 1))).toBe('Player 2 surrendered, Player 1 wins')
 })
 
 const resultCaption = (reason: GameWireState['gameOver']['reason'], winner: number | null, scores: [number, number]) => {
@@ -300,19 +304,19 @@ const resultCaption = (reason: GameWireState['gameOver']['reason'], winner: numb
   })
   render(<ReplayScreen game={game} onBack={vi.fn()} />)
   fireEvent.click(screen.getByRole('button', { name: 'Last' }))
-  return caption()
+  return verdictOf(caption())
 }
 
 test('the last step follows the end reason with who won by how much, or tied; a surrender names its winner only', () => {
-  expect(resultCaption('boardFull', 1, [30, 18])).toHaveTextContent('— no room left to build, Player 1 wins by 12')
+  expect(resultCaption('boardFull', 1, [30, 18])).toBe('No room left to build, Player 1 wins by 12')
   cleanup()
-  expect(resultCaption('playerBlocked', 2, [10, 14])).toHaveTextContent('— Player 2 had no legal move left, Player 2 wins by 4')
+  expect(resultCaption('playerBlocked', 2, [10, 14])).toBe('Player 2 had no legal move left, Player 2 wins by 4')
   cleanup()
-  expect(resultCaption('skipLimit', 1, [20, 5])).toHaveTextContent('— Player 2 hit the skip limit (5 of 5), Player 1 wins by 15')
+  expect(resultCaption('skipLimit', 1, [20, 5])).toBe('Player 2 hit the skip limit (5 of 5), Player 1 wins by 15')
   cleanup()
-  expect(resultCaption('boardFull', null, [16, 16])).toHaveTextContent('— no room left to build, tied')
+  expect(resultCaption('boardFull', null, [16, 16])).toBe('No room left to build, tied')
   cleanup()
-  expect(resultCaption('surrender', 1, [3, 40])).toHaveTextContent(/— Player 2 surrendered, Player 1 wins$/)
+  expect(resultCaption('surrender', 1, [3, 40])).toBe('Player 2 surrendered, Player 1 wins')
 })
 
 test('only the last step carries the end reason', () => {

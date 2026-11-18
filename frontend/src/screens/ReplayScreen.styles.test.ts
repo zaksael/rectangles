@@ -99,14 +99,19 @@ test('the chart label and the empty-chart text stay AA (4.5:1) on the ledger', (
   expect(textContrast(css, '.replay .chart-empty')).toBeGreaterThanOrEqual(4.5)
 })
 
-test('the caption keeps room for three lines of text, so a longer or shorter caption does not resize the chart', () => {
+test('the caption keeps room for the label, two lines of move and the result line, so the last step does not resize the chart', () => {
   const block = ruleFor(css, '.replay .caption')
   const step = ruleFor(css, '.replay .caption .step')
+  const verdict = ruleFor(css, '.replay .caption .verdict')
 
   expect(block).toMatch(/line-height:\s*18px/)
   expect(step).toMatch(/line-height:\s*13px/)
   expect(step).toMatch(/margin-bottom:\s*4px/)
-  expect(block).toMatch(/min-height:\s*71px/) // the step label's 13px + 4px, then 3 lines of 18px
+  expect(verdict).toMatch(/display:\s*block/)
+  expect(verdict).toMatch(/margin-top:\s*4px/)
+  expect(verdict).toMatch(/font-weight:\s*600/)
+  expect(verdict).toMatch(/color:\s*var\(--ink\)/)
+  expect(block).toMatch(/min-height:\s*75px/) // the label's 13px + 4px, 2 lines of 18px, then the result's 4px + 18px
 })
 
 test('the player dots in the table header and the readout carry their player colour', () => {
