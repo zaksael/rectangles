@@ -17,7 +17,6 @@
 
 .score-table tbody th,
 .score-table tfoot th,
-.score-table .score-row th,
 .score-table td:first-child {
   text-align: left;
   font-family: inherit;
@@ -43,22 +42,18 @@
   color: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
-.score-table tfoot td,
-.score-table .score-row td {
+.score-table tfoot td {
   font-size: 20px;
   font-weight: 500;
 }
 
-.score-table tfoot th,
-.score-table .score-row th {
+.score-table tfoot th {
   font-size: 14px;
   font-weight: 500;
 }
 
 .score-table tfoot td,
-.score-table tfoot th,
-.score-table .score-row td,
-.score-table .score-row th {
+.score-table tfoot th {
   border-top: 1px solid var(--ink);
   padding: 8px 5px;
 }
