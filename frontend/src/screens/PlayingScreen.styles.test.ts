@@ -145,10 +145,6 @@ test('a modal is never wider or taller than the safe area less a 16px margin', (
   expect(block).toMatch(/max-height:\s*calc\(100dvh - 32px - env\(safe-area-inset-top\) - env\(safe-area-inset-bottom\)\)/)
 })
 
-test('the Playing rail sets only its own gap; the rest comes from the shared .rail', () => {
-  expect(ruleFor(css, '.playing .rail').trim()).toBe('gap: 8px;')
-})
-
 test('the mover is marked by weight and a 3px bar under the column header name, in their colour', () => {
   const p1 = ruleFor(css, '.score-table thead th.current:not(.over)')
   const p2 = ruleFor(css, '.score-table thead th.p2.current:not(.over)')
@@ -188,4 +184,24 @@ test('the Leave series confirm is sized and spaced like the Surrender confirm, n
   expect(ruleFor(css, 'dialog.leave-series-confirm')).toMatch(/width:\s*420px[^}]*padding:\s*28px 28px 24px/)
   expect(ruleFor(css, '.leave-series-confirm h2')).toMatch(/font-size:\s*22px/)
   expect(ruleFor(css, '.leave-series-confirm p')).toMatch(/margin:\s*0 0 24px/)
+})
+
+test('the Playing rail packs its blocks with a 6px gap and 16px padding, so the Moves list fits a 720px window', () => {
+  expect(ruleFor(css, '.playing .rail').replace(/\s+/g, ' ').trim()).toBe('gap: 6px; padding: 16px;')
+})
+
+test('the Playing score table body rows are 3px tall above and below, tighter than the shared table, which keeps its header and note row spacing', () => {
+  expect(ruleFor(css, '.playing .score-table tbody tr:not(.note-row) > *')).toMatch(/padding:\s*3px 5px/)
+})
+
+test('the Playing score table header is 7px above and below, as in Replay, tighter than the shared 10px', () => {
+  expect(ruleFor(css, '.playing .score-table thead th')).toMatch(/padding:\s*7px 5px/)
+})
+
+test('the Playing rail buttons have 5px of padding above and below, like the Replay rail buttons', () => {
+  expect(ruleFor(css, '.playing .rail .btn')).toMatch(/padding:\s*5px 16px/)
+})
+
+test('the turn block spaces its status, dice and buttons 8px apart, the same gap as the rail around it', () => {
+  expect(ruleFor(css, '.rail-turn')).toMatch(/gap:\s*8px/)
 })
