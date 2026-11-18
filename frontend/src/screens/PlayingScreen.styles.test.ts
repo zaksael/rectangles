@@ -198,6 +198,12 @@ test('the Playing score table header is 7px above and below, as in Replay, tight
   expect(ruleFor(css, '.playing .score-table thead th')).toMatch(/padding:\s*7px 5px/)
 })
 
+test('the dead-roll countdown is a 2px ink bar that drains left to right over the inline duration, and reduced motion hides it', () => {
+  expect(ruleFor(css, '.skip-countdown').replace(/\s+/g, ' ')).toMatch(/height: 2px; background: var\(--ink\); transform-origin: left; animation: skip-drain linear forwards;/)
+  expect(css).toMatch(/@keyframes skip-drain \{\s*to \{\s*transform:\s*scaleX\(0\)/)
+  expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.skip-countdown \{\s*display:\s*none/)
+})
+
 test('the Playing rail buttons have 5px of padding above and below, like the Replay rail buttons', () => {
   expect(ruleFor(css, '.playing .rail .btn')).toMatch(/padding:\s*5px 16px/)
 })

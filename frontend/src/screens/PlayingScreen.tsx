@@ -403,6 +403,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
                       {turnStatus}
                     </div>
                   )}
+                  {autoSkip && !paused && <div className="skip-countdown" data-testid="skip-countdown" aria-hidden="true" style={{ animationDuration: `${AUTO_SKIP_MS}ms` }} />}
                   {/* Always rendered (blank when no key applies) so the status line doesn't shift vertically. */}
                   <p id="board-help" className="board-help">
                     {boardHint}

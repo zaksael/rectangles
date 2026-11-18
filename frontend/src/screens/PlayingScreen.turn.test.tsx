@@ -141,6 +141,19 @@ test('a dead roll that cannot be rerolled names the skip the server already coun
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skipping… (S) · skip 2 of 5')
 })
 
+test('a dead roll that is skipped by itself shows a bar that drains over the 1.5 s wait', () => {
+  renderScreen({ game: deadRoll(2), series: null })
+
+  expect(screen.getByTestId('skip-countdown')).toHaveStyle({ animationDuration: '1500ms' })
+  expect(screen.getByRole('button', { name: /^Skip/ })).toBeInTheDocument()
+})
+
+test('a skip that is not sent by itself shows no countdown bar', () => {
+  renderScreen({ game: deadRoll(5), series: null })
+
+  expect(screen.queryByTestId('skip-countdown')).not.toBeInTheDocument()
+})
+
 test('the skip cue follows the reroll wording, and the skip that reaches the limit says it ends the game', () => {
   const withReroll = (game: ReturnType<typeof deadRoll>) => {
     game.houseRules.reroll = { enabled: true, canReroll: true }

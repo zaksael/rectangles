@@ -3,14 +3,15 @@ import { readCss, ruleFor, tokensCss } from './dev/testUtils/styles'
 
 const css = readCss('PlayingScreen.css')
 
-test('the board, player dots and swatches, the score bar, the game-over outcome rule and the Replay score chart keep their colours under forced colors (backgrounds that mode would drop, and lines it would recolour)', () => {
+test('the board, player dots and swatches, the score bar, the dead-roll countdown bar, the game-over outcome rule and the Replay score chart keep their colours under forced colors (backgrounds that mode would drop, and lines it would recolour)', () => {
   const board = ruleFor(readCss('Board.css'), '.board')
   const dots = ruleFor(tokensCss, '.dot,\n.swatch')
   const bar = ruleFor(readCss('ScoreBar.css'), '.score-bar')
+  const countdown = ruleFor(css, '.skip-countdown')
   const outcome = ruleFor(css, 'dialog.game-over::before')
   const chart = ruleFor(readCss('ReplayScreen.css'), '.replay .chart')
 
-  for (const rule of [board, dots, bar, outcome, chart]) expect(rule).toMatch(/forced-color-adjust:\s*none/)
+  for (const rule of [board, dots, bar, countdown, outcome, chart]) expect(rule).toMatch(/forced-color-adjust:\s*none/)
 })
 
 // A selected control is a background fill, which forced colors replaces with Canvas, so it must name system colours there.

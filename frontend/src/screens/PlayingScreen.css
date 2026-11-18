@@ -132,6 +132,24 @@
   gap: 4px;
   min-height: 72px; /* two status rows, the gap, and a two-row hint (Reroll on wraps it) */
 }
+/* The 1.5 s before a dead roll is skipped by itself: a bar drains over the duration set inline from AUTO_SKIP_MS. */
+.skip-countdown {
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left;
+  animation: skip-drain linear forwards;
+  forced-color-adjust: none;
+}
+@keyframes skip-drain {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skip-countdown {
+    display: none;
+  }
+}
 /* The hint stays at the bottom whether the status takes one row or two. */
 .rail-instr .board-help {
   margin-top: auto;
