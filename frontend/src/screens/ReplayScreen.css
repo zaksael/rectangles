@@ -158,7 +158,7 @@
 .replay .transport,
 .replay .speed {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr 1fr 1.6fr 1fr 1fr;
   gap: 6px;
 }
 
@@ -195,6 +195,10 @@
   color: color-mix(in srgb, var(--ink) 45%, var(--ledger));
   border-color: currentcolor;
   cursor: default;
+}
+
+.replay .transport .play {
+  font-weight: 600;
 }
 
 .replay .play.replay-playing {

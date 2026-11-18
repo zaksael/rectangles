@@ -45,9 +45,14 @@ test('the flagged-turn row buttons are dimmed when unavailable and invert on hov
   expect(css.match(/@media \(hover: hover\) \{([\s\S]*?)\n\}/)![1]).toMatch(/\.replay \.flag-nav \.btn:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\)/)
 })
 
-test('the transport has five columns and the speed row three buttons centred under the middle three', () => {
-  expect(css).toMatch(/\.replay \.transport,\s*\.replay \.speed \{[^}]*grid-template-columns:\s*repeat\(5, 1fr\)/)
+test('the transport has five columns with a wider middle one for Play, and the speed row three buttons centred under the middle three', () => {
+  expect(css).toMatch(/\.replay \.transport,\s*\.replay \.speed \{[^}]*grid-template-columns:\s*1fr 1fr 1\.6fr 1fr 1fr/)
   expect(ruleFor(css, '.replay .speed .btn:first-child')).toMatch(/grid-column:\s*2/)
+})
+
+test('Play is bold but not filled, since filled means playing, pressed or hovered', () => {
+  expect(css).toMatch(/\.replay \.transport \.play\s*\{[^}]*font-weight:\s*600/)
+  expect(css).not.toMatch(/\.replay \.transport \.play\s*\{[^}]*background/)
 })
 
 test('Pause and the chosen speed are shown inverted, in ink on the ledger', () => {
