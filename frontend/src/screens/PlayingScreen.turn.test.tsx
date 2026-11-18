@@ -135,8 +135,8 @@ test('the turn status line names the rectangle to place, following Rotate', () =
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: place 1 wide × 2 tall')
 })
 
-test('a dead roll names which skip this would be, against the limit', () => {
-  renderScreen({ game: deadRoll(1), series: null })
+test('a dead roll that cannot be rerolled names the skip the server already counted, against the limit', () => {
+  renderScreen({ game: deadRoll(2), series: null })
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move, skipping… (S) · skip 2 of 5')
 })
@@ -155,7 +155,7 @@ test('the skip cue follows the reroll wording, and the skip that reaches the lim
 })
 
 test('a skip that ends the game is asked for, not announced as happening by itself', () => {
-  renderScreen({ game: deadRoll(4), series: null })
+  renderScreen({ game: deadRoll(5), series: null })
 
   expect(screen.getByTestId('turn-status')).toHaveTextContent('Player 1: no legal move — skip (S) · skip 5 of 5 ends the game')
 })
@@ -318,7 +318,7 @@ test('a dead roll is not skipped while the screen is paused, and the pause start
 
 test('a dead roll whose skip would end the game waits for S or a click', () => {
   vi.useFakeTimers()
-  const sendAction = renderScreen({ game: deadRoll(4), series: null })
+  const sendAction = renderScreen({ game: deadRoll(5), series: null })
 
   act(() => vi.advanceTimersByTime(10_000))
   expect(sendAction).not.toHaveBeenCalled()

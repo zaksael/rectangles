@@ -240,11 +240,24 @@ test('the turn in progress is a tinted live row', () => {
 test.each([
   ['awaitingRoll', 'Waiting to roll…'],
   ['choosingWildcard', 'Wildcard roll, picking…'],
-  ['skipped', 'No legal move, deciding…'],
 ] as const)('the live row reads by turn state (%s)', (turnState, text) => {
   renderScreen(movesState([], turnState))
 
   expect(within(moves()[0]!).getByText(text)).toBeInTheDocument()
+})
+
+test('a dead roll that a reroll could still discard has a live row while the player decides', () => {
+  const state = movesState([], 'skipped')
+  state.game.houseRules.reroll = { enabled: true, canReroll: true }
+  renderScreen(state)
+
+  expect(within(moves()[0]!).getByText('No legal move, deciding…')).toBeInTheDocument()
+})
+
+test('a dead roll the server already recorded is one row, not also a live row', () => {
+  renderScreen(movesState([recentTurn(1, 1, [2, 3], 6), recentTurn(2, 2, null, 0)], 'skipped', 2))
+
+  expect(moves().map((row) => row.textContent)).toEqual(['2Player 2No legal move, skipped', '1Player 1Placed 2 × 3+6'])
 })
 
 test('while placing, the live row names the piece being placed', () => {

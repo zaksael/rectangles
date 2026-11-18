@@ -108,7 +108,12 @@ const BUILDERS: Record<string, () => GameState> = {
   },
   deadroll: () => {
     const game = midGame()
-    return { game: { ...game, turn: { ...game.turn, turnState: 'skipped', lastRoll: [6, 6] } }, series: null }
+    // As on the wire, with no reroll the dead roll's skip is already counted.
+    const player = game.players['1']
+    return {
+      game: { ...game, players: { ...game.players, '1': { ...player, board: { ...player.board, consecutiveSkips: 1 } } }, turn: { ...game.turn, turnState: 'skipped', lastRoll: [6, 6] } },
+      series: null,
+    }
   },
   gameover: () => ({ game: gameOver(), series: null }),
   series: () => ({

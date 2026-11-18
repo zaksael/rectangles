@@ -176,7 +176,9 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
   const rerollUsable = canReroll && ['choosingPlacement', 'skipped', 'choosingWildcard'].includes(humanTurnState ?? '')
   // Skipping is the only legal action then, so it is sent after a pause; a new state restarts the pause.
   // A skip that ends the game is never sent on a timer: the player presses S or clicks Skip for it.
-  const skipEndsGame = !!state && state.game.players[key(state.game.turn.currentPlayerId)].board.consecutiveSkips + 1 >= state.game.board.skipLimit
+  // The server counts a dead roll's skip at once unless a reroll could still discard it, so only then is this skip one more.
+  const skipCount = state ? state.game.players[key(state.game.turn.currentPlayerId)].board.consecutiveSkips + (canReroll ? 1 : 0) : 0
+  const skipEndsGame = !!state && skipCount >= state.game.board.skipLimit
   const autoSkip = humanTurnState === 'skipped' && !canReroll && !skipEndsGame
   const sendSkip = useEffectEvent(() => sendAction({ type: 'skip' }))
   useEffect(() => {
@@ -245,8 +247,7 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     else if (turnState === 'skipped') {
       turnStatus = canReroll ? `${currentName}: no legal move — skip (S), or reroll (E)` : autoSkip ? `${currentName}: no legal move, skipping… (S)` : `${currentName}: no legal move — skip (S)`
       const { skipLimit } = state.game.board
-      const nextSkip = state.game.players[key(state.game.turn.currentPlayerId)].board.consecutiveSkips + 1
-      turnStatus += skipEndsGame ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${nextSkip} of ${skipLimit}`
+      turnStatus += skipEndsGame ? ` · skip ${skipLimit} of ${skipLimit} ends the game` : ` · skip ${skipCount} of ${skipLimit}`
     }
   }
 
@@ -290,7 +291,8 @@ export function PlayingScreen({ state, error, sendAction, onOpenSettings, onNewG
     window.addEventListener('beforeunload', guard)
     return () => window.removeEventListener('beforeunload', guard)
   }, [leaveGuarded])
-  const liveRow = turnState !== 'gameOver' && state
+  // A dead roll without a usable reroll is already in recentTurns, so a live row would show the same skip twice.
+  const liveRow = turnState !== 'gameOver' && !(turnState === 'skipped' && !canReroll) && state
   const moveRows = [
     ...(liveRow
       ? [{ turn: (recentTurns.at(-1)?.turn ?? 0) + 1, playerId: state.game.turn.currentPlayerId, live: true, text: liveMoveText(turnState, dims ?? roll), points: 0 }]

@@ -49,6 +49,7 @@ export function gameOverState() {
 
 export const renderVsBot = (state: GameState) => renderScreen(state, vi.fn(), null, vi.fn(), 2)
 
+// consecutiveSkips is the wire value: it already counts this dead roll's skip unless a reroll could still discard it.
 export const deadRoll = (consecutiveSkips: number) => {
   const game = makeGame({ board: { size: 3, skipLimit: 5 }, turn: { recentTurns: [], currentPlayerId: 1, turnState: 'skipped', lastRoll: [3, 4], legalPlacements: [] } })
   game.players['1'].board.consecutiveSkips = consecutiveSkips
