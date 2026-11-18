@@ -2,7 +2,6 @@ import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createServer } from 'node:net'
 import path from 'node:path'
-import { WebSocket as NodeWebSocket } from 'ws'
 
 const REPO_ROOT = path.resolve(__dirname, '../../../..')
 
@@ -28,20 +27,20 @@ function waitForServerReady(serverUrl: string, timeoutMs: number, exited: Promis
   const deadline = Date.now() + timeoutMs
   let settled = false // the server exited, or became ready: stop polling
   const ready = new Promise<void>((resolve, reject) => {
+    // /health answers whatever the connection count, and a probe opens no game.
     function attempt() {
-      const socket = new NodeWebSocket(`${serverUrl}/ws?protocolVersion=1`)
-      socket.addEventListener('open', () => {
-        socket.close()
-        resolve()
-      })
-      socket.addEventListener('error', () => {
-        if (settled) return
-        if (Date.now() > deadline) {
-          reject(new Error(`server at ${serverUrl} did not become ready in time`))
-          return
-        }
-        setTimeout(attempt, 200)
-      })
+      fetch(`${serverUrl.replace(/^ws/, 'http')}/health`).then(
+        (res) => (res.ok ? resolve() : retry()),
+        retry,
+      )
+    }
+    function retry() {
+      if (settled) return
+      if (Date.now() > deadline) {
+        reject(new Error(`server at ${serverUrl} did not become ready in time`))
+        return
+      }
+      setTimeout(attempt, 200)
     }
     attempt()
   })
