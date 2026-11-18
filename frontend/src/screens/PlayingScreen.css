@@ -598,8 +598,8 @@ dialog.connection-lost .reason {
   margin: 0 0 24px;
 }
 
-dialog.surrender-confirm,
-dialog.leave-series-confirm {
+dialog.leave-series-confirm,
+dialog.surrender-confirm {
   width: 420px;
   padding: 28px 28px 24px;
 }
