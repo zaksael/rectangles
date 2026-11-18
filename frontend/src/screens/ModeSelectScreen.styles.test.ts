@@ -7,6 +7,12 @@ test('the Mode Select changed-from-defaults cue keeps AA contrast (4.5:1) on the
   expect(textContrast(css, '.mode-changed-count')).toBeGreaterThanOrEqual(4.5)
 })
 
+test('secondary text uses the one muted-ink token, not its own ink mix', () => {
+  for (const selector of ['.mode-card .mode-desc', '.mode-reset-confirm p', '.mode-field-hint', '.mode-empty-hint']) {
+    expect(ruleFor(css, selector), selector).toMatch(/color:\s*var\(--ink-muted\)/)
+  }
+})
+
 test('the failed-connect line is a status block: 13px bold-ish text, a full danger border and tint, and AA (4.5:1) on that tint', () => {
   const rule = ruleFor(css, '.mode-start-error')
   const tint = mix(danger, mixShare(rule, 'background', '--danger'), ledger)
