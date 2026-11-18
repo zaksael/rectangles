@@ -52,8 +52,10 @@
      the themed full-card outline (keyboard focus only). */
   outline: none;
 }
-.mode-card:hover {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+@media (hover: hover) {
+  .mode-card:hover {
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+  }
 }
 .mode-card:active {
   background: color-mix(in srgb, var(--ink) 14%, transparent);
@@ -188,9 +190,11 @@
   color: var(--ink-muted);
   cursor: pointer;
 }
-.mode-reset-link:hover,
-.mode-group-link:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .mode-reset-link:hover,
+  .mode-group-link:hover {
+    color: var(--ink);
+  }
 }
 
 dialog.mode-reset-confirm {
@@ -263,8 +267,10 @@ dialog.mode-reset-confirm {
   background: var(--ink);
   color: var(--ledger);
 }
-.mode-segmented button:hover:not(.active) {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
+@media (hover: hover) {
+  .mode-segmented button:hover:not(.active) {
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+  }
 }
 .mode-segmented button:active:not(.active) {
   background: color-mix(in srgb, var(--ink) 16%, transparent);
@@ -351,8 +357,10 @@ dialog.mode-reset-confirm {
   height: 7px;
   background: var(--ledger);
 }
-.mode-rule:hover {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
+@media (hover: hover) {
+  .mode-rule:hover {
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+  }
 }
 .mode-rule:active {
   background: color-mix(in srgb, var(--ink) 16%, transparent);

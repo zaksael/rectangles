@@ -27,10 +27,10 @@ export const mix = (fg: number[], share: number, bg: number[]) => fg.map((v, i) 
 
 export const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-// The body of the rule whose selector starts a line, e.g. ruleFor(css, '.start-error'); else the first rule whose comma list contains it.
+// The body of the rule whose selector starts a line (indented inside an @media block is fine), e.g. ruleFor(css, '.start-error'); else the first rule whose comma list contains it.
 export function ruleFor(css: string, selector: string) {
-  const own = css.match(new RegExp(`(?:^|\\n)${escape(selector)} \\{([^}]*)\\}`))
-  const listed = css.match(new RegExp(`(?:^|\\n)(?:[^{}]*,\\s*)?${escape(selector)}(?:\\s*,[^{}]*)?\\s*\\{([^}]*)\\}`))
+  const own = css.match(new RegExp(`(?:^|\\n)[ \\t]*${escape(selector)} \\{([^}]*)\\}`))
+  const listed = css.match(new RegExp(`(?:^|\\n)[ \\t]*(?:[^{}]*,\\s*)?${escape(selector)}(?:\\s*,[^{}]*)?\\s*\\{([^}]*)\\}`))
   const match = own ?? listed
   if (!match) throw new Error(`no rule for ${selector}`)
   return match[1]!
