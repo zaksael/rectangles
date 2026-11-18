@@ -509,6 +509,13 @@ test('from round 2 each scoreboard cell carries its series total', () => {
   expect(within(board).getByText('Series 299')).toBeTruthy()
 })
 
+test('only the player ahead in the series has the full-ink series line, even when they lost the round', () => {
+  const dialog = renderRound({ winner: 1, area: [150, 141], series: makeSeries({ gamesPlayed: 2, scores: { '1': 30, '2': 33 } }) })
+  const board = within(dialog).getByRole('group', { name: 'Round score' })
+  expect(within(board).getByText('Series 33 · leads').classList.contains('ahead')).toBe(true)
+  expect(within(board).getByText('Series 30').classList.contains('ahead')).toBe(false)
+})
+
 test('a series round offers View Board then Next Round, and no New Game', () => {
   const dialog = renderRound({ winner: 1, area: [152, 141], series: makeSeries() })
   expect(within(dialog).getAllByRole('button').map((b) => b.textContent?.replace(/[VN]$/, ''))).toEqual(['View Board', 'Next Round'])

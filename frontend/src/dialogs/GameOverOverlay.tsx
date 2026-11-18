@@ -282,7 +282,11 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
         // The winner of a surrendered game can trail, so muting the lower total would contradict the headline.
         litAll={endReason === 'surrender'}
         total={(id) => formatSigned(game.players[id].score.totalScore)}
-        seriesLine={(id) => (series !== null && series.gamesPlayed >= 2 ? `Series ${series.scores[id]}${series.scores[id] > series.scores[key(3 - Number(id))] ? ' · leads' : ''}` : null)}
+        seriesLine={(id) => {
+          if (series === null || series.gamesPlayed < 2) return null
+          const ahead = series.scores[id] > series.scores[key(3 - Number(id))]
+          return { text: `Series ${series.scores[id]}${ahead ? ' · leads' : ''}`, ahead }
+        }}
       />
       {rows.length > 0 && (
         <table className="breakdown">
@@ -341,7 +345,7 @@ interface ScoreboardProps {
   label: string
   litAll?: boolean
   total: (id: '1' | '2') => ReactNode
-  seriesLine?: (id: '1' | '2') => string | null
+  seriesLine?: (id: '1' | '2') => { text: string; ahead: boolean } | null
 }
 
 function Scoreboard({ game, winner, label, litAll = false, total, seriesLine }: ScoreboardProps) {
@@ -349,6 +353,7 @@ function Scoreboard({ game, winner, label, litAll = false, total, seriesLine }: 
     <div className="game-over-scoreboard" role="group" aria-label={label}>
       {(['1', '2'] as const).map((id) => {
         const won = winner === Number(id)
+        const line = seriesLine?.(id)
         return (
           <div key={id} className={`${winner === null || litAll || won ? 'lead' : 'trail'}${won ? ' winner' : ''}`}>
             <div className="who">
@@ -356,7 +361,7 @@ function Scoreboard({ game, winner, label, litAll = false, total, seriesLine }: 
               {nameOf(game, Number(id))}
             </div>
             <div className="n">{total(id)}</div>
-            {seriesLine?.(id) && <div className="series-total">{seriesLine(id)}</div>}
+            {line && <div className={`series-total${line.ahead ? ' ahead' : ''}`}>{line.text}</div>}
           </div>
         )
       })}

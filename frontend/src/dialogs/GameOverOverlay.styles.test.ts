@@ -14,11 +14,15 @@ test('game-over capitals are for structural labels only: the reason and table he
   expect(ruleFor(css, '.game-over table.breakdown thead th')).toMatch(/text-transform:\s*uppercase/)
 })
 
-test('the series total under a round score is a muted 12px+ mono line', () => {
+test('the series total under a round score is a muted, bold 14px mono line under a hairline', () => {
   const block = ruleFor(css, '.game-over-scoreboard .series-total')
-  expect(Number(block.match(/font(?:-size)?:\s*(?:\d+ )?(\d+)px/)![1])).toBeGreaterThanOrEqual(12)
-  expect(block).toMatch(/IBM Plex Mono/)
+  expect(block).toMatch(/font:\s*600 14px 'IBM Plex Mono'/)
+  expect(block).toMatch(/border-top:\s*1px solid/)
   expect(block).toMatch(/color-mix/)
+})
+
+test('the series line of the player ahead is full ink, so it outweighs the muted one', () => {
+  expect(ruleFor(css, '.game-over-scoreboard .series-total.ahead')).toMatch(/color:\s*var\(--ink\)/)
 })
 
 test('the series ledger bolds a round winner and mutes the loser, which still clears 4.5:1', () => {
