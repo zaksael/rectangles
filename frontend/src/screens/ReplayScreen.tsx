@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { Board } from '../components/Board'
 import type { Analysis, AnalysisTurn, GameWireState, HistoryEntry, PieceState, ScoreParts, SeriesWireState } from '../game/gameTypes'
+import { boardSummary } from '../game/boardSummary'
 import { noBreak } from '../game/noBreak'
 import { formatSigned, key, reasonText } from '../game/resultText'
 import { ScoreChart } from '../components/ScoreChart'
@@ -272,7 +273,8 @@ export function ReplayScreen({ game, series = null, onBack, analysis = null, sho
   return (
     <main className="replay">
       <div className="board-wrap">
-        <Board game={boardGame} lastPlaced={lastPlaced} betterOption={showBetterOption ? flaggedTurn : null} />
+        <Board game={boardGame} lastPlaced={lastPlaced} betterOption={showBetterOption ? flaggedTurn : null} describedBy="board-summary" />
+        <p id="board-summary" className="visually-hidden">{boardSummary(boardGame, (id) => boardGame.players[id].board.pieces.reduce((sum, piece) => sum + piece.width * piece.height, 0))}</p>
       </div>
       <aside className="rail" aria-label="Replay controls">
         <div className="rail-head">

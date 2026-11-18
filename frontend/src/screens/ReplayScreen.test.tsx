@@ -91,6 +91,16 @@ test('Next places the first move, and only that piece carries the last-piece cue
   expect(screen.getByRole('button', { name: 'First' })).toBeEnabled()
 })
 
+test('the board is described to a screen reader, and the description follows the step', () => {
+  // The end-of-game totals are non-zero, so a description that read them would be wrong at every earlier step.
+  render(<ReplayScreen game={replayGame(TWO_MOVES, (g) => { g.players['1'].score.totalArea = 99; g.players['2'].score.totalArea = 98 })} onBack={vi.fn()} />)
+  const board = screen.getByRole('group', { name: '5×5 board' })
+  const description = () => document.getElementById(board.getAttribute('aria-describedby') ?? '')?.textContent
+  expect(description()).toBe('Player 1: 0 pieces, 0 cells. Player 2: 0 pieces, 0 cells.')
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  expect(description()).toBe('Player 1: 1 piece, 4 cells. Player 2: 0 pieces, 0 cells.')
+})
+
 test('the key listeners are bound once, not again on every step', () => {
   const add = vi.spyOn(window, 'addEventListener')
   onTestFinished(() => add.mockRestore())
