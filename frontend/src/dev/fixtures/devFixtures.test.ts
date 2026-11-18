@@ -121,6 +121,12 @@ describe('buildFixture', () => {
     expect(state?.series?.winner).toBe(1)
   })
 
+  it('series-final: its last round was surrendered by the player leading on score, so the other player won it', () => {
+    const last = buildFixture('series-final')?.series?.rounds[2]
+    expect(last?.total).toEqual({ '1': 18, '2': 11 })
+    expect(last?.winner).toBe(2)
+  })
+
   it('an unknown name builds nothing', () => {
     expect(buildFixture('nope')).toBeNull()
     expect(buildFixture('toString')).toBeNull()

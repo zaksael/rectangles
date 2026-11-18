@@ -73,13 +73,13 @@ function gameOver(): GameWireState {
   }
 }
 
-const round = (a: number, b: number) => ({
+const round = (a: number, b: number, winner = a > b ? 1 : b > a ? 2 : null) => ({
   area: { '1': a, '2': b },
   prizeCaptured: { '1': 0, '2': 0 },
   pitfallCaptured: { '1': 0, '2': 0 },
   stealCaptured: { '1': 0, '2': 0 },
   total: { '1': a, '2': b },
-  winner: a > b ? 1 : b > a ? 2 : null,
+  winner,
 })
 
 const BUILDERS: Record<string, () => GameState> = {
@@ -134,7 +134,7 @@ const BUILDERS: Record<string, () => GameState> = {
     series: makeSeries({
       scores: { '1': 49, '2': 41 },
       gamesPlayed: 3,
-      rounds: [round(18, 14), round(13, 16), round(18, 11)],
+      rounds: [round(18, 14), round(13, 16), round(18, 11, 2)],
       isComplete: true,
       winner: 1,
     }),

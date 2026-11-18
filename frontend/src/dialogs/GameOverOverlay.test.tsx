@@ -638,6 +638,14 @@ test('the series ledger marks each round\'s higher score as the winner and the l
   ])
 })
 
+test('the series ledger marks the round\'s winner even when the surrendering player led on score', () => {
+  const [round] = roundTotals([162, 148])
+  const dialog = renderSeriesResult(makeSeries({ gamesPlayed: 1, scores: { '1': 162, '2': 148 }, rounds: [{ ...round!, winner: 2 }] }))
+  const cells = Array.from(within(dialog).getAllByRole('row')[1]!.querySelectorAll('td')).map((c) => c.className)
+
+  expect(cells).toEqual(['round-lose', 'round-win'])
+})
+
 test('a tied series marks neither scoreboard cell as the winner', () => {
   const dialog = renderSeriesResult(makeSeries({ gamesPlayed: 3, isComplete: true, winner: null, scores: { '1': 465, '2': 465 }, rounds: roundTotals([150, 160], [160, 150], [155, 155]) }))
   const board = within(dialog).getByRole('group', { name: 'Series score' })
