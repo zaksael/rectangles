@@ -3,6 +3,7 @@ import { WebSocket as NodeWebSocket } from 'ws'
 import { makeGame, makeSeries, reach } from '../dev/fixtures/gameFixtures'
 import { startServer } from '../dev/testUtils/realServer'
 import { shapeDiff } from '../dev/testUtils/shapeDiff'
+import { placementReason } from '../game/placementReason'
 import type { AnalysisTurn, GameAction, GameWireState, HistoryEntry, PieceState, RecentTurn } from '../game/gameTypes'
 
 // The real server's payloads, key for key, against typed exemplars: tsc keeps each exemplar identical to the TS wire types, so a
@@ -119,6 +120,25 @@ test('a mid-game state with every rule on has the keys the TS wire types describ
   for (const id of ['1', '2']) expect(state.game.players[id].board.pieces.length, `player ${id} has a piece`).toBeGreaterThan(0)
   expect(shapeDiff(state, stateMessage())).toEqual([])
   for (const turn of state.game.turn.recentTurns) expect(shapeDiff(turn, RECENT), `recentTurns[${turn.turn}]`).toEqual([])
+  client.close()
+})
+
+test('the client explains a spot exactly when the server does not offer it', async () => {
+  const client = await connect(`seriesLength=3&${ALL_RULES}`)
+  const state = await untilPlacement(client, await play(client, await client.first, 3))
+  const { game } = state as { game: GameWireState }
+
+  expect(game.turn.turnState).toBe('choosingPlacement')
+  expect(game.turn.legalPlacements.length).toBeGreaterThan(0)
+  for (const { width, height, topLefts } of game.turn.legalPlacements) {
+    const offered = new Set(topLefts.map(([r, c]) => `${r},${c}`))
+    for (let r = 0; r + height <= game.board.size; r++) {
+      for (let c = 0; c + width <= game.board.size; c++) {
+        const reason = placementReason(game, game.turn.currentPlayerId as 1 | 2, [r, c], [width, height])
+        expect(reason === null, `${width}x${height} at ${r},${c}: ${reason}`).toBe(offered.has(`${r},${c}`))
+      }
+    }
+  }
   client.close()
 })
 
