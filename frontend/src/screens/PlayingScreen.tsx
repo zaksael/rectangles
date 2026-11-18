@@ -46,6 +46,18 @@ const KEY_HINT: Partial<Record<string, string>> = {
   choosingPlacement: 'Arrows move, N next, Enter places, R rotates',
 }
 
+// A wall is a straight run of cell edges, so count the runs. shortcut: two walls end to end count as one, fine until the generator can place them touching.
+function wallLines(edges: GameWireState['houseRules']['walls']['edges']) {
+  const lines = new Map<string, number[]>()
+  for (const [[r1, c1], [r2, c2]] of edges) {
+    const line = c1 === c2 ? `h${Math.max(r1, r2)}` : `v${Math.max(c1, c2)}`
+    lines.set(line, [...(lines.get(line) ?? []), c1 === c2 ? c1 : r1])
+  }
+  let runs = 0
+  for (const at of lines.values()) runs += at.sort((a, b) => a - b).filter((n, i) => i === 0 || n !== at[i - 1]! + 1).length
+  return runs
+}
+
 function boardSummary(game: GameWireState) {
   const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
   const { obstacles, walls } = game.houseRules
@@ -54,7 +66,7 @@ function boardSummary(game: GameWireState) {
     return `${p.name}: ${count(p.board.pieces.length, 'piece')}, ${count(p.score.totalArea, 'cell')}.`
   })
   if (obstacles.enabled) parts.push(`${count(obstacles.cells.length, 'obstacle cell')}.`)
-  if (walls.enabled) parts.push(`${count(walls.edges.length, 'wall')}.`)
+  if (walls.enabled) parts.push(`${count(wallLines(walls.edges), 'wall')}.`)
   return parts.join(' ')
 }
 

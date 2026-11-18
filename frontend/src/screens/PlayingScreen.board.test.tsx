@@ -551,3 +551,11 @@ test('the board summary names each player\'s pieces and cells, and the obstacles
   expect(summary).toHaveClass('visually-hidden')
   expect(summary).toHaveTextContent('Player 1: 2 pieces, 7 cells. Player 2: 0 pieces, 0 cells. 2 obstacle cells. 1 wall.')
 })
+
+test('the board summary counts a wall as one line however many cell edges it covers', () => {
+  const base = makeGame()
+  const straight: [[number, number], [number, number]][] = [[[0, 1], [0, 2]], [[1, 1], [1, 2]], [[2, 1], [2, 2]]]
+  renderScreen(makeState({ houseRules: { ...base.houseRules, walls: { enabled: true, edges: [...straight, [[4, 4], [5, 4]]] } } }))
+
+  expect(document.getElementById('board-summary')).toHaveTextContent(/ 2 walls\.$/)
+})
