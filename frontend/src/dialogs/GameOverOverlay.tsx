@@ -275,22 +275,15 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
         </p>
       )}
       {endReason === 'surrender' && <p className="game-over-caption">Score at surrender</p>}
-      <div className="game-over-scoreboard" role="group" aria-label={series === null ? 'Final score' : 'Round score'}>
-        {(['1', '2'] as const).map((id) => {
-          const won = winner === Number(id)
-          // The winner of a surrendered game can trail, so muting the lower total would contradict the headline.
-          return (
-            <div key={id} className={`${winner === null || endReason === 'surrender' || won ? 'lead' : 'trail'}${won ? ' winner' : ''}`}>
-              <div className="who">
-                <span className={`swatch p${id}`} aria-hidden="true" />
-                {nameOf(game, Number(id))}
-              </div>
-              <div className="n">{formatSigned(game.players[id].score.totalScore)}</div>
-              {series !== null && series.gamesPlayed >= 2 && <div className="series-total">{`Series ${series.scores[id]}${series.scores[id] > series.scores[key(3 - Number(id))] ? ' · leads' : ''}`}</div>}
-            </div>
-          )
-        })}
-      </div>
+      <Scoreboard
+        game={game}
+        winner={winner}
+        label={series === null ? 'Final score' : 'Round score'}
+        // The winner of a surrendered game can trail, so muting the lower total would contradict the headline.
+        litAll={endReason === 'surrender'}
+        total={(id) => formatSigned(game.players[id].score.totalScore)}
+        seriesLine={(id) => (series !== null && series.gamesPlayed >= 2 ? `Series ${series.scores[id]}${series.scores[id] > series.scores[key(3 - Number(id))] ? ' · leads' : ''}` : null)}
+      />
       {rows.length > 0 && (
         <table className="breakdown">
           <ScoreTableHead game={game} label="Score" />
@@ -342,7 +335,36 @@ export function GameOverOverlay({ game, series = null, onNewGame, onViewBoard, o
   )
 }
 
-const seriesHeadline = (game: GameWireState, series: SeriesWireState) =>
+interface ScoreboardProps {
+  game: GameWireState
+  winner: number | null
+  label: string
+  litAll?: boolean
+  total: (id: '1' | '2') => ReactNode
+  seriesLine?: (id: '1' | '2') => string | null
+}
+
+function Scoreboard({ game, winner, label, litAll = false, total, seriesLine }: ScoreboardProps) {
+  return (
+    <div className="game-over-scoreboard" role="group" aria-label={label}>
+      {(['1', '2'] as const).map((id) => {
+        const won = winner === Number(id)
+        return (
+          <div key={id} className={`${winner === null || litAll || won ? 'lead' : 'trail'}${won ? ' winner' : ''}`}>
+            <div className="who">
+              <span className={`swatch p${id}`} aria-hidden="true" />
+              {nameOf(game, Number(id))}
+            </div>
+            <div className="n">{total(id)}</div>
+            {seriesLine?.(id) && <div className="series-total">{seriesLine(id)}</div>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+const seriesHeadline =(game: GameWireState, series: SeriesWireState) =>
   series.winner === null ? 'Series tied' : `${nameOf(game, series.winner)} wins the series`
 
 // The series' result: a per-round ledger ending in the total that decided it.
@@ -360,20 +382,7 @@ export function SeriesResultOverlay({ game, series, onNewGame, onViewBoard, onRe
           by <b>{pointsText(Math.abs(series.scores['1'] - series.scores['2']))}</b>
         </p>
       )}
-      <div className="game-over-scoreboard" role="group" aria-label="Series score">
-        {(['1', '2'] as const).map((id) => {
-          const won = winner === Number(id)
-          return (
-            <div key={id} className={`${winner === null || won ? 'lead' : 'trail'}${won ? ' winner' : ''}`}>
-              <div className="who">
-                <span className={`swatch p${id}`} aria-hidden="true" />
-                {nameOf(game, Number(id))}
-              </div>
-              <div className="n">{series.scores[id]}</div>
-            </div>
-          )
-        })}
-      </div>
+      <Scoreboard game={game} winner={winner} label="Series score" total={(id) => series.scores[id]} />
       <table className="breakdown">
         <ScoreTableHead game={game} label="Round" />
         <tbody>
