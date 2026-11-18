@@ -63,3 +63,13 @@ test('a switched-on rule checkbox keeps a visible mark under forced colors', () 
 
   expect(block).toMatch(/\.mode-rule\.on \.mode-checkbox::after[^{}]*\{[^}]*background:\s*CanvasText/)
 })
+
+// Their marks are backgrounds drawn in dark ink, so under a dark forced-colors theme they need the light page colour back.
+test.each([
+  ['Board.css', '.board'],
+  ['ScoreTable.css', '.rule-mark'],
+])('%s: %s keeps the ledger background under forced colors', (file, selector) => {
+  const rule = forcedColorsBlock(readCss(file)).match(new RegExp(`${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`))
+
+  expect(rule?.[1] ?? '').toMatch(/background-color:\s*var\(--ledger\)/)
+})

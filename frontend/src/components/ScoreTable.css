@@ -101,3 +101,10 @@
   font-size: 12px;
   color: var(--ink-muted);
 }
+
+/* Same as the board: the marks keep their own colours, so they bring the light page colour they were drawn on. */
+@media (forced-colors: active) {
+  .rule-mark {
+    background-color: var(--ledger);
+  }
+}

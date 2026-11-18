@@ -233,3 +233,10 @@
   background: color-mix(in srgb, var(--mover) 60%, transparent);
   border: 2px solid var(--ink);
 }
+
+/* The board opts out of forced colors, so it brings the light page colour its dark ink marks were drawn on (a dark theme would paint Canvas black). */
+@media (forced-colors: active) {
+  .board {
+    background-color: var(--ledger);
+  }
+}
