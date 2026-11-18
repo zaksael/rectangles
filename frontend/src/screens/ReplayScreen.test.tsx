@@ -36,6 +36,9 @@ const place = (playerId: number, topLeft: [number, number], width: number, heigh
 function replayGame(history: HistoryEntry[], tweak: (game: GameWireState) => void = () => {}): GameWireState {
   const game = makeGame({ board: { size: 5, skipLimit: 5 } })
   game.gameOver = { reason: 'boardFull', playerId: null, winner: 1, history }
+  // Final totals no step can reach, so a description or caption that reads them instead of the step's own score fails a test.
+  game.players['1'].score.totalArea = 77; game.players['1'].score.totalScore = 88
+  game.players['2'].score.totalArea = 66; game.players['2'].score.totalScore = 55
   tweak(game)
   return game
 }
